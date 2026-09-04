@@ -202,7 +202,10 @@ vi.mock("../../Pages/finance/NewFinance", () => ({
     ) : null,
 }));
 
+// -----------------------------------------------------------------------------
 // Import after mocks
+// -----------------------------------------------------------------------------
+
 import FinanceDetail from "../../Pages/finance/FinancePage";
 import { createFinance, fetchFinanceList } from "../../Redux/financeThunks";
 
@@ -214,8 +217,6 @@ describe("FinanceDetail", () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
-    // Every dispatch returns a resolved promise so handleAddFinance can
-    // execute its .then() block.
     mockDispatch.mockImplementation(() => Promise.resolve());
   });
 
@@ -234,7 +235,9 @@ describe("FinanceDetail", () => {
     render(<FinanceDetail />);
 
     expect(screen.getByTestId("reusable-header")).toBeInTheDocument();
+
     expect(screen.getByText("Finance")).toBeInTheDocument();
+
     expect(screen.getByText("Dashboard / Finance")).toBeInTheDocument();
   });
 
@@ -248,15 +251,53 @@ describe("FinanceDetail", () => {
     ).toBeInTheDocument();
   });
 
-  it("renders StatsCards", () => {
+  it("renders all current StatsCards", () => {
     render(<FinanceDetail />);
 
-    expect(screen.getByTestId("stats-cards")).toBeInTheDocument();
+    const statsCards = screen.getByTestId("stats-cards");
 
-    expect(screen.getByText("Total Records")).toBeInTheDocument();
-    expect(screen.getByText("Total Income")).toBeInTheDocument();
-    expect(screen.getByText("Total Expense")).toBeInTheDocument();
-    expect(screen.getByText("Cash Balance")).toBeInTheDocument();
+    expect(statsCards).toBeInTheDocument();
+
+    // FinanceColumns currently returns exactly three cards.
+    expect(screen.getByTestId("stat-Total Income")).toBeInTheDocument();
+
+    expect(screen.getByTestId("stat-Total Expense")).toBeInTheDocument();
+
+    expect(screen.getByTestId("stat-Cash Balance")).toBeInTheDocument();
+  });
+
+  it("renders the correct StatsCards values", () => {
+    render(<FinanceDetail />);
+
+    expect(screen.getByTestId("stat-Total Income")).toHaveTextContent(
+      "Total Income",
+    );
+
+    expect(screen.getByTestId("stat-Total Income")).toHaveTextContent(
+      "₹50,000.00",
+    );
+
+    expect(screen.getByTestId("stat-Total Expense")).toHaveTextContent(
+      "Total Expense",
+    );
+
+    expect(screen.getByTestId("stat-Total Expense")).toHaveTextContent(
+      "₹5,000.00",
+    );
+
+    expect(screen.getByTestId("stat-Cash Balance")).toHaveTextContent(
+      "Cash Balance",
+    );
+
+    expect(screen.getByTestId("stat-Cash Balance")).toHaveTextContent(
+      "₹45,000.00",
+    );
+  });
+
+  it("does not render the removed Total Records card", () => {
+    render(<FinanceDetail />);
+
+    expect(screen.queryByText("Total Records")).not.toBeInTheDocument();
   });
 
   it("renders the finance filter", () => {
@@ -269,6 +310,7 @@ describe("FinanceDetail", () => {
     ).toBeInTheDocument();
 
     expect(screen.getByLabelText("finance-status")).toBeInTheDocument();
+
     expect(screen.getByLabelText("finance-date")).toBeInTheDocument();
   });
 
@@ -276,6 +318,7 @@ describe("FinanceDetail", () => {
     render(<FinanceDetail />);
 
     expect(screen.getByTestId("reusable-table")).toBeInTheDocument();
+
     expect(screen.getByTestId("table-row-count")).toHaveTextContent("2");
   });
 
@@ -283,7 +326,9 @@ describe("FinanceDetail", () => {
     render(<FinanceDetail />);
 
     expect(screen.getByTestId("pagination")).toBeInTheDocument();
+
     expect(screen.getByTestId("current-page")).toHaveTextContent("1");
+
     expect(screen.getByTestId("total-pages")).toHaveTextContent("3");
   });
 
@@ -547,6 +592,7 @@ describe("FinanceDetail", () => {
     );
 
     expect(screen.getByTestId("finance-modal")).toBeInTheDocument();
+
     expect(screen.getByText("Add Finance")).toBeInTheDocument();
   });
 
@@ -823,6 +869,7 @@ describe("FinanceDetail", () => {
     render(<FinanceDetail />);
 
     expect(screen.getByText("Salary")).toBeInTheDocument();
+
     expect(screen.getByText("Office")).toBeInTheDocument();
   });
 
@@ -830,23 +877,23 @@ describe("FinanceDetail", () => {
     render(<FinanceDetail />);
 
     expect(screen.getByText("Monthly salary")).toBeInTheDocument();
+
     expect(screen.getByText("Office expense")).toBeInTheDocument();
   });
 
   it("renders Income and Expense status values", () => {
     render(<FinanceDetail />);
 
-    // Income appears both in the filter <option> and table status.
-    // Select the table status elements specifically.
     const incomeStatuses = screen.getAllByText("Income");
+
     const expenseStatuses = screen.getAllByText("Expense");
 
     expect(incomeStatuses.length).toBeGreaterThanOrEqual(2);
+
     expect(expenseStatuses.length).toBeGreaterThanOrEqual(2);
 
-    // The last matching elements are the status values rendered
-    // by the Finance table.
     expect(incomeStatuses[incomeStatuses.length - 1]).toBeInTheDocument();
+
     expect(expenseStatuses[expenseStatuses.length - 1]).toBeInTheDocument();
   });
 });
