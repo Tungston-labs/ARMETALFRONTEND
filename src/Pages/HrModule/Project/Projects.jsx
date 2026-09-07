@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
-import ProjectCard from "../../../Components/Project/ProjectCard";
+import ProjectCard from "../../../Components/Hrmodule/Project/ProjectCard";
 
 import {
     ProjectsPage,
@@ -17,8 +17,8 @@ import ReusableHeader from "../../../Components/ReusableTable/ReusableHeader";
 import ReusableFilter from "../../../Components/ReusableTable/ReusableFilter";
 import StatsCards from "../../../Components/StatsCards/StatsCards";
 
-import ProjectModal from "../../../Components/Project/modal/ProjectModal";
-import AddEmployeeModal from "../../../Components/Project/modal/Addemployeemodal";
+import ProjectModal from "../../../Components/Hrmodule/Project/modal/ProjectModal";
+import AddEmployeeModal from "../../../Components/Hrmodule/Project/modal/Addemployeemodal";
 
 
 import {

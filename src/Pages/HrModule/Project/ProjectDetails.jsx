@@ -19,9 +19,9 @@ import ReusableHeader from "../../../Components/ReusableTable/ReusableHeader";
 import StatsCards from "../../../Components/StatsCards/StatsCards";
 import ReusableTable from "../../../Components/ReusableTable/ReusableTable";
 import ReusableFilter from "../../../Components/ReusableTable/ReusableFilter";
-import ProjectModal from "../../../Components/Project/modal/ProjectModal";
+import ProjectModal from "../../../Components/Hrmodule/Project/modal/ProjectModal";
 import ReusableConfirmModal from "../../../Components/modals/ReusableConfirmModal";
-import AddEmployeeModal from "../../../Components/Project/modal/Addemployeemodal";
+import AddEmployeeModal from "../../../Components/Hrmodule/Project/modal/Addemployeemodal";
 
 import {
     DetailsPage,

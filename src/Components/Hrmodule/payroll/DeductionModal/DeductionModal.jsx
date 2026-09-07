@@ -30,11 +30,11 @@ import {
   Footer,
   CancelBtn,
   SaveBtn,
-} from "./IncentiveModal.styles";
+} from "../IncentiveModal/IncentiveModal.styles";
 
-import { updatePayrollIncentive } from "../../../Redux/payrollSlice";
+import { updatePayrollDeduction } from "../../../../Redux/payrollSlice";
 
-const IncentiveModal = ({ onClose, employees = [], month, year }) => {
+const DeductionModal = ({ onClose, employees = [], month, year }) => {
   const dispatch = useDispatch();
 
   const [search, setSearch] = useState("");
@@ -97,7 +97,7 @@ const IncentiveModal = ({ onClose, employees = [], month, year }) => {
   };
 
   // -----------------------------------------
-  // Save incentive for all selected employees
+  // Save deduction for all selected employees
   // -----------------------------------------
   const handleSave = async () => {
     const newErrors = {};
@@ -113,7 +113,7 @@ const IncentiveModal = ({ onClose, employees = [], month, year }) => {
     }
 
     if (!type.trim()) {
-      newErrors.type = "Incentive type is required";
+      newErrors.type = "Deduction type is required";
     }
 
     if (remarks.length > 200) {
@@ -132,13 +132,13 @@ const IncentiveModal = ({ onClose, employees = [], month, year }) => {
       const results = await Promise.allSettled(
         selectedEmployees.map((employee) =>
           dispatch(
-            updatePayrollIncentive({
+            updatePayrollDeduction({
               employeeId: employee.employee,
               month,
               year,
-              incentive_amount: amount,
-              incentive_type: type,
-              incentive_reason: remarks,
+              deduction_amount: amount,
+              deduction_type: type,
+              deduction_reason: remarks,
             }),
           ).unwrap(),
         ),
@@ -160,7 +160,7 @@ const IncentiveModal = ({ onClose, employees = [], month, year }) => {
             error?.message ||
             error?.detail ||
             (typeof error === "string" ? error : null) ||
-            "Failed to add incentive";
+            "Failed to add deduction";
 
           failedEmployees.push({
             employee,
@@ -182,14 +182,14 @@ const IncentiveModal = ({ onClose, employees = [], month, year }) => {
             ? `${successCount} employee${
                 successCount > 1 ? "s" : ""
               } updated successfully.`
-            : "Failed to add incentive.",
+            : "Failed to add deduction.",
         employeeErrors: failedEmployees,
       });
     } catch (error) {
-      console.error("Incentive Error:", error);
+      console.error("Deduction Error:", error);
 
       setErrors({
-        general: error?.error || error?.message || "Failed to add incentive",
+        general: error?.error || error?.message || "Failed to add deduction",
       });
     } finally {
       setLoading(false);
@@ -202,7 +202,7 @@ const IncentiveModal = ({ onClose, employees = [], month, year }) => {
         {/* HEADER */}
         <Header>
           <HeaderLeft>
-            <Title>Add Incentive</Title>
+            <Title>Add Deduction</Title>
 
             <Subtitle>
               {new Date(year, month - 1).toLocaleString("en-IN", {
@@ -365,14 +365,14 @@ const IncentiveModal = ({ onClose, employees = [], month, year }) => {
             </SelectedEmployees>
           )}
 
-          {/* INCENTIVE DETAILS */}
+          {/* DEDUCTION DETAILS */}
           <Row>
             <Field>
-              <Label>Incentive Amount</Label>
+              <Label>Deduction Amount</Label>
 
               <Input
                 type="number"
-                placeholder="e.g. 8000"
+                placeholder="e.g. 2000"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
               />
@@ -390,11 +390,11 @@ const IncentiveModal = ({ onClose, employees = [], month, year }) => {
             </Field>
 
             <Field>
-              <Label>Incentive Type</Label>
+              <Label>Deduction Type</Label>
 
               <Input
                 type="text"
-                placeholder="e.g. Sales Bonus"
+                placeholder="e.g. Late Attendance"
                 value={type}
                 onChange={(e) => setType(e.target.value)}
               />
@@ -416,7 +416,7 @@ const IncentiveModal = ({ onClose, employees = [], month, year }) => {
             <Label>Reason / Remarks</Label>
 
             <TextArea
-              placeholder="Briefly describe the reason for this incentive..."
+              placeholder="Briefly describe the reason for this deduction..."
               value={remarks}
               onChange={(e) => setRemarks(e.target.value)}
             />
@@ -441,7 +441,7 @@ const IncentiveModal = ({ onClose, employees = [], month, year }) => {
           <SaveBtn onClick={handleSave} disabled={loading}>
             {loading
               ? "Saving..."
-              : `Save Incentive${
+              : `Save Deduction${
                   selectedEmployees.length > 0
                     ? ` (${selectedEmployees.length})`
                     : ""
@@ -453,4 +453,4 @@ const IncentiveModal = ({ onClose, employees = [], month, year }) => {
   );
 };
 
-export default IncentiveModal;
+export default DeductionModal;

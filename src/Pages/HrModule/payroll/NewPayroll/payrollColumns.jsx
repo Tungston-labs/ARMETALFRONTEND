@@ -2,7 +2,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { GoInfo } from "react-icons/go";
 import { Select } from "../PayrollTablestyes";
-import VerificationCircles from "../../../../Components/payroll/VerificationCircle";
+import VerificationCircles from "../../../../Components/Hrmodule/payroll/VerificationCircle";
 import { formatCurrency } from "../../../../utils/FormatCurrency"; // adjust path to match where you saved it
 
 export const getPayrollColumns = ({

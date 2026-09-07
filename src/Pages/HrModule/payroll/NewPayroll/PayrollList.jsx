@@ -4,8 +4,8 @@ import ReusableHeader from "../../../../Components/ReusableTable/ReusableHeader"
 import StatsCards from "../../../../Components/StatsCards/StatsCards";
 import ReusableTable from "../../../../Components/ReusableTable/ReusableTable";
 import Pagination from "../../../../Components/Pagination/Pagination";
-import IncentiveModal from "../../../../Components/payroll/IncentiveModal/IncentiveModal";
-import DeductionModal from "../../../../Components/payroll/DeductionModal/DeductionModal";
+import IncentiveModal from "../../../../Components/Hrmodule/payroll/IncentiveModal/IncentiveModal";
+import DeductionModal from "../../../../Components/Hrmodule/payroll/DeductionModal/DeductionModal";
 import { getPayrollColumns } from "./payrollColumns";
 
 import {

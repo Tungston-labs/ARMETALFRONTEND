@@ -2,52 +2,30 @@ import { Route, Routes } from "react-router-dom";
 import "./index.css";
 import LoginForm from "./Pages/login/Loginscreen.jsx";
 import Layout from "./Components/layout/Layout.jsx";
-// import DepartmentList from "./Pages/HrModule/department/DepartmentList.jsx";
 import EmployeeList from "./Pages/employee/EmployeeList.jsx";
 import Holiday from "./Pages/HrModule/holiday/Holiday.jsx";
-// import SuperAdmin from "./Pages/superAdmin/SuperAdmin.jsx";
-// import AddCompany from "./Pages/superAdmin/AddCompany.jsx";
-// import Visa from "./Pages/visa/Visa.jsx";
 import BasicLevel from "./Pages/employee/Form/BasicLevel.jsx";
 import BankPayment from "./Pages/employee/Form/BankPayment.jsx";
 import Documents from "./Pages/employee/Form/Documents.jsx";
-// import LeaveRequest from "./Pages/leaveDetails/LeaveRequest.jsx";
-// import EmployeeLeaveDetails from "./Pages/leaveDetails/EmployeeLeaveDetails.jsx";
-// import Attendance from "./Pages/attendance/Attendance.jsx";
-// import EmployeesOnLeave from "./Pages/onLeave/EmployeesOnLeave.jsx";
 import ViewBasic from "./Pages/employee/ViewForm/ViewBasic.jsx"
 import ViewBankpayment from "./Pages/employee/ViewForm/ViewBankpayment.jsx"
 import ViewDocument from "./Pages/employee/ViewForm/ViewDocument.jsx"
 import Payroll1 from "./Pages/HrModule/payroll/PaymentOverview.jsx";
 import RequireAuth from "./Components/RequireAuth.jsx";
 import Viewpage from "./Pages/superAdmin/Infopage/Viewpage.jsx";
-// import ForgetPassword from "./Pages/login/ForgetPassword.jsx";
-// import Verification from "./Pages/login/Verification.jsx";
-// import NewPassword from "./Pages/login/NewPassword.jsx";
 import Loder from "./Components/Loader/Loder.jsx";
 import LeaveList from "./Pages/HrModule/LeaveRequest/LeaveRequestList.jsx";
-// import DetailOnleave from "./Pages/onLeave/DetailOnleave.jsx"
 import DashboardNew from "./Pages/dashboard/DashboardNew.jsx";
-// import Reimb_info from "./Pages/reimbursement/Reimb_info.jsx"
 import FinancePage from "./Pages/HrModule/finance/FinancePage.jsx"
 import { useEffect } from "react";
 import { useDispatch } from "react-redux";
 import { login } from "./Redux/authSlice";
-// import Superadmin_Dashboard from "./Pages/superAdmin/Superadmin_Dashboard.jsx"
-// import FieldShift from "./Pages/Project/Project.jsx"
-// import FieldDepartment from "./Pages/Project/ProjectInfo.jsx"
 import AttendanceList from "./Pages/HrModule/Attendance/AttendanceList.jsx"
-// import ReimbursementList from "./Pages/reimbursement/ReimbursementList.jsx";
 import Daily from "./Pages/HrModule/dailytask/DailyTask.jsx";
 import ViewLayout from "./Pages/employee/layout/ViewLayout.jsx";
-// import HomeDashboard from "./Pages/dashboard/HomeDashboard.jsx"
 import ErrorSomething from "./Pages/error/ErrorSomething.jsx";
 import ErrorBoundary from "./Components/ErrorBoundary.jsx";
 import AttendanceReport from "./Pages/HrModule/attendanceReport/AttendanceReport.jsx";
-// import PayrollDetailsContainer from "./Pages/payroll/PayrollDetailsContainer.jsx";
-// import PayrollTable from "./Pages/payroll/PayrollTable.jsx";
-// import AttendanceRequestScreen from "./Pages/attendanceRequest/AttendanceRequest.jsx";
-// import Table from "./Pages/Table.jsx";
 import LeaveRequestList from "./Pages/HrModule/LeaveRequest/LeaveRequestList.jsx";
 import ContractAndVisaExpiry from "./Pages/HrModule/visa/ContractAndVisaExpiry.jsx";
 import PayrollList from "./Pages/HrModule/payroll/NewPayroll/PayrollList.jsx";
@@ -56,8 +34,6 @@ import ArchivedStaff from "./Pages/HrModule/ArchivedStaff/ArchivedStaff.jsx";
 import HrDashboard from "./Pages/HrModule/HrDashboard/HrDashboard.jsx";
 import Projects from "./Pages/HrModule/Project/Projects.jsx";
 import ProjectDetails from "./Pages/HrModule/Project/ProjectDetails.jsx";
-// import LoginScreen from "./Pages/login/Login/Loginscreen.jsx";
-// import AuthLayout from "./Pages/login/Login/AuthLayout.jsx";
 import SuperAdmin_Dashboard from "./Pages/superAdmin/Dashboard/SuperAdmin_Dashboard.jsx";
 import AddCompany from "./Pages/superAdmin/AddCompany/AddCompany.jsx"
 import Company from "./Pages/superAdmin/Company/Company.jsx"
@@ -93,84 +69,74 @@ function App() {
         <Routes>
           <Route path="/loader" element={<Loder />} />
           <Route path="/login" element={<LoginForm />} />
-
-
-          {/* <Route element={<AuthLayout />}> */}
-          {/* <Route path="/log" element={<LoginScreen />} /> */}
           <Route path="/forget-screen" element={<ForgetPasswordScreen />} />
           <Route path="/otp" element={<OtpScreen />} />
           <Route path="/create-password" element={<CreateNewPasswordScreen />} />
-          {/* </Route> */}
-          {/* <Route path="/forget-password" element={<ForgetPassword />} />
-          <Route path="/verification" element={<Verification />} />
-          <Route path="/new-password" element={<NewPassword />} /> */}
           <Route path="/payrolls" element={<Payroll1 />} />
+
           <Route element={<RequireAuth />}>
             <Route path="/" element={<Layout />}>
               <Route index element={<HrDashboard />} />
-              {/* <Route path="/department" element={<DepartmentList />} /> */}
 
               <Route path="/department" element={<DepartmentCard />} />
               <Route path="/department/:id" element={<DepartmentDetails />} />
+
+              <Route path="/holiday" element={<Holiday />} />
+
               <Route path="/employee" element={<EmployeeList />} />
               <Route path="superadmin/view/:id" element={<Viewpage />} />
-              <Route path="/holiday" element={<Holiday />} />
-              {/* <Route path="/payrolldetails/:id" element={< PayrollDetailsContainer />} /> */}
-              {/* <Route path="/payrolldetails" element={<PayrollTable />} /> */}
-              <Route path="/company" element={<Company />} />
-              {/* <Route path="/superadmin-dashboard" element={<Superadmin_Dashboard />} />  */}
 
-              <Route path="/dashboard" element={<SuperAdmin_Dashboard />} />
-              <Route path="/addcompany" element={<AddCompany />} />
-              <Route path="/addcompany/:id" element={<AddCompany />} />
-              <Route path="/add-company" element={<AddCompany />} />
-              <Route path="/add-company/:id" element={<AddCompany />} />
-              {/* <Route path="/employee-Contract-Visa-Expiry" element={<Visa />} /> */}
+              <Route path="/projects" element={<Projects />} />
+              <Route path="/projects/:id" element={<ProjectDetails />} />
+
+              <Route path="/finance" element={<FinancePage />} />
+
               <Route path="/daily-task" element={<Daily />} />
+
+              <Route path="/ReimbursementCards" element={<ReimbursementCards />} />
+              <Route path="/reimbursements/:id" element={<ReimbursementDetails />} />
+
+              <Route path="/PayrollList" element={<PayrollList />} />
+
               <Route path="/basic-details" element={<BasicLevel />} />
               <Route path="/bank-payment" element={<BankPayment />} />
               <Route path="/documents" element={<Documents />} />
-              {/* <Route path="/employee-leave-request" element={<LeaveRequest />} /> */}
-              {/* <Route path="/employee-leave-details/:id" element={<EmployeeLeaveDetails />} /> */}
-              {/* <Route path="/employee-attendance/detail/:id" element={<Attendance />} /> */}
-              <Route path="/leave" element={<LeaveList />} />
-              <Route path="/employee-on-leave" element={<LeaveList />} />
 
-              <Route path="/employee-attendance" element={<AttendanceList />} />
-              <Route
-                path="/employee-attendance-tracking/:id"
-                element={<TrackingList />}
-              />
-              {/* <Route path="/employee-leave" element={<DetailOnleave />} /> */}
               <Route path="/ViewBasic/:id" element={<ViewBasic />} />
               <Route path="/ViewBasic/:id/bank" element={<ViewBankpayment />} />
               <Route path="/ViewBasic/:id/documents" element={<ViewDocument />} />
 
-              <Route path="/ReimbursementCards" element={<ReimbursementCards />} />
-              <Route path="/reimbursements/:id" element={<ReimbursementDetails />} />
-              {/* <Route path="/reimbursement" element={<ReimbursementList />} /> */}
-              {/* <Route path="/reimbursement_info/:id" element={<Reimb_info />} /> */}
-              <Route path="/finance" element={<FinancePage />} />
-              {/* <Route path="/project" element={<FieldShift />} /> */}
-              <Route path="/projects" element={<Projects />} />
-              <Route path="/projects/:id" element={<ProjectDetails />} />
+              <Route path="/employee-ContractAndVisaExpiry" element={<ContractAndVisaExpiry />} />
 
-              {/* <Route path="/project-department/:id/" element={<FieldDepartment />} /> */}
-              <Route path="/layout" element={<ViewLayout />} />
+              <Route path="/employee-leaveRequestList" element={<LeaveRequestList />} />
+
+              <Route path="/employee-archived-staff" element={<ArchivedStaff />} />
+
+
+              <Route path="/employee-attendance" element={<AttendanceList />} />
+              <Route path="/employee-attendance-tracking/:id" element={<TrackingList />} />
+
+
               <Route path="/employee-attendance-report" element={< AttendanceReport />} />
               <Route path="/employee-attendance-summary" element={< AttendanceSummary />} />
 
+              <Route path="/dashboard" element={<SuperAdmin_Dashboard />} />
+              <Route path="/company" element={<Company />} />
 
-              {/* <Route path="/employee-attendance-request" element={<AttendanceRequestScreen />} /> */}
 
 
-              {/* <Route path="/Dashboard" element={<HrDashboard />} /> */}
+              <Route path="/add-company" element={<AddCompany />} />
+              <Route path="/add-company/:id" element={<AddCompany />} />
+
+              <Route path="/layout" element={<ViewLayout />} />
+
               <Route path="/PlanAndPricing" element={<PlanAndPricing />} />
-              <Route path="/PayrollList" element={<PayrollList />} />
-              <Route path="/employee-ContractAndVisaExpiry" element={<ContractAndVisaExpiry />} />
-              <Route path="/employee-leaveRequestList" element={<LeaveRequestList />} />
-              <Route path="/employee-archived-staff" element={<ArchivedStaff />} />
-              {/* <Route path="/table" element={<Table />} /> */}
+
+
+              {/* <Route path="/leave" element={<LeaveList />} />
+              <Route path="/employee-on-leave" element={<LeaveList />} /> */}
+              {/* <Route path="/addcompany" element={<AddCompany />} />
+              <Route path="/addcompany/:id" element={<AddCompany />} /> */}
 
               <Route path="*" element={<ErrorSomething />} />
             </Route>
