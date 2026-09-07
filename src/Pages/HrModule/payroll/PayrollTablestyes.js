@@ -2,7 +2,7 @@ import styled from "styled-components";
 import { FaArrowLeft } from "react-icons/fa6";
 
 export const Container = styled.div`
-  font-family: "Segoe UI", sans-serif;
+  font-family: "poppins", sans-serif;
   padding: 20px;
 `;
 
