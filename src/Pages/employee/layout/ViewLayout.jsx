@@ -8,7 +8,7 @@ import {
   TabsRow,
   TabButton,
 } from "./ViewLayout.Styles";
-import Header from "../../../Components/Employee/Headers/Header";
+import Header from "../../../Components/Hrmodule/Employee/Headers/Header";
 import ReusableHeader from "../../../Components/ReusableTable/ReusableHeader";
 import { useNavigate } from "react-router-dom";
 

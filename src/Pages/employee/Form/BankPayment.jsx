@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import {
   Container,
 } from "./BankPayment.Styles";
-import Table from "../../../Components/Employee/AddForm/Table";
+import Table from "../../../Components/Hrmodule/Employee/AddForm/Table";
 import {
   submitBankPayment,
   fetchAllBankPaymentsThunk,

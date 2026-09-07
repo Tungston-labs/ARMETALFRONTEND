@@ -5,7 +5,7 @@ import RecentlyAddedCompanies from "../../../Components/superadmin/Dashboard/Rec
 import PendingPayments from "../../../Components/superadmin/Dashboard/PendingPayments";
 import TopPlan from "../../../Components/superadmin/Dashboard/TopPlan";
 import RevenueOverview from "../../../Components/superadmin/Dashboard/RevenueOverview";
-import TopBar from "../../../Components/HrDashboard/TopBar/TopBar";
+import TopBar from "../../../Components/Hrmodule/HrDashboard/TopBar/TopBar";
 const Dashboard = () => {
   return (
     <>

@@ -5,11 +5,11 @@ import {
   ImageBox, ButtonGroup, Button, Title, Subtitle, Hr, InlineUploadRow,
   FormCard
 } from './Document.Styles';
-import Multistep from '../../../Components/Employee/AddForm/Multistep';
+// import Multistep from '../../../Components/Employee/AddForm/Multistep';
 import { LuCirclePlus } from "react-icons/lu";
 import { FaTrash } from "react-icons/fa";
 import { useNavigate } from 'react-router-dom';
-import SuccessModal from '../../../Components/Employee/Succes';
+import SuccessModal from '../../../Components/Hrmodule/Employee/Succes';
 import { useSelector, useDispatch } from 'react-redux';
 import {
   submitDocumentsThunk,
