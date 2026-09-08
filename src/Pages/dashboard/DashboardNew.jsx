@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 import "antd/dist/reset.css";
 import { useDispatch, useSelector } from "react-redux";
 import { getDashboardSummary } from "../../Redux/dashboardSlice";
-import Navbar from "../../Components/Navbar/SuperAdmin/Navbar";
+// import Navbar from "../../Components/Navbar/SuperAdmin/Navbar";
 import Loader from "../../Components/Loader/Loader";
 
 
@@ -47,7 +47,7 @@ const CardsOnly = () => {
 
   return (
     <>
-      <Navbar />
+      {/* <Navbar /> */}
       <Container>
         <Suspense
           fallback={

@@ -8,7 +8,7 @@ import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { getAllEmployees, deleteEmployeeById } from "../../Redux/employeeSlice";
 import { getDepartments } from "../../Redux/departmentSlice";
-import RightSideModal from "../employeDashboard/RightSideModal";
+import RightSideModal from "../HrModule/employeDashboard/RightSideModal.jsx";
 import ReusableTable from "../../Components/ReusableTable/ReusableTable";
 import ReusableFilter from "../../Components/ReusableTable/ReusableFilter";
 import ReusableHeader from "../../Components/ReusableTable/ReusableHeader";

@@ -163,21 +163,16 @@ export const ActionButton = styled.button`
 
 export const HeaderButton = styled.button`
   height: 40px;
-
   padding: 0 14px;
 
   border: none;
-
   border-radius: 5px;
 
   color: white;
-
   font-size: 13px;
-
   font-weight: 500;
 
   cursor: pointer;
-
   white-space: nowrap;
 
   transition: 0.3s;
@@ -198,10 +193,24 @@ export const HeaderButton = styled.button`
       case "blue":
         return "#3352BA";
 
+      case "excel":
+        return "#FFFFFF";
+
+      case "orange":
+        return "#F78926";
+
       default:
-        return "#3352ba";
+        return "#3352BA";
     }
   }};
+
+  color: ${({ $variant }) =>
+    $variant === "excel" ? "#333333" : "#FFFFFF"};
+
+  border: ${({ $variant }) =>
+    $variant === "excel"
+      ? "1px solid #D1D5DB"
+      : "none"};
 
   svg {
     width: 16px;
@@ -211,6 +220,13 @@ export const HeaderButton = styled.button`
 
   &:hover {
     opacity: 0.9;
+
+    ${({ $variant }) =>
+      $variant === "excel" &&
+      `
+        background: #F9FAFB;
+        border-color: #BFC3C9;
+      `}
   }
 
   @media (max-width: 480px) {

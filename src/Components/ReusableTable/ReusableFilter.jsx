@@ -65,6 +65,7 @@ const ReusableFilter = ({
 
   // ================= RIGHT ACTION =================
   rightAction = null,
+  rightButton = null,
 }) => {
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -103,8 +104,8 @@ const ReusableFilter = ({
 
     const next = selectedMoreOptions.includes(value)
       ? selectedMoreOptions.filter(
-          (item) => item !== value
-        )
+        (item) => item !== value
+      )
       : [...selectedMoreOptions, value];
 
     onMoreOptionsChange(next);
@@ -251,7 +252,7 @@ const ReusableFilter = ({
 
         {/* ================= DATE ================= */}
 
-        {showDate && (
+        {showDate && !rightButton && (
           <DateInput
             type={dateType}
             value={date}
@@ -260,7 +261,7 @@ const ReusableFilter = ({
             }
           />
         )}
-
+        {rightButton && rightButton}
         {/* ================= CUSTOM ACTION ================= */}
 
         {rightAction}

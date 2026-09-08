@@ -32,17 +32,18 @@ width:280px ;
 `;
 
 export const LogoSection = styled.div`
-  height: 90px;
+  height: 100px;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 20px;
+  padding: 15px 20px;
   flex-shrink: 0;
+  margin-top: 10px;
 `;
 
 export const Logo = styled.img`
-  /* width: 50px; */
-  height: 50px;
+  width: 150px;
+  /* height: 70px; */
   object-fit: contain;
 `;
 
