@@ -130,10 +130,15 @@ const payrollCards = getPayrollCards(counts, currencyCode);
   return (
     <Container>
       <ReusableHeader
-        title="Payroll Overview – May 2026"
-        breadcrumbs={["Payroll"]}
-        
-      >
+  title={`Payroll Overview – ${new Date(
+    selectedYear,
+    selectedMonth - 1
+  ).toLocaleString("en-US", {
+    month: "long",
+    year: "numeric",
+  })}`}
+  breadcrumbs={["Payroll"]}
+>
         <HeaderButton
           $variant="danger"
           onClick={handleAddDeduction}
