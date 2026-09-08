@@ -41,27 +41,3 @@ export const attendanceColumns = [
     ),
   },
 ];
-
-
-// export const attendanceDummyData = [
-//   {
-//     id: 18,
-//     name: "test emp",
-//     employeeId: "test12@gmail.com",
-//     date: "2026-08-29",
-//     firstSwipeIn: "03:20 PM",
-//     lastSwipeOut: "03:25 PM",
-//     totalHours: "00:05",
-//     attendanceToday: true,
-//   },
-//   {
-//     id: 2,
-//     name: "DUMMY002",
-//     employeeId: "abc2002@yopmail.com",
-//     date: null,
-//     firstSwipeIn: "--",
-//     lastSwipeOut: "--",
-//     totalHours: "00:00",
-//     attendanceToday: false,
-//   },
-// ];
