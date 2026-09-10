@@ -9,7 +9,9 @@ import {
   updateCategory,
   patchCategory,
   deleteCategory,
-  fetchParentCategories
+  fetchParentCategories,
+  fetchSubCategories,
+  fetchCategorySummary,
 } from "../../services/finance/categoryServices";
 
 
@@ -122,6 +124,7 @@ export const removeCategory = createAsyncThunk(
   }
 );
 
+
 // =====================================================
 // GET PARENT CATEGORIES
 // =====================================================
@@ -138,13 +141,53 @@ export const getParentCategories = createAsyncThunk(
     }
   }
 );
+
+
+// =====================================================
+// GET SUBCATEGORIES OF A CATEGORY
+// =====================================================
+
+export const getSubCategories = createAsyncThunk(
+  "category/getSubCategories",
+  async (id, thunkAPI) => {
+    try {
+      return await fetchSubCategories(id);
+    } catch (error) {
+      return thunkAPI.rejectWithValue(
+        error.response?.data || error.message
+      );
+    }
+  }
+);
+
+
+// =====================================================
+// GET CATEGORY SUMMARY
+// =====================================================
+
+export const getCategorySummary = createAsyncThunk(
+  "category/getCategorySummary",
+  async (_, thunkAPI) => {
+    try {
+      return await fetchCategorySummary();
+    } catch (error) {
+      return thunkAPI.rejectWithValue(
+        error.response?.data || error.message
+      );
+    }
+  }
+);
+
+
 // =====================================================
 // INITIAL STATE
 // =====================================================
 
 const initialState = {
   categories: [],
- parentCategories: [],  
+  parentCategories: [],
+  subCategories: [],
+  summary: null,
   selectedCategory: null,
 
   // API pagination
@@ -192,6 +235,7 @@ const categorySlice = createSlice({
 
     // =================================================
     // GET ALL
+    // Payload shape: { total_items, total_pages, current_page, next, previous, results }
     // =================================================
 
     builder
@@ -210,23 +254,11 @@ const categorySlice = createSlice({
 
         const data = action.payload || {};
 
-        console.log("CATEGORY API RESPONSE:", data);
-
-        // IMPORTANT
-        // API returns results
         state.categories = data.results || [];
-
-        // API returns total_items
         state.count = data.total_items || 0;
-
-        // API returns total_pages
         state.totalPages = data.total_pages || 1;
-
-        // API returns current_page
         state.currentPage = data.current_page || 1;
-
         state.next = data.next || null;
-
         state.previous = data.previous || null;
 
       })
@@ -244,6 +276,7 @@ const categorySlice = createSlice({
 
     // =================================================
     // CREATE
+    // Payload shape: {...category} (already unwrapped from "data")
     // =================================================
 
     builder
@@ -282,6 +315,7 @@ const categorySlice = createSlice({
 
     // =================================================
     // GET BY ID
+    // Payload shape: {...category}
     // =================================================
 
     builder
@@ -314,6 +348,7 @@ const categorySlice = createSlice({
 
     // =================================================
     // PUT
+    // Payload shape: {...category}
     // =================================================
 
     builder
@@ -359,6 +394,7 @@ const categorySlice = createSlice({
 
     // =================================================
     // PATCH
+    // Payload shape: {...category}
     // =================================================
 
     builder
@@ -462,24 +498,91 @@ const categorySlice = createSlice({
 
       });
 
-      // =================================================
-      // GET PARENT CATEGORIES
-      // =================================================
 
-   builder
-  .addCase(getParentCategories.pending, (state) => {
-    state.error = null;
-    })
-  .addCase(getParentCategories.fulfilled, (state, action) => {
-    const data = action.payload;
-    // Handle either a raw array or a paginated { results: [...] } shape
-    state.parentCategories = Array.isArray(data)
-      ? data
-      : data?.results || [];
-  })
-  .addCase(getParentCategories.rejected, (state, action) => {
-    state.error = action.payload;
-  });
+    // =================================================
+    // GET PARENT CATEGORIES
+    // Payload shape: [...categories] (already unwrapped from "data")
+    // =================================================
+
+    builder
+
+      .addCase(getParentCategories.pending, (state) => {
+
+        state.error = null;
+
+      })
+
+      .addCase(getParentCategories.fulfilled, (state, action) => {
+
+        const data = action.payload;
+
+        state.parentCategories = Array.isArray(data)
+          ? data
+          : [];
+
+      })
+
+      .addCase(getParentCategories.rejected, (state, action) => {
+
+        state.error = action.payload;
+
+      });
+
+
+    // =================================================
+    // GET SUBCATEGORIES
+    // Payload shape: [...categories]
+    // =================================================
+
+    builder
+
+      .addCase(getSubCategories.pending, (state) => {
+
+        state.error = null;
+
+      })
+
+      .addCase(getSubCategories.fulfilled, (state, action) => {
+
+        const data = action.payload;
+
+        state.subCategories = Array.isArray(data)
+          ? data
+          : [];
+
+      })
+
+      .addCase(getSubCategories.rejected, (state, action) => {
+
+        state.error = action.payload;
+
+      });
+
+
+    // =================================================
+    // GET SUMMARY
+    // Payload shape: { total_categories, active_categories, inactive_categories, parent_categories, sub_categories }
+    // =================================================
+
+    builder
+
+      .addCase(getCategorySummary.pending, (state) => {
+
+        state.error = null;
+
+      })
+
+      .addCase(getCategorySummary.fulfilled, (state, action) => {
+
+        state.summary = action.payload || null;
+
+      })
+
+      .addCase(getCategorySummary.rejected, (state, action) => {
+
+        state.error = action.payload;
+
+      });
 
   },
 });

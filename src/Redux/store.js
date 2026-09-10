@@ -15,6 +15,8 @@ import companyReducer from "../Redux/companySlice";
 import financeReducer from "./financeSlice";
 import salaryIncrementReducer from "../Redux/salaryIncrementSlice";
 import categoryReducer from "./finance/categorySlice";
+import productReducer from "./finance/ProductSlice";
+
 export const store = configureStore({
   reducer: {
     auth: authReducer,
@@ -34,5 +36,6 @@ export const store = configureStore({
     salaryIncrement: salaryIncrementReducer,
 
       category: categoryReducer,
+          product: productReducer,
   },
 });

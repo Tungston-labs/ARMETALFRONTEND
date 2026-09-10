@@ -5,6 +5,7 @@ import {
     getCategories,
     addCategory,
     getParentCategories,
+    getCategorySummary,
 } from "../../../../Redux/finance/categorySlice";
 
 export const useCategoriesList = () => {
@@ -13,6 +14,7 @@ export const useCategoriesList = () => {
     const {
         categories = [],
         parentCategories = [],
+        summary,
         count = 0,
         totalPages = 1,
         loading,
@@ -28,50 +30,67 @@ export const useCategoriesList = () => {
     const rowsPerPage = 10;
 
     // ==========================================
+    // DEBOUNCE SEARCH
+    // Avoids firing an API call on every keystroke.
+    // ==========================================
+
+    const [debouncedSearch, setDebouncedSearch] = useState("");
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedSearch(search.trim());
+        }, 400);
+
+        return () => clearTimeout(timer);
+    }, [search]);
+
+    // ==========================================
     // GET CATEGORIES
+    // search / status / category_type are now sent to the
+    // backend (it already supports all three as query params)
+    // instead of being filtered client-side on a single page.
     // ==========================================
 
     useEffect(() => {
-        dispatch(
-            getCategories({
-                page: currentPage,
-                page_size: rowsPerPage,
-            })
-        );
-    }, [dispatch, currentPage]);
+        const params = {
+            page: currentPage,
+            page_size: rowsPerPage,
+        };
+
+        if (debouncedSearch) params.search = debouncedSearch;
+        if (status) params.status = status;
+        if (categoryType) params.category_type = categoryType;
+
+        dispatch(getCategories(params));
+    }, [dispatch, currentPage, debouncedSearch, status, categoryType]);
+
+    // ==========================================
+    // GET PARENT CATEGORIES (for the modal dropdown)
+    // ==========================================
 
     useEffect(() => {
         dispatch(getParentCategories());
     }, [dispatch]);
 
     // ==========================================
-    // FILTER
+    // GET SUMMARY (real totals, not page-derived)
     // ==========================================
 
-    const filteredData = categories.filter((category) => {
-        const searchValue = search.trim().toLowerCase();
-
-        const matchesSearch =
-            !searchValue ||
-            category.category_name?.toLowerCase().includes(searchValue) ||
-            category.code?.toLowerCase().includes(searchValue);
-
-        const matchesStatus = !status || category.status === status;
-        const matchesType = !categoryType || category.category_type === categoryType;
-
-        return matchesSearch && matchesStatus && matchesType;
-    });
+    useEffect(() => {
+        dispatch(getCategorySummary());
+    }, [dispatch]);
 
     // ==========================================
     // STATS
+    // Sourced from the /summary/ endpoint so counts reflect
+    // the whole table, not just the currently loaded page.
     // ==========================================
-    // NOTE: activeCount / inactiveCount / productCount are derived from
-    // the currently loaded page only (categories), since the API doesn't
-    // return status breakdowns. totalCount uses the real server-side total.
 
-    const activeCount = categories.filter((c) => c.status === "active").length;
-    const inactiveCount = categories.filter((c) => c.status === "inactive").length;
-    const productCount = categories.filter((c) => c.category_type === "product").length;
+    const totalCount = summary?.total_categories ?? count;
+    const activeCount = summary?.active_categories ?? 0;
+    const inactiveCount = summary?.inactive_categories ?? 0;
+    const parentCount = summary?.parent_categories ?? 0;
+    const subCategoryCount = summary?.sub_categories ?? 0;
 
     // ==========================================
     // HANDLERS
@@ -81,22 +100,37 @@ export const useCategoriesList = () => {
 
     const handleCloseCategoryModal = () => setShowCategoryModal(false);
 
+    const refreshList = () => {
+        const params = {
+            page: currentPage,
+            page_size: rowsPerPage,
+        };
+
+        if (debouncedSearch) params.search = debouncedSearch;
+        if (status) params.status = status;
+        if (categoryType) params.category_type = categoryType;
+
+        dispatch(getCategories(params));
+    };
+
     const handleSaveCategory = async (categoryData) => {
-        try {
-            await dispatch(addCategory(categoryData)).unwrap();
+        // Intentionally NOT catching-and-swallowing here: if addCategory
+        // rejects, we let it propagate to CategoryModal so it can show
+        // submitError / map backend field errors onto the form. Swallowing
+        // it here previously made failed creates fail silently.
+        const result = await dispatch(addCategory(categoryData)).unwrap();
 
-            setShowCategoryModal(false);
+        setShowCategoryModal(false);
 
-            // Refresh list
-            dispatch(
-                getCategories({
-                    page: currentPage,
-                    page_size: rowsPerPage,
-                })
-            );
-        } catch (error) {
-            console.error("Failed to create category:", error);
-        }
+        // Refresh everything that could now be stale:
+        // - the list (new row / new counts)
+        // - parent options (the new category may itself be a valid parent)
+        // - summary card totals
+        refreshList();
+        dispatch(getParentCategories());
+        dispatch(getCategorySummary());
+
+        return result;
     };
 
     const handlePageChange = (page) => setCurrentPage(page);
@@ -111,30 +145,30 @@ export const useCategoriesList = () => {
         setCurrentPage(1);
     };
 
-    // ==========================================
-    // DEBUG
-    // ==========================================
-
-    console.log("Categories:", categories);
-    console.log("Filtered Categories:", filteredData);
-    console.log("Count:", count);
-    console.log("Total Pages:", totalPages);
+    const handleCategoryTypeChange = (value) => {
+        setCategoryType(value);
+        setCurrentPage(1);
+    };
 
     return {
         // data
         categories,
         parentCategories,
-        filteredData,
-        count,
+        // kept as "filteredData" for backward compatibility with
+        // CategoriesList.jsx — filtering now happens server-side,
+        // so this is just the current page as returned by the API.
+        filteredData: categories,
+        count: totalCount,
         totalPages,
         currentPage,
         loading,
         error,
 
-        // stats
+        // stats (from /summary/, table-wide — not page-derived)
         activeCount,
         inactiveCount,
-        productCount,
+        parentCount,
+        subCategoryCount,
 
         // filter state
         search,
@@ -151,5 +185,6 @@ export const useCategoriesList = () => {
         handlePageChange,
         handleSearchChange,
         handleStatusChange,
+        handleCategoryTypeChange,
     };
 };

@@ -22,27 +22,18 @@ export const Container = styled.div`
 `;
 
 /* =========================================================
-   TABLE HEADER
+   SINGLE SCROLL WRAPPER
+   (both horizontal AND vertical scroll happen here now,
+   so the header and body always move together)
 ========================================================= */
 
-export const TableHeaderContainer = styled.div`
-  width: 100%;
-  overflow: hidden;
-  background: ${colors.background};
-  border-radius: 5px 5px 0 0;
-`;
-
-/* =========================================================
-   TABLE BODY
-========================================================= */
-
-export const TableBodyContainer = styled.div`
+export const TableScrollContainer = styled.div`
   width: 100%;
   max-height: 100vh;
-  overflow-y: auto;
   overflow-x: auto;
+  overflow-y: auto;
 
-  border-radius: 0 0 5px 5px;
+  border-radius: 5px;
   background: ${colors.background};
 
   /* Firefox */
@@ -111,7 +102,7 @@ export const Th = styled.th`
 
   padding: 14px;
 
-  text-align: left;
+  text-align: center;
 
   font-size: 14px;
   font-weight: 600;
@@ -123,11 +114,11 @@ export const Th = styled.th`
   z-index: 10;
 
   &:first-child {
-    border-radius: 5px 0 0 5px;
+    border-radius: 5px 0 0 0;
   }
 
   &:last-child {
-    border-radius: 0 5px 5px 0;
+    border-radius: 0 5px 0 0;
   }
 `;
 
@@ -139,7 +130,7 @@ export const Td = styled.td`
   padding: 10px 15px;
 
   border-bottom: 1px solid ${colors.border};
-
+  text-align: center;
   white-space: nowrap;
 
   font-size: 14px;

@@ -96,31 +96,21 @@ font-style: Regular;
 font-size: 14px;
 line-height: 100%;
 letter-spacing: 0%;
-
+  text-transform: uppercase;
 `;
 
 export const Input = styled.input`
   width: 100%;
   height: 41px;
-
   padding: 0 12px;
-
   box-sizing: border-box;
-
   border: 1px solid #e1e1e1;
-
   border-radius: 4px;
-
   outline: none;
-
   background: #ffffff;
-
   font-family: "Poppins", sans-serif;
-
   font-size: 13px;
-
   color: #333333;
-
   transition: 0.2s ease;
 
   &::placeholder {

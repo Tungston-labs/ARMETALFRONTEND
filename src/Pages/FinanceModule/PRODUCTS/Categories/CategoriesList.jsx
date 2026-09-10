@@ -33,11 +33,15 @@ const CategoriesList = () => {
         count,
         activeCount,
         inactiveCount,
-        productCount,
+        parentCount,
+        subCategoryCount,
     } = useCategoriesList();
 
     // ==========================================
     // STATS CARDS CONFIG
+    // Sourced from the backend /summary/ endpoint (real,
+    // table-wide totals) rather than derived from a single
+    // loaded page. Each card now shows a distinct stat.
     // ==========================================
 
     const statsCards = [
@@ -57,24 +61,24 @@ const CategoriesList = () => {
         },
         {
             icon: <FiXCircle size={20} />,
-            title: "Products Assigned",
+            title: "Inactive Categories",
             count: inactiveCount,
             backgroundColor: "#FEF2F2",
             iconColor: "#EF4444",
         },
         {
             icon: <FiLayers size={20} />,
-            title: " Empty Categories",
-            count: productCount,
+            title: "Parent Categories",
+            count: parentCount,
             backgroundColor: "#FFF7ED",
             iconColor: "#F97316",
         },
         {
             icon: <FiLayers size={20} />,
-            title: "Largest Category",
-            count: productCount,
-            backgroundColor: "#FFF7ED",
-            iconColor: "#F97316",
+            title: "Sub Categories",
+            count: subCategoryCount,
+            backgroundColor: "#F5F3FF",
+            iconColor: "#8B5CF6",
         },
     ];
 
@@ -121,7 +125,7 @@ const CategoriesList = () => {
                 <div style={{ color: "red", marginBottom: 10 }}>
                     {typeof error === "string"
                         ? error
-                        : error?.detail || "Failed to load categories"}
+                        : error?.message || error?.detail || "Failed to load categories"}
                 </div>
             )}
 

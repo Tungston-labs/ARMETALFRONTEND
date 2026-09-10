@@ -29,6 +29,17 @@ import {
 
 const CODE_PATTERN = /^[A-Za-z0-9#-]{2,20}$/;
 
+// Maps backend serializer field names -> frontend form state keys,
+// so a 400 response like { errors: { category_name: [...] } } lands
+// on the right input instead of only showing a generic banner.
+const BACKEND_FIELD_MAP = {
+    code: "code",
+    category_name: "categoryName",
+    parent_category: "parentCategory",
+    category_type: "categoryType",
+    status: "status",
+};
+
 const CategoryModal = ({
     isOpen,
     onClose,
@@ -202,6 +213,14 @@ const CategoryModal = ({
 
     /*
      * VALIDATION
+     * Note: the code/name "already in use" checks below only look at
+     * `categories`, which is whatever page is currently loaded in the
+     * table — not the full company-wide dataset. This is a soft,
+     * best-effort UX hint only. The backend's unique constraint on
+     * (company, code) is the actual source of truth, and a real
+     * duplicate will still come back as a field error from the server
+     * (handled in handleSubmit's catch block below) even if this
+     * client-side check misses it.
      */
     const validate = () => {
         const nextErrors = {};
@@ -285,13 +304,14 @@ const CategoryModal = ({
                 formData.categoryName.trim(),
 
             /*
-             * Send selected category ID.
-             *
-             * If no parent selected,
-             * send empty string.
+             * Send selected category ID, or null when no parent
+             * is selected. The backend field is a nullable FK
+             * (PrimaryKeyRelatedField(allow_null=True)) — sending
+             * an empty string instead of null fails validation,
+             * since "" is not a valid primary key.
              */
             parent_category:
-                formData.parentCategory || "",
+                formData.parentCategory || null,
 
             category_type:
                 formData.categoryType,
@@ -309,6 +329,34 @@ const CategoryModal = ({
             }
 
         } catch (err) {
+            // Rejected thunk payload shape (from rejectWithValue) mirrors
+            // the backend's error response: { message, errors: {...} }.
+            // Map any field-level errors onto the matching input so the
+            // user sees exactly what's wrong, not just a generic banner.
+            const backendFieldErrors = err?.errors;
+
+            if (
+                backendFieldErrors &&
+                typeof backendFieldErrors === "object"
+            ) {
+                setErrors((prev) => {
+                    const mapped = { ...prev };
+
+                    Object.entries(backendFieldErrors).forEach(
+                        ([field, messages]) => {
+                            const key =
+                                BACKEND_FIELD_MAP[field] || field;
+
+                            mapped[key] = Array.isArray(messages)
+                                ? messages[0]
+                                : messages;
+                        }
+                    );
+
+                    return mapped;
+                });
+            }
+
             setSubmitError(
                 err?.message ||
                     "Something went wrong while saving. Please try again."

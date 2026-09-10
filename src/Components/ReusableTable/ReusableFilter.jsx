@@ -42,6 +42,9 @@ const ReusableFilter = ({
   onStatus,
   showStatus = false,
 
+  // ================= GENERIC FILTERS =================
+  filters = [],
+
   // ================= DATE =================
   date = "",
   onDate,
@@ -241,6 +244,49 @@ const ReusableFilter = ({
             })}
           </Select>
         )}
+
+        {/* ================= GENERIC FILTERS ================= */}
+
+        {filters.map((filter) => (
+          <Select
+            key={filter.key}
+            value={filter.value}
+            onChange={(event) =>
+              filter.onChange?.(event.target.value)
+            }
+          >
+            <option value="">
+              {filter.placeholder || "All"}
+            </option>
+
+            {filter.options.map((item, index) => {
+              const isObject =
+                typeof item === "object" &&
+                item !== null;
+
+              const label = isObject
+                ? item.label
+                : item;
+
+              const value = isObject
+                ? item.value
+                : item;
+
+              return (
+                <option
+                  key={
+                    isObject
+                      ? `${filter.key}-${item.value}`
+                      : `${filter.key}-${item}-${index}`
+                  }
+                  value={value}
+                >
+                  {label}
+                </option>
+              );
+            })}
+          </Select>
+        ))}
 
       </LeftSection>
 
