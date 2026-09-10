@@ -3,8 +3,7 @@ import { ClipLoader } from "react-spinners";
 
 import {
   Container,
-  TableHeaderContainer,
-  TableBodyContainer,
+  TableScrollContainer,
   StyledTable,
   Thead,
   Tbody,
@@ -78,10 +77,14 @@ const ReusableTable = ({
   return (
     <Container>
       {/* =====================================================
-          TABLE HEADER
+          SINGLE SCROLLABLE TABLE
+          Header + body live in ONE table inside ONE scroll
+          container, so on small screens the header scrolls
+          horizontally in sync with the body (same scrollbar),
+          while position: sticky keeps it pinned vertically.
       ====================================================== */}
 
-      <TableHeaderContainer>
+      <TableScrollContainer>
         <StyledTable>
           <Thead>
             <Tr>
@@ -104,15 +107,7 @@ const ReusableTable = ({
               ))}
             </Tr>
           </Thead>
-        </StyledTable>
-      </TableHeaderContainer>
 
-      {/* =====================================================
-          TABLE BODY
-      ====================================================== */}
-
-      <TableBodyContainer>
-        <StyledTable>
           <Tbody>
 
             {/* ================= LOADING ================= */}
@@ -172,7 +167,7 @@ const ReusableTable = ({
 
           </Tbody>
         </StyledTable>
-      </TableBodyContainer>
+      </TableScrollContainer>
     </Container>
   );
 };
