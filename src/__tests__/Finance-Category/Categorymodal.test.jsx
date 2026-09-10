@@ -42,13 +42,11 @@ const setup = (overrides = {}) => {
     return { onSave, onClose, ...utils };
 };
 
-// Helper getters (component doesn't use <label htmlFor>, so we query by placeholder/text)
 const getCodeInput = () => screen.getByPlaceholderText("1253698");
 const getNameInput = () => screen.getByPlaceholderText("Enter name");
 const getParentInput = () => screen.getByPlaceholderText("Select Parent Category");
 const getCategoryTypeSelect = () => screen.getByDisplayValue("Product/Service");
 const getStatusSelect = () => screen.getByDisplayValue("Active/Inactive");
-// Matches both "SAVE CATEGORY" (idle) and "SAVING..." (in-flight) button text
 const getSaveButton = () => screen.getByRole("button", { name: /save category|saving/i });
 const getCancelButton = () => screen.getByRole("button", { name: /cancel/i });
 
@@ -92,7 +90,6 @@ describe("CategoryModal", () => {
             fireEvent.change(getCodeInput(), { target: { value: "NEW1" } });
             expect(getCodeInput()).toHaveValue("NEW1");
 
-            // Close then reopen
             rerender(
                 <CategoryModal
                     isOpen={false}
@@ -236,7 +233,6 @@ describe("CategoryModal", () => {
             await user.click(screen.getByText("Home Appliances"));
 
             expect(getParentInput()).toHaveValue("Home Appliances");
-            // dropdown should close after selection
             expect(screen.queryByText("Electronics")).not.toBeInTheDocument();
         });
 
@@ -251,8 +247,6 @@ describe("CategoryModal", () => {
             await user.clear(getParentInput());
             await user.type(getParentInput(), "Home Applianc");
 
-            // Selection was cleared, so submitting now with exact-ish partial text should
-            // fall into the "no match" (not exact) validation branch on submit.
             fireEvent.change(getCodeInput(), { target: { value: "NEWX" } });
             fireEvent.change(getNameInput(), { target: { value: "Brand New" } });
             fireEvent.click(getSaveButton());
@@ -285,7 +279,7 @@ describe("CategoryModal", () => {
             await user.selectOptions(getStatusSelect(), "active");
         };
 
-        it("calls onSave with correctly mapped backend field names, parent omitted", async () => {
+        it("calls onSave with correctly mapped backend field names, parent omitted as null", async () => {
             const user = userEvent.setup();
             const { onSave } = setup();
 
@@ -296,7 +290,7 @@ describe("CategoryModal", () => {
             expect(onSave).toHaveBeenCalledWith({
                 code: "NEWX",
                 category_name: "Brand New Category",
-                parent_category: "",
+                parent_category: null, // component sends null, not "", when no parent is chosen
                 category_type: "product",
                 status: "active",
             });
@@ -382,6 +376,40 @@ describe("CategoryModal", () => {
 
             expect(await screen.findByText(/network error/i)).toBeInTheDocument();
             expect(getSaveButton()).not.toBeDisabled();
+        });
+
+        it("maps backend field errors onto the matching inputs when onSave rejects with an errors object", async () => {
+            const user = userEvent.setup();
+            const onSave = jest.fn().mockRejectedValue({
+                message: "Validation failed",
+                errors: {
+                    code: ["This code is already in use"],
+                    category_name: ["Category name too similar to existing one"],
+                },
+            });
+
+            render(
+                <CategoryModal
+                    isOpen={true}
+                    onClose={jest.fn()}
+                    onSave={onSave}
+                    categories={existingCategories}
+                    parentCategories={parentCategories}
+                />
+            );
+
+            await user.type(getCodeInput(), "NEWX");
+            await user.type(getNameInput(), "Brand New Category");
+            await user.selectOptions(getCategoryTypeSelect(), "product");
+            await user.selectOptions(getStatusSelect(), "active");
+
+            await user.click(getSaveButton());
+
+            expect(await screen.findByText(/validation failed/i)).toBeInTheDocument();
+            expect(screen.getByText(/this code is already in use/i)).toBeInTheDocument();
+            expect(
+                screen.getByText(/category name too similar to existing one/i)
+            ).toBeInTheDocument();
         });
     });
 

@@ -11,6 +11,7 @@ import StatsCards from "../../../../Components/StatsCards/StatsCards"; // adjust
 import CategoryModal from "./modal/CategoryModal";
 import { categoryColumns } from "./columns";
 import { useCategoriesList } from "./useCategoriesList";
+import { PiPackage } from "react-icons/pi";
 
 const CategoriesList = () => {
     const {
@@ -22,6 +23,7 @@ const CategoriesList = () => {
         error,
         search,
         status,
+        categoryType,
         showCategoryModal,
         handleAddCategory,
         handleCloseCategoryModal,
@@ -29,6 +31,7 @@ const CategoriesList = () => {
         handlePageChange,
         handleSearchChange,
         handleStatusChange,
+        handleCategory,
         categories,
         count,
         activeCount,
@@ -46,7 +49,7 @@ const CategoriesList = () => {
 
     const statsCards = [
         {
-            icon: <FiFolder size={20} />,
+            icon: <PiPackage size={20} />,
             title: "Total Categories",
             count,
             backgroundColor: "#EEF2FF",
@@ -60,22 +63,22 @@ const CategoriesList = () => {
             iconColor: "#10B981",
         },
         {
-            icon: <FiXCircle size={20} />,
-            title: "Inactive Categories",
+            icon: <PiPackage size={20} />,
+            title: "Products Assigned",
             count: inactiveCount,
             backgroundColor: "#FEF2F2",
             iconColor: "#EF4444",
         },
         {
-            icon: <FiLayers size={20} />,
-            title: "Parent Categories",
+            icon: <PiPackage size={20} />,
+            title: "Empty Categories",
             count: parentCount,
             backgroundColor: "#FFF7ED",
             iconColor: "#F97316",
         },
         {
-            icon: <FiLayers size={20} />,
-            title: "Sub Categories",
+            icon: <PiPackage size={20} />,
+            title: "Largest Category",
             count: subCategoryCount,
             backgroundColor: "#F5F3FF",
             iconColor: "#8B5CF6",
@@ -107,16 +110,25 @@ const CategoriesList = () => {
             <ReusableFilter
                 search={search}
                 onSearch={handleSearchChange}
+                searchPlaceholder="Search Category Code"
                 status={status}
                 statuses={["active", "inactive"]}
                 onStatus={handleStatusChange}
                 showSearch
                 showStatus
-                rightButton={
-                    <HeaderButton $variant="orange">
-                        Apply Filters
-                    </HeaderButton>
-                }
+                
+               filters={[
+    {
+        key: "categoryType",
+        value: categoryType,
+        onChange: handleCategory,
+        options: [
+            { label: "Product", value: "product" },
+            { label: "Service", value: "service" },
+        ],
+        placeholder: "Category Type",
+    },
+]}
             />
 
             {/* ERROR */}

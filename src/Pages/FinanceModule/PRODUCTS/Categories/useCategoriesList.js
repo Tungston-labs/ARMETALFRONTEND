@@ -145,10 +145,10 @@ export const useCategoriesList = () => {
         setCurrentPage(1);
     };
 
-    const handleCategoryTypeChange = (value) => {
-        setCategoryType(value);
-        setCurrentPage(1);
-    };
+  const handleCategory = (value) => {
+    setCategoryType(value);
+    setCurrentPage(1);
+};
 
     return {
         // data
@@ -185,6 +185,6 @@ export const useCategoriesList = () => {
         handlePageChange,
         handleSearchChange,
         handleStatusChange,
-        handleCategoryTypeChange,
+         handleCategory,
     };
 };

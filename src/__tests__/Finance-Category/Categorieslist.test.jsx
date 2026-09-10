@@ -8,13 +8,12 @@ import CategoriesList from "../../Pages/FinanceModule/PRODUCTS/Categories/Catego
 import { useCategoriesList } from "../../Pages/FinanceModule/PRODUCTS/Categories/useCategoriesList";
 
 // ---- Mock child pieces that aren't the concern of this test ----
-// Paths below are resolved relative to THIS test file
-// (src/__tests__/Finance-Category/Categorieslist.test.jsx),
-// and must point at the same real modules CategoriesList.jsx itself imports.
+// Paths below are resolved relative to THIS test file and must point
+// at the same real modules CategoriesList.jsx itself imports.
 
-vi.mock("../../Pages/FinanceModule/Categories/useCategoriesList");
+vi.mock("../../Pages/FinanceModule/PRODUCTS/Categories/useCategoriesList");
 
-vi.mock("../../Pages/FinanceModule/Categories/modal/CategoryModal", () => ({
+vi.mock("../../Pages/FinanceModule/PRODUCTS/Categories/modal/CategoryModal", () => ({
     default: ({ isOpen, onClose, onSave }) =>
         isOpen ? (
             <div data-testid="category-modal">
@@ -61,7 +60,7 @@ vi.mock("../../Components/Pagination/ReusablePagination", () => ({
 }));
 
 vi.mock("../../Components/ReusableTable/ReusableFilter", () => ({
-    default: ({ search, onSearch, status, onStatus, rightButton }) => (
+    default: ({ search, onSearch, status, onStatus, filters = [] }) => (
         <div data-testid="reusable-filter">
             <input
                 data-testid="search-input"
@@ -77,7 +76,22 @@ vi.mock("../../Components/ReusableTable/ReusableFilter", () => ({
                 <option value="active">active</option>
                 <option value="inactive">inactive</option>
             </select>
-            {rightButton}
+
+            {filters.map((f) => (
+                <select
+                    key={f.key}
+                    data-testid={`filter-${f.key}`}
+                    value={f.value}
+                    onChange={(e) => f.onChange(e.target.value)}
+                >
+                    <option value="">{f.placeholder}</option>
+                    {f.options.map((opt) => (
+                        <option key={opt} value={opt}>
+                            {opt}
+                        </option>
+                    ))}
+                </select>
+            ))}
         </div>
     ),
 }));
@@ -88,6 +102,14 @@ vi.mock("../../Components/ReusableTable/ReusableHeader", () => ({
             <h1>{title}</h1>
             {children}
         </div>
+    ),
+}));
+
+vi.mock("../../Components/ReusableTable/ReusableHeader.styles", () => ({
+    HeaderButton: ({ children, onClick, $variant }) => (
+        <button data-variant={$variant} onClick={onClick}>
+            {children}
+        </button>
     ),
 }));
 
@@ -103,6 +125,7 @@ const baseHookReturn = {
     error: null,
     search: "",
     status: "",
+    categoryType: "",
     showCategoryModal: false,
     handleAddCategory: vi.fn(),
     handleCloseCategoryModal: vi.fn(),
@@ -110,11 +133,13 @@ const baseHookReturn = {
     handlePageChange: vi.fn(),
     handleSearchChange: vi.fn(),
     handleStatusChange: vi.fn(),
+    handleCategory: vi.fn(),
     categories: [{ id: 1, code: "ELEC", category_name: "Electronics" }],
     count: 10,
     activeCount: 7,
     inactiveCount: 3,
-    productCount: 5,
+    parentCount: 4,
+    subCategoryCount: 6,
 };
 
 const mockHook = (overrides = {}) => {
@@ -137,6 +162,13 @@ describe("CategoriesList", () => {
         expect(screen.getByTestId("pagination")).toBeInTheDocument();
     });
 
+    it("renders the export and add category buttons in the header", () => {
+        render(<CategoriesList />);
+
+        expect(screen.getByText(/export excel/i)).toBeInTheDocument();
+        expect(screen.getByText(/\+ add category/i)).toBeInTheDocument();
+    });
+
     it("passes table rows through from filteredData", () => {
         render(<CategoriesList />);
 
@@ -146,13 +178,17 @@ describe("CategoriesList", () => {
         expect(rows[1]).toHaveTextContent("Laptops");
     });
 
-    it("renders stat card counts from the hook", () => {
+    it("renders all 5 stat card counts from the hook", () => {
         render(<CategoriesList />);
 
         const cards = screen.getAllByTestId("stat-card");
         expect(cards).toHaveLength(5);
+
         expect(screen.getByText("Total Categories").nextSibling).toHaveTextContent("10");
         expect(screen.getByText("Active Categories").nextSibling).toHaveTextContent("7");
+        expect(screen.getByText("Products Assigned").nextSibling).toHaveTextContent("3");
+        expect(screen.getByText("Empty Categories").nextSibling).toHaveTextContent("4");
+        expect(screen.getByText("Largest Category").nextSibling).toHaveTextContent("6");
     });
 
     it("shows a string error message", () => {
@@ -162,15 +198,24 @@ describe("CategoriesList", () => {
         expect(screen.getByText("Something went wrong")).toBeInTheDocument();
     });
 
-    it("shows an object error's detail message, falling back to a default", () => {
+    it("shows an object error's detail message", () => {
         mockHook({ error: { detail: "Server exploded" } });
         render(<CategoriesList />);
+
         expect(screen.getByText("Server exploded")).toBeInTheDocument();
     });
 
-    it("falls back to a generic error message when detail is missing", () => {
+    it("shows an object error's message field when detail is missing", () => {
+        mockHook({ error: { message: "Network down" } });
+        render(<CategoriesList />);
+
+        expect(screen.getByText("Network down")).toBeInTheDocument();
+    });
+
+    it("falls back to a generic error message when neither message nor detail exist", () => {
         mockHook({ error: {} });
         render(<CategoriesList />);
+
         expect(screen.getByText(/failed to load categories/i)).toBeInTheDocument();
     });
 
@@ -179,7 +224,7 @@ describe("CategoriesList", () => {
         expect(screen.queryByText(/failed to load categories/i)).not.toBeInTheDocument();
     });
 
-    it("opens the modal via handleAddCategory when '+ ADD CATEGORY' is clicked", async () => {
+    it("calls handleAddCategory when '+ ADD CATEGORY' is clicked", async () => {
         const user = userEvent.setup();
         const handleAddCategory = vi.fn();
         mockHook({ handleAddCategory });
@@ -244,6 +289,18 @@ describe("CategoriesList", () => {
         });
 
         expect(handleStatusChange).toHaveBeenCalledWith("active");
+    });
+
+    it("propagates categoryType filter changes to handleCategory", () => {
+        const handleCategory = vi.fn();
+        mockHook({ handleCategory });
+
+        render(<CategoriesList />);
+        fireEvent.change(screen.getByTestId("filter-categoryType"), {
+            target: { value: "Service" },
+        });
+
+        expect(handleCategory).toHaveBeenCalledWith("Service");
     });
 
     it("propagates page changes to handlePageChange", async () => {
