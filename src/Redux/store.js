@@ -14,6 +14,8 @@ import projectReducer from '../Redux/fieldShiftSlice';
 import companyReducer from "../Redux/companySlice";
 import financeReducer from "../Redux/financeSlice"; 
 import salaryIncrementReducer from "../Redux/salaryIncrementSlice";
+import warehouseReducer from "../Redux/warehouseSlice";
+
 export const store = configureStore({
   reducer: {
     auth: authReducer,
@@ -31,5 +33,6 @@ export const store = configureStore({
     company: companyReducer,
      finance: financeReducer,  
      salaryIncrement: salaryIncrementReducer,
+     warehouse: warehouseReducer,
   },
 });

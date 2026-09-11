@@ -1,7 +1,178 @@
-import React from "react";
+// import React, { useEffect, useMemo } from "react";
+// import { useDispatch, useSelector } from "react-redux";
+// import { useParams } from "react-router-dom";
+
+// import {
+//   FiEdit2,
+//   FiTrash2,
+//   FiBox,
+//   FiArchive,
+//   FiPackage,
+//   FiAlertTriangle,
+// } from "react-icons/fi";
+
+// import WarehouseInfoCard from "../../../../Components/WarehouseDetails/WarehouseInfoCard";
+// import WarehouseContactCard from "../../../../Components/WarehouseDetails/WarehouseContactCard";
+
+// import ReusableHeader from "../../../../Components/ReusableTable/ReusableHeader";
+// import { HeaderButton } from "../../../../Components/ReusableTable/ReusableHeader.styles";
+
+// import StatsCards from "../../../../Components/StatsCards/StatsCards";
+
+// import { fetchWarehouseById } from "../../../../Redux/warehouseSlice";
+
+// import { Page, DetailsGrid } from "./WarehouseDetails.styles";
+
+// const WarehouseDetails = () => {
+//   const dispatch = useDispatch();
+//   const { id } = useParams();
+
+//   const { warehouseDetail, detailLoading, detailError } = useSelector(
+//     (state) => state.warehouse,
+//   );
+
+//   useEffect(() => {
+//     if (!id) {
+//       return;
+//     }
+
+//     dispatch(fetchWarehouseById(id));
+//   }, [dispatch, id]);
+
+//   const warehouse = useMemo(() => {
+//     const data = warehouseDetail || {};
+
+//     return {
+//       name: data.warehouse_name || data.name || "Warehouse",
+//       date: data.operating_since || data.created_at || "-",
+//       type: data.warehouse_type || "-",
+//       totalProducts: data.total_products ?? 0,
+//       stockQuantity: data.stock_quantity ?? 0,
+//       lowStockProducts: data.low_stock_products ?? 0,
+//       outOfStockProducts: data.out_of_stock_products ?? 0,
+//       manager: data.manager_name || data.manager || "-",
+//       phoneNumber: data.phone_number || "-",
+//       email: data.email || "-",
+//       storageCapacity: data.storage_capacity || "-",
+//       companyName: data.company_name || data.company?.name || "-",
+//       addressLine1: data.address_line_1 || data.address || "-",
+//       addressLine2: data.address_line_2 || data.city || "-",
+//       city: data.city || "-",
+//     };
+//   }, [warehouseDetail]);
+
+//   const warehouseCards = useMemo(
+//     () => [
+//       {
+//         count: String(warehouse.type || "-"),
+//         title: "Warehouses Type",
+//         icon: <FiBox size={20} />,
+//         backgroundColor: "#E8EDFF",
+//         iconColor: "#3454B9",
+//       },
+//       {
+//         count: String(warehouse.totalProducts ?? 0),
+//         title: "Total Products",
+//         icon: <FiArchive size={20} />,
+//         backgroundColor: "#E4F7FB",
+//         iconColor: "#22A6C7",
+//       },
+//       {
+//         count: String(warehouse.stockQuantity ?? 0),
+//         title: "Total Stock Quantity",
+//         icon: <FiPackage size={20} />,
+//         backgroundColor: "#E9F8ED",
+//         iconColor: "#16A34A",
+//       },
+//       {
+//         count: String(warehouse.lowStockProducts ?? 0),
+//         title: "Low Stock Products",
+//         icon: <FiPackage size={20} />,
+//         backgroundColor: "#FFF2E5",
+//         iconColor: "#FF8500",
+//       },
+//       {
+//         count: String(warehouse.outOfStockProducts ?? 0),
+//         title: "Out of Stock Products",
+//         icon: <FiAlertTriangle size={20} />,
+//         backgroundColor: "#FFECEC",
+//         iconColor: "#FF2D2D",
+//       },
+//     ],
+//     [warehouse],
+//   );
+
+//   const handleEditWarehouse = () => {
+//     console.log("Edit warehouse:", warehouse);
+//   };
+
+//   const handleDeleteWarehouse = () => {
+//     const confirmed = window.confirm(
+//       `Are you sure you want to delete "${warehouse.name}"?`,
+//     );
+
+//     if (!confirmed) {
+//       return;
+//     }
+
+//     console.log("Delete warehouse:", warehouse);
+//   };
+
+//   return (
+//     <Page>
+//       <ReusableHeader
+//         title={`${warehouse.name} - ${warehouse.date}`}
+//         breadcrumbs={["Dashboard", "Products", "Warehouse"]}
+//       >
+//         <HeaderButton onClick={handleEditWarehouse}>
+//           <FiEdit2 />
+//           EDIT
+//         </HeaderButton>
+
+//         <HeaderButton $variant="delete" onClick={handleDeleteWarehouse}>
+//           <FiTrash2 />
+//           DELETE
+//         </HeaderButton>
+//       </ReusableHeader>
+
+//       {detailError && (
+//         <div style={{ color: "#c0392b", margin: "14px 0" }}>
+//           {typeof detailError === "string"
+//             ? detailError
+//             : detailError?.detail || "Failed to fetch warehouse detail"}
+//         </div>
+//       )}
+
+//       <StatsCards cards={warehouseCards} loading={detailLoading} />
+
+//       <DetailsGrid>
+//         <WarehouseInfoCard
+//           image="/warehouse-logo.png"
+//           warehouseName={warehouse.name}
+//           companyName={warehouse.companyName}
+//           addressLine1={warehouse.addressLine1}
+//           addressLine2={warehouse.addressLine2}
+//           city={warehouse.city}
+//         />
+
+//         <WarehouseContactCard
+//           manager={warehouse.manager}
+//           phoneNumber={warehouse.phoneNumber}
+//           email={warehouse.email}
+//           storageCapacity={warehouse.storageCapacity}
+//         />
+//       </DetailsGrid>
+//     </Page>
+//   );
+// };
+
+// export default WarehouseDetails;
+
+import React, { useEffect, useMemo } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { useParams } from "react-router-dom";
 
 import {
-  FiDownload,
   FiEdit2,
   FiTrash2,
   FiBox,
@@ -18,99 +189,137 @@ import { HeaderButton } from "../../../../Components/ReusableTable/ReusableHeade
 
 import StatsCards from "../../../../Components/StatsCards/StatsCards";
 
+import { fetchWarehouseById } from "../../../../Redux/warehouseSlice";
+
 import { Page, DetailsGrid } from "./WarehouseDetails.styles";
 
 const WarehouseDetails = () => {
-  /* =========================================
-     WAREHOUSE DATA
-  ========================================= */
+  const dispatch = useDispatch();
+  const { id } = useParams();
 
-  const warehouse = {
-    name: "Riyadh Central Warehouse",
-    date: "22 July 2022",
+  const { warehouseDetail, detailLoading, detailError } = useSelector(
+    (state) => state.warehouse,
+  );
 
-    type: "Main",
+  useEffect(() => {
+    if (id === undefined || id === null || id === "") {
+      return;
+    }
 
-    totalProducts: "1250",
+    dispatch(fetchWarehouseById(id));
+  }, [dispatch, id]);
 
-    stockQuantity: "45,280 Units",
+  const warehouse = useMemo(() => {
+    const data = warehouseDetail || {};
 
-    lowStockProducts: "14",
+    const manager =
+      data?.manager_name ||
+      data?.manager?.name ||
+      data?.manager?.full_name ||
+      data?.manager?.username ||
+      (typeof data?.manager === "string" ? data.manager : "-");
 
-    outOfStockProducts: "03",
+    return {
+      name: data.warehouse_name || data.name || "Warehouse",
 
-    manager: "George",
+      date: data.operating_since || data.created_at || "-",
 
-    phoneNumber: "+966 50 123 4567",
+      type: data.warehouse_type || "-",
 
-    email: "info@riyadhtech.sa",
+      totalProducts: data.total_products ?? 0,
 
-    storageCapacity: "18,500",
+      stockQuantity: data.stock_quantity ?? 0,
 
-    companyName: "Nexora Tech Solutions",
+      lowStockProducts: data.low_stock_products ?? 0,
 
-    addressLine1: "PO Box 12345, King Fahd Road",
+      outOfStockProducts: data.out_of_stock_products ?? 0,
 
-    addressLine2: "Riyadh, Saudi Arabia",
-  };
+      manager,
 
-  /* =========================================
-     WAREHOUSE STATISTICS
-  ========================================= */
+      phoneNumber: data.phone_number || "-",
 
-  const warehouseCards = [
-    {
-      count: warehouse.type,
-      title: "Warehouses Type",
-      icon: <FiBox size={20} />,
-      backgroundColor: "#E8EDFF",
-      iconColor: "#3454B9",
-    },
+      email: data.email || "-",
 
-    {
-      count: warehouse.totalProducts,
-      title: "Total Products",
-      icon: <FiArchive size={20} />,
-      backgroundColor: "#E4F7FB",
-      iconColor: "#22A6C7",
-    },
+      storageCapacity: data.storage_capacity ?? "-",
 
-    {
-      count: warehouse.stockQuantity,
-      title: "Total Stock Quantity",
-      icon: <FiPackage size={20} />,
-      backgroundColor: "#E9F8ED",
-      iconColor: "#16A34A",
-    },
+      companyName: data.company_name || data.company?.name || "-",
 
-    {
-      count: warehouse.lowStockProducts,
-      title: "Low Stock Products",
-      icon: <FiPackage size={20} />,
-      backgroundColor: "#FFF2E5",
-      iconColor: "#FF8500",
-    },
+      addressLine1: data.address_line_1 || data.address || "-",
 
-    {
-      count: warehouse.outOfStockProducts,
-      title: "Out of Stock Products",
-      icon: <FiAlertTriangle size={20} />,
-      backgroundColor: "#FFECEC",
-      iconColor: "#FF2D2D",
-    },
-  ];
+      addressLine2: data.address_line_2 || "-",
 
-  /* =========================================
-     EDIT WAREHOUSE
-  ========================================= */
+      city: data.city || "-",
+    };
+  }, [warehouseDetail]);
+
+  const warehouseCards = useMemo(
+    () => [
+      {
+        count: String(warehouse.type || "-"),
+
+        title: "Warehouses Type",
+
+        icon: <FiBox size={20} />,
+
+        backgroundColor: "#E8EDFF",
+
+        iconColor: "#3454B9",
+      },
+
+      {
+        count: String(warehouse.totalProducts ?? 0),
+
+        title: "Total Products",
+
+        icon: <FiArchive size={20} />,
+
+        backgroundColor: "#E4F7FB",
+
+        iconColor: "#22A6C7",
+      },
+
+      {
+        count: String(warehouse.stockQuantity ?? 0),
+
+        title: "Total Stock Quantity",
+
+        icon: <FiPackage size={20} />,
+
+        backgroundColor: "#E9F8ED",
+
+        iconColor: "#16A34A",
+      },
+
+      {
+        count: String(warehouse.lowStockProducts ?? 0),
+
+        title: "Low Stock Products",
+
+        icon: <FiPackage size={20} />,
+
+        backgroundColor: "#FFF2E5",
+
+        iconColor: "#FF8500",
+      },
+
+      {
+        count: String(warehouse.outOfStockProducts ?? 0),
+
+        title: "Out of Stock Products",
+
+        icon: <FiAlertTriangle size={20} />,
+
+        backgroundColor: "#FFECEC",
+
+        iconColor: "#FF2D2D",
+      },
+    ],
+    [warehouse],
+  );
 
   const handleEditWarehouse = () => {
     console.log("Edit warehouse:", warehouse);
   };
-
-  /* =========================================
-     DELETE WAREHOUSE
-  ========================================= */
 
   const handleDeleteWarehouse = () => {
     const confirmed = window.confirm(
@@ -124,38 +333,16 @@ const WarehouseDetails = () => {
     console.log("Delete warehouse:", warehouse);
   };
 
-  /* =========================================
-     EXPORT WAREHOUSE
-  ========================================= */
-
-  const handleExportWarehouse = () => {
-    console.log("Export warehouse:", warehouse);
-  };
-
-  /* =========================================
-     RENDER
-  ========================================= */
-
   return (
     <Page>
-      {/* =====================================
-          HEADER
-      ===================================== */}
-
       <ReusableHeader
         title={`${warehouse.name} - ${warehouse.date}`}
         breadcrumbs={["Dashboard", "Products", "Warehouse"]}
       >
-
-
-        {/* EDIT */}
-
         <HeaderButton onClick={handleEditWarehouse}>
           <FiEdit2 />
           EDIT
         </HeaderButton>
-
-        {/* DELETE */}
 
         <HeaderButton $variant="delete" onClick={handleDeleteWarehouse}>
           <FiTrash2 />
@@ -163,32 +350,32 @@ const WarehouseDetails = () => {
         </HeaderButton>
       </ReusableHeader>
 
-      {/* =====================================
-          STATS CARDS
-      ===================================== */}
+      {detailError && (
+        <div
+          style={{
+            color: "#c0392b",
+            margin: "14px 0",
+          }}
+        >
+          {typeof detailError === "string"
+            ? detailError
+            : detailError?.detail ||
+              detailError?.message ||
+              "Failed to fetch warehouse detail"}
+        </div>
+      )}
 
-      <StatsCards cards={warehouseCards} loading={false} />
-
-      {/* =====================================
-          WAREHOUSE DETAILS
-      ===================================== */}
+      <StatsCards cards={warehouseCards} loading={detailLoading} />
 
       <DetailsGrid>
-        {/* ===================================
-            WAREHOUSE INFORMATION
-        =================================== */}
-
         <WarehouseInfoCard
           image="/warehouse-logo.png"
           warehouseName={warehouse.name}
           companyName={warehouse.companyName}
           addressLine1={warehouse.addressLine1}
           addressLine2={warehouse.addressLine2}
+          city={warehouse.city}
         />
-
-        {/* ===================================
-            CONTACT INFORMATION
-        =================================== */}
 
         <WarehouseContactCard
           manager={warehouse.manager}

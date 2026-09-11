@@ -62,7 +62,7 @@ const CompanyTable = () => {
   // =====================================================
 
   const handleAdd = () => {
-    navigate("/addcompany");
+    navigate("/add-company");
   };
 
   // =====================================================
@@ -70,7 +70,7 @@ const CompanyTable = () => {
   // =====================================================
 
   const handleEdit = (company) => {
-    navigate(`/addcompany/${company.id}`);
+    navigate(`/add-company/${company.id}`);
   };
 
   // =====================================================
