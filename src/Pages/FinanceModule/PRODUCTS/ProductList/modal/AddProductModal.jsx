@@ -18,6 +18,8 @@ import {
 
 import { FiSave } from "react-icons/fi";
 
+import { getWarehouses } from "../../../../../services/warehouseService";
+
 const initialFormData = {
     product_type: "product",
 
@@ -137,8 +139,16 @@ const AddProductModal = ({
 }) => {
     const [formData, setFormData] =
         useState(initialFormData);
+    const [modalWarehouses, setModalWarehouses] =
+        useState(Array.isArray(warehouses) ? warehouses : []);
 
     const isEditMode = mode === "edit";
+
+    const resolveWarehouseName = (warehouse) =>
+        warehouse?.warehouse_name ||
+        warehouse?.name ||
+        warehouse?.warehouseName ||
+        "Warehouse";
 
     /* =========================
        PREFILL WHEN OPENED
@@ -155,6 +165,53 @@ const AddProductModal = ({
             setFormData(initialFormData);
         }
     }, [isOpen, initialData]);
+
+    useEffect(() => {
+        if (!isOpen) return;
+
+        if (Array.isArray(warehouses) && warehouses.length > 0) {
+            setModalWarehouses(warehouses);
+            return;
+        }
+
+        let cancelled = false;
+
+        const loadWarehouses = async () => {
+            try {
+                const response = await getWarehouses({
+                    page: 1,
+                    page_size: 100,
+                });
+
+                const nextWarehouses = Array.isArray(response)
+                    ? response
+                    : (response?.results || response?.data?.results || response?.data || []);
+
+                const normalized = Array.isArray(nextWarehouses)
+                    ? nextWarehouses.map((warehouse) => ({
+                        ...warehouse,
+                        warehouse_name:
+                            resolveWarehouseName(warehouse),
+                    }))
+                    : [];
+
+                if (!cancelled) {
+                    setModalWarehouses(normalized);
+                }
+            } catch (error) {
+                console.error("Failed to load warehouse options:", error);
+                if (!cancelled) {
+                    setModalWarehouses([]);
+                }
+            }
+        };
+
+        loadWarehouses();
+
+        return () => {
+            cancelled = true;
+        };
+    }, [isOpen, warehouses]);
 
     const handleChange = (e) => {
         const {
@@ -408,12 +465,12 @@ const AddProductModal = ({
                                 SELECT WAREHOUSE
                             </option>
 
-                            {warehouses.map((warehouse) => (
+                            {modalWarehouses.map((warehouse) => (
                                 <option
                                     key={warehouse.id}
                                     value={warehouse.id}
                                 >
-                                    {warehouse.warehouse_name}
+                                    {resolveWarehouseName(warehouse)}
                                 </option>
                             ))}
                         </Select>
