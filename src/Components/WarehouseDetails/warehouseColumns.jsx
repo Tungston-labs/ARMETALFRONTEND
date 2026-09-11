@@ -1,12 +1,13 @@
 import React from "react";
+
 import { FiInfo } from "react-icons/fi";
 
-/* =========================================================
-   FORMAT NUMBER
-========================================================= */
-
 const formatNumber = (value) => {
-  if (value === null || value === undefined || value === "") {
+  if (
+    value === null ||
+    value === undefined ||
+    value === ""
+  ) {
     return "-";
   }
 
@@ -19,21 +20,13 @@ const formatNumber = (value) => {
   return number.toLocaleString("en-US");
 };
 
-/* =========================================================
-   FORMAT CURRENCY
-========================================================= */
-
 const formatCurrency = (value) => {
-  if (value === null || value === undefined || value === "") {
+  if (
+    value === null ||
+    value === undefined ||
+    value === ""
+  ) {
     return "-";
-  }
-
-  if (typeof value === "string") {
-    const trimmedValue = value.trim();
-
-    if (trimmedValue.toUpperCase().includes("SAR")) {
-      return trimmedValue;
-    }
   }
 
   const number = Number(value);
@@ -42,322 +35,256 @@ const formatCurrency = (value) => {
     return value;
   }
 
-  return `SAR ${number.toLocaleString("en-US")}`;
+  return `₹${number.toLocaleString("en-IN")}`;
 };
-
-/* =========================================================
-   FORMAT TYPE
-========================================================= */
-
-const formatType = (value) => {
-  if (value === null || value === undefined || value === "") {
-    return "-";
-  }
-
-  const text = String(value);
-
-  return text.charAt(0).toUpperCase() + text.slice(1);
-};
-
-/* =========================================================
-   FORMAT STATUS
-========================================================= */
-
-const formatStatus = (value) => {
-  if (value === null || value === undefined || value === "") {
-    return "-";
-  }
-
-  const text = String(value);
-
-  return text.charAt(0).toUpperCase() + text.slice(1);
-};
-
-/* =========================================================
-   MANAGER NAME
-========================================================= */
 
 const getManagerName = (row) => {
-  if (
-    row?.manager_name !== null &&
-    row?.manager_name !== undefined &&
-    row?.manager_name !== ""
-  ) {
-    return row.manager_name;
-  }
-
-  if (
-    row?.manager?.name !== null &&
-    row?.manager?.name !== undefined &&
-    row?.manager?.name !== ""
-  ) {
-    return row.manager.name;
-  }
-
-  if (
-    row?.manager?.full_name !== null &&
-    row?.manager?.full_name !== undefined &&
-    row?.manager?.full_name !== ""
-  ) {
-    return row.manager.full_name;
-  }
-
-  if (
-    row?.manager?.username !== null &&
-    row?.manager?.username !== undefined &&
-    row?.manager?.username !== ""
-  ) {
-    return row.manager.username;
-  }
-
-  if (
-    typeof row?.manager === "number" ||
-    (typeof row?.manager === "string" && /^\d+$/.test(row.manager))
-  ) {
-    return "-";
-  }
-
-  if (typeof row?.manager === "string" && row.manager.trim() !== "") {
-    return row.manager;
-  }
-
-  return "-";
+  return (
+    row?.manager_name ||
+    row?.manager?.name ||
+    row?.manager?.full_name ||
+    row?.manager?.username ||
+    (typeof row?.manager === "string"
+      ? row.manager
+      : "-")
+  );
 };
 
-/* =========================================================
-   WAREHOUSE COLUMNS
-========================================================= */
+const hasWarehouseId = (row) => {
+  return !(
+    row?.id === null ||
+    row?.id === undefined ||
+    row?.id === ""
+  );
+};
 
-const getWarehouseColumns = ({ navigate }) => [
-  /* =======================================================
-     CODE
-  ======================================================= */
-
+const getWarehouseColumns = ({
+  navigate,
+  onEdit,
+  onDelete,
+}) => [
   {
     header: "Code",
-
     accessor: "code",
+    cell: (row) => row?.code || "-",
   },
-
-  /* =======================================================
-     WAREHOUSE NAME
-  ======================================================= */
 
   {
     header: "Warehouse Name",
-
     accessor: "warehouse_name",
-
     cell: (row) => {
       const warehouseId = row?.id;
+      const warehouseName =
+        row?.warehouse_name || "-";
 
-      const warehouseName = row?.warehouse_name || row?.name || "-";
-
-      const handleClick = () => {
-        /*
-         * IMPORTANT:
-         *
-         * Always use the database ID
-         * for the details API.
-         *
-         * Example:
-         *
-         * id   = 7
-         * code = WH001
-         *
-         * URL:
-         * /warehouse/7
-         */
-
-        if (
-          warehouseId === null ||
-          warehouseId === undefined ||
-          warehouseId === ""
-        ) {
-          console.error("Warehouse ID is missing:", row);
-
+      const handleWarehouseClick = () => {
+        if (!hasWarehouseId(row)) {
+          console.error(
+            "Warehouse ID is missing:",
+            row,
+          );
           return;
         }
 
-        navigate(`/warehouse/${encodeURIComponent(warehouseId)}`);
+        const id = String(warehouseId);
+
+        console.log(
+          "Navigating to warehouse details:",
+          id,
+        );
+
+        navigate(
+          `/warehouse/${encodeURIComponent(id)}`,
+        );
       };
 
       return (
-        <button
-          type="button"
-          onClick={handleClick}
+        <span
+          onClick={handleWarehouseClick}
           style={{
-            color: "#3454B9",
-
-            fontFamily: "Poppins, sans-serif",
-
-            fontSize: "12px",
-
+            cursor: hasWarehouseId(row)
+              ? "pointer"
+              : "default",
+            color: hasWarehouseId(row)
+              ? "#3454B9"
+              : "inherit",
             fontWeight: 500,
-
-            background: "transparent",
-
-            border: "none",
-
-            padding: 0,
-
-            cursor: "pointer",
-
-            textAlign: "left",
           }}
         >
           {warehouseName}
-        </button>
+        </span>
       );
     },
   },
 
-  /* =======================================================
-     TYPE
-  ======================================================= */
-
   {
-    header: "Type",
-
+    header: "Warehouse Type",
     accessor: "warehouse_type",
-
-    cell: (row) => <span>{formatType(row?.warehouse_type)}</span>,
+    cell: (row) =>
+      row?.warehouse_type || "-",
   },
-
-  /* =======================================================
-     LOCATION
-  ======================================================= */
 
   {
     header: "Location",
-
     accessor: "city",
+    cell: (row) => {
+      const city = row?.city || "";
+      const country = row?.country || "";
 
-    cell: (row) => <span>{row?.city || "-"}</span>,
+      if (!city && !country) {
+        return "-";
+      }
+
+      return [city, country]
+        .filter(Boolean)
+        .join(", ");
+    },
   },
-
-  /* =======================================================
-     MANAGER
-  ======================================================= */
 
   {
     header: "Manager",
-
-    accessor: "manager_name",
-
-    cell: (row) => <span>{getManagerName(row)}</span>,
+    accessor: "manager",
+    cell: (row) =>
+      getManagerName(row),
   },
-
-  /* =======================================================
-     TOTAL PRODUCTS
-  ======================================================= */
 
   {
     header: "Total Products",
-
     accessor: "total_products",
-
-    cell: (row) => <span>{formatNumber(row?.total_products)}</span>,
+    cell: (row) =>
+      formatNumber(row?.total_products),
   },
-
-  /* =======================================================
-     STOCK QUANTITY
-  ======================================================= */
 
   {
     header: "Stock Quantity",
-
     accessor: "stock_quantity",
-
-    cell: (row) => <span>{formatNumber(row?.stock_quantity)}</span>,
+    cell: (row) =>
+      formatNumber(row?.stock_quantity),
   },
-
-  /* =======================================================
-     INVENTORY VALUE
-  ======================================================= */
 
   {
     header: "Inventory Value",
-
     accessor: "inventory_value",
-
-    cell: (row) => <span>{formatCurrency(row?.inventory_value)}</span>,
+    cell: (row) =>
+      formatCurrency(row?.inventory_value),
   },
-
-  /* =======================================================
-     STATUS
-  ======================================================= */
 
   {
     header: "Status",
-
     accessor: "status",
+    cell: (row) => {
+      const status = row?.status || "-";
 
-    cell: (row) => <span>{formatStatus(row?.status)}</span>,
+      return (
+        <span
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            padding: "4px 10px",
+            borderRadius: "20px",
+            fontSize: "12px",
+            fontWeight: 500,
+            background:
+              String(status).toLowerCase() ===
+              "active"
+                ? "#E8F7EE"
+                : "#FDECEC",
+            color:
+              String(status).toLowerCase() ===
+              "active"
+                ? "#16A34A"
+                : "#D64545",
+          }}
+        >
+          {status}
+        </span>
+      );
+    },
   },
 
-  /* =======================================================
-     ACTION
-  ======================================================= */
-
   {
-    header: "Action",
-
-    accessor: "action",
-
+    header: "Actions",
+    accessor: "actions",
     cell: (row) => {
-      const warehouseId = row?.id;
-
-      const warehouseName = row?.warehouse_name || "warehouse";
-
-      const handleClick = () => {
-        if (
-          warehouseId === null ||
-          warehouseId === undefined ||
-          warehouseId === ""
-        ) {
-          console.error("Warehouse ID is missing:", row);
-
+      const handleEdit = () => {
+        if (!hasWarehouseId(row)) {
+          console.error(
+            "Warehouse ID is missing:",
+            row,
+          );
           return;
         }
 
-        navigate(`/warehouse/${encodeURIComponent(warehouseId)}`);
+        if (typeof onEdit !== "function") {
+          console.error(
+            "onEdit function is missing.",
+          );
+          return;
+        }
+
+        onEdit(row);
+      };
+
+      const handleDelete = () => {
+        if (!hasWarehouseId(row)) {
+          console.error(
+            "Warehouse ID is missing:",
+            row,
+          );
+          return;
+        }
+
+        if (typeof onDelete !== "function") {
+          console.error(
+            "onDelete function is missing.",
+          );
+          return;
+        }
+
+        onDelete(row);
       };
 
       return (
-        <button
-          type="button"
-          title="View warehouse"
-          aria-label={`View ${warehouseName}`}
-          onClick={handleClick}
+        <div
           style={{
-            width: "25px",
-
-            height: "25px",
-
-            padding: 0,
-
-            border: "1px solid #DDDDDD",
-
-            borderRadius: "5px",
-
-            background: "#FFFFFF",
-
-            color: "#333333",
-
-            cursor: "pointer",
-
             display: "flex",
-
             alignItems: "center",
-
-            justifyContent: "center",
-
-            margin: "0 auto",
+            gap: "10px",
           }}
         >
-          <FiInfo size={14} />
-        </button>
+          <button
+            type="button"
+            onClick={handleEdit}
+            title="Edit warehouse"
+            style={{
+              border: "none",
+              background: "transparent",
+              cursor: "pointer",
+              padding: 4,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <FiInfo size={18} />
+          </button>
+
+          {typeof onDelete === "function" && (
+            <button
+              type="button"
+              onClick={handleDelete}
+              title="Delete warehouse"
+              style={{
+                border: "none",
+                background: "transparent",
+                cursor: "pointer",
+                padding: 4,
+              }}
+            >
+              Delete
+            </button>
+          )}
+        </div>
       );
     },
   },

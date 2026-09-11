@@ -25,6 +25,8 @@ import getWarehouseColumns from "../../../../Components/WarehouseDetails/warehou
 import {
   fetchWarehouses,
   addWarehouse,
+  fetchWarehouseById,
+  updateWarehouse,
   fetchWarehouseKpi,
 } from "../../../../Redux/warehouseSlice";
 
@@ -51,7 +53,105 @@ import WarehouseModal from "../../../../Components/WarehouseModal/WarehouseModal
 ========================================================= */
 
 /**
- * Format number values
+ * Convert API date/datetime value
+ * to the YYYY-MM-DD format required
+ * by an HTML date input.
+ */
+const formatDateForInput = (value) => {
+  if (value === null || value === undefined || value === "") {
+    return "";
+  }
+
+  const text = String(value);
+
+  if (/^\d{4}-\d{2}-\d{2}$/.test(text)) {
+    return text;
+  }
+
+  if (text.includes("T")) {
+    return text.split("T")[0];
+  }
+
+  return text.length >= 10 ? text.substring(0, 10) : "";
+};
+
+/**
+ * Get manager value from the API.
+ *
+ * The existing application supports
+ * manager_name and manager object values.
+ */
+const getManagerValue = (warehouse) => {
+  if (
+    warehouse?.manager_name !== null &&
+    warehouse?.manager_name !== undefined &&
+    warehouse?.manager_name !== ""
+  ) {
+    return String(warehouse.manager_name);
+  }
+
+  if (typeof warehouse?.manager === "string") {
+    return warehouse.manager;
+  }
+
+  if (warehouse?.manager?.name) {
+    return String(warehouse.manager.name);
+  }
+
+  if (warehouse?.manager?.full_name) {
+    return String(warehouse.manager.full_name);
+  }
+
+  if (warehouse?.manager?.username) {
+    return String(warehouse.manager.username);
+  }
+
+  return "";
+};
+
+/**
+ * Convert the actual API warehouse
+ * object into the existing modal's
+ * form field structure.
+ */
+const mapWarehouseToForm = (warehouse) => {
+  const data = warehouse || {};
+
+  return {
+    warehouseName: data.warehouse_name ?? "",
+
+    warehouseCode: data.code ?? "",
+
+    warehouseType: data.warehouse_type ?? "",
+
+    manager: getManagerValue(data),
+
+    status: data.status ?? "",
+
+    operatingSince: formatDateForInput(data.operating_since),
+
+    country: data.country ?? "",
+
+    city: data.city ?? "",
+
+    addressLine1: data.address_line_1 ?? "",
+
+    addressLine2: data.address_line_2 ?? "",
+
+    postalCode: data.postal_code ?? "",
+
+    phoneNumber: data.phone_number ?? "",
+
+    email: data.email ?? "",
+
+    storageCapacity: data.storage_capacity ?? "",
+
+    notes: data.notes ?? "",
+  };
+};
+
+/**
+ * Format number values.
  */
 const formatNumber = (value) => {
   if (value === null || value === undefined || value === "") {
@@ -68,7 +168,7 @@ const formatNumber = (value) => {
 };
 
 /**
- * Format currency values
+ * Format currency values.
  */
 const formatCurrency = (value) => {
   if (value === null || value === undefined || value === "") {
@@ -113,7 +213,9 @@ const Warehouselist = () => {
     kpi,
     loading,
     creating,
+    updating,
     error,
+    updateError,
     totalPages,
   } = useSelector((state) => state.warehouse);
 
@@ -130,6 +232,14 @@ const Warehouselist = () => {
   const [currentPage, setCurrentPage] = useState(1);
 
   const [isWarehouseModalOpen, setIsWarehouseModalOpen] = useState(false);
+
+  const [isEditMode, setIsEditMode] = useState(false);
+
+  const [selectedWarehouseId, setSelectedWarehouseId] = useState(null);
+
+  const [selectedWarehouseData, setSelectedWarehouseData] = useState(null);
+
+  const [editLoading, setEditLoading] = useState(false);
 
   const rowsPerPage = 20;
 
@@ -153,14 +263,83 @@ const Warehouselist = () => {
      EDIT WAREHOUSE
   ======================================================= */
 
-  const handleEditWarehouse = useCallback((warehouse) => {
-    console.log("Edit warehouse:", warehouse);
+  const handleEditWarehouse = useCallback(
+    async (warehouse) => {
+      const warehouseId = warehouse?.id;
 
-    /*
-     * Add your edit modal/API logic here
-     * when the edit functionality is ready.
-     */
-  }, []);
+      if (
+        warehouseId === null ||
+        warehouseId === undefined ||
+        warehouseId === ""
+      ) {
+        console.error("Warehouse ID is missing:", warehouse);
+
+        return;
+      }
+
+      setIsEditMode(true);
+
+      setSelectedWarehouseId(warehouseId);
+
+      setEditLoading(true);
+
+      setSelectedWarehouseData(null);
+
+      setIsWarehouseModalOpen(true);
+
+      try {
+        /*
+         * Always fetch the selected
+         * warehouse from the API.
+         *
+         * This guarantees that the
+         * Edit modal receives the
+         * current complete warehouse
+         * object rather than relying
+         * on incomplete table data.
+         */
+
+        const result = await dispatch(fetchWarehouseById(warehouseId));
+
+        if (fetchWarehouseById.fulfilled.match(result)) {
+          const response = result.payload;
+
+          const warehouseData =
+            response?.data &&
+            typeof response.data === "object" &&
+            !Array.isArray(response.data)
+              ? response.data
+              : response;
+
+          if (warehouseData && typeof warehouseData === "object") {
+            setSelectedWarehouseData(mapWarehouseToForm(warehouseData));
+          } else {
+            console.error("Invalid warehouse detail response:", response);
+
+            setSelectedWarehouseData(mapWarehouseToForm(warehouse));
+          }
+        } else {
+          console.error("Failed to fetch warehouse:", result.payload);
+
+          /*
+           * If the GET fails but the
+           * row contains data, use the
+           * row as a fallback instead
+           * of opening an empty modal.
+           */
+
+          setSelectedWarehouseData(mapWarehouseToForm(warehouse));
+        }
+      } catch (error) {
+        console.error("Failed to fetch warehouse:", error);
+
+        setSelectedWarehouseData(mapWarehouseToForm(warehouse));
+      } finally {
+        setEditLoading(false);
+      }
+    },
+    [dispatch],
+  );
 
   /* =======================================================
      DELETE WAREHOUSE
@@ -170,8 +349,8 @@ const Warehouselist = () => {
     console.log("Delete warehouse:", warehouseId, warehouse);
 
     /*
-     * Add your delete API logic here
-     * when the delete functionality is ready.
+     * Existing delete functionality
+     * is intentionally untouched.
      */
   }, []);
 
@@ -183,7 +362,9 @@ const Warehouselist = () => {
     () =>
       getWarehouseColumns({
         navigate,
+
         onEdit: handleEditWarehouse,
+
         onDelete: handleDeleteWarehouse,
       }),
     [navigate, handleEditWarehouse, handleDeleteWarehouse],
@@ -269,6 +450,12 @@ const Warehouselist = () => {
   ======================================================= */
 
   const handleAddWarehouse = useCallback(() => {
+    setIsEditMode(false);
+
+    setSelectedWarehouseId(null);
+
+    setSelectedWarehouseData(null);
+
     setIsWarehouseModalOpen(true);
   }, []);
 
@@ -277,47 +464,165 @@ const Warehouselist = () => {
   ======================================================= */
 
   const handleCloseWarehouseModal = useCallback(() => {
+    if (updating) {
+      return;
+    }
+
     setIsWarehouseModalOpen(false);
-  }, []);
+
+    setIsEditMode(false);
+
+    setSelectedWarehouseId(null);
+
+    setSelectedWarehouseData(null);
+
+    setEditLoading(false);
+  }, [updating]);
 
   /* =======================================================
-     SAVE WAREHOUSE
+     SAVE / UPDATE WAREHOUSE
   ======================================================= */
 
   const handleSaveWarehouse = async (formData) => {
-    const rawCode = String(formData?.warehouseCode || "").trim();
+    /* ---------------------------------------------------
+         ADD MODE
+      --------------------------------------------------- */
 
-    const rawName = String(formData?.warehouseName || "").trim();
+    if (!isEditMode) {
+      const rawCode = String(formData?.warehouseCode || "").trim();
 
-    /* -----------------------------------------------------
-         CHECK EXISTING CODES
-      ----------------------------------------------------- */
+      const rawName = String(formData?.warehouseName || "").trim();
 
-    const existingCodes = new Set(
-      Array.isArray(warehouses)
-        ? warehouses
-            .map((warehouse) => String(warehouse?.code || "").trim())
-            .filter(Boolean)
-        : [],
-    );
+      /* -----------------------------------------------
+           CHECK EXISTING CODES
+        ------------------------------------------------ */
 
-    /* -----------------------------------------------------
-         GENERATE SAFE CODE
-      ----------------------------------------------------- */
+      const existingCodes = new Set(
+        Array.isArray(warehouses)
+          ? warehouses
+              .map((warehouse) => String(warehouse?.code || "").trim())
+              .filter(Boolean)
+          : [],
+      );
 
-    const safeCode =
-      rawCode && !existingCodes.has(rawCode)
-        ? rawCode
-        : `${rawCode || "WH"}-${Date.now().toString(36)}`;
+      /* -----------------------------------------------
+           GENERATE SAFE CODE
+        ------------------------------------------------ */
 
-    /* -----------------------------------------------------
-         API PAYLOAD
-      ----------------------------------------------------- */
+      const safeCode =
+        rawCode && !existingCodes.has(rawCode)
+          ? rawCode
+          : `${rawCode || "WH"}-${Date.now().toString(36)}`;
+
+      /* -----------------------------------------------
+           API PAYLOAD
+        ------------------------------------------------ */
+
+      const warehousePayload = {
+        code: safeCode,
+
+        warehouse_name: rawName || "",
+
+        warehouse_type: formData?.warehouseType || null,
+
+        manager_name:
+          formData?.manager !== null &&
+          formData?.manager !== undefined &&
+          String(formData.manager).trim() !== ""
+            ? String(formData.manager).trim()
+            : null,
+
+        status: formData?.status || null,
+
+        operating_since: formData?.operatingSince || null,
+
+        country: formData?.country || "",
+
+        city: formData?.city || "",
+
+        address_line_1: formData?.addressLine1 || "",
+
+        address_line_2: formData?.addressLine2 || "",
+
+        postal_code: formData?.postalCode || "",
+
+        phone_number: formData?.phoneNumber || "",
+
+        email: formData?.email || "",
+
+        storage_capacity: formData?.storageCapacity || "",
+
+        notes: formData?.notes || "",
+      };
+
+      console.log("Warehouse API Payload:", warehousePayload);
+
+      try {
+        const result = await dispatch(addWarehouse(warehousePayload));
+
+        if (addWarehouse.fulfilled.match(result)) {
+          setIsWarehouseModalOpen(false);
+
+          setIsEditMode(false);
+
+          setSelectedWarehouseData(null);
+
+          setSelectedWarehouseId(null);
+
+          /*
+           * Refresh warehouse list.
+           */
+
+          dispatch(
+            fetchWarehouses({
+              search,
+              page: currentPage,
+              page_size: rowsPerPage,
+            }),
+          );
+
+          /*
+           * Refresh KPI.
+           */
+
+          dispatch(fetchWarehouseKpi());
+
+          return;
+        }
+
+        console.error("Warehouse creation failed:", result.payload);
+      } catch (submitError) {
+        console.error("Warehouse creation failed:", submitError);
+      }
+
+      return;
+    }
+
+    /* ---------------------------------------------------
+         EDIT MODE
+      --------------------------------------------------- */
+
+    if (
+      selectedWarehouseId === null ||
+      selectedWarehouseId === undefined ||
+      selectedWarehouseId === ""
+    ) {
+      console.error("Cannot update warehouse: ID is missing");
+
+      return;
+    }
+
+    /*
+     * IMPORTANT:
+     *
+     * Edit uses the same API field names
+     * as the existing Add flow.
+     */
 
     const warehousePayload = {
-      code: safeCode,
+      code: formData?.warehouseCode ?? "",
 
-      warehouse_name: rawName || "",
+      warehouse_name: formData?.warehouseName ?? "",
 
       warehouse_type: formData?.warehouseType || null,
 
@@ -351,19 +656,36 @@ const Warehouselist = () => {
       notes: formData?.notes || "",
     };
 
-    console.log("Warehouse API Payload:", warehousePayload);
-
-    /* -----------------------------------------------------
-         CREATE WAREHOUSE
-      ----------------------------------------------------- */
+    console.log("Warehouse UPDATE payload:", warehousePayload);
 
     try {
-      const result = await dispatch(addWarehouse(warehousePayload));
+      const result = await dispatch(
+        updateWarehouse({
+          id: selectedWarehouseId,
 
-      if (addWarehouse.fulfilled.match(result)) {
+          warehouseData: warehousePayload,
+        }),
+      );
+
+      if (updateWarehouse.fulfilled.match(result)) {
+        /*
+         * Close modal after
+         * successful update.
+         */
+
         setIsWarehouseModalOpen(false);
 
-        /* Refresh warehouse list */
+        setIsEditMode(false);
+
+        setSelectedWarehouseId(null);
+
+        setSelectedWarehouseData(null);
+
+        /*
+         * Refresh list so the
+         * server's latest data
+         * is displayed.
+         */
 
         dispatch(
           fetchWarehouses({
@@ -373,16 +695,18 @@ const Warehouselist = () => {
           }),
         );
 
-        /* Refresh KPI */
+        /*
+         * Refresh KPI.
+         */
 
         dispatch(fetchWarehouseKpi());
 
         return;
       }
 
-      console.error("Warehouse creation failed:", result.payload);
+      console.error("Warehouse update failed:", result.payload);
     } catch (submitError) {
-      console.error("Warehouse creation failed:", submitError);
+      console.error("Warehouse update failed:", submitError);
     }
   };
 
@@ -478,6 +802,30 @@ const Warehouselist = () => {
       )}
 
       {/* ===================================================
+          UPDATE ERROR
+      =================================================== */}
+
+      {updateError && (
+        <div
+          style={{
+            marginTop: 15,
+            marginBottom: 15,
+            padding: 12,
+            borderRadius: 6,
+            background: "#FDEAEA",
+            color: "#D64545",
+            fontSize: 13,
+          }}
+        >
+          {typeof updateError === "string"
+            ? updateError
+            : updateError?.detail ||
+              updateError?.message ||
+              "Failed to update warehouse"}
+        </div>
+      )}
+
+      {/* ===================================================
           FILTER
       =================================================== */}
 
@@ -505,7 +853,7 @@ const Warehouselist = () => {
       <ReusableTable
         columns={columns}
         data={Array.isArray(warehouses) ? warehouses : []}
-        loading={loading || creating}
+        loading={loading || creating || updating}
       />
 
       {/* ===================================================
@@ -526,7 +874,43 @@ const Warehouselist = () => {
         isOpen={isWarehouseModalOpen}
         onClose={handleCloseWarehouseModal}
         onSubmit={handleSaveWarehouse}
+        initialData={isEditMode ? selectedWarehouseData : null}
+        isEdit={isEditMode}
+        submitting={updating || editLoading}
       />
+
+      {/* ===================================================
+          EDIT LOADING
+      =================================================== */}
+
+      {isWarehouseModalOpen && isEditMode && editLoading && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            zIndex: 9999,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            pointerEvents: "none",
+          }}
+        >
+          <div
+            style={{
+              background: "#FFFFFF",
+              padding: "10px 16px",
+              borderRadius: 6,
+              boxShadow: "0 4px 15px rgba(0,0,0,0.12)",
+              fontSize: 13,
+            }}
+          >
+            Loading warehouse...
+          </div>
+        </div>
+      )}
     </div>
   );
 };

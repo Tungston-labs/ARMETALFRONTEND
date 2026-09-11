@@ -160,7 +160,7 @@ export const Select = styled.select`
   appearance: auto;
 
   color: ${({ value }) =>
-        value ? "#333333" : "#888888"};
+    value ? "#333333" : "#888888"};
 
   option {
     color: #333333;
