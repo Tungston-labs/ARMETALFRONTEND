@@ -1,8 +1,8 @@
 import axios from "axios";
-import {toast} from "react-toastify";
 
-export const BASE_URL=import.meta.env.VITE_API_BASE_URL
-console.log(BASE_URL);
+export const BASE_URL = String(
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:8000"
+).replace(/\/+$/, "");
 
 const API = axios.create({
   baseURL: `${BASE_URL}/api`,
@@ -43,19 +43,20 @@ API.interceptors.response.use(
         });
 
         const newAccessToken = res.data.access;
-        const newRefreshToken = res.data.refresh; 
+        const newRefreshToken = res.data.refresh;
 
-        if(localStorage.getItem("refreshToken")){
-        localStorage.setItem("accessToken", newAccessToken);
-        if (newRefreshToken) {
-          localStorage.setItem("refreshToken", newRefreshToken);
+        if (localStorage.getItem("refreshToken")) {
+          localStorage.setItem("accessToken", newAccessToken);
+          if (newRefreshToken) {
+            localStorage.setItem("refreshToken", newRefreshToken);
+          }
+        } else {
+          sessionStorage.setItem("accessToken", newAccessToken);
+          if (newRefreshToken) {
+            sessionStorage.setItem("refreshToken", newRefreshToken);
+          }
         }
-      }else{
-        sessionStorage.setItem("accessToken", newAccessToken);
-        if (newRefreshToken) {
-          sessionStorage.setItem("refreshToken", newRefreshToken);
-        }
-      }
+
         originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
         return API(originalRequest);
       } catch (refreshErr) {
@@ -65,6 +66,7 @@ API.interceptors.response.use(
         return Promise.reject(refreshErr);
       }
     }
+
     return Promise.reject(error);
   }
 );

@@ -38,6 +38,7 @@ import {
 } from "../../../../Redux/finance/ProductSlice";
 
 import { getCategories } from "../../../../Redux/finance/categorySlice";
+import { getWarehouses } from "../../../../services/warehouseService";
 
 import { useProductList } from "./productHooks";
 
@@ -72,6 +73,23 @@ const ProductList = () => {
                 page_size: 100,
             })
         );
+
+        getWarehouses({
+            page: 1,
+            page_size: 100,
+        })
+            .then((response) => {
+                const rows = Array.isArray(response)
+                    ? response
+                    : (response?.results || response?.data?.results || response?.data || []);
+
+                setWarehouses(Array.isArray(rows) ? rows : []);
+            })
+            .catch((error) => {
+                console.error("Failed to load product warehouse options:", error);
+                setWarehouses([]);
+            });
+
         // NOTE: KPI is no longer fetched separately here.
         // The product list endpoint (getProducts, called
         // inside useProductList) already returns the KPI

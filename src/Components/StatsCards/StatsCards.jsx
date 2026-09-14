@@ -11,10 +11,7 @@ import {
 
 import SkeletonStatsCard from "../Skeleton/SkeletonStatsCard";
 
-const StatsCards = ({
-  cards = [],
-  loading = false,
-}) => {
+const StatsCards = ({ cards = [], loading = false }) => {
   if (loading) {
     return (
       <Wrapper>
@@ -28,25 +25,15 @@ const StatsCards = ({
   return (
     <Wrapper>
       {cards.map((card, index) => (
-        <Card
-          key={index}
-          onClick={card.onClick}
-        >
-          <IconWrapper
-            bg={card.backgroundColor}
-            color={card.iconColor}
-          >
+        <Card key={index} onClick={card.onClick}>
+          <IconWrapper bg={card.backgroundColor} color={card.iconColor}>
             {card.icon}
           </IconWrapper>
 
           <Content>
-            <Count>
-              {card.count}
-            </Count>
+            <Count>{card.count}</Count>
 
-            <Title>
-              {card.title}
-            </Title>
+            <Title>{card.title}</Title>
           </Content>
         </Card>
       ))}
