@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
 
 import {
     Overlay,
@@ -17,6 +18,8 @@ import {
 } from "./AddProductModal.styles";
 
 import { FiSave } from "react-icons/fi";
+
+import { getCategories } from "../../../../../Redux/finance/categorySlice";
 
 import { getWarehouses } from "../../../../../services/warehouseService";
 
@@ -48,16 +51,19 @@ const initialFormData = {
     selling_price: "",
 
     status: "active",
-
 };
 
-/* =========================
-   MAP AN EXISTING PRODUCT ROW
-   INTO FORM SHAPE
-========================= */
+
+/* =====================================================
+   MAP EXISTING PRODUCT INTO FORM DATA
+===================================================== */
 
 const mapProductToFormData = (product) => {
-    if (!product) return initialFormData;
+    if (!product) {
+        return {
+            ...initialFormData,
+        };
+    }
 
     return {
         product_type:
@@ -66,21 +72,44 @@ const mapProductToFormData = (product) => {
         product_name:
             product.product_name || "",
 
-        sku: product.sku || "",
+        sku:
+            product.sku || "",
 
         /*
-         * category / warehouse may come back as
-         * nested objects, ids, or names depending
-         * on the serializer — normalize to id/string
+         * Category may come as:
+         *
+         * category: 1
+         *
+         * OR
+         *
+         * category: {
+         *     id: 1,
+         *     category_name: "Electronics"
+         * }
          */
         category:
             product.category?.id ??
             product.category ??
             "",
 
-        brand: product.brand || "",
-        supplier: product.supplier || "",
+        brand:
+            product.brand || "",
 
+        supplier:
+            product.supplier || "",
+
+        /*
+         * Warehouse may come as:
+         *
+         * warehouse: 1
+         *
+         * OR
+         *
+         * warehouse: {
+         *     id: 1,
+         *     warehouse_name: "Main Warehouse"
+         * }
+         */
         warehouse:
             product.warehouse?.id ??
             product.warehouse ??
@@ -96,7 +125,8 @@ const mapProductToFormData = (product) => {
             product.reorder_level ?? "10"
         ),
 
-        unit: product.unit || "",
+        unit:
+            product.unit || "",
 
         quantity: String(
             product.quantity ??
@@ -107,14 +137,15 @@ const mapProductToFormData = (product) => {
         description:
             product.description || "",
 
-        tax_type: product.tax_type || "",
+        tax_type:
+            product.tax_type || "",
+
         tax_rate: String(
             product.tax_rate ?? ""
         ),
 
         hsn_sac_code:
-            product.hsn_sac_code ||
-            product.brand || "",
+            product.hsn_sac_code || "",
 
         cost_price: String(
             product.cost_price ?? ""
@@ -124,9 +155,11 @@ const mapProductToFormData = (product) => {
             product.selling_price ?? ""
         ),
 
-        status: product.status || "active",
+        status:
+            product.status || "active",
     };
 };
+
 
 const AddProductModal = ({
     isOpen,
@@ -135,15 +168,37 @@ const AddProductModal = ({
     loading = false,
     warehouses = [],
     initialData = null,
-    mode = "add", // "add" | "edit"
+    mode = "add",
 }) => {
+
+    const dispatch = useDispatch();
+
+
+    /* =====================================================
+       GET CATEGORIES FROM REDUX
+    ===================================================== */
+
+    const {
+        categories = [],
+        loading: categoryLoading,
+    } = useSelector(
+        (state) => state.category
+    );
+
+
     const [formData, setFormData] =
         useState(initialFormData);
     const [modalWarehouses, setModalWarehouses] =
         useState(Array.isArray(warehouses) ? warehouses : []);
 
-    const isEditMode = mode === "edit";
 
+    const isEditMode =
+        mode === "edit";
+
+
+    /* =====================================================
+       FETCH CATEGORIES WHEN MODAL OPENS
+    ===================================================== */
     const resolveWarehouseName = (warehouse) =>
         warehouse?.warehouse_name ||
         warehouse?.name ||
@@ -155,16 +210,52 @@ const AddProductModal = ({
     ========================= */
 
     useEffect(() => {
+
+        if (!isOpen) return;
+
+        dispatch(
+            getCategories({
+                page: 1,
+                page_size: 100,
+            })
+        );
+
+    }, [isOpen, dispatch]);
+
+
+    /* =====================================================
+       PREFILL FORM WHEN MODAL OPENS
+    ===================================================== */
+
+    useEffect(() => {
+
         if (!isOpen) return;
 
         if (initialData) {
+
             setFormData(
-                mapProductToFormData(initialData)
+                mapProductToFormData(
+                    initialData
+                )
             );
+
         } else {
-            setFormData(initialFormData);
+
+            setFormData({
+                ...initialFormData,
+            });
+
         }
-    }, [isOpen, initialData]);
+
+    }, [
+        isOpen,
+        initialData,
+    ]);
+
+
+    /* =====================================================
+       HANDLE INPUT CHANGE
+    ===================================================== */
 
     useEffect(() => {
         if (!isOpen) return;
@@ -214,6 +305,7 @@ const AddProductModal = ({
     }, [isOpen, warehouses]);
 
     const handleChange = (e) => {
+
         const {
             name,
             value,
@@ -225,26 +317,45 @@ const AddProductModal = ({
         }));
     };
 
+
+    /* =====================================================
+       HANDLE SUBMIT
+    ===================================================== */
+
     const handleSubmit = (e) => {
+
         e.preventDefault();
 
+
         const payload = {
+
             ...formData,
 
-            /*
-             * Convert empty IDs to null
-             */
+
+            /* =========================
+               CATEGORY
+            ========================= */
+
             category:
                 formData.category || null,
+
+
+            /* =========================
+               WAREHOUSE
+            ========================= */
 
             warehouse:
                 formData.warehouse || null,
 
-            /*
-             * Numeric values
-             */
+
+            /* =========================
+               NUMERIC VALUES
+            ========================= */
+
             quantity:
-                Number(formData.quantity) || 0,
+                Number(
+                    formData.quantity
+                ) || 0,
 
             opening_stock_qty:
                 Number(
@@ -256,9 +367,11 @@ const AddProductModal = ({
                     formData.reorder_level
                 ) || 0,
 
-            /*
-             * Decimal fields
-             */
+
+            /* =========================
+               DECIMAL VALUES
+            ========================= */
+
             cost_price:
                 formData.cost_price || "0",
 
@@ -269,29 +382,58 @@ const AddProductModal = ({
                 formData.tax_rate || "0",
         };
 
+
         onSave(payload);
 
-        setFormData(initialFormData);
+
+        setFormData({
+            ...initialFormData,
+        });
     };
 
+
+    /* =====================================================
+       HANDLE CLOSE
+    ===================================================== */
+
     const handleClose = () => {
+
         if (loading) return;
 
-        setFormData(initialFormData);
+        setFormData({
+            ...initialFormData,
+        });
 
         onClose();
     };
 
-    if (!isOpen) return null;
+
+    /* =====================================================
+       DON'T RENDER WHEN CLOSED
+    ===================================================== */
+
+    if (!isOpen) {
+        return null;
+    }
+
 
     return (
-        <Overlay onClick={handleClose}>
+        <Overlay
+            onClick={handleClose}
+        >
+
             <Modal
                 onClick={(e) =>
                     e.stopPropagation()
                 }
             >
+
+                {/* =================================================
+                    HEADER
+                ================================================= */}
+
                 <Header>
+
                     <Title>
                         {isEditMode
                             ? "Edit Product"
@@ -303,16 +445,25 @@ const AddProductModal = ({
                             ? "Update the details of this product or service."
                             : "Create a new product or service."}
                     </Subtitle>
+
                 </Header>
 
+
+                {/* =================================================
+                    FORM
+                ================================================= */}
+
                 <Form
-                    onSubmit={
-                        handleSubmit
-                    }
+                    onSubmit={handleSubmit}
                 >
-                    {/* TYPE */}
+
+
+                    {/* =================================================
+                        PRODUCT TYPE
+                    ================================================= */}
 
                     <FormGroup>
+
                         <Label>
                             TYPE
                         </Label>
@@ -326,6 +477,7 @@ const AddProductModal = ({
                                 handleChange
                             }
                         >
+
                             <option value="product">
                                 Product
                             </option>
@@ -333,12 +485,18 @@ const AddProductModal = ({
                             <option value="service">
                                 Service
                             </option>
+
                         </Select>
+
                     </FormGroup>
 
-                    {/* PRODUCT NAME */}
+
+                    {/* =================================================
+                        PRODUCT NAME
+                    ================================================= */}
 
                     <FormGroup>
+
                         <Label>
                             PRODUCT NAME
                         </Label>
@@ -354,11 +512,16 @@ const AddProductModal = ({
                             placeholder="Enter name"
                             required
                         />
+
                     </FormGroup>
 
-                    {/* SKU */}
+
+                    {/* =================================================
+                        SKU
+                    ================================================= */}
 
                     <FormGroup>
+
                         <Label>
                             SKU
                         </Label>
@@ -373,11 +536,16 @@ const AddProductModal = ({
                             }
                             placeholder="1253698"
                         />
+
                     </FormGroup>
 
-                    {/* CATEGORY */}
+
+                    {/* =================================================
+                        CATEGORY - DYNAMIC FROM API
+                    ================================================= */}
 
                     <FormGroup>
+
                         <Label>
                             CATEGORY
                         </Label>
@@ -390,32 +558,45 @@ const AddProductModal = ({
                             onChange={
                                 handleChange
                             }
+                            required
                         >
+
                             <option value="">
-                                Select Category
+                                {categoryLoading
+                                    ? "Loading Categories..."
+                                    : "Select Category"}
                             </option>
 
-                            <option value="1">
-                                Electronics
-                            </option>
 
-                            <option value="2">
-                                Furniture
-                            </option>
+                            {!categoryLoading &&
+                                categories.map(
+                                    (category) => (
+                                        <option
+                                            key={
+                                                category.id
+                                            }
+                                            value={
+                                                category.id
+                                            }
+                                        >
+                                            {
+                                                category.category_name
+                                            }
+                                        </option>
+                                    )
+                                )}
 
-                            <option value="3">
-                                Stationery
-                            </option>
-
-                            <option value="4">
-                                Raw Materials
-                            </option>
                         </Select>
+
                     </FormGroup>
 
-                    {/* BRAND */}
+
+                    {/* =================================================
+                        BRAND
+                    ================================================= */}
 
                     <FormGroup>
+
                         <Label>
                             BRAND
                         </Label>
@@ -430,11 +611,16 @@ const AddProductModal = ({
                             }
                             placeholder="Enter Brand"
                         />
+
                     </FormGroup>
 
-                    {/* SUPPLIER */}
+
+                    {/* =================================================
+                        SUPPLIER
+                    ================================================= */}
 
                     <FormGroup>
+
                         <Label>
                             SUPPLIER
                         </Label>
@@ -449,21 +635,53 @@ const AddProductModal = ({
                             }
                             placeholder="Enter Supplier"
                         />
+
                     </FormGroup>
 
-                    {/* WAREHOUSE */}
+
+                    {/* =================================================
+                        WAREHOUSE
+                    ================================================= */}
 
                     <FormGroup>
-                        <Label>WAREHOUSE</Label>
+
+                        <Label>
+                            WAREHOUSE
+                        </Label>
 
                         <Select
                             name="warehouse"
-                            value={formData.warehouse}
-                            onChange={handleChange}
+                            value={
+                                formData.warehouse
+                            }
+                            onChange={
+                                handleChange
+                            }
                         >
+
                             <option value="">
                                 SELECT WAREHOUSE
                             </option>
+
+
+                            {warehouses.map(
+                                (warehouse) => (
+
+                                    <option
+                                        key={
+                                            warehouse.id
+                                        }
+                                        value={
+                                            warehouse.id
+                                        }
+                                    >
+                                        {
+                                            warehouse.warehouse_name
+                                        }
+                                    </option>
+
+                                )
+                            )}
 
                             {modalWarehouses.map((warehouse) => (
                                 <option
@@ -474,11 +692,16 @@ const AddProductModal = ({
                                 </option>
                             ))}
                         </Select>
+
                     </FormGroup>
 
-                    {/* OPENING STOCK */}
+
+                    {/* =================================================
+                        OPENING STOCK
+                    ================================================= */}
 
                     <FormGroup>
+
                         <Label>
                             OPENING STOCK QTY
                         </Label>
@@ -493,11 +716,16 @@ const AddProductModal = ({
                                 handleChange
                             }
                         />
+
                     </FormGroup>
 
-                    {/* REORDER LEVEL */}
+
+                    {/* =================================================
+                        REORDER LEVEL
+                    ================================================= */}
 
                     <FormGroup>
+
                         <Label>
                             REORDER LEVEL
                         </Label>
@@ -512,19 +740,31 @@ const AddProductModal = ({
                                 handleChange
                             }
                         />
+
                     </FormGroup>
 
-                    {/* UNIT */}
+
+                    {/* =================================================
+                        UNIT
+                    ================================================= */}
 
                     <FormGroup>
-                        <Label>UNIT</Label>
+
+                        <Label>
+                            UNIT
+                        </Label>
 
                         <Select
                             name="unit"
-                            value={formData.unit}
-                            onChange={handleChange}
+                            value={
+                                formData.unit
+                            }
+                            onChange={
+                                handleChange
+                            }
                             required
                         >
+
                             <option value="">
                                 Select Unit
                             </option>
@@ -564,12 +804,18 @@ const AddProductModal = ({
                             <option value="Other">
                                 Other
                             </option>
+
                         </Select>
+
                     </FormGroup>
 
-                    {/* QUANTITY */}
+
+                    {/* =================================================
+                        QUANTITY
+                    ================================================= */}
 
                     <FormGroup>
+
                         <Label>
                             QUANTITY
                         </Label>
@@ -584,11 +830,16 @@ const AddProductModal = ({
                                 handleChange
                             }
                         />
+
                     </FormGroup>
 
-                    {/* DESCRIPTION */}
+
+                    {/* =================================================
+                        DESCRIPTION
+                    ================================================= */}
 
                     <FormGroup>
+
                         <Label>
                             DESCRIPTION /
                             SPECIFICATION
@@ -604,11 +855,16 @@ const AddProductModal = ({
                             }
                             placeholder="Enter Note..."
                         />
+
                     </FormGroup>
 
-                    {/* TAX TYPE */}
+
+                    {/* =================================================
+                        TAX TYPE
+                    ================================================= */}
 
                     <FormGroup>
+
                         <Label>
                             TAX TYPE
                         </Label>
@@ -622,6 +878,7 @@ const AddProductModal = ({
                                 handleChange
                             }
                         >
+
                             <option value="">
                                 Select
                             </option>
@@ -633,12 +890,18 @@ const AddProductModal = ({
                             <option value="exclusive">
                                 Exclusive
                             </option>
+
                         </Select>
+
                     </FormGroup>
 
-                    {/* TAX RATE */}
+
+                    {/* =================================================
+                        TAX RATE
+                    ================================================= */}
 
                     <FormGroup>
+
                         <Label>
                             TAX RATE (%)
                         </Label>
@@ -652,6 +915,7 @@ const AddProductModal = ({
                                 handleChange
                             }
                         >
+
                             <option value="">
                                 Select
                             </option>
@@ -679,12 +943,18 @@ const AddProductModal = ({
                             <option value="20">
                                 20%
                             </option>
+
                         </Select>
+
                     </FormGroup>
 
-                    {/* HSN/SAC */}
+
+                    {/* =================================================
+                        HSN / SAC
+                    ================================================= */}
 
                     <FormGroup>
+
                         <Label>
                             HSN / SAC CODE
                         </Label>
@@ -699,11 +969,16 @@ const AddProductModal = ({
                             }
                             placeholder="Enter Code"
                         />
+
                     </FormGroup>
 
-                    {/* COST PRICE */}
+
+                    {/* =================================================
+                        PURCHASE PRICE
+                    ================================================= */}
 
                     <FormGroup>
+
                         <Label>
                             PURCHASE PRICE
                         </Label>
@@ -720,11 +995,16 @@ const AddProductModal = ({
                             }
                             placeholder="0.00"
                         />
+
                     </FormGroup>
 
-                    {/* SELLING PRICE */}
+
+                    {/* =================================================
+                        SELLING PRICE
+                    ================================================= */}
 
                     <FormGroup>
+
                         <Label>
                             SELLING PRICE
                         </Label>
@@ -741,13 +1021,23 @@ const AddProductModal = ({
                             }
                             placeholder="0.00"
                         />
+
                     </FormGroup>
+
+
+                    {/* =================================================
+                        EMPTY FORM GROUP
+                    ================================================= */}
 
                     <FormGroup />
 
-                    {/* BUTTONS */}
+
+                    {/* =================================================
+                        BUTTONS
+                    ================================================= */}
 
                     <ButtonRow>
+
                         <CancelButton
                             type="button"
                             onClick={
@@ -758,21 +1048,37 @@ const AddProductModal = ({
                             CANCEL
                         </CancelButton>
 
+
                         <SaveButton
                             type="submit"
                             disabled={loading}
                         >
+
                             <FiSave />
 
                             {loading
-                                ? (isEditMode ? "UPDATING..." : "SAVING...")
-                                : (isEditMode ? "UPDATE PRODUCT" : "SAVE PRODUCT")}
+                                ? (
+                                    isEditMode
+                                        ? "UPDATING..."
+                                        : "SAVING..."
+                                )
+                                : (
+                                    isEditMode
+                                        ? "UPDATE PRODUCT"
+                                        : "SAVE PRODUCT"
+                                )}
+
                         </SaveButton>
+
                     </ButtonRow>
+
                 </Form>
+
             </Modal>
+
         </Overlay>
     );
 };
+
 
 export default AddProductModal;
