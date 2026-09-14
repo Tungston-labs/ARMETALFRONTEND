@@ -167,15 +167,15 @@ const CustomerList = () => {
     // ============================================================
 
  const customerColumns = [
-    { accessor: "customer_id", header: "CUSTOMER ID" },
-    { accessor: "customer_name", header: "CUSTOMER NAME" },
-    { accessor: "company_name", header: "COMPANY" },
-    { accessor: "industry_name", header: "INDUSTRY" },
-    { accessor: "currency_name", header: "CURRENCY" },
-    { accessor: "payment_term_name", header: "PAYMENT TERM" },
-    { accessor: "client_status_name", header: "STATUS" },
-    { accessor: "credit_limit", header: "CREDIT LIMIT" },
-    { accessor: "opening_balance", header: "OPENING BALANCE" },
+    { accessor: "customer_id", header: "Code" },
+    { accessor: "customer_name", header: "Customer Name" },
+    { accessor: "credit_limit", header: "Credit Limit" },
+    { accessor: "industry_name", header: "Total Invoices" },
+    { accessor: "currency_name", header: "Payments Received" },
+    { accessor: "payment_term_name", header: "Balance" },
+    { accessor: "client_status_name", header: "Outstanding Days" },
+    { accessor: "credit_limit", header: "Last Payment" },
+    { accessor: "opening_balance", header: "Actions" },
 ];
 
     return (
