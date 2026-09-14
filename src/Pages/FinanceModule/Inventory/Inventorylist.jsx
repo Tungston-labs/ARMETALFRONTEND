@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 
 import { useDispatch, useSelector } from "react-redux";
 
@@ -14,6 +14,9 @@ import { FiDownload } from "react-icons/fi";
 import StockAdjustmentModal from "../../../Components/InventoryModal/InventoryModal";
 
 import { fetchInventory } from "../../../Redux/inventorySlice";
+import { getCategories } from "../../../Redux/finance/categorySlice";
+import { getWarehouses } from "../../../services/warehouseService";
+import { fetchProducts } from "../../../services/finance/productServices";
 
 import { inventoryColumns } from "../../../Components/ReusableTable/inventoryColumns.jsx";
 
@@ -26,12 +29,13 @@ const InventoryList = () => {
 
   const {
     inventory = [],
-    totalItems = 0,
     totalPages = 0,
     currentPage: apiCurrentPage = 1,
     loading = false,
     error = null,
   } = useSelector((state) => state.inventory || {});
+
+  const categoryOptions = useSelector((state) => state.category?.categories || []);
 
   // =====================================================
   // FILTER STATE
@@ -41,6 +45,8 @@ const InventoryList = () => {
   const [category, setCategory] = useState("");
   const [warehouse, setWarehouse] = useState("");
   const [status, setStatus] = useState("");
+  const [warehouseOptions, setWarehouseOptions] = useState([]);
+  const [productOptions, setProductOptions] = useState([]);
 
   // =====================================================
   // PAGINATION
@@ -78,6 +84,34 @@ const InventoryList = () => {
   // =====================================================
 
   useEffect(() => {
+    dispatch(getCategories({ page: 1, page_size: 100 }));
+
+    getWarehouses({ page: 1, page_size: 100 })
+      .then((response) => {
+        const rows = Array.isArray(response)
+          ? response
+          : response?.results || response?.data?.results || response?.data || [];
+
+        setWarehouseOptions(Array.isArray(rows) ? rows : []);
+      })
+      .catch((error) => {
+        console.error("Failed to load inventory warehouse options:", error);
+        setWarehouseOptions([]);
+      });
+
+    fetchProducts({ page: 1, page_size: 100 })
+      .then((response) => {
+        const rows = Array.isArray(response)
+          ? response
+          : response?.results || response?.data?.results || response?.data || [];
+
+        setProductOptions(Array.isArray(rows) ? rows : []);
+      })
+      .catch((error) => {
+        console.error("Failed to load inventory product options:", error);
+        setProductOptions([]);
+      });
+
     dispatch(
       fetchInventory({
         page: 1,
@@ -196,6 +230,54 @@ const InventoryList = () => {
 
   const tableData = Array.isArray(inventory) ? inventory : [];
 
+  const categoryOptionsForFilter = useMemo(
+    () =>
+      Array.isArray(categoryOptions)
+        ? categoryOptions.map((item) => ({
+            label: item?.category_name || item?.name || "Category",
+            value: item?.id ?? item?.category_id ?? item?.category ?? "",
+          }))
+        : [],
+    [categoryOptions],
+  );
+
+  const warehouseFilterOptions = useMemo(
+    () =>
+      Array.isArray(warehouseOptions)
+        ? warehouseOptions.map((item) => ({
+            label: item?.warehouse_name || item?.name || "Warehouse",
+            value: item?.id ?? item?.warehouse_id ?? item?.warehouse ?? "",
+          }))
+        : [],
+    [warehouseOptions],
+  );
+
+  const modalWarehouseOptions = useMemo(
+    () =>
+      Array.isArray(warehouseOptions)
+        ? warehouseOptions.map((item) => ({
+            id: item?.id ?? item?.warehouse_id ?? item?.warehouse,
+            value: item?.id ?? item?.warehouse_id ?? item?.warehouse,
+            name: item?.warehouse_name || item?.name || "Warehouse",
+            label: item?.warehouse_name || item?.name || "Warehouse",
+          }))
+        : [],
+    [warehouseOptions],
+  );
+
+  const modalProductOptions = useMemo(
+    () =>
+      Array.isArray(productOptions)
+        ? productOptions.map((item) => ({
+            id: item?.id ?? item?.product_id,
+            value: item?.id ?? item?.product_id,
+            name: item?.product_name || item?.name || "Product",
+            label: item?.product_name || item?.name || "Product",
+          }))
+        : [],
+    [productOptions],
+  );
+
   // =====================================================
   // RENDER
   // =====================================================
@@ -225,14 +307,27 @@ const InventoryList = () => {
         search={search}
         onSearch={handleSearch}
         department={category}
-        departments={[]}
+        departments={categoryOptionsForFilter}
         onDepartment={handleCategory}
         status={status}
-        statuses={["In Stock", "Low Stock", "Out of Stock"]}
+        statuses={[
+          { label: "In Stock", value: "In Stock" },
+          { label: "Low Stock", value: "Low Stock" },
+          { label: "Out of Stock", value: "Out of Stock" },
+        ]}
         onStatus={handleStatus}
         showSearch
         showDepartment
         showStatus
+        filters={[
+          {
+            key: "warehouse",
+            value: warehouse,
+            onChange: handleWarehouse,
+            placeholder: "All Warehouses",
+            options: warehouseFilterOptions,
+          },
+        ]}
         rightButton={
           <HeaderButton $variant="orange" onClick={handleApplyFilters}>
             Apply Filters
@@ -318,6 +413,8 @@ const InventoryList = () => {
         isOpen={isInventoryModalOpen}
         onClose={handleCloseInventoryModal}
         onSubmit={handleInventorySubmit}
+        warehouses={modalWarehouseOptions}
+        products={modalProductOptions}
       />
     </div>
   );
