@@ -40,21 +40,27 @@ const BACKEND_FIELD_MAP = {
     status: "status",
 };
 
+const EMPTY_FORM = {
+    code: "",
+    categoryName: "",
+    parentCategory: "",
+    categoryType: "",
+    status: "",
+};
+
 const CategoryModal = ({
     isOpen,
     onClose,
     onSave,
     categories = [],
     parentCategories = [],
+    initialData = null,
+    mode = "add",
 }) => {
 
-    const [formData, setFormData] = useState({
-        code: "",
-        categoryName: "",
-        parentCategory: "",
-        categoryType: "",
-        status: "",
-    });
+    const isEdit = mode === "edit" && !!initialData;
+
+    const [formData, setFormData] = useState(EMPTY_FORM);
 
     const [errors, setErrors] = useState({});
 
@@ -73,24 +79,40 @@ const CategoryModal = ({
     const comboBoxRef = useRef(null);
 
     /*
-     * Reset form whenever modal opens
+     * Reset / prefill form whenever modal opens.
+     * Edit mode: seed from initialData.
+     * Add mode: blank slate (unchanged from before).
      */
     useEffect(() => {
         if (isOpen) {
-            setFormData({
-                code: "",
-                categoryName: "",
-                parentCategory: "",
-                categoryType: "",
-                status: "",
-            });
+            if (isEdit) {
+                setFormData({
+                    code: initialData.code ?? "",
+                    categoryName: initialData.category_name ?? "",
+                    // parent_category may come back as an id, or nested
+                    // under parent_category / parent_category_id depending
+                    // on the serializer — this covers the common shapes.
+                    parentCategory:
+                        initialData.parent_category ??
+                        initialData.parent_category_id ??
+                        "",
+                    categoryType: initialData.category_type ?? "",
+                    status: initialData.status ?? "",
+                });
+
+                setParentSearch(
+                    initialData.parent_category_name ?? ""
+                );
+            } else {
+                setFormData(EMPTY_FORM);
+                setParentSearch("");
+            }
 
             setErrors({});
-            setParentSearch("");
             setShowParentDropdown(false);
             setSubmitError(null);
         }
-    }, [isOpen]);
+    }, [isOpen, isEdit, initialData]);
 
     /*
      * Close dropdown when clicking outside
@@ -221,12 +243,20 @@ const CategoryModal = ({
      * duplicate will still come back as a field error from the server
      * (handled in handleSubmit's catch block below) even if this
      * client-side check misses it.
+     *
+     * In edit mode, the category being edited is excluded from these
+     * checks — otherwise saving without changing code/name would
+     * false-positive against itself.
      */
     const validate = () => {
         const nextErrors = {};
 
         const code = formData.code.trim();
         const name = formData.categoryName.trim();
+
+        const otherCategories = isEdit
+            ? categories.filter((c) => c.id !== initialData.id)
+            : categories;
 
         // --- CODE ---
         if (!code) {
@@ -235,7 +265,7 @@ const CategoryModal = ({
             nextErrors.code =
                 "Code must be 2–20 characters (letters, numbers, # or - only)";
         } else if (
-            categories.some(
+            otherCategories.some(
                 (c) => c.code?.toLowerCase() === code.toLowerCase()
             )
         ) {
@@ -249,7 +279,7 @@ const CategoryModal = ({
             nextErrors.categoryName =
                 "Category name must be at least 2 characters";
         } else if (
-            categories.some(
+            otherCategories.some(
                 (c) =>
                     c.category_name?.toLowerCase() ===
                     name.toLowerCase()
@@ -376,11 +406,13 @@ const CategoryModal = ({
                 <ModalHeader>
 
                     <ModalTitle>
-                        Add New Category
+                        {isEdit ? "Edit Category" : "Add New Category"}
                     </ModalTitle>
 
                     <ModalSubtitle>
-                        Create a new product or services category
+                        {isEdit
+                            ? "Update this product or service category"
+                            : "Create a new product or services category"}
                     </ModalSubtitle>
 
                 </ModalHeader>
@@ -634,6 +666,8 @@ const CategoryModal = ({
 
                             {saving
                                 ? "SAVING..."
+                                : isEdit
+                                ? "UPDATE CATEGORY"
                                 : "SAVE CATEGORY"}
                         </SaveButton>
 

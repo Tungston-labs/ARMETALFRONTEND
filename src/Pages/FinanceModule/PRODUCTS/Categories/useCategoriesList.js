@@ -4,6 +4,8 @@ import { useDispatch, useSelector } from "react-redux";
 import {
     getCategories,
     addCategory,
+    editCategory,
+    removeCategory,
     getParentCategories,
     getCategorySummary,
 } from "../../../../Redux/finance/categorySlice";
@@ -27,11 +29,15 @@ export const useCategoriesList = () => {
     const [showCategoryModal, setShowCategoryModal] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
 
+    // edit / delete state
+    const [editingCategory, setEditingCategory] = useState(null);
+    const [deleteTarget, setDeleteTarget] = useState(null);
+    const [deleteLoading, setDeleteLoading] = useState(false);
+
     const rowsPerPage = 10;
 
     // ==========================================
     // DEBOUNCE SEARCH
-    // Avoids firing an API call on every keystroke.
     // ==========================================
 
     const [debouncedSearch, setDebouncedSearch] = useState("");
@@ -46,9 +52,6 @@ export const useCategoriesList = () => {
 
     // ==========================================
     // GET CATEGORIES
-    // search / status / category_type are now sent to the
-    // backend (it already supports all three as query params)
-    // instead of being filtered client-side on a single page.
     // ==========================================
 
     useEffect(() => {
@@ -65,7 +68,7 @@ export const useCategoriesList = () => {
     }, [dispatch, currentPage, debouncedSearch, status, categoryType]);
 
     // ==========================================
-    // GET PARENT CATEGORIES (for the modal dropdown)
+    // GET PARENT CATEGORIES
     // ==========================================
 
     useEffect(() => {
@@ -73,7 +76,7 @@ export const useCategoriesList = () => {
     }, [dispatch]);
 
     // ==========================================
-    // GET SUMMARY (real totals, not page-derived)
+    // GET SUMMARY
     // ==========================================
 
     useEffect(() => {
@@ -82,8 +85,6 @@ export const useCategoriesList = () => {
 
     // ==========================================
     // STATS
-    // Sourced from the /summary/ endpoint so counts reflect
-    // the whole table, not just the currently loaded page.
     // ==========================================
 
     const totalCount = summary?.total_categories ?? count;
@@ -96,9 +97,15 @@ export const useCategoriesList = () => {
     // HANDLERS
     // ==========================================
 
-    const handleAddCategory = () => setShowCategoryModal(true);
+    const handleAddCategory = () => {
+        setEditingCategory(null);
+        setShowCategoryModal(true);
+    };
 
-    const handleCloseCategoryModal = () => setShowCategoryModal(false);
+    const handleCloseCategoryModal = () => {
+        setShowCategoryModal(false);
+        setEditingCategory(null);
+    };
 
     const refreshList = () => {
         const params = {
@@ -114,23 +121,56 @@ export const useCategoriesList = () => {
     };
 
     const handleSaveCategory = async (categoryData) => {
-        // Intentionally NOT catching-and-swallowing here: if addCategory
-        // rejects, we let it propagate to CategoryModal so it can show
-        // submitError / map backend field errors onto the form. Swallowing
-        // it here previously made failed creates fail silently.
-        const result = await dispatch(addCategory(categoryData)).unwrap();
+        // Same intent as before: don't swallow errors here so
+        // CategoryModal can surface submitError / field errors.
+        const result = editingCategory
+            ? await dispatch(
+                  editCategory({
+                      id: editingCategory.id,
+                      categoryData,
+                  })
+              ).unwrap()
+            : await dispatch(addCategory(categoryData)).unwrap();
 
         setShowCategoryModal(false);
+        setEditingCategory(null);
 
-        // Refresh everything that could now be stale:
-        // - the list (new row / new counts)
-        // - parent options (the new category may itself be a valid parent)
-        // - summary card totals
         refreshList();
         dispatch(getParentCategories());
         dispatch(getCategorySummary());
 
         return result;
+    };
+
+    const handleEdit = (row) => {
+        setEditingCategory(row);
+        setShowCategoryModal(true);
+    };
+
+    const handleDeleteClick = (row) => {
+        setDeleteTarget(row);
+    };
+
+    const handleCancelDelete = () => {
+        setDeleteTarget(null);
+    };
+
+    const handleConfirmDelete = async () => {
+        if (!deleteTarget) return;
+
+        try {
+            setDeleteLoading(true);
+            await dispatch(removeCategory(deleteTarget.id)).unwrap();
+
+            refreshList();
+            dispatch(getParentCategories());
+            dispatch(getCategorySummary());
+        } catch (error) {
+            console.error("Delete category failed:", error);
+        } finally {
+            setDeleteLoading(false);
+            setDeleteTarget(null);
+        }
     };
 
     const handlePageChange = (page) => setCurrentPage(page);
@@ -145,18 +185,15 @@ export const useCategoriesList = () => {
         setCurrentPage(1);
     };
 
-  const handleCategory = (value) => {
-    setCategoryType(value);
-    setCurrentPage(1);
-};
+    const handleCategory = (value) => {
+        setCategoryType(value);
+        setCurrentPage(1);
+    };
 
     return {
         // data
         categories,
         parentCategories,
-        // kept as "filteredData" for backward compatibility with
-        // CategoriesList.jsx — filtering now happens server-side,
-        // so this is just the current page as returned by the API.
         filteredData: categories,
         count: totalCount,
         totalPages,
@@ -164,7 +201,7 @@ export const useCategoriesList = () => {
         loading,
         error,
 
-        // stats (from /summary/, table-wide — not page-derived)
+        // stats
         activeCount,
         inactiveCount,
         parentCount,
@@ -177,6 +214,11 @@ export const useCategoriesList = () => {
 
         // modal state
         showCategoryModal,
+        editingCategory,
+
+        // delete state
+        deleteTarget,
+        deleteLoading,
 
         // handlers
         handleAddCategory,
@@ -185,6 +227,10 @@ export const useCategoriesList = () => {
         handlePageChange,
         handleSearchChange,
         handleStatusChange,
-         handleCategory,
+        handleCategory,
+        handleEdit,
+        handleDeleteClick,
+        handleCancelDelete,
+        handleConfirmDelete,
     };
 };
