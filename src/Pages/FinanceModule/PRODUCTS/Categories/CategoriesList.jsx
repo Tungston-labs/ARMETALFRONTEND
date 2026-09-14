@@ -1,15 +1,16 @@
-import React from "react";
-import { FiFolder, FiCheckCircle, FiXCircle, FiLayers, FiDownload } from "react-icons/fi";
+import React, { useMemo } from "react";
+import { FiCheckCircle, FiDownload } from "react-icons/fi";
 
 import ReusableTable from "../../../../Components/ReusableTable/ReusableTable";
 import ReusablePagination from "../../../../Components/Pagination/ReusablePagination";
 import ReusableFilter from "../../../../Components/ReusableTable/ReusableFilter";
 import ReusableHeader from "../../../../Components/ReusableTable/ReusableHeader";
 import { HeaderButton } from "../../../../Components/ReusableTable/ReusableHeader.styles";
-import StatsCards from "../../../../Components/StatsCards/StatsCards"; // adjust path to actual location
+import StatsCards from "../../../../Components/StatsCards/StatsCards";
 
 import CategoryModal from "./modal/CategoryModal";
-import { categoryColumns } from "./columns";
+import DeleteConfirmModal from "./modal/DeleteConfirmModal"; // adjust path if you keep a shared one
+import { getCategoryColumns } from "./columns";
 import { useCategoriesList } from "./useCategoriesList";
 import { PiPackage } from "react-icons/pi";
 
@@ -25,6 +26,9 @@ const CategoriesList = () => {
         status,
         categoryType,
         showCategoryModal,
+        editingCategory,
+        deleteTarget,
+        deleteLoading,
         handleAddCategory,
         handleCloseCategoryModal,
         handleSaveCategory,
@@ -32,6 +36,10 @@ const CategoriesList = () => {
         handleSearchChange,
         handleStatusChange,
         handleCategory,
+        handleEdit,
+        handleDeleteClick,
+        handleCancelDelete,
+        handleConfirmDelete,
         categories,
         count,
         activeCount,
@@ -39,13 +47,6 @@ const CategoriesList = () => {
         parentCount,
         subCategoryCount,
     } = useCategoriesList();
-
-    // ==========================================
-    // STATS CARDS CONFIG
-    // Sourced from the backend /summary/ endpoint (real,
-    // table-wide totals) rather than derived from a single
-    // loaded page. Each card now shows a distinct stat.
-    // ==========================================
 
     const statsCards = [
         {
@@ -85,15 +86,21 @@ const CategoriesList = () => {
         },
     ];
 
+    const columns = useMemo(
+        () =>
+            getCategoryColumns({
+                onEdit: handleEdit,
+                onDelete: handleDeleteClick,
+            }),
+        [handleEdit, handleDeleteClick]
+    );
+
     return (
         <div style={{ padding: 20 }}>
 
             {/* HEADER */}
 
-            <ReusableHeader
-                title="Categories"
-                breadcrumbs={["Categories"]}
-            >
+            <ReusableHeader title="Categories" breadcrumbs={["Categories"]}>
                 <HeaderButton $variant="excel">
                     <FiDownload />
                     EXPORT EXCEL
@@ -103,6 +110,7 @@ const CategoriesList = () => {
                     + ADD CATEGORY
                 </HeaderButton>
             </ReusableHeader>
+
             {/* STATS */}
             <StatsCards cards={statsCards} loading={loading} />
 
@@ -116,19 +124,18 @@ const CategoriesList = () => {
                 onStatus={handleStatusChange}
                 showSearch
                 showStatus
-                
-               filters={[
-    {
-        key: "categoryType",
-        value: categoryType,
-        onChange: handleCategory,
-        options: [
-            { label: "Product", value: "product" },
-            { label: "Service", value: "service" },
-        ],
-        placeholder: "Category Type",
-    },
-]}
+                filters={[
+                    {
+                        key: "categoryType",
+                        value: categoryType,
+                        onChange: handleCategory,
+                        options: [
+                            { label: "Product", value: "product" },
+                            { label: "Service", value: "service" },
+                        ],
+                        placeholder: "Category Type",
+                    },
+                ]}
             />
 
             {/* ERROR */}
@@ -144,7 +151,7 @@ const CategoriesList = () => {
             {/* TABLE */}
 
             <ReusableTable
-                columns={categoryColumns}
+                columns={columns}
                 data={filteredData}
                 loading={loading}
             />
@@ -157,7 +164,7 @@ const CategoriesList = () => {
                 onPageChange={handlePageChange}
             />
 
-            {/* MODAL */}
+            {/* ADD / EDIT MODAL */}
 
             <CategoryModal
                 isOpen={showCategoryModal}
@@ -165,6 +172,23 @@ const CategoriesList = () => {
                 onSave={handleSaveCategory}
                 categories={categories}
                 parentCategories={parentCategories}
+                initialData={editingCategory}
+                mode={editingCategory ? "edit" : "add"}
+            />
+
+            {/* DELETE MODAL */}
+
+            <DeleteConfirmModal
+                isOpen={!!deleteTarget}
+                title="Delete Category"
+                message={
+                    deleteTarget
+                        ? `Are you sure you want to delete "${deleteTarget.category_name}"? This action cannot be undone.`
+                        : ""
+                }
+                loading={deleteLoading}
+                onCancel={handleCancelDelete}
+                onConfirm={handleConfirmDelete}
             />
 
         </div>
