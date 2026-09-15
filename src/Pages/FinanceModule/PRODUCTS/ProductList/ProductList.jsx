@@ -96,20 +96,12 @@ const ProductList = () => {
         handleType,
         handleStockStatus,
         handlePageChange,
+            loadProducts,
     } = useProductList();
 
-    const refreshList = () => {
-        dispatch(
-            getProducts({
-                page: currentPage,
-                page_size: 10,
-                search: search.trim(),
-            })
-        );
-        // Single call refreshes both the table
-        // and the stats cards (kpi comes from
-        // the same response).
-    };
+   const refreshList = () => {
+    loadProducts();
+};
 
     const handleOpenAddModal = () => {
         setEditingProduct(null);
