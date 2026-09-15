@@ -14,7 +14,7 @@ export const getProductColumns = ({ onEdit, onDelete }) => [
         header: "Type",
     },
     {
-        accessor: "category",
+        accessor: "category_name",
         header: "Category",
     },
     {

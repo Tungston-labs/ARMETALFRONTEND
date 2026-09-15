@@ -1,5 +1,8 @@
 import { Route } from "react-router-dom";
-import CategoriesList from "../Pages/FinanceModule/PRODUCTS/Categories/CategoriesList";
+
+import Warehouse from "../Pages/FinanceModule/PRODUCTS/Warehouse/Warehouselist.jsx";
+import WarehouseDetails from "../Pages/FinanceModule/PRODUCTS/Warehouse/WarehouseDetails.jsx";
+import InventoryList from "../Pages/FinanceModule/PRODUCTS/Inventory/Inventorylist.jsx";
 import ProductList from "../Pages/FinanceModule/PRODUCTS/ProductList/ProductList";
 import CustomerList from "../Pages/FinanceModule/SALES/Customer/CustomerList";
 import Overview from "../Pages/FinanceModule/SALES/Customer/Overview/Overview";
@@ -13,6 +16,8 @@ import Invoices from "../Pages/FinanceModule/SALES/Customer/Invoices/Invoices";
 import SalesOrder from "../Pages/FinanceModule/SALES/SalesOrders/SalesOrder";
 import SalesInvoices from "../Pages/FinanceModule/SALES/Invoices/SalesInvoices";
 import AddingInvoice from '../Pages/FinanceModule/SALES/Invoices/AddingInvoice/AddingInvoice'
+import CategoriesList from "../Pages/FinanceModule/PRODUCTS/Categories/CategoriesList";
+
 const FinanceRoutes = () => {
   return (
     <>
@@ -37,6 +42,11 @@ const FinanceRoutes = () => {
             <Route path="sales/orders" element={<SalesOrder />} />
             <Route path="sales/invoices" element={<SalesInvoices />} />
              <Route path="sales/invoices/adding" element={<AddingInvoice />} />
+      <Route path="Warehouse-List" element={<Warehouse />} />
+
+      <Route path="warehouse/:id" element={<WarehouseDetails />} />
+
+      <Route path="Inventory-List" element={<InventoryList />} />
     </>
   );
 };
