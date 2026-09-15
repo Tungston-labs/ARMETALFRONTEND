@@ -17,6 +17,7 @@ import salaryIncrementReducer from "../Redux/salaryIncrementSlice";
 import warehouseReducer from "../Redux/warehouseSlice";
 import categoryReducer from "./finance/categorySlice";
 import productReducer from "./finance/ProductSlice";
+import quotationReducer from "./quotationSlice";
 
 // =====================================================
 // INVENTORY
@@ -74,6 +75,7 @@ export const store = configureStore({
     // =================================================
 
     finance: financeReducer,
+    quotation: quotationReducer,
     salaryIncrement: salaryIncrementReducer,
 
     // =================================================

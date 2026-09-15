@@ -2,23 +2,23 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 
 import { useDispatch, useSelector } from "react-redux";
 
-import ReusableTable from "../../../Components/ReusableTable/ReusableTable";
-import ReusablePagination from "../../../Components/Pagination/ReusablePagination";
+import ReusableTable from "../../../../Components/ReusableTable/ReusableTable";
+import ReusablePagination from "../../../../Components/Pagination/ReusablePagination";
 
-import ReusableFilter from "../../../Components/ReusableTable/ReusableFilter";
-import ReusableHeader from "../../../Components/ReusableTable/ReusableHeader";
-import { HeaderButton } from "../../../Components/ReusableTable/ReusableHeader.styles";
+import ReusableFilter from "../../../../Components/ReusableTable/ReusableFilter";
+import ReusableHeader from "../../../../Components/ReusableTable/ReusableHeader";
+import { HeaderButton } from "../../../../Components/ReusableTable/ReusableHeader.styles";
 
 import { FiDownload } from "react-icons/fi";
 
-import StockAdjustmentModal from "../../../Components/InventoryModal/InventoryModal";
+import StockAdjustmentModal from "../../../../Components/InventoryModal/InventoryModal";
 
-import { fetchInventory } from "../../../Redux/inventorySlice";
-import { getCategories } from "../../../Redux/finance/categorySlice";
-import { getWarehouses } from "../../../services/warehouseService";
-import { fetchProducts } from "../../../services/finance/productServices";
+import { fetchInventory } from "../../../../Redux/inventorySlice";
+import { getCategories } from "../../../../Redux/finance/categorySlice";
+import { getWarehouses } from "../../../../services/warehouseService";
+import { fetchProducts } from "../../../../services/finance/productServices";
 
-import { inventoryColumns } from "../../../Components/ReusableTable/inventoryColumns.jsx";
+import { inventoryColumns } from "../../../../Components/ReusableTable/inventoryColumns.jsx";
 
 const InventoryList = () => {
   const dispatch = useDispatch();
