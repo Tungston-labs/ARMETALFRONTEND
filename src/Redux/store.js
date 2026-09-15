@@ -17,25 +17,13 @@ import salaryIncrementReducer from "../Redux/salaryIncrementSlice";
 import warehouseReducer from "../Redux/warehouseSlice";
 import categoryReducer from "./finance/categorySlice";
 import productReducer from "./finance/ProductSlice";
-
-// =====================================================
-// INVENTORY
-// =====================================================
-
+import customerReducer from "./finance/CustomerSlice";
 import inventoryReducer from "../Redux/inventorySlice";
 
 export const store = configureStore({
   reducer: {
-    // =================================================
-    // AUTH
-    // =================================================
 
     auth: authReducer,
-
-    // =================================================
-    // HR
-    // =================================================
-
     departments: departmentReducer,
     holidays: holidayReducer,
     superAdmin: superAdminReducer,
@@ -44,60 +32,17 @@ export const store = configureStore({
     leave: leaveReducer,
     attendance: attendanceReducer,
     payroll: payrollReducer,
-
-    // =================================================
-    // EMPLOYEES
-    // =================================================
-
     employees: employeeReducer,
-
-    // =================================================
-    // DASHBOARD
-    // =================================================
-
     dashboard: dashboardReducer,
-
-    // =================================================
-    // PROJECTS / FIELD SHIFT
-    // =================================================
-
     projects: projectReducer,
-
-    // =================================================
-    // COMPANY
-    // =================================================
-
     company: companyReducer,
-
-    // =================================================
-    // FINANCE
-    // =================================================
-
     finance: financeReducer,
     salaryIncrement: salaryIncrementReducer,
 
-    // =================================================
-    // WAREHOUSE
-    // =================================================
-
-    warehouse: warehouseReducer,
-
-    // =================================================
-    // CATEGORY
-    // =================================================
-
     category: categoryReducer,
-
-    // =================================================
-    // PRODUCT
-    // =================================================
-
     product: productReducer,
-
-    // =================================================
-    // INVENTORY
-    // =================================================
-
+    customer: customerReducer,
+    warehouse: warehouseReducer,
     inventory: inventoryReducer,
   },
 });

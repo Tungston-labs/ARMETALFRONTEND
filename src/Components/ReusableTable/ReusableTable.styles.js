@@ -100,9 +100,9 @@ export const Th = styled.th`
   background: #f78926;
   color: white;
 
-  padding: 14px;
+  padding: 14px 8px;
 
-  text-align: center;
+  text-align: left;
 
   font-size: 14px;
   font-weight: 600;
@@ -127,10 +127,10 @@ export const Th = styled.th`
 ========================================================= */
 
 export const Td = styled.td`
-  padding: 10px 15px;
+  padding: 10px 8px;
 
   border-bottom: 1px solid ${colors.border};
-  text-align: center;
+  text-align: left;
   white-space: nowrap;
 
   font-size: 14px;

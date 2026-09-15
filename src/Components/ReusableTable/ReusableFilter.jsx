@@ -15,12 +15,14 @@ import {
   MenuItem,
   MenuHeader,
   MenuStatusItem,
+  FilterButton,
 } from "./ReusableFilter.styles";
 
 import {
   FiSearch,
   FiMinus,
   FiChevronDown,
+  FiFilter,
 } from "react-icons/fi";
 
 const ReusableFilter = ({
@@ -66,6 +68,11 @@ const ReusableFilter = ({
   bulkStatusOptions = [],
   onBulkStatusChange,
 
+  // ================= FILTER BUTTON =================
+  showFilterButton = false,
+  filterButtonText = "Filter",
+  onFilterClick,
+
   // ================= RIGHT ACTION =================
   rightAction = null,
   rightButton = null,
@@ -107,8 +114,8 @@ const ReusableFilter = ({
 
     const next = selectedMoreOptions.includes(value)
       ? selectedMoreOptions.filter(
-        (item) => item !== value
-      )
+          (item) => item !== value
+        )
       : [...selectedMoreOptions, value];
 
     onMoreOptionsChange(next);
@@ -307,7 +314,23 @@ const ReusableFilter = ({
             }
           />
         )}
+
+        {/* ================= RIGHT BUTTON ================= */}
+
         {rightButton && rightButton}
+
+        {/* ================= FILTER BUTTON ================= */}
+
+        {showFilterButton && (
+          <FilterButton
+            type="button"
+            onClick={onFilterClick}
+          >
+            <FiFilter />
+            <span>{filterButtonText}</span>
+          </FilterButton>
+        )}
+
         {/* ================= CUSTOM ACTION ================= */}
 
         {rightAction}
@@ -384,7 +407,6 @@ const ReusableFilter = ({
         )}
 
       </RightSection>
-
     </FilterWrapper>
   );
 };

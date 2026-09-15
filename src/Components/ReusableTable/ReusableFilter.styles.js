@@ -521,3 +521,53 @@ export const MenuStatusItem = styled.button`
     font-size: 13px;
   }
 `;
+
+export const FilterButton = styled.button`
+  height: 38px;
+  min-width: 90px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+
+  padding: 0 14px;
+
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+
+  background: #ffffff;
+  color: #374151;
+
+  font-size: 13px;
+  font-weight: 500;
+
+  cursor: pointer;
+
+  transition: all 0.2s ease;
+
+  svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  &:hover {
+    border-color: #f78926;
+    color: #f78926;
+    background: #fff8f2;
+  }
+
+  &:active {
+    transform: scale(0.98);
+  }
+
+  @media (max-width: 768px) {
+    min-width: 38px;
+    width: 38px;
+    padding: 0;
+
+    span {
+      display: none;
+    }
+  }
+`;

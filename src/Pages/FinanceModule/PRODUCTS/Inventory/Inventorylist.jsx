@@ -1,21 +1,15 @@
 import React, { useCallback, useEffect, useState } from "react";
 
 import { useDispatch, useSelector } from "react-redux";
-
-import ReusableTable from "../../../Components/ReusableTable/ReusableTable";
-import ReusablePagination from "../../../Components/Pagination/ReusablePagination";
-
-import ReusableFilter from "../../../Components/ReusableTable/ReusableFilter";
-import ReusableHeader from "../../../Components/ReusableTable/ReusableHeader";
-import { HeaderButton } from "../../../Components/ReusableTable/ReusableHeader.styles";
-
 import { FiDownload } from "react-icons/fi";
-
-import StockAdjustmentModal from "../../../Components/InventoryModal/InventoryModal";
-
-import { fetchInventory } from "../../../Redux/inventorySlice";
-
-import { inventoryColumns } from "../../../Components/ReusableTable/inventoryColumns.jsx";
+import StockAdjustmentModal from "../../../../Components/InventoryModal/InventoryModal.jsx";
+import { fetchInventory } from "../../../../Redux/inventorySlice.js";
+import { inventoryColumns } from "../../../../Components/ReusableTable/inventoryColumns.jsx";
+import ReusableHeader from "../../../../Components/ReusableTable/ReusableHeader.jsx";
+import ReusableFilter from "../../../../Components/ReusableTable/ReusableFilter.jsx";
+import ReusableTable from "../../../../Components/ReusableTable/ReusableTable.jsx";
+import ReusablePagination from "../../../../Components/Pagination/ReusablePagination.jsx";
+import { HeaderButton } from "../../../../Components/ReusableTable/ReusableHeader.styles.js";
 
 const InventoryList = () => {
   const dispatch = useDispatch();
