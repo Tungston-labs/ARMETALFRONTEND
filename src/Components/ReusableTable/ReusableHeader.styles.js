@@ -233,3 +233,19 @@ export const HeaderButton = styled.button`
     width: 100%;
   }
 `;
+export const Subtitle = styled.p`
+  font-size: 13px;
+  margin: 2px 0 0;
+`;
+
+export const Badge = styled.span`
+  padding: 2px 10px;
+  border-radius:5px;
+  font-size: 12px;
+  font-weight: 500;
+  margin-left: 8px;
+  ${({ $variant }) =>
+    $variant === "success"
+      ? `background: #ecfdf3; color: #03AC17; border: 1px solid #a6f4c5;`
+      : `background: #f2f4f7; color: #667085; border: 1px solid #d0d5dd;`}
+`;
