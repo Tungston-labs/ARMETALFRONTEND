@@ -13,6 +13,7 @@ import Invoices from "../Pages/FinanceModule/SALES/Customer/Invoices/Invoices";
 import SalesOrder from "../Pages/FinanceModule/SALES/SalesOrders/SalesOrder";
 import SalesInvoices from "../Pages/FinanceModule/SALES/Invoices/SalesInvoices";
 import AddingInvoice from '../Pages/FinanceModule/SALES/Invoices/AddingInvoice/AddingInvoice'
+import RecurringBilling from "../Pages/FinanceModule/SALES/Recurring Billing/RecurringBilling";
 const FinanceRoutes = () => {
   return (
     <>
@@ -37,6 +38,7 @@ const FinanceRoutes = () => {
             <Route path="sales/orders" element={<SalesOrder />} />
             <Route path="sales/invoices" element={<SalesInvoices />} />
              <Route path="sales/invoices/adding" element={<AddingInvoice />} />
+                <Route path="sales/recurring-billing" element={<RecurringBilling />} />
     </>
   );
 };
