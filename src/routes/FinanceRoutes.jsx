@@ -10,7 +10,9 @@ import Ledger from "../Pages/FinanceModule/SALES/Customer/Ledger/Ledger";
 import CreditNotes from "../Pages/FinanceModule/SALES/Customer/CreditNotes/CreditNotes";
 import CompanyLayout from "../Pages/FinanceModule/SALES/Customer/layout/CompanyLayout";
 import Invoices from "../Pages/FinanceModule/SALES/Customer/Invoices/Invoices";
-
+import SalesOrder from "../Pages/FinanceModule/SALES/SalesOrders/SalesOrder";
+import SalesInvoices from "../Pages/FinanceModule/SALES/Invoices/SalesInvoices";
+import AddingInvoice from '../Pages/FinanceModule/SALES/Invoices/AddingInvoice/AddingInvoice'
 const FinanceRoutes = () => {
   return (
     <>
@@ -20,7 +22,7 @@ const FinanceRoutes = () => {
       {/* customer list (table of all customers) */}
       <Route path="sales/customers" element={<CustomerList />} />
 
-      {/* customer detail shell — nested under the customer's own id */}
+
       <Route path="sales/customers/:customerId" element={<CompanyLayout />}>
         <Route index element={<Overview />} />
         <Route path="overview" element={<Overview />} />
@@ -31,6 +33,10 @@ const FinanceRoutes = () => {
         <Route path="ledger" element={<Ledger />} />
         <Route path="credit-notes" element={<CreditNotes />} />
       </Route>
+
+            <Route path="sales/orders" element={<SalesOrder />} />
+            <Route path="sales/invoices" element={<SalesInvoices />} />
+             <Route path="sales/invoices/adding" element={<AddingInvoice />} />
     </>
   );
 };

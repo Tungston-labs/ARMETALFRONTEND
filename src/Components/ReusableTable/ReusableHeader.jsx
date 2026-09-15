@@ -1,4 +1,6 @@
+// ReusableHeader.jsx
 import React from "react";
+
 import {
   HeaderContainer,
   LeftSection,
@@ -11,14 +13,18 @@ import {
   BackButton,
   HomeIcon,
   Separator,
+  Subtitle,
+  Badge,
 } from "./ReusableHeader.styles";
 
-import { IoArrowBack } from "react-icons/io5";
-import { IoHomeOutline } from "react-icons/io5";
+import { IoArrowBack, IoHomeOutline } from "react-icons/io5";
 import { useNavigate } from "react-router-dom";
 
 const ReusableHeader = ({
   title,
+  subtitle,
+  badge,
+  badgeVariant = "success",
   breadcrumbs = [],
   buttonText,
   onButtonClick,
@@ -36,6 +42,29 @@ const ReusableHeader = ({
     }
   };
 
+  const formatDate = (date) => {
+    if (!date) return "";
+
+    const parsedDate = new Date(date);
+
+    if (Number.isNaN(parsedDate.getTime())) {
+      return date;
+    }
+
+    return parsedDate.toLocaleDateString("en-GB", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
+  };
+
+  const formattedSubtitle = subtitle
+    ? subtitle.replace(
+        /Created On:\s*([^\s,]+)/,
+        (_, date) => `Created On: ${formatDate(date)}`
+      )
+    : "";
+
   return (
     <HeaderContainer>
       <LeftSection>
@@ -47,30 +76,47 @@ const ReusableHeader = ({
           )}
 
           <PageTitle>{title}</PageTitle>
+
+          
         </TitleRow>
 
-        <Breadcrumb>
-          {/* Home */}
-          <BreadcrumbItem>
-            <HomeIcon>
-              <IoHomeOutline />
-            </HomeIcon>
-            <span>Dashboard</span>
-          </BreadcrumbItem>
+        {formattedSubtitle && (
+          <Subtitle>
+            {formattedSubtitle}
+            {badge && (
+            <Badge $variant={badgeVariant}>
+              {badge}
+            </Badge>
+          )}
+          </Subtitle>
+          
+        )}
 
-          {/* Breadcrumb items */}
-          {breadcrumbs.map((item, index) => (
-            <React.Fragment key={index}>
-              <Separator>›</Separator>
+        {breadcrumbs.length > 0 && (
+          <Breadcrumb>
+            <BreadcrumbItem>
+              <HomeIcon>
+                <IoHomeOutline />
+              </HomeIcon>
 
-              <BreadcrumbItem
-                $active={index === breadcrumbs.length - 1}
-              >
-                {item}
-              </BreadcrumbItem>
-            </React.Fragment>
-          ))}
-        </Breadcrumb>
+              <span>Dashboard</span>
+            </BreadcrumbItem>
+
+            {breadcrumbs.map((item, index) => (
+              <React.Fragment key={index}>
+                <Separator>›</Separator>
+
+                <BreadcrumbItem
+                  $active={
+                    index === breadcrumbs.length - 1
+                  }
+                >
+                  {item}
+                </BreadcrumbItem>
+              </React.Fragment>
+            ))}
+          </Breadcrumb>
+        )}
       </LeftSection>
 
       <RightSection>

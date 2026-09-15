@@ -2,11 +2,12 @@ import styled from "styled-components";
 
 export const HeaderWrapper = styled.div`
   width: 100%;
+  margin-bottom: 15px;
 `;
 
 export const Tabs = styled.div`
   width: 100%;
-  height: 38px;
+  height: 42px;
 
   display: flex;
   align-items: center;

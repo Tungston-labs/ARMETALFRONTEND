@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
+import { FiPlus, FiFileText, FiMoreVertical, FiEdit2, FiTrash2 } from "react-icons/fi";
 
 import ReusableTable from "../../../../Components/ReusableTable/ReusableTable";
 import ReusablePagination from "../../../../Components/Pagination/ReusablePagination";
@@ -16,8 +18,19 @@ import {
     removeCustomer,
 } from "../../../../Redux/finance/CustomerSlice";
 
+import {
+    LinkName,
+    BalanceAmount,
+    ActionsCell,
+    ActionButton,
+    MenuWrapper,
+    KebabButton,
+    CircleIconButton,
+} from "./CustomerList.styles";
+
 const CustomerList = () => {
     const dispatch = useDispatch();
+    const navigate = useNavigate();
 
     const {
         customers,
@@ -37,6 +50,27 @@ const CustomerList = () => {
 
     const [editingCustomer, setEditingCustomer] =
         useState(null);
+
+    // Which row's info dropdown (Edit / Delete) is currently open.
+    // Only one open at a time; clicking anywhere outside a menu
+    // wrapper (identified by data-menu-root) closes it.
+    const [openMenuId, setOpenMenuId] = useState(null);
+
+    useEffect(() => {
+        const handleClickOutside = (e) => {
+            if (!e.target.closest("[data-menu-root]")) {
+                setOpenMenuId(null);
+            }
+        };
+
+        document.addEventListener("mousedown", handleClickOutside);
+        return () =>
+            document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
+
+    const toggleActionsMenu = (rowId) => {
+        setOpenMenuId((prev) => (prev === rowId ? null : rowId));
+    };
 
     const rowsPerPage = 10;
 
@@ -163,20 +197,142 @@ const CustomerList = () => {
     };
 
     // ============================================================
+    // ROW ACTION HANDLERS (Invoice / Ledger / Overview)
+    // ============================================================
+
+    // These navigate relative to the current "sales/customers" route,
+    // landing on the matching nested route under
+    // "sales/customers/:customerId" defined in FinanceRoutes.
+    const handleCreateInvoice = (customer) => {
+        if (!customer?.id) return;
+        navigate(`${customer.id}/invoices`);
+    };
+
+    const handleViewLedger = (customer) => {
+        if (!customer?.id) return;
+        navigate(`${customer.id}/ledger`);
+    };
+
+    const handleViewOverview = (customer) => {
+        if (!customer?.id) return;
+        navigate(`${customer.id}/overview`);
+    };
+
+    // ============================================================
     // TABLE COLUMNS
     // ============================================================
 
- const customerColumns = [
-    { accessor: "customer_id", header: "Code" },
-    { accessor: "customer_name", header: "Customer Name" },
-    { accessor: "credit_limit", header: "Credit Limit" },
-    { accessor: "industry_name", header: "Total Invoices" },
-    { accessor: "currency_name", header: "Payments Received" },
-    { accessor: "payment_term_name", header: "Balance" },
-    { accessor: "client_status_name", header: "Outstanding Days" },
-    { accessor: "credit_limit", header: "Last Payment" },
-    { accessor: "opening_balance", header: "Actions" },
-];
+    // Widths are chosen so the row adds up to 100%: short/fixed content
+    // (Code, Outstanding Days, dates) gets just enough room, longer money
+    // columns get more, and Actions gets a fixed px width big enough for
+    // its three buttons so it never gets squeezed by the others.
+    const customerColumns = [
+        { accessor: "customer_id", header: "Code", width: "9%" },
+        {
+            accessor: "customer_name",
+            header: "Customer Name",
+            width: "13%",
+            render: (row) => (
+                <LinkName
+                    type="button"
+                    onClick={() => handleViewOverview(row)}
+                >
+                    {row.customer_name}
+                </LinkName>
+            ),
+        },
+        { accessor: "credit_limit", header: "Credit Limit", width: "10%" },
+        { accessor: "total_invoices", header: "Total Invoices", width: "10%" },
+        {
+            accessor: "payments_received",
+            header: "Payments Received",
+            width: "10%",
+        },
+        {
+            accessor: "balance",
+            header: "Balance",
+            width: "10%",
+            render: (row) => (
+                <BalanceAmount $negative={Number(row.balance) > 0}>
+                    {row.balance}
+                </BalanceAmount>
+            ),
+        },
+        {
+            accessor: "outstanding_days",
+            header: "Outstanding Days",
+            width: "10%",
+        },
+        { accessor: "last_payment_date", header: "Last Payment", width: "9%" },
+        {
+            accessor: "actions",
+            header: "Actions",
+            width: "300px",
+            render: (row) => {
+                const rowId = row.id ?? row.customer_id;
+                const isMenuOpen = openMenuId === rowId;
+
+                return (
+                    <ActionsCell>
+                        <ActionButton
+                            type="button"
+                            onClick={() => handleCreateInvoice(row)}
+                        >
+                            <FiPlus size={13} />
+                            Invoice
+                        </ActionButton>
+
+                        <ActionButton
+                            type="button"
+                            onClick={() => handleViewLedger(row)}
+                        >
+                            <FiFileText size={13} />
+                            Ledger
+                        </ActionButton>
+
+                        <MenuWrapper data-menu-root>
+                            <KebabButton
+                                type="button"
+                                onClick={() => toggleActionsMenu(rowId)}
+                                aria-label="More actions"
+                                aria-expanded={isMenuOpen}
+                            >
+                                <FiMoreVertical size={15} />
+                            </KebabButton>
+
+                            {isMenuOpen && (
+                                <>
+                                    <CircleIconButton
+                                        type="button"
+                                        $variant="edit"
+                                        onClick={() => {
+                                            setOpenMenuId(null);
+                                            handleEditCustomer(row);
+                                        }}
+                                        aria-label="Edit customer"
+                                    >
+                                        <FiEdit2 size={13} />
+                                    </CircleIconButton>
+
+                                    <CircleIconButton
+                                        type="button"
+                                        $variant="delete"
+                                        onClick={() => {
+                                            setOpenMenuId(null);
+                                            handleDeleteCustomer(row);
+                                        }}
+                                        aria-label="Delete customer"
+                                    >
+                                        <FiTrash2 size={13} />
+                                    </CircleIconButton>
+                                </>
+                            )}
+                        </MenuWrapper>
+                    </ActionsCell>
+                );
+            },
+        },
+    ];
 
     return (
         <div style={{ padding: 20 }}>

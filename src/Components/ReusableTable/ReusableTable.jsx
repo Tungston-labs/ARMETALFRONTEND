@@ -86,6 +86,25 @@ const ReusableTable = ({
 
       <TableScrollContainer>
         <StyledTable>
+          {/* StyledTable sets table-layout: fixed and a min-width in
+              ReusableTable.styles.js. With fixed layout, a browser with
+              no explicit widths just splits that min-width evenly across
+              every column — that's what was squeezing Actions down to
+              the same width as Code or Outstanding Days. This colgroup
+              gives each column an explicit share driven by column.width,
+              so short columns stay short and Actions gets real room.
+              THIS is the piece that makes column.width actually do
+              anything — without it, setting width on a column is a
+              no-op. */}
+          <colgroup>
+            {columns.map((column) => (
+              <col
+                key={column.accessor}
+                style={{ width: column.width || "auto" }}
+              />
+            ))}
+          </colgroup>
+
           <Thead>
             <Tr>
               {columns.map((column) => (
@@ -156,7 +175,27 @@ const ReusableTable = ({
                   }
                 >
                   {columns.map((column) => (
-                    <Td key={column.accessor}>
+                    <Td
+                      key={column.accessor}
+                      // Base Td styles clip every cell with nowrap +
+                      // overflow: hidden, which is right for plain text
+                      // but was also crushing custom render() content
+                      // (buttons, links). Override just that here.
+                      style={
+                        column.render
+                          ? {
+                              whiteSpace: "normal",
+                              overflow: "visible",
+                              textOverflow: "clip",
+                            }
+                          : undefined
+                      }
+                      title={
+                        column.render
+                          ? undefined
+                          : String(row[column.accessor] ?? "")
+                      }
+                    >
                       {column.render
                         ? column.render(row, index)
                         : row[column.accessor]}

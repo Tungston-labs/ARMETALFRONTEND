@@ -72,11 +72,6 @@ const ProductList = () => {
                 page_size: 100,
             })
         );
-        // NOTE: KPI is no longer fetched separately here.
-        // The product list endpoint (getProducts, called
-        // inside useProductList) already returns the KPI
-        // fields in the same response, so a dedicated
-        // kpi/ request is unnecessary.
     }, [dispatch]);
 
     const {
@@ -106,9 +101,6 @@ const ProductList = () => {
                 search: search.trim(),
             })
         );
-        // Single call refreshes both the table
-        // and the stats cards (kpi comes from
-        // the same response).
     };
 
     const handleOpenAddModal = () => {
