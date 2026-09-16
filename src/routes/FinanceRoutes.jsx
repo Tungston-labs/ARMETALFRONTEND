@@ -15,18 +15,20 @@ import CompanyLayout from "../Pages/FinanceModule/SALES/Customer/layout/CompanyL
 import Invoices from "../Pages/FinanceModule/SALES/Customer/Invoices/Invoices";
 import SalesOrder from "../Pages/FinanceModule/SALES/SalesOrders/SalesOrder";
 import SalesInvoices from "../Pages/FinanceModule/SALES/Invoices/SalesInvoices";
-import AddingInvoice from '../Pages/FinanceModule/SALES/Invoices/AddingInvoice/AddingInvoice'
 import CategoriesList from "../Pages/FinanceModule/PRODUCTS/Categories/CategoriesList";
+import CustomerLedger from "../Pages/FinanceModule/SALES/CustomerLedger/CustomerLedger.jsx";
 
 const FinanceRoutes = () => {
   return (
     <>
       <Route path="Categories-List" element={<CategoriesList />} />
       <Route path="Product-List" element={<ProductList />} />
+      <Route path="Warehouse-List" element={<Warehouse />} />
+      <Route path="warehouse/:id" element={<WarehouseDetails />} />
+      <Route path="Inventory-List" element={<InventoryList />} />
 
       {/* customer list (table of all customers) */}
       <Route path="sales/customers" element={<CustomerList />} />
-
 
       <Route path="sales/customers/:customerId" element={<CompanyLayout />}>
         <Route index element={<Overview />} />
@@ -39,14 +41,12 @@ const FinanceRoutes = () => {
         <Route path="credit-notes" element={<CreditNotes />} />
       </Route>
 
-            <Route path="sales/orders" element={<SalesOrder />} />
-            <Route path="sales/invoices" element={<SalesInvoices />} />
-             <Route path="sales/invoices/adding" element={<AddingInvoice />} />
-      <Route path="Warehouse-List" element={<Warehouse />} />
+      <Route path="sales/orders" element={<SalesOrder />} />
+      <Route path="sales/invoices" element={<SalesInvoices />} />
+      <Route path="sales/customer-ledger" element={<CustomerLedger />} />
 
-      <Route path="warehouse/:id" element={<WarehouseDetails />} />
 
-      <Route path="Inventory-List" element={<InventoryList />} />
+
     </>
   );
 };

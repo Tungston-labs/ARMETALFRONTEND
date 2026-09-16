@@ -4,7 +4,7 @@ import userEvent from "@testing-library/user-event";
 import "@testing-library/jest-dom";
 import { describe, it, expect, beforeEach, vi } from "vitest";
 
-import AddProductModal from "../../Pages/FinanceModule/PRODUCTS/ProductList/modal/AddProductModal";
+import AddProductModal from "../../../Pages/FinanceModule/PRODUCTS/ProductList/modal/AddProductModal";
 
 // ---- react-redux ----
 const { mockDispatch, mockUseSelector } = vi.hoisted(() => ({
@@ -21,7 +21,7 @@ vi.mock("../../Redux/finance/categorySlice", () => ({
     getCategories: vi.fn((params) => ({ type: "getCategories", payload: params })),
 }));
 
-import { getCategories } from "../../Redux/finance/categorySlice";
+import { getCategories } from "../../../Redux/finance/categorySlice";
 
 // ---- styled-components stand-ins ----
 // Real behavior lives in JSX structure/logic, not styling, so swap in plain

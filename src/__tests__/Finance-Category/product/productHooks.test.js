@@ -1,7 +1,7 @@
 import { renderHook, act } from "@testing-library/react";
 import { describe, it, expect, beforeEach, vi } from "vitest";
 
-import { useProductList } from "../../Pages/FinanceModule/PRODUCTS/ProductList/productHooks";
+import { useProductList } from "../../../Pages/FinanceModule/PRODUCTS/ProductList/productHooks";
 
 const { mockDispatch, mockUseSelector } = vi.hoisted(() => ({
     mockDispatch: vi.fn(),
@@ -31,7 +31,7 @@ const baseState = {
 };
 
 // Grab the mocked getProducts so we can inspect exactly what was passed to it.
-import { getProducts } from "../../Redux/finance/ProductSlice";
+import { getProducts } from "../../../Redux/finance/ProductSlice";
 
 const lastDispatchedParams = () => {
     const call = mockDispatch.mock.calls.at(-1);

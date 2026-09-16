@@ -4,8 +4,8 @@ import userEvent from "@testing-library/user-event";
 import "@testing-library/jest-dom";
 import { describe, it, expect, beforeEach, vi } from "vitest";
 
-import ProductList from "../../Pages/FinanceModule/PRODUCTS/ProductList/ProductList";
-import { useProductList } from "../../Pages/FinanceModule/PRODUCTS/ProductList/productHooks";
+import ProductList from "../../../Pages/FinanceModule/PRODUCTS/ProductList/ProductList";
+import { useProductList } from "../../../Pages/FinanceModule/PRODUCTS/ProductList/productHooks";
 
 // ---- react-redux: ProductList reads createLoading/updateLoading/deleteLoading
 // and categoryOptions via useSelector directly, and dispatches actions itself

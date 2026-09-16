@@ -4,7 +4,7 @@ import userEvent from "@testing-library/user-event";
 import "@testing-library/jest-dom";
 import { describe, it, expect, beforeEach, vi } from "vitest";
 
-import DeleteConfirmModal from "../../Pages/FinanceModule/PRODUCTS/ProductList/modal/DeleteConfirmModal";
+import DeleteConfirmModal from "../../../Pages/FinanceModule/PRODUCTS/ProductList/modal/DeleteConfirmModal";
 
 // ---- react-spinners ----
 // Swap ClipLoader for a plain marker so tests can assert on its presence

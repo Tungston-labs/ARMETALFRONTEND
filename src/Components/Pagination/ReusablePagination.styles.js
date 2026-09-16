@@ -2,7 +2,7 @@ import styled from "styled-components";
 
 export const PaginationWrapper = styled.div`
   display: flex;
-  justify-content: right;
+  justify-content: space-between;
   align-items: center;
   gap: 6px;
   flex-wrap: wrap;
@@ -12,13 +12,15 @@ export const PaginationWrapper = styled.div`
   background: #fff;
   padding: 16px 0;
   z-index: 10;
+ 
 `;
 
 export const TotalRecords = styled.span`
-  margin-right: auto;
   color: #374151;
   font-size: 13px;
   font-weight: 600;
+  margin-right: auto;
+  padding: 5px;
 `;
 
 export const ArrowButton = styled.button`
@@ -52,6 +54,7 @@ export const PageNumber = styled.button`
   height: 30px;
   border: 1px solid #dcdcdc;
   border-radius: 8px;
+
   background: ${({ $active }) => ($active ? "#2563eb" : "#fff")};
   color: ${({ $active }) => ($active ? "#fff" : "#333")};
 
