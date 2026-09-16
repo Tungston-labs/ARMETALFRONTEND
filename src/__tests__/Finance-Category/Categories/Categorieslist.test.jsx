@@ -4,8 +4,8 @@ import userEvent from "@testing-library/user-event";
 import "@testing-library/jest-dom";
 import { describe, it, expect, beforeEach, vi } from "vitest";
 
-import CategoriesList from "../../Pages/FinanceModule/PRODUCTS/Categories/CategoriesList";
-import { useCategoriesList } from "../../Pages/FinanceModule/PRODUCTS/Categories/useCategoriesList";
+import CategoriesList from "../../../Pages/FinanceModule/PRODUCTS/Categories/CategoriesList";
+import { useCategoriesList } from "../../../Pages/FinanceModule/PRODUCTS/Categories/useCategoriesList";
 
 // ---- Mock child pieces that aren't the concern of this test ----
 // Paths below are resolved relative to THIS test file and must point

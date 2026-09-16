@@ -1,7 +1,6 @@
 import React from "react";
 import {
   PaginationWrapper,
-  //   PageButton,
   PageNumber,
   Ellipsis,
   ArrowButton,
@@ -9,9 +8,15 @@ import {
 } from "./ReusablePagination.styles";
 import { FaAngleLeft, FaAngleRight } from "react-icons/fa";
 
-const ReusablePagination = ({ currentPage, totalPages, totalRecords, onPageChange }) => {
-  // Nothing to paginate — don't render anything until there's more than one page
-  if ((!totalPages || totalPages <= 1) && totalRecords === undefined) return null;
+const ReusablePagination = ({
+  currentPage,
+  totalPages,
+  totalRecords,
+  onPageChange,
+}) => {
+  if ((!totalPages || totalPages <= 1) && totalRecords === undefined) {
+    return null;
+  }
 
   const getPages = () => {
     const pages = [];
@@ -47,38 +52,43 @@ const ReusablePagination = ({ currentPage, totalPages, totalRecords, onPageChang
 
   return (
     <PaginationWrapper>
+      {/* LEFT SIDE */}
       {totalRecords !== undefined && (
-        <TotalRecords>TOTAL RECORDS: {totalRecords}</TotalRecords>
+        <TotalRecords>
+          TOTAL RECORDS: {totalRecords}
+        </TotalRecords>
       )}
+
+      {/* RIGHT SIDE */}
       {totalPages > 1 && (
         <>
-      <ArrowButton
-        disabled={currentPage === 1}
-        onClick={() => onPageChange(currentPage - 1)}
-      >
-        <FaAngleLeft />
-      </ArrowButton>
-
-      {getPages().map((page, index) =>
-        page === "..." ? (
-          <Ellipsis key={index}>...</Ellipsis>
-        ) : (
-          <PageNumber
-            key={page}
-            $active={currentPage === page}
-            onClick={() => onPageChange(page)}
+          <ArrowButton
+            disabled={currentPage === 1}
+            onClick={() => onPageChange(currentPage - 1)}
           >
-            {page}
-          </PageNumber>
-        )
-      )}
+            <FaAngleLeft />
+          </ArrowButton>
 
-      <ArrowButton
-        disabled={currentPage === totalPages}
-        onClick={() => onPageChange(currentPage + 1)}
-      >
-        <FaAngleRight />
-      </ArrowButton>
+          {getPages().map((page, index) =>
+            page === "..." ? (
+              <Ellipsis key={index}>...</Ellipsis>
+            ) : (
+              <PageNumber
+                key={page}
+                $active={currentPage === page}
+                onClick={() => onPageChange(page)}
+              >
+                {page}
+              </PageNumber>
+            )
+          )}
+
+          <ArrowButton
+            disabled={currentPage === totalPages}
+            onClick={() => onPageChange(currentPage + 1)}
+          >
+            <FaAngleRight />
+          </ArrowButton>
         </>
       )}
     </PaginationWrapper>
