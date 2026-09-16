@@ -59,31 +59,34 @@ export const useProductList = () => {
        returns KPI + pagination)
     ========================= */
 
-    const loadProducts = useCallback(() => {
-        dispatch(
-            getProducts({
-                page: currentPage,
-                page_size: rowsPerPage,
-                search: search.trim(),
+ const loadProducts = useCallback(() => {
+    const params = {
+        page: currentPage,
+        page_size: rowsPerPage,
+    };
 
-                /*
-                 * IMPORTANT:
-                 * Your documented backend currently
-                 * supports search, ordering, page,
-                 * page_size.
-                 *
-                 * Don't send category/type/status/
-                 * stock_status unless backend supports
-                 * those query parameters.
-                 */
-            })
-        );
-    }, [
-        dispatch,
-        currentPage,
-        search,
-    ]);
+    if (search.trim()) params.search = search.trim();
+    if (category) params.category = category;
+    if (status) params.status = status.toLowerCase();       // "Active" -> "active"
+    if (type) params.product_type = type.toLowerCase();     // "Product" -> "product"
 
+    // Only send once the backend supports it:
+    // if (stockStatus) {
+    //     params.stock_status = stockStatus
+    //         .toLowerCase()
+    //         .replace(/\s+/g, "_");                        // "Out of Stock" -> "out_of_stock"
+    // }
+
+    dispatch(getProducts(params));
+}, [
+    dispatch,
+    currentPage,
+    search,
+    category,
+    status,
+    type,
+    stockStatus,
+]);
     /* =========================
        INITIAL LOAD / REFETCH
     ========================= */

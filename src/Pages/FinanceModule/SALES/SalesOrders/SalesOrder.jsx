@@ -78,7 +78,7 @@ const SalesOrder = () => {
         },
         {
             title: "Total Amount",
-            count: "SAR 0.00",
+            count: " 0.00",
             icon: <FiDollarSign />,
             backgroundColor: "#FFF4E5",
             iconColor: "#F59E0B",
