@@ -52,6 +52,7 @@ const defaultItem = () => ({
 
 const emptyForm = {
   invoiceNumber: "",
+  salesOrderRef: "",
   paymentStatus: "",
   from: { name: "", address: "", phone: "", email: "" },
   billTo: { client: "", address: "", phone: "", email: "" },
@@ -63,9 +64,12 @@ const emptyForm = {
 // Bridges the flat mock row shape (SalesInvoices.columns.jsx) into the
 // nested shape this form works with. Swap this out once a real
 // "get invoice detail by id" endpoint exists — items/from/payment
-// currently have no source data and are left at defaults.
+// currently have no source data and are left at defaults. so_ref
+// already exists on the mock rows (see SalesInvoices.columns.jsx),
+// so it maps straight through.
 const mapRowToFormData = (row) => ({
   invoiceNumber: row.invoice_number || "",
+  salesOrderRef: row.so_ref || "",
   invoiceDate: row.invoice_date || "",
   dueDate: row.due_date || "",
   paymentStatus: (row.payment_status || "").toLowerCase().includes("partial")
@@ -100,6 +104,7 @@ const AddingInvoice = () => {
   const notFound = isEditMode && !existingRow;
 
   const [invoiceNumber, setInvoiceNumber] = useState(initialData?.invoiceNumber || "");
+  const [salesOrderRef, setSalesOrderRef] = useState(initialData?.salesOrderRef || "");
   const [invoiceDate, setInvoiceDate] = useState(initialData?.invoiceDate || today);
   const [dueDate, setDueDate] = useState(initialData?.dueDate || "");
   const [paymentStatus, setPaymentStatus] = useState(initialData?.paymentStatus || "");
@@ -114,6 +119,7 @@ const AddingInvoice = () => {
     if (existingRow) {
       const mapped = mapRowToFormData(existingRow);
       setInvoiceNumber(mapped.invoiceNumber);
+      setSalesOrderRef(mapped.salesOrderRef);
       setInvoiceDate(mapped.invoiceDate);
       setDueDate(mapped.dueDate);
       setPaymentStatus(mapped.paymentStatus);
@@ -162,6 +168,7 @@ const AddingInvoice = () => {
     const payload = {
       ...(isEditMode ? { id } : {}),
       invoiceNumber,
+      salesOrderRef,
       invoiceDate,
       dueDate,
       paymentStatus,
@@ -179,26 +186,41 @@ const AddingInvoice = () => {
   if (notFound) {
     return (
       <InvoiceContainer>
-       <ReusableHeader
-  title={isEditMode ? "Edit Invoice" : "Generate New Invoice"}
-  breadcrumbs={["Sales", "Invoices"]}
-
-></ReusableHeader>
+        <ReusableHeader
+          title={isEditMode ? "Edit Invoice" : "Generate New Invoice"}
+          breadcrumbs={["Sales", "Invoices"]}
+          showBack
+          onBack={() => navigate("/sales/invoices")}
+        ></ReusableHeader>
+        <div style={{ padding: 20 }}>
+          No invoice found for id "{id}".{" "}
+          <button onClick={handleCancel}>Back to Invoices</button>
+        </div>
       </InvoiceContainer>
     );
   }
 
   return (
     <InvoiceContainer>
-     <ReusableHeader
-  title={isEditMode ? "Edit Invoice" : "Generate New Invoice"}
-  breadcrumbs={["Sales", "Invoices"]}
-  showBack
-  onBack={() => navigate("/sales/invoices")}
-></ReusableHeader>
+      <ReusableHeader
+        title={isEditMode ? "Edit Invoice" : "Generate New Invoice"}
+        breadcrumbs={["Sales", "Invoices"]}
+        showBack
+        onBack={() => navigate("/sales/invoices")}
+      ></ReusableHeader>
 
       <InvoiceForm>
         <FormGrid>
+          <FormGroup>
+            <Label>SALES ORDER REFERENCE</Label>
+            <Input
+              placeholder="S0 0123 - CHICKING"
+              value={salesOrderRef}
+              onChange={(e) => setSalesOrderRef(e.target.value)}
+              readOnly={isEditMode}
+            />
+          </FormGroup>
+
           <FormGroup>
             <Label>INVOICE NUMBER</Label>
             <Input
@@ -216,20 +238,6 @@ const AddingInvoice = () => {
                 type="date"
                 value={invoiceDate}
                 onChange={(e) => setInvoiceDate(e.target.value)}
-                readOnly={isEditMode}
-                disabled={isEditMode}
-              />
-            </CalendarInput>
-          </FormGroup>
-
-          <FormGroup>
-            <Label>DUE DATE</Label>
-            <CalendarInput>
-              <Input
-                type="date"
-                value={dueDate}
-                min={invoiceDate}
-                onChange={(e) => setDueDate(e.target.value)}
                 readOnly={isEditMode}
                 disabled={isEditMode}
               />
@@ -293,6 +301,7 @@ const AddingInvoice = () => {
               readOnly={isEditMode}
             />
           </FormGroup>
+
           <FormGroup>
             <Label>BILL TO</Label>
             <SelectWrapper>
@@ -350,10 +359,12 @@ const AddingInvoice = () => {
 
         <InvoiceItemsHeader>
           <SectionTitle>INVOICE ITEMS</SectionTitle>
-          <AddItemButton onClick={addItem}>
-            <FiPlus />
-            ADD ITEM
-          </AddItemButton>
+          {!isEditMode && (
+            <AddItemButton onClick={addItem}>
+              <FiPlus />
+              ADD ITEM
+            </AddItemButton>
+          )}
         </InvoiceItemsHeader>
 
         <InvoiceTableWrapper>
@@ -382,6 +393,7 @@ const AddingInvoice = () => {
                       placeholder="App Design"
                       value={item.service}
                       onChange={(e) => updateItem(item.id, "service", e.target.value)}
+                      readOnly={isEditMode}
                     />
                   </td>
                   <td>
@@ -389,48 +401,57 @@ const AddingInvoice = () => {
                       placeholder="Wireframe Of 15 Pages"
                       value={item.particular}
                       onChange={(e) => updateItem(item.id, "particular", e.target.value)}
+                      readOnly={isEditMode}
                     />
                   </td>
                   <td>
                     <input
                       value={item.qty}
                       onChange={(e) => updateItem(item.id, "qty", e.target.value)}
+                      readOnly={isEditMode}
                     />
                   </td>
                   <td>
                     <input
                       value={item.hsCode}
                       onChange={(e) => updateItem(item.id, "hsCode", e.target.value)}
+                      readOnly={isEditMode}
                     />
                   </td>
                   <td>
                     <input
                       value={item.rate}
                       onChange={(e) => updateItem(item.id, "rate", e.target.value)}
+                      readOnly={isEditMode}
                     />
                   </td>
                   <td>
                     <input
                       value={item.vat}
                       onChange={(e) => updateItem(item.id, "vat", e.target.value)}
+                      readOnly={isEditMode}
                     />
                   </td>
                   <td>
                     <input
                       value={item.vatAmount}
                       onChange={(e) => updateItem(item.id, "vatAmount", e.target.value)}
+                      readOnly={isEditMode}
                     />
                   </td>
                   <td>
                     <input
                       value={item.amount}
                       onChange={(e) => updateItem(item.id, "amount", e.target.value)}
+                      readOnly={isEditMode}
                     />
                   </td>
                   <td>
-                    <DeleteButton onClick={() => removeItem(item.id)}>
-                      <FiX />
-                    </DeleteButton>
+                    {!isEditMode && (
+                      <DeleteButton onClick={() => removeItem(item.id)}>
+                        <FiX />
+                      </DeleteButton>
+                    )}
                   </td>
                 </tr>
               ))}
