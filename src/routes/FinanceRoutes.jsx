@@ -14,7 +14,6 @@ import CreditNotes from "../Pages/FinanceModule/SALES/Customer/CreditNotes/Credi
 import CompanyLayout from "../Pages/FinanceModule/SALES/Customer/layout/CompanyLayout";
 import Invoices from "../Pages/FinanceModule/SALES/Customer/Invoices/Invoices";
 import SalesOrder from "../Pages/FinanceModule/SALES/SalesOrders/SalesOrder";
-import SalesInvoices from "../Pages/FinanceModule/SALES/Invoices/SalesInvoices";
 import CategoriesList from "../Pages/FinanceModule/PRODUCTS/Categories/CategoriesList";
 import CustomerLedger from "../Pages/FinanceModule/SALES/CustomerLedger/CustomerLedger.jsx";
 
@@ -42,7 +41,6 @@ const FinanceRoutes = () => {
       </Route>
 
       <Route path="sales/orders" element={<SalesOrder />} />
-      <Route path="sales/invoices" element={<SalesInvoices />} />
       <Route path="sales/customer-ledger" element={<CustomerLedger />} />
 
 
