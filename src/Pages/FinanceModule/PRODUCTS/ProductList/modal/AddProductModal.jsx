@@ -19,7 +19,7 @@ import {
 
 import { FiSave } from "react-icons/fi";
 
-import { getCategories } from "../../../../../Redux/finance/categorySlice";
+import { getCategories } from "../../../../../Redux/finance/Product/categorySlice";
 
 import { getWarehouses } from "../../../../../services/warehouseService";
 

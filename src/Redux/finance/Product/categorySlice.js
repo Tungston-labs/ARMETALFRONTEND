@@ -12,7 +12,7 @@ import {
   fetchParentCategories,
   fetchSubCategories,
   fetchCategorySummary,
-} from "../../services/finance/categoryServices";
+} from "../../../services/finance/Product/categoryServices";
 
 
 // =====================================================

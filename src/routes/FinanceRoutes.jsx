@@ -17,6 +17,7 @@ import SalesOrder from "../Pages/FinanceModule/SALES/SalesOrders/SalesOrder";
 import SalesInvoices from "../Pages/FinanceModule/SALES/Invoices/SalesInvoices";
 import CategoriesList from "../Pages/FinanceModule/PRODUCTS/Categories/CategoriesList";
 import CustomerLedger from "../Pages/FinanceModule/SALES/CustomerLedger/CustomerLedger.jsx";
+import AddingInvoice from "../Pages/FinanceModule/SALES/Invoices/AddingInvoice/AddingInvoice.jsx";
 
 const FinanceRoutes = () => {
   return (
@@ -43,6 +44,7 @@ const FinanceRoutes = () => {
 
       <Route path="sales/orders" element={<SalesOrder />} />
       <Route path="sales/invoices" element={<SalesInvoices />} />
+       <Route path="sales/invoices/add" element={<AddingInvoice />} />
       <Route path="sales/customer-ledger" element={<CustomerLedger />} />
 
 

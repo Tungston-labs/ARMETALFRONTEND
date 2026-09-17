@@ -36,11 +36,11 @@ import {
 } from "./AddingInvoice.styles";
 import ReusableHeader from "../../../../../Components/ReusableTable/ReusableHeader";
 
-const Invoice = () => {
-    const today = new Date().toISOString().split("T")[0];
+const AddingInvoice = () => {
+  const today = new Date().toISOString().split("T")[0];
 
-const [invoiceDate, setInvoiceDate] = useState(today);
-const [dueDate, setDueDate] = useState("");
+  const [invoiceDate, setInvoiceDate] = useState(today);
+  const [dueDate, setDueDate] = useState("");
   const [items, setItems] = useState([
     {
       id: 1,
@@ -92,14 +92,14 @@ const [dueDate, setDueDate] = useState("");
 
   return (
     <InvoiceContainer>
-        <ReusableHeader
-                title="Generate New Invoice"
-                breadcrumbs={[
-                    "Sales",
-                    "Invoices",
-                ]}
-                
-            ></ReusableHeader>
+      <ReusableHeader
+        title="Generate New Invoice"
+        breadcrumbs={[
+          "Sales",
+          "Invoices",
+        ]}
+
+      ></ReusableHeader>
       <InvoiceForm>
         {/* =====================================================
             INVOICE DETAILS
@@ -114,28 +114,28 @@ const [dueDate, setDueDate] = useState("");
           <FormGroup>
             <Label>INVOICE DATE</Label>
 
-          <CalendarInput>
-    <Input
-        type="date"
-        value={invoiceDate}
-        onChange={(e) => setInvoiceDate(e.target.value)}
-    />
+            <CalendarInput>
+              <Input
+                type="date"
+                value={invoiceDate}
+                onChange={(e) => setInvoiceDate(e.target.value)}
+              />
 
-</CalendarInput>
+            </CalendarInput>
           </FormGroup>
 
           <FormGroup>
             <Label>DUE DATE</Label>
 
             <CalendarInput>
-    <Input
-        type="date"
-        value={dueDate}
-        min={invoiceDate}
-        onChange={(e) => setDueDate(e.target.value)}
-    />
+              <Input
+                type="date"
+                value={dueDate}
+                min={invoiceDate}
+                onChange={(e) => setDueDate(e.target.value)}
+              />
 
-</CalendarInput>
+            </CalendarInput>
           </FormGroup>
 
           <FormGroup>
@@ -444,4 +444,4 @@ const UploadBox = ({ children }) => (
   </div>
 );
 
-export default Invoice;
+export default AddingInvoice;

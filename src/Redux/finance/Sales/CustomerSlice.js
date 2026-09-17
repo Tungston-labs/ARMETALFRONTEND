@@ -8,7 +8,7 @@ import {
     patchCustomer,
     deleteCustomer,
     fetchCustomerSummary,
-} from "../../services/finance/CustomerService";
+} from "../../../services/finance/Sales/CustomerService";
 
 // GET Customers
 export const getCustomers = createAsyncThunk(

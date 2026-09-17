@@ -1,24 +1,15 @@
-import React, { useMemo, useState } from "react";
-import {
-    FiShoppingCart,
-    FiDollarSign,
-    FiCheckCircle,
-    FiClock,
-    FiXCircle,
-    FiDownload,
-} from "react-icons/fi";
+import React from "react";
 
 import {
-    employeeColumns,
-    employeeData,
-} from "../../../../Components/ReusableTable/dummydata";
+    FiDownload,
+} from "react-icons/fi";
 
 import ReusableHeader from "../../../../Components/ReusableTable/ReusableHeader";
 import ReusableFilter from "../../../../Components/ReusableTable/ReusableFilter";
 import ReusableTable from "../../../../Components/ReusableTable/ReusableTable";
 import ReusablePagination from "../../../../Components/Pagination/ReusablePagination";
 import StatsCards from "../../../../Components/StatsCards/StatsCards";
-
+import { useNavigate } from "react-router-dom";
 import {
     DateRangeWrapper,
     DatePickerContainer,
@@ -27,145 +18,48 @@ import {
     ExportButton,
 } from "./SalesInvoices.styles";
 
-const getCurrentMonthRange = () => {
-    const today = new Date();
+import {
+    salesInvoiceStats,
+} from "./SalesInvoices.columns";
 
-    const year = today.getFullYear();
-    const month = today.getMonth();
-
-    const firstDay = new Date(year, month, 1);
-    const lastDay = new Date(year, month + 1, 0);
-
-    const formatDate = (date) => {
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, "0");
-        const day = String(date.getDate()).padStart(2, "0");
-
-        return `${year}-${month}-${day}`;
-    };
-
-    return {
-        start: formatDate(firstDay),
-        end: formatDate(lastDay),
-    };
-};
+import useSalesInvoices from "./UseSalesInvoices";
 
 const SalesInvoices = () => {
-    const currentMonth = getCurrentMonthRange();
+      const navigate = useNavigate();
+    const {
+        salesInvoiceColumns,
+        paginatedData,
+        totalRecords,
+        totalPages,
 
-    const [search, setSearch] = useState("");
-    const [status, setStatus] = useState("");
-    const [customer, setCustomer] = useState("");
-    const [dueDate, setDueDate] = useState("");
-    const [startDate, setStartDate] = useState(
-        currentMonth.start
-    );
+        search,
+        status,
+        customer,
+        dueDate,
+        startDate,
+        endDate,
+        currentPage,
 
-    const [endDate, setEndDate] = useState(
-        currentMonth.end
-    );
+        salesOrderStats,
 
-    const rowsPerPage = 10;
-    const [currentPage, setCurrentPage] = useState(1);
+        handleSearch,
+        handleStatus,
+        handleCustomer,
+        handleDueDate,
+        handleStartDateChange,
+        handleEndDateChange,
+        handleExport,
+        setCurrentPage,
+    } = useSalesInvoices();
 
-    const salesOrderStats = [
-        {
-            title: "Total Orders",
-            count: employeeData.length,
-            icon: <FiShoppingCart />,
-            backgroundColor: "#E8F1FF",
-            iconColor: "#3478F6",
-        },
-        {
-            title: "Total Amount",
-            count: "SAR 0.00",
-            icon: <FiDollarSign />,
-            backgroundColor: "#FFF4E5",
-            iconColor: "#F59E0B",
-        },
-        {
-            title: "Completed Orders",
-            count: 0,
-            icon: <FiCheckCircle />,
-            backgroundColor: "#E8F8EF",
-            iconColor: "#22A06B",
-        },
-        {
-            title: "Pending Orders",
-            count: 0,
-            icon: <FiClock />,
-            backgroundColor: "#FFF4E5",
-            iconColor: "#F59E0B",
-        },
-        {
-            title: "Cancelled Orders",
-            count: 0,
-            icon: <FiXCircle />,
-            backgroundColor: "#FDECEC",
-            iconColor: "#E5484D",
-        },
-    ];
-
-    const totalPages = Math.ceil(
-        employeeData.length / rowsPerPage
-    );
-
-    const paginatedData = useMemo(() => {
-        const start =
-            (currentPage - 1) * rowsPerPage;
-
-        return employeeData.slice(
-            start,
-            start + rowsPerPage
-        );
-    }, [currentPage]);
-
-    const handleStartDateChange = (e) => {
-        const value = e.target.value;
-
-        if (!value) {
-            setStartDate("");
-            return;
-        }
-
-        setStartDate(value);
-        setCurrentPage(1);
-
-        if (endDate && value > endDate) {
-            setEndDate(value);
-        }
-    };
-
-    const handleEndDateChange = (e) => {
-        const value = e.target.value;
-
-        if (!value) {
-            setEndDate("");
-            return;
-        }
-
-        if (startDate && value < startDate) {
-            return;
-        }
-
-        setEndDate(value);
-        setCurrentPage(1);
-    };
-
-    const handleExport = () => {
-        console.log("Export Sales Orders", {
-            startDate,
-            endDate,
-            search,
-            status,
-            customer,
-        });
-
-        // Add Excel/PDF export logic here
-    };
+    const statsCards =
+        salesInvoiceStats(salesOrderStats);
 
     return (
         <div style={{ padding: 20 }}>
+
+            {/* HEADER */}
+
             <ReusableHeader
                 title="Invoices"
                 breadcrumbs={[
@@ -174,7 +68,7 @@ const SalesInvoices = () => {
                 ]}
                 buttonText="+ ADD NEW INVOICE"
                 onButtonClick={() =>
-                    console.log("Add Sales invoice")
+                    navigate("/sales/invoices/add")
                 }
             >
                 <ExportButton
@@ -184,13 +78,20 @@ const SalesInvoices = () => {
                     <FiDownload />
                     <span>Export</span>
                 </ExportButton>
+
                 <DateRangeWrapper>
                     <DatePickerContainer>
+
                         <DateInput
                             type="date"
                             value={startDate}
-                            onChange={handleStartDateChange}
-                            max={endDate || undefined}
+                            onChange={
+                                handleStartDateChange
+                            }
+                            max={
+                                endDate ||
+                                undefined
+                            }
                             aria-label="Start date"
                         />
 
@@ -201,27 +102,32 @@ const SalesInvoices = () => {
                         <DateInput
                             type="date"
                             value={endDate}
-                            onChange={handleEndDateChange}
-                            min={startDate || undefined}
+                            onChange={
+                                handleEndDateChange
+                            }
+                            min={
+                                startDate ||
+                                undefined
+                            }
                             aria-label="End date"
                         />
+
                     </DatePickerContainer>
-
-
                 </DateRangeWrapper>
             </ReusableHeader>
 
+            {/* STATS */}
+
             <StatsCards
-                cards={salesOrderStats}
+                cards={statsCards}
             />
+
+            {/* FILTERS */}
 
             <ReusableFilter
                 search={search}
-                onSearch={(value) => {
-                    setSearch(value);
-                    setCurrentPage(1);
-                }}
-                searchPlaceholder="Search Order"
+                onSearch={handleSearch}
+                searchPlaceholder="Search Invoice"
                 showSearch
 
                 status={status}
@@ -230,86 +136,111 @@ const SalesInvoices = () => {
                     "Pending",
                     "Cancelled",
                 ]}
-                onStatus={(value) => {
-                    setStatus(value);
-                    setCurrentPage(1);
-                }}
+                onStatus={handleStatus}
                 showStatus
 
                 filters={[
                     {
                         key: "customer",
                         value: customer,
-                        onChange: (value) => {
-                            setCustomer(value);
-                            setCurrentPage(1);
-                        },
+                        onChange:
+                            handleCustomer,
                         options: [
                             {
-                                label: "ABC Trading",
-                                value: "ABC Trading",
+                                label:
+                                    "ABC Trading",
+                                value:
+                                    "ABC Trading",
                             },
                             {
-                                label: "Riyadh Tech",
-                                value: "Riyadh Tech",
+                                label:
+                                    "Riyadh Tech",
+                                value:
+                                    "Riyadh Tech",
                             },
                             {
-                                label: "Al Noor Company",
-                                value: "Al Noor Company",
+                                label:
+                                    "Al Noor Company",
+                                value:
+                                    "Al Noor Company",
                             },
                             {
-                                label: "Saudi Solutions",
-                                value: "Saudi Solutions",
+                                label:
+                                    "Saudi Solutions",
+                                value:
+                                    "Saudi Solutions",
                             },
                         ],
-                        placeholder: "All Customer",
+                        placeholder:
+                            "All Customer",
                     },
                     {
                         key: "dueDate",
                         value: dueDate,
-                        onChange: (value) => {
-                            setDueDate(value);
-                            setCurrentPage(1);
-                        },
+                        onChange:
+                            handleDueDate,
                         options: [
                             {
-                                label: "Due Today",
-                                value: "due_today",
+                                label:
+                                    "Due Today",
+                                value:
+                                    "due_today",
                             },
                             {
-                                label: "Due This Week",
-                                value: "due_week",
+                                label:
+                                    "Due This Week",
+                                value:
+                                    "due_week",
                             },
                             {
-                                label: "Overdue",
-                                value: "overdue",
+                                label:
+                                    "Overdue",
+                                value:
+                                    "overdue",
                             },
                             {
-                                label: "Due Later",
-                                value: "due_later",
+                                label:
+                                    "Due Later",
+                                value:
+                                    "due_later",
                             },
                         ],
-                        placeholder: "All Due Date",
+                        placeholder:
+                            "All Due Date",
                     },
                 ]}
 
                 showFilterButton
                 filterButtonText="Filter"
-                onFilterClick={() => {
-                    console.log("Filter clicked");
-                }}
+                onFilterClick={() =>
+                    console.log(
+                        "Filter clicked"
+                    )
+                }
             />
 
+            {/* TABLE */}
+
             <ReusableTable
-                columns={employeeColumns}
+                columns={
+                    salesInvoiceColumns
+                }
                 data={paginatedData}
             />
+
+            {/* PAGINATION */}
 
             <ReusablePagination
                 currentPage={currentPage}
                 totalPages={totalPages}
-                onPageChange={setCurrentPage}
+                totalRecords={
+                    totalRecords
+                }
+                onPageChange={
+                    setCurrentPage
+                }
             />
+
         </div>
     );
 };
