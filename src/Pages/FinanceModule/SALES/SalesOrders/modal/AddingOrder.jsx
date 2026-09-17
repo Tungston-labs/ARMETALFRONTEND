@@ -52,7 +52,10 @@ const defaultItem = () => ({
 
 const emptyForm = {
   orderNumber: "",
+  soNumber: "",
   orderStatus: "",
+  paymentTerms: "",
+  warehouse: "",
   from: { name: "", address: "", phone: "", email: "" },
   billTo: { client: "", address: "", phone: "", email: "" },
   payment: { accountHolder: "", accountNumber: "", iban: "" },
@@ -63,11 +66,17 @@ const emptyForm = {
 // Bridges the flat mock row shape (SalesOrders.columns.jsx) into the
 // nested shape this form works with. Swap out once a real
 // "get order detail by id" endpoint exists — items/from/payment
-// currently have no source data and are left at defaults.
+// currently have no source data and are left at defaults. Fields like
+// so_number, due_date, payment_terms, warehouse aren't in the mock data
+// yet, so they'll come back blank until salesOrderData includes them.
 const mapRowToFormData = (row) => ({
   orderNumber: row.order_number || "",
+  soNumber: row.so_number || "",
   orderDate: row.order_date || "",
   deliveryDate: row.delivery_date || "",
+  dueDate: row.due_date || "",
+  paymentTerms: row.payment_terms || "",
+  warehouse: row.warehouse || "",
   orderStatus: (row.status || "").toLowerCase(),
   from: emptyForm.from,
   billTo: { ...emptyForm.billTo, client: row.customer || "" },
@@ -98,8 +107,12 @@ const AddingOrder = () => {
   const notFound = isEditMode && !existingRow;
 
   const [orderNumber, setOrderNumber] = useState(initialData?.orderNumber || "");
+  const [soNumber, setSoNumber] = useState(initialData?.soNumber || "");
   const [orderDate, setOrderDate] = useState(initialData?.orderDate || today);
   const [deliveryDate, setDeliveryDate] = useState(initialData?.deliveryDate || "");
+  const [dueDate, setDueDate] = useState(initialData?.dueDate || "");
+  const [paymentTerms, setPaymentTerms] = useState(initialData?.paymentTerms || "");
+  const [warehouse, setWarehouse] = useState(initialData?.warehouse || "");
   const [orderStatus, setOrderStatus] = useState(initialData?.orderStatus || "");
   const [from, setFrom] = useState(initialData?.from || emptyForm.from);
   const [billTo, setBillTo] = useState(initialData?.billTo || emptyForm.billTo);
@@ -112,8 +125,12 @@ const AddingOrder = () => {
     if (existingRow) {
       const mapped = mapRowToFormData(existingRow);
       setOrderNumber(mapped.orderNumber);
+      setSoNumber(mapped.soNumber);
       setOrderDate(mapped.orderDate);
       setDeliveryDate(mapped.deliveryDate);
+      setDueDate(mapped.dueDate);
+      setPaymentTerms(mapped.paymentTerms);
+      setWarehouse(mapped.warehouse);
       setOrderStatus(mapped.orderStatus);
       setFrom(mapped.from);
       setBillTo(mapped.billTo);
@@ -160,8 +177,12 @@ const AddingOrder = () => {
     const payload = {
       ...(isEditMode ? { id } : {}),
       orderNumber,
+      soNumber,
       orderDate,
       deliveryDate,
+      dueDate,
+      paymentTerms,
+      warehouse,
       orderStatus,
       from,
       billTo,
@@ -203,7 +224,7 @@ const AddingOrder = () => {
       <OrderForm>
         <FormGrid>
           <FormGroup>
-            <Label> SALES ORDER REFERENCE</Label>
+            <Label>QUOTE REFERENCE</Label>
             <Input
               placeholder="SO001"
               value={orderNumber}
@@ -213,7 +234,17 @@ const AddingOrder = () => {
           </FormGroup>
 
           <FormGroup>
-            <Label>INVOICE NUMBER </Label>
+            <Label>SO NUMBER</Label>
+            <Input
+              placeholder="SO-2026-001"
+              value={soNumber}
+              onChange={(e) => setSoNumber(e.target.value)}
+              readOnly={isEditMode}
+            />
+          </FormGroup>
+
+          <FormGroup>
+            <Label>ORDER DATE</Label>
             <CalendarInput>
               <Input
                 type="date"
@@ -226,7 +257,25 @@ const AddingOrder = () => {
           </FormGroup>
 
           <FormGroup>
-            <Label>INVOICE DATE</Label>
+            <Label>ORDER STATUS</Label>
+            <SelectWrapper>
+              <Select
+                value={orderStatus}
+                onChange={(e) => setOrderStatus(e.target.value)}
+              >
+                <option value="" disabled>
+                  Select Order Status
+                </option>
+                <option value="completed">Completed</option>
+                <option value="pending">Pending</option>
+                <option value="cancelled">Cancelled</option>
+              </Select>
+              <FiChevronDown />
+            </SelectWrapper>
+          </FormGroup>
+
+          <FormGroup>
+            <Label>DELIVERY DATE</Label>
             <CalendarInput>
               <Input
                 type="date"
@@ -239,21 +288,54 @@ const AddingOrder = () => {
             </CalendarInput>
           </FormGroup>
 
-          {/* ORDER STATUS — the only field editable in edit mode,
-              mirroring how PAYMENT STATUS worked in AddingInvoice */}
           <FormGroup>
-            <Label>PAYMENT STATUS</Label>
+            <Label>DUE DATE</Label>
+            <CalendarInput>
+              <Input
+                type="date"
+                value={dueDate}
+                min={orderDate}
+                onChange={(e) => setDueDate(e.target.value)}
+                readOnly={isEditMode}
+                disabled={isEditMode}
+              />
+            </CalendarInput>
+          </FormGroup>
+
+          <FormGroup>
+            <Label>PAYMENT TERMS</Label>
             <SelectWrapper>
               <Select
-                value={orderStatus}
-                onChange={(e) => setOrderStatus(e.target.value)}
+                value={paymentTerms}
+                onChange={(e) => setPaymentTerms(e.target.value)}
+                disabled={isEditMode}
               >
                 <option value="" disabled>
-                  Select Order Status
+                  Select Payment Terms
                 </option>
-                <option value="completed">Completed</option>
-                <option value="pending">Pending</option>
-                <option value="cancelled">Cancelled</option>
+                <option value="net15">Net 15</option>
+                <option value="net30">Net 30</option>
+                <option value="net45">Net 45</option>
+                <option value="cod">Cash on Delivery</option>
+              </Select>
+              <FiChevronDown />
+            </SelectWrapper>
+          </FormGroup>
+
+          <FormGroup>
+            <Label>WAREHOUSE</Label>
+            <SelectWrapper>
+              <Select
+                value={warehouse}
+                onChange={(e) => setWarehouse(e.target.value)}
+                disabled={isEditMode}
+              >
+                <option value="" disabled>
+                  Select Warehouse
+                </option>
+                <option value="warehouse1">Warehouse 1 - Riyadh</option>
+                <option value="warehouse2">Warehouse 2 - Jeddah</option>
+                <option value="warehouse3">Warehouse 3 - Dammam</option>
               </Select>
               <FiChevronDown />
             </SelectWrapper>
