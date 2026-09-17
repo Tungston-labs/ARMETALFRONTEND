@@ -210,13 +210,7 @@ const SalesInvoices = () => {
                     },
                 ]}
 
-                showFilterButton
-                filterButtonText="Filter"
-                onFilterClick={() =>
-                    console.log(
-                        "Filter clicked"
-                    )
-                }
+               
             />
 
             {/* TABLE */}

@@ -45,6 +45,7 @@ const FinanceRoutes = () => {
       <Route path="sales/orders" element={<SalesOrder />} />
       <Route path="sales/invoices" element={<SalesInvoices />} />
        <Route path="sales/invoices/add" element={<AddingInvoice />} />
+       <Route path="sales/invoices/edit/:id" element={<AddingInvoice />} />
       <Route path="sales/customer-ledger" element={<CustomerLedger />} />
 
 

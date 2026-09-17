@@ -3,13 +3,12 @@ import React, {
     useRef,
     useState,
 } from "react";
-import { CiSquareInfo } from "react-icons/ci";
 import {
     FiMoreVertical,
     FiEdit2,
     FiTrash2,
 } from "react-icons/fi";
-
+import { useNavigate } from "react-router-dom";
 import {
     ActionWrapper,
     ActionButton,
@@ -18,11 +17,10 @@ import {
 
 const InvoiceActions = ({
     row,
-    onEdit,
     onDelete,
 }) => {
     const [open, setOpen] = useState(false);
-
+    const navigate = useNavigate();
     const wrapperRef = useRef(null);
 
     useEffect(() => {
@@ -48,7 +46,11 @@ const InvoiceActions = ({
                 handleClickOutside
             );
     }, []);
-
+    const handleEdit = (invoice) => {
+        navigate(`/sales/invoices/edit/${invoice.id}`, {
+            state: { invoiceData: invoice },
+        });
+    };
     return (
         <ActionWrapper ref={wrapperRef}>
             {/* MORE BUTTON */}
@@ -66,7 +68,7 @@ const InvoiceActions = ({
 
             {/* VIEW */}
 
- 
+
 
             {/* EDIT */}
 
@@ -78,7 +80,7 @@ const InvoiceActions = ({
                 onClick={(e) => {
                     e.stopPropagation();
 
-                    onEdit?.(row);
+                    handleEdit(row);
 
                     setOpen(false);
                 }}
