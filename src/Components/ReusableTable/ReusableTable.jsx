@@ -61,9 +61,7 @@ const ReusableTable = ({
     <Container>
       <TableScrollContainer>
         <StyledTable>
-          {/* data-priority on <col> keeps the column's width rule in
-              sync with its header/body cells being hidden at the same
-              breakpoint (see ReusableTable.styles.js responsive rules). */}
+
           <colgroup>
             {columns.map((column) => (
               <col
