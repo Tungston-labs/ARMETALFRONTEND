@@ -18,18 +18,6 @@ import {
     CircleIconButton,
 } from "./CustomerList.styles";
 
-// ============================================================
-// Column definitions for the Customer List table.
-// A function (not a plain array) because columns need handlers
-// and state (openMenuId) that only exist inside the component —
-// call this from the component and pass what it needs.
-//
-// Every column also gets a "priority" (1 = always show, higher =
-// first to hide on small screens) used by ReusableTable / CSS
-// to progressively hide less-important columns instead of letting
-// them squeeze/overlap each other. See responsive note in
-// ReusableTable.styles.js.
-// ============================================================
 export const getCustomerColumns = ({
     openMenuId,
     toggleActionsMenu,

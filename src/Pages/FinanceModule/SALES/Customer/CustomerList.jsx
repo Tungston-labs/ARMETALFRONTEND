@@ -27,7 +27,7 @@ const CustomerList = () => {
         loading,
         selectedCustomer,
         cards,
-totalRecords,
+        totalRecords,
         openMenuId,
         toggleActionsMenu,
         handleCreateInvoice,
@@ -55,10 +55,6 @@ totalRecords,
         handleEndDateChange,
     } = useCustomerList();
 
-    // ============================================================
-    // TABLE COLUMNS — definitions now live in CustomerList.columns.jsx.
-    // Pass in whatever handlers/state the columns need to render.
-    // ============================================================
     const customerColumns = getCustomerColumns({
         openMenuId,
         toggleActionsMenu,
