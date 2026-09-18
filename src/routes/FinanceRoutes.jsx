@@ -5,7 +5,7 @@ import Warehouse from "../Pages/FinanceModule/PRODUCTS/Warehouse/Warehouselist.j
 import WarehouseDetails from "../Pages/FinanceModule/PRODUCTS/Warehouse/WarehouseDetails.jsx";
 import InventoryList from "../Pages/FinanceModule/PRODUCTS/Inventory/Inventorylist.jsx";
 import ProductList from "../Pages/FinanceModule/PRODUCTS/ProductList/ProductList";
-import QuotationsList from "../Pages/FinanceModule/Quotations/QuotationsList.jsx";
+import QuotationsList from "../Pages/FinanceModule/SALES/Quotations/QuotationsList.jsx";
 import CustomerList from "../Pages/FinanceModule/SALES/Customer/CustomerList";
 import Overview from "../Pages/FinanceModule/SALES/Customer/Overview/Overview";
 import Quotations from "../Pages/FinanceModule/SALES/Customer/Quotations/Quotations";
@@ -18,7 +18,7 @@ import Invoices from "../Pages/FinanceModule/SALES/Customer/Invoices/Invoices";
 import SalesOrder from "../Pages/FinanceModule/SALES/SalesOrders/SalesOrder";
 import SalesInvoices from "../Pages/FinanceModule/SALES/Invoices/SalesInvoices";
 import AddingInvoice from '../Pages/FinanceModule/SALES/Invoices/AddingInvoice/AddingInvoice'
-import CategoriesList from "../Pages/FinanceModule/PRODUCTS/Categories/CategoriesList";
+
 
 const FinanceRoutes = () => {
   return (

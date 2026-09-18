@@ -1,16 +1,14 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { FiCalendar, FiCheckCircle, FiClock, FiDownload, FiEye, FiFileText, FiXCircle } from "react-icons/fi";
-import ReusableTable from "../../../Components/ReusableTable/ReusableTable";
-import ReusablePagination from "../../../Components/Pagination/ReusablePagination";
-import ReusableFilter from "../../../Components/ReusableTable/ReusableFilter";
-import ReusableHeader from "../../../Components/ReusableTable/ReusableHeader";
-import { HeaderButton } from "../../../Components/ReusableTable/ReusableHeader.styles";
-import StatsCards from "../../../Components/StatsCards/StatsCards";
 import GenerateQuotationModal from "../../../Components/GenerateQuotationModal/GenerateQuotationModal";
 import QuotationInvoice from "../../../Components/QuotationInvoice/QuotationInvoice";
 import { createQuotation, fetchQuotationDetails, fetchQuotationKpi, fetchQuotationList } from "../../../Redux/quotationThunks";
 import { ActionButtons, CalendarIcon, DateInput, DateRangeWrapper, FilterSection, HeaderActions, IconButton, PageContainer, QuotationNumber, StatusBadge } from "./QuotationsList.styles";
+import ReusableHeader from "../../../../Components/ReusableTable/ReusableHeader";
+import ReusableTable from "../../../../Components/ReusableTable/ReusableTable";
+import ReusablePagination from "../../../../Components/Pagination/ReusablePagination";
+import StatsCards from "../../../../Components/StatsCards/StatsCards";
 
 const formatCurrency = (value) => {
   if (value === null || value === undefined || value === "") return "-";
