@@ -3,7 +3,7 @@ import { render, screen, fireEvent, waitFor, within } from "@testing-library/rea
 import userEvent from "@testing-library/user-event";
 import "@testing-library/jest-dom";
 
-import CategoryModal from "../../Pages/FinanceModule/PRODUCTS/Categories/modal/CategoryModal";
+import CategoryModal from "../../../Pages/FinanceModule/PRODUCTS/Categories/modal/CategoryModal";
 
 /**
  * NOTE ON STYLED COMPONENTS
