@@ -40,6 +40,7 @@ import {
 } from "../../../../../Redux/finance/deliveryNotesSlice";
 
 import { getCustomers as getCustomerList } from "../../../../../Redux/finance/CustomerSlice";
+import { getProducts } from "../../../../../Redux/finance/ProductSlice";
 
 /* =========================================================
    CONSTANTS
@@ -209,7 +210,7 @@ const normalizeItemStatusForApi = (value) => {
    PRODUCT ID
 ========================================================= */
 
-const getProductId = (item) => {
+const getProductId = (item, products = []) => {
   const rawProduct =
     item?.productId ??
     item?.product_id ??
@@ -220,15 +221,50 @@ const getProductId = (item) => {
     return normalizeId(rawProduct);
   }
 
-  if (typeof item?.product === "string" && /^\d+$/.test(item.product.trim())) {
-    return Number(item.product.trim());
+  const productText = typeof item?.product === "string" ? item.product.trim() : "";
+
+  if (productText) {
+    if (/^\d+$/.test(productText)) {
+      return Number(productText);
+    }
+
+    const matchedProduct = products.find((product) => {
+      const productId =
+        product?.id ??
+        product?.pk ??
+        product?.product_id ??
+        null;
+
+      const productName =
+        product?.name ??
+        product?.product_name ??
+        product?.code ??
+        product?.product_code ??
+        "";
+
+      return (
+        String(productId ?? "") === String(productText) ||
+        String(productName).toLowerCase() === productText.toLowerCase() ||
+        String(product?.sku ?? "").toLowerCase() === productText.toLowerCase()
+      );
+    });
+
+    if (matchedProduct) {
+      return normalizeId(
+        matchedProduct?.id ??
+          matchedProduct?.pk ??
+          matchedProduct?.product_id,
+      );
+    }
+
+    return null;
   }
 
   if (typeof item?.product === "number") {
     return item.product;
   }
 
-  return item?.product ?? "";
+  return null;
 };
 
 /* =========================================================
@@ -514,6 +550,7 @@ const buildPayload = ({
   billTo,
   notes,
   items,
+  products = [],
 }) => {
   const rawCustomer =
     billTo?.clientId ?? billTo?.customerId ?? billTo?.client ?? "";
@@ -568,7 +605,7 @@ const buildPayload = ({
     items: (Array.isArray(items) ? items : []).map((item, index) => ({
       sl_no: item?.slNo || String(index + 1).padStart(2, "0"),
 
-      product: getProductId(item),
+      product: getProductId(item, products),
 
       ordered_qty: toNumber(item?.orderedQty),
 
@@ -634,6 +671,8 @@ const Createdeliverynotes = ({ onCancel, onPreview }) => {
     return [];
   });
 
+  const products = useSelector((state) => state?.product?.products || []);
+
   const customers = useMemo(() => {
     if (Array.isArray(customersFromStore)) {
       return customersFromStore;
@@ -690,6 +729,14 @@ const Createdeliverynotes = ({ onCancel, onPreview }) => {
 
     return fallbackName || `Customer #${fallbackId}`;
   };
+
+  const productOptions = useMemo(
+    () =>
+      Array.isArray(products)
+        ? products.filter(Boolean)
+        : [],
+    [products],
+  );
 
   /* =======================================================
      DELIVERY NOTE REDUX
@@ -752,6 +799,7 @@ const Createdeliverynotes = ({ onCancel, onPreview }) => {
 
   useEffect(() => {
     dispatch(getCustomerList());
+    dispatch(getProducts({ page_size: 200 }));
   }, [dispatch]);
 
   /* =======================================================
@@ -898,12 +946,17 @@ const Createdeliverynotes = ({ onCancel, onPreview }) => {
       return false;
     }
 
-    const emptyProduct = items.some(
-      (item) => !String(item?.product ?? "").trim(),
-    );
+    const emptyProduct = items.some((item) => {
+      const resolvedProductId = getProductId(item, products);
+      return !resolvedProductId && !String(item?.product ?? "").trim();
+    });
 
-    if (emptyProduct) {
-      setValidationError("Please enter a product for every delivery item.");
+    const invalidProduct = items.some((item) => !getProductId(item, products));
+
+    if (emptyProduct || invalidProduct) {
+      setValidationError(
+        "Please enter a valid product id or select a valid product for every delivery item.",
+      );
 
       return false;
     }
@@ -939,6 +992,7 @@ const Createdeliverynotes = ({ onCancel, onPreview }) => {
       billTo,
       notes,
       items,
+      products,
     });
 
     console.log(
@@ -1367,6 +1421,21 @@ const Createdeliverynotes = ({ onCancel, onPreview }) => {
         </OrderItemsHeader>
 
         <OrderTableWrapper>
+          <datalist id="delivery-product-options">
+            {productOptions.map((product) => (
+              <option
+                key={product?.id ?? product?.pk ?? product?.product_id ?? Math.random()}
+                value={
+                  product?.product_name ||
+                  product?.name ||
+                  product?.code ||
+                  product?.product_code ||
+                  ""
+                }
+              />
+            ))}
+          </datalist>
+
           <OrderTable>
             <thead>
               <tr>
@@ -1396,6 +1465,7 @@ const Createdeliverynotes = ({ onCancel, onPreview }) => {
                   <td>
                     <input
                       value={item.product}
+                      list="delivery-product-options"
                       onChange={(e) =>
                         updateItem(item.id, "product", e.target.value)
                       }
