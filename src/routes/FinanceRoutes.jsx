@@ -57,7 +57,7 @@ const FinanceRoutes = () => {
 
       <Route path="delivery/notes" element={<DeliveryNotes />} />
       <Route path="delivery/notes/add" element={<Createdeliverynotes />} />
-      {/* <Route path="delivery/notes/edit/:id" element={<AddingOrder />} /> */}
+      <Route path="delivery/notes/edit/:id" element={<Createdeliverynotes />} />
     </>
   );
 };

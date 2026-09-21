@@ -1,6 +1,7 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { FiDownload } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
 
 import ReusableHeader from "../../../../Components/ReusableTable/ReusableHeader";
 import ReusableFilter from "../../../../Components/ReusableTable/ReusableFilter";
@@ -17,10 +18,22 @@ import {
 } from "./SalesOrder.styles";
 
 import {
-    salesOrderColumns,
-    salesOrderData,
-    salesOrderStats,
+    getSalesOrderColumns,
+    buildSalesOrderStats,
+    ORDER_STATUS_OPTIONS,
 } from "./SalesOrders.columns";
+
+import {
+    getSalesOrders,
+    getSalesOrderSummary,
+    getCustomers,
+    removeSalesOrder,
+    selectSalesOrders,
+    selectSalesOrderPagination,
+    selectSalesOrderKPI,
+    selectSalesOrderLoading,
+    selectCustomers,
+} from "../../../../Redux/finance/Salesorderslice";
 
 const getCurrentMonthRange = () => {
     const today = new Date();
@@ -40,86 +53,80 @@ const getCurrentMonthRange = () => {
     return { start: formatDate(firstDay), end: formatDate(lastDay) };
 };
 
+// Debounce free-text search so every keystroke doesn't fire a request.
+const useDebouncedValue = (value, delay = 400) => {
+    const [debounced, setDebounced] = useState(value);
+
+    useEffect(() => {
+        const timer = setTimeout(() => setDebounced(value), delay);
+        return () => clearTimeout(timer);
+    }, [value, delay]);
+
+    return debounced;
+};
+
 const SalesOrder = () => {
     const navigate = useNavigate();
+    const dispatch = useDispatch();
     const currentMonth = getCurrentMonthRange();
 
+    const salesOrders = useSelector(selectSalesOrders);
+    const pagination = useSelector(selectSalesOrderPagination);
+    const kpi = useSelector(selectSalesOrderKPI);
+    const loading = useSelector(selectSalesOrderLoading);
+    const customers = useSelector(selectCustomers);
+
     const [search, setSearch] = useState("");
-    const [status, setStatus] = useState("");
+    const [orderStatus, setOrderStatus] = useState("");
     const [customer, setCustomer] = useState("");
     const [startDate, setStartDate] = useState(currentMonth.start);
     const [endDate, setEndDate] = useState(currentMonth.end);
-
-    const rowsPerPage = 10;
     const [currentPage, setCurrentPage] = useState(1);
 
-    const filteredData = useMemo(() => {
-        return salesOrderData.filter((row) => {
-            const searchValue = search.trim().toLowerCase();
-            const rowText = Object.values(row).join(" ").toLowerCase();
-            const matchesSearch = !searchValue || rowText.includes(searchValue);
+    const debouncedSearch = useDebouncedValue(search);
 
-            const matchesStatus =
-                !status || row.status.toLowerCase() === status.toLowerCase();
+    // Customer dropdown options, sourced from the real customers lookup.
+    useEffect(() => {
+        dispatch(getCustomers());
+    }, [dispatch]);
 
-            const matchesCustomer =
-                !customer || row.customer.toLowerCase() === customer.toLowerCase();
-
-            const matchesStartDate = !startDate || row.order_date >= startDate;
-            const matchesEndDate = !endDate || row.order_date <= endDate;
-
-            return (
-                matchesSearch &&
-                matchesStatus &&
-                matchesCustomer &&
-                matchesStartDate &&
-                matchesEndDate
-            );
-        });
-    }, [search, status, customer, startDate, endDate]);
-
-    const totalPages = Math.max(
-        1,
-        Math.ceil(filteredData.length / rowsPerPage)
+    const customerOptions = useMemo(
+        () =>
+            customers.map((c) => ({
+                label: c.name || c.customer_name || `Customer #${c.id}`,
+                value: String(c.id),
+            })),
+        [customers]
     );
 
-    const paginatedData = useMemo(() => {
-        const start = (currentPage - 1) * rowsPerPage;
-        return filteredData.slice(start, start + rowsPerPage);
-    }, [filteredData, currentPage]);
+    // Server-side list fetch — re-runs whenever a filter or the page changes.
+    useEffect(() => {
+        const params = { page: currentPage };
 
-    const getStatusCount = (targetStatus) =>
-        filteredData.filter(
-            (row) => row.status.toLowerCase() === targetStatus.toLowerCase()
-        ).length;
+        if (debouncedSearch) params.search = debouncedSearch;
+        if (orderStatus) params.order_status = orderStatus;
+        if (customer) params.customer = customer;
+        if (startDate) params.order_date_after = startDate;
+        if (endDate) params.order_date_before = endDate;
 
-    const totalAmount = filteredData.reduce((sum, row) => {
-        const amount = Number(
-            String(row.amount).replace("SAR", "").replace(/,/g, "").trim()
-        );
-        return sum + (Number.isNaN(amount) ? 0 : amount);
-    }, 0);
+        dispatch(getSalesOrders(params));
+    }, [dispatch, debouncedSearch, orderStatus, customer, startDate, endDate, currentPage]);
 
-    const stats = salesOrderStats({
-        totalOrders: filteredData.length,
-        totalAmount: ` ${totalAmount.toLocaleString("en-US", {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2,
-        })}`,
-        completedOrders: getStatusCount("Completed"),
-        pendingOrders: getStatusCount("Pending"),
-        cancelledOrders: getStatusCount("Cancelled"),
-    });
+    // KPI cards come from the dedicated summary endpoint, not the list page.
+    useEffect(() => {
+        dispatch(getSalesOrderSummary());
+    }, [dispatch]);
+
+    const stats = useMemo(() => buildSalesOrderStats(kpi), [kpi]);
 
     const handleStartDateChange = (e) => {
         const value = e.target.value;
+        setCurrentPage(1);
         if (!value) {
             setStartDate("");
-            setCurrentPage(1);
             return;
         }
         setStartDate(value);
-        setCurrentPage(1);
         if (endDate && value > endDate) setEndDate(value);
     };
 
@@ -136,9 +143,26 @@ const SalesOrder = () => {
     };
 
     const handleExport = () => {
-        console.log("Export Sales Orders", { startDate, endDate, search, status, customer });
+        console.log("Export Sales Orders", { startDate, endDate, search, orderStatus, customer });
         // Add Excel/PDF export logic here
     };
+
+    const handleDelete = (order) => {
+        if (!window.confirm(`Delete sales order ${order.so_number}?`)) return;
+
+        dispatch(removeSalesOrder(order.id)).then((result) => {
+            if (!result.error) {
+                // Refresh the current page + KPIs after a successful delete
+                dispatch(getSalesOrderSummary());
+            }
+        });
+    };
+
+    const columns = useMemo(
+        () => getSalesOrderColumns({ onDelete: handleDelete }),
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        []
+    );
 
     return (
         <div style={{ padding: 20 }}>
@@ -182,12 +206,15 @@ const SalesOrder = () => {
                     setSearch(value);
                     setCurrentPage(1);
                 }}
-                searchPlaceholder="Search Order"
+                searchPlaceholder="Search SO Number or Customer"
                 showSearch
-                status={status}
-                statuses={["Completed", "Pending", "Cancelled"]}
+                status={orderStatus}
+                statuses={ORDER_STATUS_OPTIONS.map((s) => s.label)}
                 onStatus={(value) => {
-                    setStatus(value);
+                    const match = ORDER_STATUS_OPTIONS.find(
+                        (s) => s.label === value
+                    );
+                    setOrderStatus(match ? match.value : "");
                     setCurrentPage(1);
                 }}
                 showStatus
@@ -199,25 +226,22 @@ const SalesOrder = () => {
                             setCustomer(value);
                             setCurrentPage(1);
                         },
-                        options: [
-                            { label: "ABC Trading", value: "ABC Trading" },
-                            { label: "Riyadh Tech", value: "Riyadh Tech" },
-                            { label: "Al Noor Company", value: "Al Noor Company" },
-                            { label: "Saudi Solutions", value: "Saudi Solutions" },
-                        ],
-                        placeholder: "All Customer",
+                        options: customerOptions,
+                        placeholder: "All Customers",
                     },
                 ]}
-                showFilterButton
-                filterButtonText="Filter"
-                onFilterClick={() => console.log("Filter clicked")}
+               
             />
 
-            <ReusableTable columns={salesOrderColumns} data={paginatedData} />
+            <ReusableTable
+                columns={columns}
+                data={salesOrders}
+                loading={loading}
+            />
 
             <ReusablePagination
-                currentPage={currentPage}
-                totalPages={totalPages}
+                currentPage={pagination.currentPage || currentPage}
+                totalPages={pagination.totalPages || 1}
                 onPageChange={setCurrentPage}
             />
         </div>

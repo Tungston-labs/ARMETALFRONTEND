@@ -31,7 +31,7 @@ const getSidebarData = (user) => {
         icon: <FaReceipt />,
         path: "/finance",
       },
-       {
+      {
         title: "PLANS & PRICING",
         icon: <LuCircleDollarSign />,
         path: "/PlanAndPricing",
@@ -90,6 +90,13 @@ const getSidebarData = (user) => {
       items.push({ title: "PROJECT", icon: <FiCodesandbox />, path: "/projects" });
     }
 
+
+    if (modules.project) {
+      items.push({ title: "ORDERS", icon: <FiCodesandbox />, path: "/sales/orders" });
+    }
+  
+
+    
     return items;
   }
 

@@ -18,14 +18,10 @@ import warehouseReducer from "../Redux/warehouseSlice";
 import categoryReducer from "./finance/categorySlice";
 import productReducer from "./finance/ProductSlice";
 import quotationReducer from "./quotationSlice";
-
-// =====================================================
-// INVENTORY
-// =====================================================
-
 import customerReducer from "./finance/CustomerSlice";
 import inventoryReducer from "../Redux/inventorySlice";
-
+import salesOrderReducer from "../Redux/finance/Salesorderslice";
+import deliveryNotesReducer from "../Redux/finance/deliveryNotesSlice";
 export const store = configureStore({
   reducer: {
 
@@ -51,5 +47,7 @@ export const store = configureStore({
     customer: customerReducer,
     warehouse: warehouseReducer,
     inventory: inventoryReducer,
+    salesOrder: salesOrderReducer,
+    deliveryNotes: deliveryNotesReducer,
   },
 });
