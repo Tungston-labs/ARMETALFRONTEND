@@ -27,7 +27,7 @@ import {
   ButtonWrapper,
   CancelButton,
   PreviewButton,
-} from "./AddingOrder.styles";
+} from "./AddQuotation.style";
 import ReusableHeader from "../../../../../Components/ReusableTable/ReusableHeader";
 import { getOrderById } from "../SalesOrders.columns";
 
@@ -383,7 +383,7 @@ const AddingOrder = ({ mode = "order", onCancel, onPreview }) => {
               </FormGroup>
 
               <FormGroup>
-                <Label>FINANCE CONTACT EMAIL</Label>
+                <Label>Finance Contact Email</Label>
                 <SelectWrapper>
                   <Select
                     value={billTo.email || ""}
@@ -538,7 +538,7 @@ const AddingOrder = ({ mode = "order", onCancel, onPreview }) => {
                   <strong>{summary.subTotal || "SAR 1,970"}</strong>
                 </SummaryRow>
                 <SummaryRow>
-                  <span>Total GST(₹)</span>
+                  <span>Total GST (₹)</span>
                   <strong>{summary.vat || "SAR 295.50"}</strong>
                 </SummaryRow>
                 <SummaryRow>

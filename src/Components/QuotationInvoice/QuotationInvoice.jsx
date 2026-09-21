@@ -53,85 +53,40 @@ import {
   SentButton,
 } from "./QuotationInvoice.styles";
 
-const quotationItems = [
-  {
-    slNo: "01",
-    particular: "LOGO DESIGN",
-    qty: "01",
-    hsn: "0102",
-    rate: "SAR 78.80",
-    gstPercent: "15%",
-    gstAmount: "₹324",
-    amount: "₹2324",
-  },
-  {
-    slNo: "02",
-    particular: "MOBILE APP DESIGN",
-    qty: "01",
-    hsn: "0103",
-    rate: "SAR 78.80",
-    gstPercent: "18%",
-    gstAmount: "₹324",
-    amount: "₹2324",
-  },
-  {
-    slNo: "03",
-    particular: "WEBSITE DESIGN",
-    qty: "01",
-    hsn: "0104",
-    rate: "SAR 78.80",
-    gstPercent: "18%",
-    gstAmount: "₹324",
-    amount: "₹2324",
-  },
-  {
-    slNo: "04",
-    particular: "ERP SOFTWARE",
-    qty: "01",
-    hsn: "0105",
-    rate: "SAR 78.80",
-    gstPercent: "15%",
-    gstAmount: "₹324",
-    amount: "₹2324",
-  },
-];
-
 const QuotationInvoice = ({
   quotation = {},
-  items = quotationItems,
+  items = [],
   onCancel,
   onDownload,
   onSaveDraft,
   onSend,
   error,
 }) => {
+  const displayItems = Array.isArray(items) ? items : [];
   const invoiceData = {
-    companyName: quotation.companyName || "Tungston Labs",
-    companyBuilding: quotation.companyBuilding || "Ullampilly Building",
-    companyAddress:
-      quotation.companyAddress ||
-      "4th Floor, Soaper Building - Airport Rd,\nKakkanad, Kochi, Kerala 682030",
-    phone: quotation.phone || "+971 55736021",
-    email: quotation.email || "info@tungstonlabs.com",
+    companyName: quotation.companyName || "",
+    companyBuilding: quotation.companyBuilding || "",
+    companyAddress: quotation.companyAddress || "",
+    phone: quotation.phone || "",
+    email: quotation.email || "",
 
-    quoteNumber: quotation.quoteNumber || "QUT2082023",
+    quoteNumber: quotation.quoteNumber || "",
 
-    issueDate: quotation.issueDate || "12 May 2026",
-    dueDate: quotation.dueDate || "15 May 2026",
+    issueDate: quotation.issueDate || "",
+    dueDate: quotation.dueDate || "",
 
-    invoiceNumber: quotation.invoiceNumber || "INV12082023",
+    invoiceNumber: quotation.invoiceNumber || "",
 
     paymentStatus: quotation.paymentStatus || "Draft",
 
-    billToName: quotation.billToName || "Mediora Company",
-    billToAddress:
-      quotation.billToAddress || "Musterstrasse 15, 10115\nErnakulam, Kerala",
+    billToName: quotation.billToName || "",
+    billToAddress: quotation.billToAddress || "",
 
-    subTotal: quotation.subTotal || "₹2324",
-    gstTotal: quotation.gstTotal || "₹2324",
-    discount: quotation.discount || "₹500",
-    roundOff: quotation.roundOff || "₹4148",
-    grandTotal: quotation.grandTotal || "SAR 163.45",
+    subTotal: quotation.subTotal || "SAR 0.00",
+    gstTotal: quotation.gstTotal || "SAR 0.00",
+    discount: quotation.discount || "SAR 0.00",
+    roundOff: quotation.roundOff || "SAR 0.00",
+    grandTotal: quotation.grandTotal || "SAR 0.00",
 
     website: quotation.website || "https://tungstonlabs.com/",
   };
@@ -258,7 +213,7 @@ const QuotationInvoice = ({
             </TableHead>
 
             <TableBody>
-              {items.map((item, index) => (
+              {displayItems.map((item, index) => (
                 <TableRow key={item.id || item.slNo || index}>
                   <TableCell>{item.slNo}</TableCell>
 

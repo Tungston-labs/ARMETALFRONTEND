@@ -1,18 +1,19 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import {
+  convertQuotationToSalesOrder,
   createQuotationService,
-  convertQuotationService,
-  deleteQuotationService,
-  getQuotationService,
+  deleteQuotationById,
+  getQuotationById,
+  getQuotationKPI,
   listQuotationService,
-  quotationKpiService,
+  patchQuotationService,
   updateQuotationService,
 } from "../services/quotationService";
 
 const apiError = (error) => error.response?.data || error.message;
 
 export const fetchQuotationList = createAsyncThunk(
-  "quotation/list",
+  "quotation/fetchQuotationList",
   async (params = {}, { rejectWithValue }) => {
     try {
       return await listQuotationService(params);
@@ -22,8 +23,21 @@ export const fetchQuotationList = createAsyncThunk(
   },
 );
 
+export const fetchQuotationById = createAsyncThunk(
+  "quotation/fetchQuotationById",
+  async (id, { rejectWithValue }) => {
+    try {
+      return await getQuotationById(id);
+    } catch (error) {
+      return rejectWithValue(apiError(error));
+    }
+  },
+);
+
+export const fetchQuotationDetails = fetchQuotationById;
+
 export const createQuotation = createAsyncThunk(
-  "quotation/create",
+  "quotation/createQuotation",
   async (data, { rejectWithValue }) => {
     try {
       return await createQuotationService(data);
@@ -33,19 +47,8 @@ export const createQuotation = createAsyncThunk(
   },
 );
 
-export const fetchQuotationDetails = createAsyncThunk(
-  "quotation/details",
-  async (id, { rejectWithValue }) => {
-    try {
-      return await getQuotationService(id);
-    } catch (error) {
-      return rejectWithValue(apiError(error));
-    }
-  },
-);
-
 export const updateQuotation = createAsyncThunk(
-  "quotation/update",
+  "quotation/updateQuotation",
   async ({ id, data, partial = false }, { rejectWithValue }) => {
     try {
       return await updateQuotationService(id, data, partial);
@@ -55,12 +58,22 @@ export const updateQuotation = createAsyncThunk(
   },
 );
 
+export const patchQuotation = createAsyncThunk(
+  "quotation/patchQuotation",
+  async ({ id, data }, { rejectWithValue }) => {
+    try {
+      return await patchQuotationService(id, data);
+    } catch (error) {
+      return rejectWithValue(apiError(error));
+    }
+  },
+);
+
 export const deleteQuotation = createAsyncThunk(
-  "quotation/delete",
+  "quotation/deleteQuotation",
   async (id, { rejectWithValue }) => {
     try {
-      await deleteQuotationService(id);
-      return id;
+      return await deleteQuotationById(id);
     } catch (error) {
       return rejectWithValue(apiError(error));
     }
@@ -68,10 +81,10 @@ export const deleteQuotation = createAsyncThunk(
 );
 
 export const convertQuotation = createAsyncThunk(
-  "quotation/convert",
+  "quotation/convertQuotation",
   async (id, { rejectWithValue }) => {
     try {
-      return await convertQuotationService(id);
+      return await convertQuotationToSalesOrder(id);
     } catch (error) {
       return rejectWithValue(apiError(error));
     }
@@ -79,12 +92,24 @@ export const convertQuotation = createAsyncThunk(
 );
 
 export const fetchQuotationKpi = createAsyncThunk(
-  "quotation/kpi",
+  "quotation/fetchQuotationKpi",
   async (params = {}, { rejectWithValue }) => {
     try {
-      return await quotationKpiService(params);
+      return await getQuotationKPI(params);
     } catch (error) {
       return rejectWithValue(apiError(error));
     }
   },
 );
+
+export const getQuotationKPIThunk = fetchQuotationKpi;
+export const getQuotationByIdThunk = fetchQuotationById;
+export const deleteQuotationIdThunk = deleteQuotationById;
+export const convertQuotationToSalesOrderThunk = convertQuotationToSalesOrder;
+
+export {
+  getQuotationById,
+  getQuotationKPI,
+  deleteQuotationById,
+  convertQuotationToSalesOrder,
+};

@@ -16,11 +16,13 @@ import CompanyLayout from "../Pages/FinanceModule/SALES/Customer/layout/CompanyL
 import Invoices from "../Pages/FinanceModule/SALES/Customer/Invoices/Invoices";
 import SalesOrder from "../Pages/FinanceModule/SALES/SalesOrders/SalesOrder";
 import SalesInvoices from "../Pages/FinanceModule/SALES/Invoices/SalesInvoices";
-import AddingInvoice from '../Pages/FinanceModule/SALES/Invoices/AddingInvoice/AddingInvoice'
+import AddingInvoice from "../Pages/FinanceModule/SALES/Invoices/AddingInvoice/AddingInvoice";
 
 import CategoriesList from "../Pages/FinanceModule/PRODUCTS/Categories/CategoriesList";
 import CustomerLedger from "../Pages/FinanceModule/SALES/CustomerLedger/CustomerLedger.jsx";
 import AddingOrder from "../Pages/FinanceModule/SALES/SalesOrders/modal/AddingOrder.jsx";
+import DeliveryNotes from "../Pages/FinanceModule/SALES/DeliveryNotes/DeliveryNotes.jsx";
+import Createdeliverynotes from "../Pages/FinanceModule/SALES/DeliveryNotes/modal/CreatedeliveryNotes.jsx";
 
 const FinanceRoutes = () => {
   return (
@@ -50,10 +52,12 @@ const FinanceRoutes = () => {
       <Route path="sales/orders/edit/:id" element={<AddingOrder />} />
       <Route path="sales/customer-ledger" element={<CustomerLedger />} />
 
-
-
       <Route path="Inventory-List" element={<InventoryList />} />
       <Route path="Quotation-List" element={<QuotationsList />} />
+
+      <Route path="delivery/notes" element={<DeliveryNotes />} />
+      <Route path="delivery/notes/add" element={<Createdeliverynotes />} />
+      {/* <Route path="delivery/notes/edit/:id" element={<AddingOrder />} /> */}
     </>
   );
 };
