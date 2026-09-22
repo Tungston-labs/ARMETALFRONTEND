@@ -1,25 +1,87 @@
 import React from "react";
-import { render, screen, fireEvent, within } from "@testing-library/react";
+import { render, screen, fireEvent, within, waitFor, act } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import "@testing-library/jest-dom";
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 
 // ---- PATH PLACEHOLDER ----
-// Confirm the real location with:  find src -iname 'SalesOrder*'
-// then update BOTH the import below and the vi.mock path for dummydata
-// (and SalesOrder.styles) to match — vi.mock paths resolve relative to
-// THIS test file's location, not the component's.
-import SalesOrder from "../../../Pages/FinanceModule/SALES/SalesOrder/SalesOrder";
+// These paths assume this test file lives in the SAME folder as SalesOrder.jsx
+// (so every vi.mock() path below is copied verbatim from SalesOrder.jsx's own
+// imports). If you put this file somewhere else (e.g. a top-level __tests__
+// folder), you MUST update:
+//   1. The `import SalesOrder from ...` line below
+//   2. Every vi.mock(...) path below
+// Mock paths resolve relative to THIS file's location, not the component's.
+import SalesOrder from "./SalesOrder";
 
-vi.mock("../../../Components/ReusableTable/dummydata", () => ({
-    employeeColumns: [{ accessor: "id", header: "ID" }],
-    employeeData: Array.from({ length: 25 }, (_, i) => ({
-        id: i + 1,
-        name: `Order ${i + 1}`,
-    })),
+import { useDispatch, useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
+import {
+    getSalesOrders,
+    getSalesOrderSummary,
+    getCustomers,
+    removeSalesOrder,
+} from "../../../../Redux/finance/Sales/Salesorderslice";
+import { getSalesOrderColumns } from "./SalesOrders.columns";
+
+// ---- react-redux / react-router-dom ----
+
+// NOTE: deliberately NOT using the `async (importOriginal) => ({...actual, ...})`
+// form here. With react-router-dom v7 (it re-exports from the "react-router"
+// package under the hood), awaiting importOriginal() inside an async mock
+// factory can end up not overriding the hook at all, so the REAL useNavigate
+// runs and throws "useNavigate() may be used only in the context of a
+// <Router>". Returning a plain object with just the hooks the component
+// actually uses sidesteps that entirely.
+vi.mock("react-redux", () => ({
+    useDispatch: vi.fn(),
+    useSelector: vi.fn(),
 }));
 
-vi.mock("../../../Pages/FinanceModule/SALES/SalesOrder/SalesOrder.styles", () => ({
+vi.mock("react-router-dom", () => ({
+    useNavigate: vi.fn(),
+}));
+
+// ---- Redux slice (actions are just marker objects; selectors read from
+// whatever fake state object the test's useSelector mock is fed) ----
+
+vi.mock("../../../../Redux/finance/Sales/Salesorderslice", () => ({
+    getSalesOrders: vi.fn((params) => ({ type: "getSalesOrders", params })),
+    getSalesOrderSummary: vi.fn(() => ({ type: "getSalesOrderSummary" })),
+    getCustomers: vi.fn(() => ({ type: "getCustomers" })),
+    removeSalesOrder: vi.fn((id) => ({ type: "removeSalesOrder", id })),
+    selectSalesOrders: (state) => state.salesOrders,
+    selectSalesOrderPagination: (state) => state.pagination,
+    selectSalesOrderKPI: (state) => state.kpi,
+    selectSalesOrderLoading: (state) => state.loading,
+    selectCustomers: (state) => state.customers,
+}));
+
+// ---- Columns / stats helpers ----
+// getSalesOrderColumns is mocked so we can grab the onDelete callback the
+// component wires up and trigger it from the mocked ReusableTable below.
+
+vi.mock("./SalesOrders.columns", () => ({
+    getSalesOrderColumns: vi.fn(({ onDelete }) => [
+        { accessor: "id", header: "ID" },
+        { accessor: "actions", header: "Actions", onDelete },
+    ]),
+    buildSalesOrderStats: vi.fn((kpi = {}) => [
+        { title: "Total Orders", count: kpi.total ?? 0 },
+        { title: "Completed Orders", count: kpi.completed ?? 0 },
+        { title: "Pending Orders", count: kpi.pending ?? 0 },
+        { title: "Cancelled Orders", count: kpi.cancelled ?? 0 },
+    ]),
+    ORDER_STATUS_OPTIONS: [
+        { label: "Completed", value: "completed" },
+        { label: "Pending", value: "pending" },
+        { label: "Cancelled", value: "cancelled" },
+    ],
+}));
+
+// ---- Presentational component mocks ----
+
+vi.mock("./SalesOrder.styles", () => ({
     DateRangeWrapper: ({ children }) => <div data-testid="date-range">{children}</div>,
     DatePickerContainer: ({ children }) => <div>{children}</div>,
     DateInput: (props) => <input {...props} />,
@@ -31,7 +93,7 @@ vi.mock("../../../Pages/FinanceModule/SALES/SalesOrder/SalesOrder.styles", () =>
     ),
 }));
 
-vi.mock("../../../Components/ReusableTable/ReusableHeader", () => ({
+vi.mock("../../../../Components/ReusableTable/ReusableHeader", () => ({
     default: ({ title, breadcrumbs = [], buttonText, onButtonClick, children }) => (
         <div data-testid="reusable-header">
             <h1>{title}</h1>
@@ -42,7 +104,7 @@ vi.mock("../../../Components/ReusableTable/ReusableHeader", () => ({
     ),
 }));
 
-vi.mock("../../../Components/StatsCards/StatsCards", () => ({
+vi.mock("../../../../Components/StatsCards/StatsCards", () => ({
     default: ({ cards = [] }) => (
         <div data-testid="stats-cards">
             {cards.map((c) => (
@@ -55,7 +117,7 @@ vi.mock("../../../Components/StatsCards/StatsCards", () => ({
     ),
 }));
 
-vi.mock("../../../Components/ReusableTable/ReusableFilter", () => ({
+vi.mock("../../../../Components/ReusableTable/ReusableFilter", () => ({
     default: ({
         search,
         onSearch,
@@ -66,9 +128,6 @@ vi.mock("../../../Components/ReusableTable/ReusableFilter", () => ({
         onStatus,
         showStatus,
         filters = [],
-        showFilterButton,
-        filterButtonText,
-        onFilterClick,
     }) => (
         <div data-testid="reusable-filter">
             {showSearch ? (
@@ -110,29 +169,32 @@ vi.mock("../../../Components/ReusableTable/ReusableFilter", () => ({
                     ))}
                 </select>
             ))}
-
-            {showFilterButton ? (
-                <button data-testid="filter-button" onClick={onFilterClick}>
-                    {filterButtonText}
-                </button>
-            ) : null}
         </div>
     ),
 }));
 
-vi.mock("../../../Components/ReusableTable/ReusableTable", () => ({
-    default: ({ data = [], columns }) => (
-        <div data-testid="reusable-table" data-columns={JSON.stringify(columns)}>
-            {data.map((row) => (
-                <div key={row.id} data-testid="table-row">
-                    {row.name}
-                </div>
-            ))}
-        </div>
-    ),
+vi.mock("../../../../Components/ReusableTable/ReusableTable", () => ({
+    default: ({ data = [], columns = [], loading }) => {
+        const actionsColumn = columns.find((c) => c.onDelete);
+        return (
+            <div data-testid="reusable-table" data-loading={String(!!loading)}>
+                {loading && <div data-testid="table-loading">Loading...</div>}
+                {data.map((row) => (
+                    <div key={row.id} data-testid="table-row">
+                        <span>{row.so_number}</span>
+                        {actionsColumn && (
+                            <button onClick={() => actionsColumn.onDelete(row)}>
+                                delete-{row.id}
+                            </button>
+                        )}
+                    </div>
+                ))}
+            </div>
+        );
+    },
 }));
 
-vi.mock("../../../Components/Pagination/ReusablePagination", () => ({
+vi.mock("../../../../Components/Pagination/ReusablePagination", () => ({
     default: ({ currentPage, totalPages, onPageChange }) => (
         <div data-testid="pagination">
             <span>
@@ -144,27 +206,84 @@ vi.mock("../../../Components/Pagination/ReusablePagination", () => ({
     ),
 }));
 
-// Mirrors the component's own getCurrentMonthRange so the default date
-// values can be asserted without hardcoding "today".
-const getExpectedMonthRange = () => {
-    const today = new Date();
-    const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
-    const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-    const fmt = (d) =>
-        `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
-            d.getDate()
-        ).padStart(2, "0")}`;
-    return { start: fmt(firstDay), end: fmt(lastDay) };
-};
+vi.mock("../../../../Components/modals/ReusableConfirmModal", () => ({
+    default: ({ show, title, message, confirmText, confirmVariant, onConfirm, onClose }) =>
+        show ? (
+            <div data-testid="confirm-modal">
+                <h2>{title}</h2>
+                <p>{message}</p>
+                <button data-testid="modal-confirm" data-variant={confirmVariant} onClick={onConfirm}>
+                    {confirmText}
+                </button>
+                <button data-testid="modal-close" onClick={onClose}>
+                    Close
+                </button>
+            </div>
+        ) : null,
+}));
+
+// ---- Test fixtures ----
+
+const buildSalesOrders = (n) =>
+    Array.from({ length: n }, (_, i) => ({
+        id: i + 1,
+        so_number: `SO-${1000 + i}`,
+    }));
+
+const buildState = (overrides = {}) => ({
+    salesOrders: buildSalesOrders(5),
+    pagination: { currentPage: 1, totalPages: 3 },
+    kpi: { total: 25, completed: 10, pending: 8, cancelled: 7 },
+    loading: false,
+    customers: [
+        { id: 1, name: "ABC Trading" },
+        { id: 2, name: "Riyadh Tech" },
+        { id: 3, customer_name: "Al Noor Company" },
+        { id: 4 }, // no name -> falls back to "Customer #4"
+    ],
+    ...overrides,
+});
 
 const getDateInputs = () => ({
     start: screen.getByLabelText("Start date"),
     end: screen.getByLabelText("End date"),
 });
 
+// Matches the component's hardcoded "current month" (Sep 2026)
+const EXPECTED_MONTH_START = "2026-09-01";
+const EXPECTED_MONTH_END = "2026-09-30";
+
 describe("SalesOrder", () => {
+    let dispatchMock;
+    let navigateMock;
+    let removeSalesOrderResult;
+
+    const setupSelectors = (stateOverrides = {}) => {
+        const state = buildState(stateOverrides);
+        vi.mocked(useSelector).mockImplementation((selector) => selector(state));
+        return state;
+    };
+
     beforeEach(() => {
         vi.clearAllMocks();
+
+        navigateMock = vi.fn();
+        vi.mocked(useNavigate).mockReturnValue(navigateMock);
+
+        removeSalesOrderResult = { error: false };
+        dispatchMock = vi.fn((action) => {
+            if (action && action.type === "removeSalesOrder") {
+                return Promise.resolve(removeSalesOrderResult);
+            }
+            return action;
+        });
+        vi.mocked(useDispatch).mockReturnValue(dispatchMock);
+
+        setupSelectors();
+    });
+
+    afterEach(() => {
+        vi.useRealTimers();
     });
 
     // ---- Structure ----
@@ -177,121 +296,129 @@ describe("SalesOrder", () => {
         expect(screen.getByTestId("reusable-filter")).toBeInTheDocument();
         expect(screen.getByTestId("reusable-table")).toBeInTheDocument();
         expect(screen.getByTestId("pagination")).toBeInTheDocument();
+        expect(screen.queryByTestId("confirm-modal")).not.toBeInTheDocument();
     });
 
     it("renders the Sales / Sales Orders breadcrumbs", () => {
         render(<SalesOrder />);
 
-        expect(screen.getByTestId("breadcrumbs")).toHaveTextContent(
-            "Sales / Sales Orders"
-        );
+        expect(screen.getByTestId("breadcrumbs")).toHaveTextContent("Sales / Sales Orders");
     });
 
-    it("renders the export button and date range inside the header", () => {
+    it("navigates to the add-order page when the header button is clicked", async () => {
+        const user = userEvent.setup();
+        render(<SalesOrder />);
+
+        await user.click(screen.getByText("+ ADD NEW SALES ORDER"));
+
+        expect(navigateMock).toHaveBeenCalledWith("/sales/orders/add");
+    });
+
+    it("renders the date range inside the header actions", () => {
         render(<SalesOrder />);
 
         const actions = within(screen.getByTestId("header-actions"));
-        expect(actions.getByTestId("export-button")).toBeInTheDocument();
         expect(actions.getByTestId("date-range")).toBeInTheDocument();
     });
 
-    it("logs when the ADD NEW SALES ORDER button is clicked", async () => {
-        const user = userEvent.setup();
-        const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+    // ---- Initial data fetching ----
 
+    it("dispatches getCustomers and getSalesOrderSummary once on mount", () => {
         render(<SalesOrder />);
-        await user.click(screen.getByText("+ ADD NEW SALES ORDER"));
 
-        expect(logSpy).toHaveBeenCalledWith("Add Sales Order");
-        logSpy.mockRestore();
+        expect(getCustomers).toHaveBeenCalledTimes(1);
+        expect(getSalesOrderSummary).toHaveBeenCalledTimes(1);
+    });
+
+    it("dispatches getSalesOrders on mount with the default month range and page 1", () => {
+        render(<SalesOrder />);
+
+        expect(getSalesOrders).toHaveBeenCalledWith(
+            expect.objectContaining({
+                page: 1,
+                order_date_after: EXPECTED_MONTH_START,
+                order_date_before: EXPECTED_MONTH_END,
+            })
+        );
+        // no search/status/customer sent when empty
+        const lastCallParams = getSalesOrders.mock.calls[getSalesOrders.mock.calls.length - 1][0];
+        expect(lastCallParams).not.toHaveProperty("search");
+        expect(lastCallParams).not.toHaveProperty("order_status");
+        expect(lastCallParams).not.toHaveProperty("customer");
     });
 
     // ---- Stats ----
 
-    it("renders all 5 stat cards with Total Orders matching the dataset length", () => {
+    it("renders stat cards derived from the KPI selector", () => {
         render(<SalesOrder />);
 
         const stats = within(screen.getByTestId("stats-cards"));
-        const cards = stats.getAllByTestId("stat-card");
-        expect(cards).toHaveLength(5);
         expect(stats.getByText("Total Orders").nextSibling).toHaveTextContent("25");
+        expect(stats.getByText("Completed Orders").nextSibling).toHaveTextContent("10");
+        expect(stats.getByText("Pending Orders").nextSibling).toHaveTextContent("8");
+        expect(stats.getByText("Cancelled Orders").nextSibling).toHaveTextContent("7");
     });
 
-    // ---- Table / pagination against the mocked dataset (25 rows, page size 10) ----
+    // ---- Table / loading ----
 
-    it("paginates the mocked dataset into pages of 10", () => {
+    it("renders a row per sales order from the selector", () => {
         render(<SalesOrder />);
-
-        expect(screen.getAllByTestId("table-row")).toHaveLength(10);
-        expect(screen.getByTestId("pagination")).toHaveTextContent("1/3");
-    });
-
-    it("shows the correct slice of data after moving to page 2", async () => {
-        const user = userEvent.setup();
-        render(<SalesOrder />);
-
-        await user.click(screen.getByText("next-page"));
-
-        const rows = screen.getAllByTestId("table-row");
-        expect(rows).toHaveLength(10);
-        expect(rows[0]).toHaveTextContent("Order 11");
-        expect(rows[9]).toHaveTextContent("Order 20");
-    });
-
-    it("shows the remaining partial page (5 rows) on the last page", async () => {
-        const user = userEvent.setup();
-        render(<SalesOrder />);
-
-        await user.click(screen.getByText("next-page"));
-        await user.click(screen.getByText("next-page"));
 
         const rows = screen.getAllByTestId("table-row");
         expect(rows).toHaveLength(5);
-        expect(rows[0]).toHaveTextContent("Order 21");
-        expect(rows[4]).toHaveTextContent("Order 25");
+        expect(rows[0]).toHaveTextContent("SO-1000");
     });
 
-    it("passes employeeColumns through to the table unchanged", () => {
+    it("passes the loading flag through to the table", () => {
+        setupSelectors({ loading: true });
         render(<SalesOrder />);
 
-        const table = screen.getByTestId("reusable-table");
-        expect(JSON.parse(table.getAttribute("data-columns"))).toEqual([
-            { accessor: "id", header: "ID" },
-        ]);
+        expect(screen.getByTestId("reusable-table")).toHaveAttribute("data-loading", "true");
+        expect(screen.getByTestId("table-loading")).toBeInTheDocument();
     });
 
-    // ---- Search / status / customer filters (all reset the page) ----
+    // ---- Search (debounced) ----
 
-    it("propagates search input to state and resets to page 1", async () => {
-        const user = userEvent.setup();
+    it("updates the search input immediately but only dispatches after the debounce delay", () => {
+        vi.useFakeTimers();
         render(<SalesOrder />);
 
-        await user.click(screen.getByText("next-page")); // move to page 2 first
+        const callsBeforeTyping = getSalesOrders.mock.calls.length;
+
         fireEvent.change(screen.getByTestId("search-input"), {
             target: { value: "order" },
         });
 
         expect(screen.getByTestId("search-input")).toHaveValue("order");
+        // no new dispatch yet - still debouncing
+        expect(getSalesOrders.mock.calls.length).toBe(callsBeforeTyping);
+
+        act(() => {
+            vi.advanceTimersByTime(400);
+        });
+
+        expect(getSalesOrders).toHaveBeenLastCalledWith(
+            expect.objectContaining({ search: "order", page: 1 })
+        );
+    });
+
+    it("resets to page 1 as soon as the search value changes", () => {
+        render(<SalesOrder />);
+
+        fireEvent.click(screen.getByText("next-page")); // -> page 2
+        fireEvent.change(screen.getByTestId("search-input"), {
+            target: { value: "order" },
+        });
+
         expect(screen.getByTestId("pagination")).toHaveTextContent("1/3");
     });
 
     it("renders the search placeholder", () => {
         render(<SalesOrder />);
-        expect(screen.getByPlaceholderText("Search Order")).toBeInTheDocument();
+        expect(screen.getByPlaceholderText("Search SO Number or Customer")).toBeInTheDocument();
     });
 
-    it("propagates status filter changes and resets to page 1", async () => {
-        const user = userEvent.setup();
-        render(<SalesOrder />);
-
-        await user.click(screen.getByText("next-page"));
-        fireEvent.change(screen.getByTestId("status-select"), {
-            target: { value: "Completed" },
-        });
-
-        expect(screen.getByTestId("status-select")).toHaveValue("Completed");
-        expect(screen.getByTestId("pagination")).toHaveTextContent("1/3");
-    });
+    // ---- Status filter ----
 
     it("offers Completed, Pending and Cancelled as status options", () => {
         render(<SalesOrder />);
@@ -304,20 +431,23 @@ describe("SalesOrder", () => {
         expect(options).toEqual(["all", "Completed", "Pending", "Cancelled"]);
     });
 
-    it("propagates customer filter changes and resets to page 1", async () => {
-        const user = userEvent.setup();
+    it("maps the selected status label to its value, dispatches it, and resets the page", () => {
         render(<SalesOrder />);
 
-        await user.click(screen.getByText("next-page"));
-        fireEvent.change(screen.getByTestId("filter-customer"), {
-            target: { value: "Riyadh Tech" },
+        fireEvent.click(screen.getByText("next-page")); // -> page 2
+        fireEvent.change(screen.getByTestId("status-select"), {
+            target: { value: "Completed" },
         });
 
-        expect(screen.getByTestId("filter-customer")).toHaveValue("Riyadh Tech");
         expect(screen.getByTestId("pagination")).toHaveTextContent("1/3");
+        expect(getSalesOrders).toHaveBeenLastCalledWith(
+            expect.objectContaining({ order_status: "completed", page: 1 })
+        );
     });
 
-    it("lists all 4 customer options", () => {
+    // ---- Customer filter ----
+
+    it("builds customer options from the selector, falling back to Customer #id when unnamed", () => {
         render(<SalesOrder />);
 
         const select = screen.getByTestId("filter-customer");
@@ -326,47 +456,56 @@ describe("SalesOrder", () => {
             .map((o) => o.textContent);
 
         expect(labels).toEqual([
-            "All Customer",
+            "All Customers",
             "ABC Trading",
             "Riyadh Tech",
             "Al Noor Company",
-            "Saudi Solutions",
+            "Customer #4",
         ]);
     });
 
-    it("logs when the Filter button is clicked", async () => {
-        const user = userEvent.setup();
-        const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
-
+    it("dispatches the selected customer id and resets the page", () => {
         render(<SalesOrder />);
-        await user.click(screen.getByTestId("filter-button"));
 
-        expect(logSpy).toHaveBeenCalledWith("Filter clicked");
-        logSpy.mockRestore();
+        fireEvent.click(screen.getByText("next-page")); // -> page 2
+        fireEvent.change(screen.getByTestId("filter-customer"), {
+            target: { value: "2" },
+        });
+
+        expect(screen.getByTestId("filter-customer")).toHaveValue("2");
+        expect(screen.getByTestId("pagination")).toHaveTextContent("1/3");
+        expect(getSalesOrders).toHaveBeenLastCalledWith(
+            expect.objectContaining({ customer: "2", page: 1 })
+        );
     });
 
-    // ---- Date range defaults + behavior ----
+    // ---- Date range ----
 
-    it("defaults the date range to the current calendar month", () => {
+    it("defaults the date range to the hardcoded current month (Sep 2026)", () => {
         render(<SalesOrder />);
 
-        const expected = getExpectedMonthRange();
         const { start, end } = getDateInputs();
-
-        expect(start).toHaveValue(expected.start);
-        expect(end).toHaveValue(expected.end);
+        expect(start).toHaveValue(EXPECTED_MONTH_START);
+        expect(end).toHaveValue(EXPECTED_MONTH_END);
     });
 
-    it("updates startDate, resets the page, and keeps endDate bounded to it", async () => {
-        const user = userEvent.setup();
+    it("bounds start against end and end against start via min/max attributes", () => {
         render(<SalesOrder />);
 
-        await user.click(screen.getByText("next-page"));
+        const { start, end } = getDateInputs();
+        expect(start).toHaveAttribute("max", EXPECTED_MONTH_END);
+        expect(end).toHaveAttribute("min", EXPECTED_MONTH_START);
+    });
 
+    it("updates startDate and always resets the page, even when clearing it", () => {
+        render(<SalesOrder />);
+
+        fireEvent.click(screen.getByText("next-page")); // -> page 2
         const { start } = getDateInputs();
-        fireEvent.change(start, { target: { value: "2026-09-15" } });
 
-        expect(start).toHaveValue("2026-09-15");
+        fireEvent.change(start, { target: { value: "" } });
+
+        expect(start).toHaveValue("");
         expect(screen.getByTestId("pagination")).toHaveTextContent("1/3");
     });
 
@@ -374,111 +513,144 @@ describe("SalesOrder", () => {
         render(<SalesOrder />);
 
         const { start, end } = getDateInputs();
-        const laterThanCurrentEnd = "2099-12-31";
+        fireEvent.change(start, { target: { value: "2099-12-31" } });
 
-        fireEvent.change(start, { target: { value: laterThanCurrentEnd } });
-
-        expect(end).toHaveValue(laterThanCurrentEnd);
+        expect(end).toHaveValue("2099-12-31");
     });
 
-    it("clears startDate without resetting the page when the input is emptied", async () => {
-        const user = userEvent.setup();
-        render(<SalesOrder />);
-
-        await user.click(screen.getByText("next-page"));
-        const { start } = getDateInputs();
-
-        fireEvent.change(start, { target: { value: "" } });
-
-        expect(start).toHaveValue("");
-        // no page reset on clearing — still on page 2
-        expect(screen.getByTestId("pagination")).toHaveTextContent("2/3");
-    });
-
-    it("ignores an endDate earlier than the current startDate", () => {
+    it("ignores an endDate earlier than the current startDate (no state change)", () => {
         render(<SalesOrder />);
 
         const { start, end } = getDateInputs();
-        const expected = getExpectedMonthRange();
+        const callsBefore = getSalesOrders.mock.calls.length;
 
         fireEvent.change(end, { target: { value: "2000-01-01" } });
 
-        // unchanged — the handler returns early rather than accepting it
-        expect(end).toHaveValue(expected.end);
-        expect(start).toHaveValue(expected.start);
+        expect(end).toHaveValue(EXPECTED_MONTH_END);
+        expect(start).toHaveValue(EXPECTED_MONTH_START);
+        // early-return path: no re-render-triggering state change
+        expect(getSalesOrders.mock.calls.length).toBe(callsBefore);
     });
 
- it("accepts a valid endDate and resets the page", async () => {
-    const user = userEvent.setup();
-    render(<SalesOrder />);
-
-    await user.click(screen.getByText("next-page"));
-    const { end } = getDateInputs();
-    const expected = getExpectedMonthRange();
-
-    fireEvent.change(end, { target: { value: expected.end } });
-
-    expect(end).toHaveValue(expected.end);
-    expect(screen.getByTestId("pagination")).toHaveTextContent("1/3");
-});
-
-    it("clears endDate without resetting the page when the input is emptied", async () => {
-        const user = userEvent.setup();
+    it("accepts a valid endDate and resets the page", () => {
         render(<SalesOrder />);
 
-        await user.click(screen.getByText("next-page"));
+        fireEvent.click(screen.getByText("next-page")); // -> page 2
+        const { end } = getDateInputs();
+
+        fireEvent.change(end, { target: { value: "2026-09-25" } });
+
+        expect(end).toHaveValue("2026-09-25");
+        expect(screen.getByTestId("pagination")).toHaveTextContent("1/3");
+    });
+
+    it("clearing endDate also resets the page", () => {
+        render(<SalesOrder />);
+
+        fireEvent.click(screen.getByText("next-page")); // -> page 2
         const { end } = getDateInputs();
 
         fireEvent.change(end, { target: { value: "" } });
 
         expect(end).toHaveValue("");
-        expect(screen.getByTestId("pagination")).toHaveTextContent("2/3");
+        expect(screen.getByTestId("pagination")).toHaveTextContent("1/3");
     });
 
-    it("bounds start against end and end against start via min/max attributes", () => {
+    // ---- Pagination ----
+
+    it("reflects currentPage/totalPages from the pagination selector", () => {
+        setupSelectors({ pagination: { currentPage: 2, totalPages: 4 } });
         render(<SalesOrder />);
 
-        const expected = getExpectedMonthRange();
-        const { start, end } = getDateInputs();
-
-        expect(start).toHaveAttribute("max", expected.end);
-        expect(end).toHaveAttribute("min", expected.start);
+        expect(screen.getByTestId("pagination")).toHaveTextContent("2/4");
     });
 
-    // ---- Export ----
+    it("dispatches getSalesOrders with the new page when pagination changes", () => {
+        render(<SalesOrder />);
 
-    it("logs the current filters when Export is clicked", async () => {
+        fireEvent.click(screen.getByText("next-page"));
+
+        expect(getSalesOrders).toHaveBeenLastCalledWith(expect.objectContaining({ page: 2 }));
+    });
+
+    // ---- Delete flow ----
+
+    it("opens the confirm modal with the order's SO number when delete is clicked", async () => {
         const user = userEvent.setup();
-        const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
-
         render(<SalesOrder />);
-        fireEvent.change(screen.getByTestId("search-input"), {
-            target: { value: "order" },
-        });
-        fireEvent.change(screen.getByTestId("status-select"), {
-            target: { value: "Pending" },
-        });
 
-        await user.click(screen.getByTestId("export-button"));
+        await user.click(screen.getByText("delete-1"));
 
-        expect(logSpy).toHaveBeenCalledWith(
-            "Export Sales Orders",
-            expect.objectContaining({ search: "order", status: "Pending" })
-        );
-        logSpy.mockRestore();
+        expect(screen.getByTestId("confirm-modal")).toBeInTheDocument();
+        expect(screen.getByText("Delete Sales Order")).toBeInTheDocument();
+        expect(screen.getByText("Are you sure you want to delete sales order SO-1000?")).toBeInTheDocument();
+        expect(screen.getByTestId("modal-confirm")).toHaveTextContent("Delete");
+        expect(screen.getByTestId("modal-confirm")).toHaveAttribute("data-variant", "danger");
     });
 
-    // ---- Regression guard: stats beyond "Total Orders" are still hardcoded ----
-
-    it("REGRESSION: Completed/Pending/Cancelled counts are hardcoded to 0 regardless of data", () => {
+    it("confirming a successful delete calls removeSalesOrder, refreshes the summary, and closes the modal", async () => {
+        const user = userEvent.setup();
         render(<SalesOrder />);
 
-        const stats = within(screen.getByTestId("stats-cards"));
-        // These will need to become real derived counts once order status
-        // data exists — today they're static placeholders baked into the
-        // component, so this test documents (not celebrates) that gap.
-        expect(stats.getByText("Completed Orders").nextSibling).toHaveTextContent("0");
-        expect(stats.getByText("Pending Orders").nextSibling).toHaveTextContent("0");
-        expect(stats.getByText("Cancelled Orders").nextSibling).toHaveTextContent("0");
+        await user.click(screen.getByText("delete-1"));
+        await user.click(screen.getByTestId("modal-confirm"));
+
+        expect(removeSalesOrder).toHaveBeenCalledWith(1);
+        await waitFor(() => {
+            expect(getSalesOrderSummary).toHaveBeenCalledTimes(2); // mount + post-delete
+        });
+        expect(screen.queryByTestId("confirm-modal")).not.toBeInTheDocument();
+    });
+
+    it("shows the server error message and switches to a Close action on failed delete", async () => {
+        removeSalesOrderResult = { error: true, payload: { detail: "Order has linked invoices." } };
+        const user = userEvent.setup();
+        render(<SalesOrder />);
+
+        await user.click(screen.getByText("delete-1"));
+        await user.click(screen.getByTestId("modal-confirm"));
+
+        expect(await screen.findByText("Unable to Delete Sales Order")).toBeInTheDocument();
+        expect(screen.getByText("Order has linked invoices.")).toBeInTheDocument();
+        expect(screen.getByTestId("modal-confirm")).toHaveTextContent("Close");
+        expect(screen.getByTestId("modal-confirm")).toHaveAttribute("data-variant", "secondary");
+
+        await user.click(screen.getByTestId("modal-confirm"));
+        expect(screen.queryByTestId("confirm-modal")).not.toBeInTheDocument();
+    });
+
+    it("falls back to a default error message when the server gives no detail", async () => {
+        removeSalesOrderResult = { error: true, payload: {} };
+        const user = userEvent.setup();
+        render(<SalesOrder />);
+
+        await user.click(screen.getByText("delete-1"));
+        await user.click(screen.getByTestId("modal-confirm"));
+
+        expect(await screen.findByText("This Sales Order cannot be deleted.")).toBeInTheDocument();
+    });
+
+    it("closes the modal without deleting when Close/onClose is clicked before confirming", async () => {
+        const user = userEvent.setup();
+        render(<SalesOrder />);
+
+        await user.click(screen.getByText("delete-1"));
+        expect(screen.getByTestId("confirm-modal")).toBeInTheDocument();
+
+        await user.click(screen.getByTestId("modal-close"));
+
+        expect(screen.queryByTestId("confirm-modal")).not.toBeInTheDocument();
+        expect(removeSalesOrder).not.toHaveBeenCalled();
+    });
+
+    // ---- Columns wiring ----
+
+    it("builds the table columns via getSalesOrderColumns once", () => {
+        render(<SalesOrder />);
+
+        expect(getSalesOrderColumns).toHaveBeenCalledTimes(1);
+        expect(getSalesOrderColumns).toHaveBeenCalledWith(
+            expect.objectContaining({ onDelete: expect.any(Function) })
+        );
     });
 });

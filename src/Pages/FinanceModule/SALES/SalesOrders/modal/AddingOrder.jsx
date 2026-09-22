@@ -59,7 +59,7 @@ import {
   selectWarehouses,
   selectAvailableQuotations,
   selectSelectedQuotation,
-} from "../../../../../Redux/finance/Salesorderslice";
+} from "../../../../../Redux/finance/Sales/Salesorderslice";
 
 const defaultItem = () => ({
   id: Date.now(),
@@ -445,13 +445,26 @@ const AddingOrder = () => {
         onBack={() => navigate("/sales/orders")}
       ></ReusableHeader>
 
-      {saveError && (
-        <div style={{ padding: "0 20px", color: "#c0392b" }}>
-          {typeof saveError === "string"
+    {saveError && (
+    <div
+        style={{
+            margin: "0 20px 16px",
+            padding: "12px 16px",
+            borderRadius: "6px",
+            backgroundColor: "#fff1f0",
+            border: "1px solid #ffccc7",
+            color: "#c0392b",
+            fontSize: "14px",
+        }}
+    >
+        {typeof saveError === "string"
             ? saveError
-            : "Something went wrong saving this order."}
-        </div>
-      )}
+            : saveError?.detail ||
+              saveError?.message ||
+              saveError?.order_status?.[0] ||
+              "Unable to update Sales Order. Please try again."}
+    </div>
+)}
 
       <OrderForm>
         <FormGrid>
