@@ -14,7 +14,7 @@ import {
   DateSeparator,
 } from "./CompanyLayout.styles";
 
-import { getCustomerById } from "../../../../../Redux/finance/CustomerSlice";
+import { getCustomerById } from "../../../../../Redux/finance/Sales/CustomerSlice";
 
 /* =========================================================
    PAGE META

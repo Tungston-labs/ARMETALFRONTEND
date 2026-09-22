@@ -6,13 +6,12 @@ export const PaginationWrapper = styled.div`
   align-items: center;
   gap: 6px;
   flex-wrap: wrap;
-  margin-top: auto;
+  /* margin-top: 24px; */
   position: sticky;
   bottom: 0;
   background: #fff;
   padding: 16px 0;
   z-index: 10;
- 
 `;
 
 export const TotalRecords = styled.span`

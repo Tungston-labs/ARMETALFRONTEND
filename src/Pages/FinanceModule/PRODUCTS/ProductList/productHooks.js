@@ -16,7 +16,7 @@ import {
     selectProductPagination,
     selectProductLoading,
     selectProductKPI,
-} from "../../../../Redux/finance/ProductSlice";
+} from "../../../../Redux/finance/Product/ProductSlice";
 
 const rowsPerPage = 10;
 
@@ -53,12 +53,6 @@ export const useProductList = () => {
     const [currentPage, setCurrentPage] =
         useState(1);
 
-    /* =========================
-       FETCH PRODUCTS
-       (this single call also
-       returns KPI + pagination)
-    ========================= */
-
  const loadProducts = useCallback(() => {
     const params = {
         page: currentPage,
@@ -67,16 +61,8 @@ export const useProductList = () => {
 
     if (search.trim()) params.search = search.trim();
     if (category) params.category = category;
-    if (status) params.status = status.toLowerCase();       // "Active" -> "active"
-    if (type) params.product_type = type.toLowerCase();     // "Product" -> "product"
-
-    // Only send once the backend supports it:
-    // if (stockStatus) {
-    //     params.stock_status = stockStatus
-    //         .toLowerCase()
-    //         .replace(/\s+/g, "_");                        // "Out of Stock" -> "out_of_stock"
-    // }
-
+    if (status) params.status = status.toLowerCase();    
+    if (type) params.product_type = type.toLowerCase();    
     dispatch(getProducts(params));
 }, [
     dispatch,
@@ -87,72 +73,37 @@ export const useProductList = () => {
     type,
     stockStatus,
 ]);
-    /* =========================
-       INITIAL LOAD / REFETCH
-    ========================= */
 
     useEffect(() => {
         loadProducts();
     }, [loadProducts]);
-
-    /* =========================
-       SEARCH
-    ========================= */
-
     const handleSearch = (value) => {
         setSearch(value);
         setCurrentPage(1);
     };
 
-    /* =========================
-       CATEGORY
-    ========================= */
-
     const handleCategory = (value) => {
         setCategory(value);
         setCurrentPage(1);
     };
-
-    /* =========================
-       STATUS
-    ========================= */
-
     const handleStatus = (value) => {
         setStatus(value);
         setCurrentPage(1);
     };
-
-    /* =========================
-       TYPE
-    ========================= */
 
     const handleType = (value) => {
         setType(value);
         setCurrentPage(1);
     };
 
-    /* =========================
-       STOCK STATUS
-    ========================= */
-
     const handleStockStatus = (value) => {
         setStockStatus(value);
         setCurrentPage(1);
     };
 
-    /* =========================
-       PAGE
-    ========================= */
-
     const handlePageChange = (page) => {
         setCurrentPage(page);
     };
-
-    /* =========================
-       TOTAL PAGES
-       (comes straight from the
-       backend response now)
-    ========================= */
 
     const totalPages =
         pagination?.totalPages || 0;
@@ -163,15 +114,10 @@ export const useProductList = () => {
         status,
         type,
         stockStatus,
-
         currentPage,
-
         products,
-
         paginatedData: products,
-
         totalPages,
-
         loading,
         kpi,
 

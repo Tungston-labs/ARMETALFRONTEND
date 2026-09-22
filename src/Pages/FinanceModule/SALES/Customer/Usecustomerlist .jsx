@@ -16,7 +16,7 @@ import {
     addCustomer,
     editCustomer,
     removeCustomer,
-} from "../../../../Redux/finance/CustomerSlice";
+} from "../../../../Redux/finance/Sales/CustomerSlice";
 
 export const useCustomerList = () => {
     const dispatch = useDispatch();
