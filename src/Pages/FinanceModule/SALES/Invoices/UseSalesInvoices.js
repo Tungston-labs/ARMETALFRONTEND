@@ -1,8 +1,18 @@
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
 
 import {
-    salesInvoiceColumns,
-    salesInvoiceData,
+    getInvoices,
+    getInvoiceSummary,
+    getInvoiceCustomers,
+    removeInvoice,
+    clearInvoiceError,
+    clearInvoiceMessage,
+} from "../../../../Redux/finance/Sales/InvoiceSlice";
+
+import {
+    getSalesInvoiceColumns,
+    salesInvoiceStats,
 } from "./SalesInvoices.columns";
 
 const getCurrentMonthRange = () => {
@@ -15,11 +25,11 @@ const getCurrentMonthRange = () => {
     const lastDay = new Date(year, month + 1, 0);
 
     const formatDate = (date) => {
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, "0");
-        const day = String(date.getDate()).padStart(2, "0");
+        const y = date.getFullYear();
+        const m = String(date.getMonth() + 1).padStart(2, "0");
+        const d = String(date.getDate()).padStart(2, "0");
 
-        return `${year}-${month}-${day}`;
+        return `${y}-${m}-${d}`;
     };
 
     return {
@@ -28,19 +38,89 @@ const getCurrentMonthRange = () => {
     };
 };
 
+/*
+ * UI status labels -> API payment_status values
+ *
+ * Paid            -> paid
+ * Partially Paid  -> partially_paid
+ * Pending         -> unpaid
+ */
+const STATUS_VALUE_MAP = {
+    Paid: "paid",
+    "Partially Paid": "partially_paid",
+    Pending: "unpaid",
+};
+
+const formatLocalDate = (date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+
+    return `${year}-${month}-${day}`;
+};
+
 const useSalesInvoices = () => {
+    const dispatch = useDispatch();
+
     const currentMonth = useMemo(
         () => getCurrentMonthRange(),
         []
     );
 
-    // -----------------------------
-    // STATE
-    // -----------------------------
+    // --------------------------------------------------
+    // REDUX STATE
+    // --------------------------------------------------
+
+    const invoices = useSelector(
+        (state) => state.invoice.invoices
+    );
+
+    const totalItems = useSelector(
+        (state) => state.invoice.totalItems
+    );
+
+    const totalPages = useSelector(
+        (state) => state.invoice.totalPages
+    );
+
+    const loading = useSelector(
+        (state) => state.invoice.loading
+    );
+
+    const summary = useSelector(
+        (state) => state.invoice.summary
+    );
+
+    const summaryLoading = useSelector(
+        (state) => state.invoice.summaryLoading
+    );
+
+    const customers = useSelector(
+        (state) => state.invoice.customers
+    );
+
+    const deleteLoading = useSelector(
+        (state) => state.invoice.deleteLoading
+    );
+
+    const error = useSelector(
+        (state) => state.invoice.error
+    );
+
+    const successMessage = useSelector(
+        (state) => state.invoice.successMessage
+    );
+
+    // --------------------------------------------------
+    // LOCAL FILTER / PAGINATION STATE
+    // --------------------------------------------------
 
     const [search, setSearch] = useState("");
+
     const [status, setStatus] = useState("");
+
     const [customer, setCustomer] = useState("");
+
     const [dueDate, setDueDate] = useState("");
 
     const [startDate, setStartDate] = useState(
@@ -55,115 +135,104 @@ const useSalesInvoices = () => {
 
     const rowsPerPage = 10;
 
-    // -----------------------------
-    // FILTER DATA
-    // -----------------------------
+    // --------------------------------------------------
+    // DELETE MODAL STATE
+    // --------------------------------------------------
 
-    const filteredData = useMemo(() => {
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
+    const [deleteModal, setDeleteModal] = useState({
+        isOpen: false,
+        invoice: null,
+        loading: false,
+    });
 
-        return salesInvoiceData.filter((row) => {
-            const searchValue = search
-                .trim()
-                .toLowerCase();
+    // --------------------------------------------------
+    // BUILD API QUERY PARAMS
+    // --------------------------------------------------
 
-            const rowText = Object.values(row)
-                .filter(
-                    (value) =>
-                        value !== null &&
-                        value !== undefined
-                )
-                .join(" ")
-                .toLowerCase();
+    const buildParams = useCallback(() => {
+        const params = {
+            page: currentPage,
+            page_size: rowsPerPage,
+            ordering: "-created_at",
+        };
 
-            // SEARCH
-            const matchesSearch =
-                !searchValue ||
-                rowText.includes(searchValue);
+        // Search
+        if (search.trim()) {
+            params.search = search.trim();
+        }
 
-            // STATUS
-            const rowStatus = String(
-                row.status || ""
-            ).toLowerCase();
+        // Payment status
+        if (status) {
+            params.payment_status =
+                STATUS_VALUE_MAP[status] || status;
+        }
 
-            const matchesStatus =
-                !status ||
-                rowStatus === status.toLowerCase();
+        // Customer
+        if (customer) {
+            params.customer = customer;
+        }
 
-            // CUSTOMER
-            const rowCustomer = String(
-                row.customer || ""
-            ).toLowerCase();
+        // Invoice date range
+        if (startDate) {
+            params.invoice_date_after = startDate;
+        }
 
-            const matchesCustomer =
-                !customer ||
-                rowCustomer === customer.toLowerCase();
+        if (endDate) {
+            params.invoice_date_before = endDate;
+        }
 
-            // DUE DATE
-            let matchesDueDate = true;
+        // --------------------------------------------------
+        // Due Date Filters
+        // --------------------------------------------------
 
-            if (dueDate) {
-                const invoiceDueDate = new Date(
-                    row.due_date
-                );
+        if (dueDate) {
+            const today = new Date();
 
-                invoiceDueDate.setHours(0, 0, 0, 0);
+            today.setHours(0, 0, 0, 0);
 
-                if (dueDate === "due_today") {
-                    matchesDueDate =
-                        invoiceDueDate.getTime() ===
-                        today.getTime();
-                }
-
-                if (dueDate === "due_week") {
-                    const weekEnd = new Date(today);
-
-                    weekEnd.setDate(
-                        today.getDate() + 7
-                    );
-
-                    matchesDueDate =
-                        invoiceDueDate >= today &&
-                        invoiceDueDate <= weekEnd;
-                }
-
-                if (dueDate === "overdue") {
-                    matchesDueDate =
-                        invoiceDueDate < today &&
-                        rowStatus !== "completed";
-                }
-
-                if (dueDate === "due_later") {
-                    const weekEnd = new Date(today);
-
-                    weekEnd.setDate(
-                        today.getDate() + 7
-                    );
-
-                    matchesDueDate =
-                        invoiceDueDate > weekEnd;
-                }
+            if (dueDate === "due_today") {
+                params.due_date =
+                    formatLocalDate(today);
             }
 
-            // DATE RANGE
-            const matchesStartDate =
-                !startDate ||
-                row.invoice_date >= startDate;
+            if (dueDate === "due_week") {
+                const weekEnd = new Date(today);
 
-            const matchesEndDate =
-                !endDate ||
-                row.invoice_date <= endDate;
+                weekEnd.setDate(
+                    today.getDate() + 7
+                );
 
-            return (
-                matchesSearch &&
-                matchesStatus &&
-                matchesCustomer &&
-                matchesDueDate &&
-                matchesStartDate &&
-                matchesEndDate
-            );
-        });
+                params.due_date_after =
+                    formatLocalDate(today);
+
+                params.due_date_before =
+                    formatLocalDate(weekEnd);
+            }
+
+            if (dueDate === "overdue") {
+                const yesterday = new Date(today);
+
+                yesterday.setDate(
+                    today.getDate() - 1
+                );
+
+                params.due_date_before =
+                    formatLocalDate(yesterday);
+            }
+
+            if (dueDate === "due_later") {
+                const weekEnd = new Date(today);
+
+                weekEnd.setDate(
+                    today.getDate() + 7
+                );
+
+                params.due_date_after =
+                    formatLocalDate(weekEnd);
+            }
+        }
+
+        return params;
     }, [
         search,
         status,
@@ -171,136 +240,308 @@ const useSalesInvoices = () => {
         dueDate,
         startDate,
         endDate,
-    ]);
-
-    // -----------------------------
-    // PAGINATION
-    // -----------------------------
-
-    const totalRecords = filteredData.length;
-
-    const totalPages = Math.max(
-        1,
-        Math.ceil(
-            totalRecords / rowsPerPage
-        )
-    );
-
-    const paginatedData = useMemo(() => {
-        const start =
-            (currentPage - 1) * rowsPerPage;
-
-        return filteredData.slice(
-            start,
-            start + rowsPerPage
-        );
-    }, [
-        filteredData,
         currentPage,
     ]);
 
-    // -----------------------------
-    // FILTER HANDLERS
-    // -----------------------------
+    // --------------------------------------------------
+    // FETCH INVOICES
+    // --------------------------------------------------
 
-    const handleSearch = (value) => {
+    useEffect(() => {
+        dispatch(
+            getInvoices(buildParams())
+        );
+    }, [
+        dispatch,
+        buildParams,
+    ]);
+
+    // --------------------------------------------------
+    // FETCH SUMMARY
+    // --------------------------------------------------
+
+    useEffect(() => {
+        const params = {};
+
+        if (status) {
+            params.payment_status =
+                STATUS_VALUE_MAP[status] || status;
+        }
+
+        if (customer) {
+            params.customer = customer;
+        }
+
+        dispatch(
+            getInvoiceSummary(params)
+        );
+    }, [
+        dispatch,
+        status,
+        customer,
+    ]);
+
+    // --------------------------------------------------
+    // FETCH CUSTOMERS
+    // --------------------------------------------------
+
+    useEffect(() => {
+        dispatch(
+            getInvoiceCustomers()
+        );
+    }, [dispatch]);
+
+    // --------------------------------------------------
+    // CLEAR SUCCESS / ERROR MESSAGES
+    // --------------------------------------------------
+
+    useEffect(() => {
+        if (!error && !successMessage) {
+            return undefined;
+        }
+
+        const timer = setTimeout(() => {
+            dispatch(
+                clearInvoiceError()
+            );
+
+            dispatch(
+                clearInvoiceMessage()
+            );
+        }, 4000);
+
+        return () => {
+            clearTimeout(timer);
+        };
+    }, [
+        dispatch,
+        error,
+        successMessage,
+    ]);
+
+    // --------------------------------------------------
+    // FILTER HANDLERS
+    // --------------------------------------------------
+
+    const handleSearch = useCallback((value) => {
         setSearch(value);
         setCurrentPage(1);
-    };
+    }, []);
 
-    const handleStatus = (value) => {
+    const handleStatus = useCallback((value) => {
         setStatus(value);
         setCurrentPage(1);
-    };
+    }, []);
 
-    const handleCustomer = (value) => {
+    const handleCustomer = useCallback((value) => {
         setCustomer(value);
         setCurrentPage(1);
-    };
+    }, []);
 
-    const handleDueDate = (value) => {
+    const handleDueDate = useCallback((value) => {
         setDueDate(value);
         setCurrentPage(1);
-    };
+    }, []);
 
-    // -----------------------------
+    // --------------------------------------------------
     // DATE HANDLERS
-    // -----------------------------
+    // --------------------------------------------------
 
-    const handleStartDateChange = (e) => {
-        const value = e.target.value;
+    const handleStartDateChange = useCallback(
+        (e) => {
+            const value = e.target.value;
 
-        if (!value) {
-            setStartDate("");
+            if (!value) {
+                setStartDate("");
+                setCurrentPage(1);
+                return;
+            }
+
+            setStartDate(value);
             setCurrentPage(1);
-            return;
-        }
 
-        setStartDate(value);
-        setCurrentPage(1);
+            if (
+                endDate &&
+                value > endDate
+            ) {
+                setEndDate(value);
+            }
+        },
+        [endDate]
+    );
 
-        if (endDate && value > endDate) {
+    const handleEndDateChange = useCallback(
+        (e) => {
+            const value = e.target.value;
+
+            if (!value) {
+                setEndDate("");
+                setCurrentPage(1);
+                return;
+            }
+
+            if (
+                startDate &&
+                value < startDate
+            ) {
+                return;
+            }
+
             setEndDate(value);
-        }
-    };
-
-    const handleEndDateChange = (e) => {
-        const value = e.target.value;
-
-        if (!value) {
-            setEndDate("");
             setCurrentPage(1);
-            return;
+        },
+        [startDate]
+    );
+
+    // --------------------------------------------------
+    // OPEN DELETE MODAL
+    // --------------------------------------------------
+
+const handleDeleteInvoice = useCallback((invoice) => {
+    console.log("DELETE CLICKED:", invoice);
+
+    if (!invoice?.id) {
+        console.error("Invoice ID is missing:", invoice);
+        return;
+    }
+
+    setDeleteModal({
+        isOpen: true,
+        invoice,
+        loading: false,
+    });
+}, []);
+
+const handleDeleteCancel = useCallback(() => {
+    setDeleteModal({
+        isOpen: false,
+        invoice: null,
+        loading: false,
+    });
+}, []);
+
+const handleDeleteConfirm = useCallback(async () => {
+    const invoice = deleteModal.invoice;
+
+    console.log("CONFIRM DELETE:", invoice);
+    console.log("DELETE ID:", invoice?.id);
+
+    if (!invoice?.id) {
+        console.error("Cannot delete invoice: ID missing");
+        return;
+    }
+
+    try {
+        setDeleteModal((prev) => ({
+            ...prev,
+            loading: true,
+        }));
+
+        console.log(
+            "Dispatching removeInvoice:",
+            invoice.id
+        );
+
+        await dispatch(
+            removeInvoice(invoice.id)
+        ).unwrap();
+
+        console.log(
+            "Invoice deleted successfully:",
+            invoice.id
+        );
+
+        setDeleteModal({
+            isOpen: false,
+            invoice: null,
+            loading: false,
+        });
+
+        const summaryParams = {};
+
+        if (status) {
+            summaryParams.payment_status =
+                STATUS_VALUE_MAP[status] || status;
         }
 
-        if (
-            startDate &&
-            value < startDate
-        ) {
-            return;
+        if (customer) {
+            summaryParams.customer = customer;
         }
 
-        setEndDate(value);
-        setCurrentPage(1);
-    };
+        await dispatch(
+            getInvoiceSummary(summaryParams)
+        ).unwrap();
 
-    // -----------------------------
+    } catch (deleteError) {
+        console.error(
+            "DELETE INVOICE FAILED:",
+            deleteError
+        );
+
+        setDeleteModal((prev) => ({
+            ...prev,
+            loading: false,
+        }));
+    }
+}, [
+    dispatch,
+    deleteModal.invoice,
+    status,
+    customer,
+]);
+
+    // --------------------------------------------------
+    // CONFIRM DELETE
+    // --------------------------------------------------
+
+
+    // --------------------------------------------------
+    // COLUMNS
+    // --------------------------------------------------
+
+    const salesInvoiceColumns = useMemo(
+        () =>
+            getSalesInvoiceColumns(
+                handleDeleteInvoice
+            ),
+        [handleDeleteInvoice]
+    );
+
+    // --------------------------------------------------
     // EXPORT
-    // -----------------------------
+    // --------------------------------------------------
 
-    const handleExport = () => {
-        if (!filteredData.length) {
+    const handleExport = useCallback(() => {
+        if (!invoices?.length) {
             console.log(
                 "No data to export"
             );
+
             return;
         }
 
-        const headers = salesInvoiceColumns
-            .filter(
+        const exportableColumns =
+            salesInvoiceColumns.filter(
                 (column) =>
                     column.accessor !==
                     "actions"
-            )
-            .map(
+            );
+
+        const headers =
+            exportableColumns.map(
                 (column) =>
                     column.header
             );
 
-        const accessors = salesInvoiceColumns
-            .filter(
-                (column) =>
-                    column.accessor !==
-                    "actions"
-            )
-            .map(
+        const accessors =
+            exportableColumns.map(
                 (column) =>
                     column.accessor
             );
 
         const csvRows = [
             headers.join(","),
-            ...filteredData.map((row) =>
+            ...invoices.map((row) =>
                 accessors
                     .map((accessor) => {
                         const value =
@@ -336,6 +577,7 @@ const useSalesInvoices = () => {
             document.createElement("a");
 
         link.href = url;
+
         link.download =
             "sales-invoices.csv";
 
@@ -346,115 +588,100 @@ const useSalesInvoices = () => {
         document.body.removeChild(link);
 
         URL.revokeObjectURL(url);
-    };
+    }, [
+        invoices,
+        salesInvoiceColumns,
+    ]);
 
-    // -----------------------------
+    // --------------------------------------------------
     // STATS
-    // -----------------------------
+    // --------------------------------------------------
 
-    const getStatusCount = (
-        targetStatus
-    ) => {
-        return filteredData.filter(
-            (row) =>
-                String(
-                    row.status || ""
-                ).toLowerCase() ===
-                targetStatus.toLowerCase()
-        ).length;
-    };
+    const salesOrderStats =
+        salesInvoiceStats(
+            summary || {}
+        );
 
-    const totalAmount = filteredData.reduce(
-        (total, row) => {
-            const amount = Number(
-                String(
-                    row.total_amount
-                )
-                    .replace("SAR", "")
-                    .replace(/,/g, "")
-                    .trim()
-            );
+    // --------------------------------------------------
+    // CUSTOMER OPTIONS
+    // --------------------------------------------------
 
-            return total + (
-                Number.isNaN(amount)
-                    ? 0
-                    : amount
-            );
-        },
-        0
+    const customerOptions = useMemo(
+        () =>
+            (customers || []).map(
+                (c) => ({
+                    label:
+                        c.name ||
+                        c.display_name ||
+                        c.customer_name ||
+                        "Unknown Customer",
+
+                    value: String(
+                        c.id
+                    ),
+                })
+            ),
+        [customers]
     );
 
-    const salesOrderStats = {
-        totalOrders: totalRecords,
-
-        totalAmount: ` ${totalAmount.toLocaleString(
-            "en-US",
-            {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2,
-            }
-        )}`,
-
-        completedOrders:
-            getStatusCount(
-                "Completed"
-            ),
-
-        pendingOrders:
-            getStatusCount(
-                "Pending"
-            ),
-
-        cancelledOrders:
-            getStatusCount(
-                "Cancelled"
-            ),
-    };
-
-    // -----------------------------
+    // --------------------------------------------------
     // RETURN
-    // -----------------------------
+    // --------------------------------------------------
 
     return {
+        // Table
         salesInvoiceColumns,
+        paginatedData: invoices,
 
-        paginatedData,
-
-        totalRecords,
-
+        // Pagination
+        totalRecords: totalItems,
         totalPages,
-
         rowsPerPage,
 
+        // Loading
+        loading,
+        summaryLoading,
+        deleteLoading,
+
+        // Messages
+        error,
+        successMessage,
+
+        // Filters
         search,
-
         status,
-
         customer,
-
         dueDate,
 
+        // Date range
         startDate,
-
         endDate,
 
+        // Pagination state
         currentPage,
 
+        // Stats
         salesOrderStats,
 
+        // Customers
+        customerOptions,
+
+        // Delete modal
+        deleteModal,
+
+        // Handlers
         handleSearch,
-
         handleStatus,
-
         handleCustomer,
-
         handleDueDate,
 
         handleStartDateChange,
-
         handleEndDateChange,
 
         handleExport,
+
+        handleDeleteCancel,
+        handleDeleteConfirm,
 
         setCurrentPage,
     };

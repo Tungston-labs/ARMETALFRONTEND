@@ -2,7 +2,7 @@ import styled from "styled-components";
 
 export const InvoiceContainer = styled.div`
     width: 100%;
-
+    min-height: 100%;
     padding: 20px;
     box-sizing: border-box;
 

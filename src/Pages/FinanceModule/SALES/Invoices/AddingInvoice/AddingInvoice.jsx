@@ -1,5 +1,4 @@
-import React, { useState, useEffect } from "react";
-import { useParams, useNavigate, useLocation } from "react-router-dom";
+import React from "react";
 import {
   FiChevronDown,
   FiPlus,
@@ -35,163 +34,104 @@ import {
   PreviewButton,
 } from "./AddingInvoice.styles";
 import ReusableHeader from "../../../../../Components/ReusableTable/ReusableHeader";
-import { getInvoiceById } from "../SalesInvoices.columns";
+import useAddingInvoice from "./Useaddinginvoice";
 
-const defaultItem = () => ({
-  id: Date.now(),
-  slNo: "01",
-  service: "",
-  particular: "",
-  qty: "",
-  hsCode: "",
-  rate: "",
-  vat: "",
-  vatAmount: "",
-  amount: "",
-});
+/* Small presentational-only helpers, kept local since they are pure UI */
+const UploadBox = ({ children }) => (
+  <div
+    style={{
+      height: "30px",
+      border: "1px solid #e5e5e5",
+      borderRadius: "3px",
+      display: "flex",
+      alignItems: "center",
+      paddingLeft: "15px",
+      color: "#111",
+    }}
+  >
+    {children}
+  </div>
+);
 
-const emptyForm = {
-  invoiceNumber: "",
-  salesOrderRef: "",
-  paymentStatus: "",
-  from: { name: "", address: "", phone: "", email: "" },
-  billTo: { client: "", address: "", phone: "", email: "" },
-  payment: { accountHolder: "", accountNumber: "", iban: "" },
-  summary: { subTotal: "", vat: "", discount: "", roundOff: "", total: "" },
-  items: [defaultItem()],
-};
-
-// Bridges the flat mock row shape (SalesInvoices.columns.jsx) into the
-// nested shape this form works with. Swap this out once a real
-// "get invoice detail by id" endpoint exists — items/from/payment
-// currently have no source data and are left at defaults. so_ref
-// already exists on the mock rows (see SalesInvoices.columns.jsx),
-// so it maps straight through.
-const mapRowToFormData = (row) => ({
-  invoiceNumber: row.invoice_number || "",
-  salesOrderRef: row.so_ref || "",
-  invoiceDate: row.invoice_date || "",
-  dueDate: row.due_date || "",
-  paymentStatus: (row.payment_status || "").toLowerCase().includes("partial")
-    ? "partial"
-    : (row.payment_status || "").toLowerCase(),
-  from: emptyForm.from,
-  billTo: { ...emptyForm.billTo, client: row.customer || "" },
-  payment: emptyForm.payment,
-  summary: {
-    ...emptyForm.summary,
-    subTotal: row.amount || "",
-    total: row.amount || "",
-  },
-  items: [defaultItem()],
-});
+const errorStyle = { borderColor: "#c0392b" };
+const ErrorText = ({ children }) =>
+  children ? (
+    <span
+      style={{
+        display: "block",
+        color: "#c0392b",
+        fontSize: "12px",
+        marginTop: "4px",
+      }}
+    >
+      {children}
+    </span>
+  ) : null;
 
 const AddingInvoice = () => {
-  const { id } = useParams();
-  const navigate = useNavigate();
-  const location = useLocation();
-  const isEditMode = Boolean(id);
-  const today = new Date().toISOString().split("T")[0];
+  const {
+    id,
+    isEditMode,
+    salesOrders,
+    customers,
+    detailLoading,
+    saveError,
+    invoiceNumber,
+    salesOrderRef,
+    invoiceDate,
+    dueDate,
+    paymentStatus,
+    amountPaid,
+    from,
+    billTo,
+    payment,
+    summary,
+    items,
+    errors,
+    isSaving,
+    notFound,
+    handleInvoiceNumberChange,
+    handleInvoiceDateChange,
+    handleDueDateChange,
+    handlePaymentStatusChange,
+    handleAmountPaidChange,
+    updateFrom,
+    updateBillTo,
+    updatePayment,
+    handleSalesOrderChange,
+    handleCustomerChange,
+    addItem,
+    removeItem,
+    updateItem,
+    handleCancel,
+    handleSave,
+    selectedInvoice,
+    navigate,
+  } = useAddingInvoice();
 
-  // Prefer the row passed via navigate() state (fast path, no lookup).
-  // Fall back to the mock-data lookup for direct links/page refreshes,
-  // where location.state is empty.
-  const existingRow = isEditMode
-    ? location.state?.invoiceData || getInvoiceById(id)
-    : null;
-
-  const initialData = existingRow ? mapRowToFormData(existingRow) : null;
-  const notFound = isEditMode && !existingRow;
-
-  const [invoiceNumber, setInvoiceNumber] = useState(initialData?.invoiceNumber || "");
-  const [salesOrderRef, setSalesOrderRef] = useState(initialData?.salesOrderRef || "");
-  const [invoiceDate, setInvoiceDate] = useState(initialData?.invoiceDate || today);
-  const [dueDate, setDueDate] = useState(initialData?.dueDate || "");
-  const [paymentStatus, setPaymentStatus] = useState(initialData?.paymentStatus || "");
-  const [from, setFrom] = useState(initialData?.from || emptyForm.from);
-  const [billTo, setBillTo] = useState(initialData?.billTo || emptyForm.billTo);
-  const [payment, setPayment] = useState(initialData?.payment || emptyForm.payment);
-  const [summary, setSummary] = useState(initialData?.summary || emptyForm.summary);
-  const [items, setItems] = useState(initialData?.items || [defaultItem()]);
-
-  // Re-sync if the :id param changes while this component stays mounted
-  useEffect(() => {
-    if (existingRow) {
-      const mapped = mapRowToFormData(existingRow);
-      setInvoiceNumber(mapped.invoiceNumber);
-      setSalesOrderRef(mapped.salesOrderRef);
-      setInvoiceDate(mapped.invoiceDate);
-      setDueDate(mapped.dueDate);
-      setPaymentStatus(mapped.paymentStatus);
-      setFrom(mapped.from);
-      setBillTo(mapped.billTo);
-      setPayment(mapped.payment);
-      setSummary(mapped.summary);
-      setItems(mapped.items);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id]);
-
-  const addItem = () => {
-    setItems((prev) => [
-      ...prev,
-      {
-        id: Date.now(),
-        slNo: String(prev.length + 1).padStart(2, "0"),
-        service: "",
-        particular: "",
-        qty: "",
-        hsCode: "",
-        rate: "",
-        vat: "",
-        vatAmount: "",
-        amount: "",
-      },
-    ]);
-  };
-
-  const removeItem = (itemId) => {
-    setItems((prev) => prev.filter((item) => item.id !== itemId));
-  };
-
-  const updateItem = (itemId, field, value) => {
-    setItems((prev) =>
-      prev.map((item) =>
-        item.id === itemId ? { ...item, [field]: value } : item
-      )
+  if (detailLoading && isEditMode && !selectedInvoice) {
+    return (
+      <InvoiceContainer>
+        <ReusableHeader
+          title="Edit Invoice"
+          breadcrumbs={["Sales", "Invoices"]}
+          showBack
+          onBack={() => navigate("/sales/invoices")}
+        />
+        <div style={{ padding: 20 }}>Loading invoice...</div>
+      </InvoiceContainer>
     );
-  };
-
-  const handleCancel = () => navigate("/sales/invoices");
-
-  const handleSave = () => {
-    const payload = {
-      ...(isEditMode ? { id } : {}),
-      invoiceNumber,
-      salesOrderRef,
-      invoiceDate,
-      dueDate,
-      paymentStatus,
-      from,
-      billTo,
-      payment,
-      summary,
-      items,
-    };
-    // TODO: POST for create, PATCH/PUT for update, against your real API
-    console.log(isEditMode ? "Update invoice:" : "Create invoice:", payload);
-    navigate("/sales/invoices");
-  };
+  }
 
   if (notFound) {
     return (
       <InvoiceContainer>
         <ReusableHeader
-          title={isEditMode ? "Edit Invoice" : "Generate New Invoice"}
+          title="Invoice not found"
           breadcrumbs={["Sales", "Invoices"]}
           showBack
           onBack={() => navigate("/sales/invoices")}
-        ></ReusableHeader>
+        />
         <div style={{ padding: 20 }}>
           No invoice found for id "{id}".{" "}
           <button onClick={handleCancel}>Back to Invoices</button>
@@ -209,16 +149,35 @@ const AddingInvoice = () => {
         onBack={() => navigate("/sales/invoices")}
       ></ReusableHeader>
 
+      {saveError && (
+        <div style={{ padding: "0 20px", color: "#c0392b" }}>
+          {typeof saveError === "string"
+            ? saveError
+            : "Something went wrong saving this invoice."}
+        </div>
+      )}
+
       <InvoiceForm>
         <FormGrid>
           <FormGroup>
             <Label>SALES ORDER REFERENCE</Label>
-            <Input
-              placeholder="S0 0123 - CHICKING"
-              value={salesOrderRef}
-              onChange={(e) => setSalesOrderRef(e.target.value)}
-              readOnly={isEditMode}
-            />
+            {isEditMode ? (
+              <Input value={salesOrderRef} readOnly />
+            ) : (
+              <SelectWrapper>
+                <Select value={salesOrderRef} onChange={handleSalesOrderChange}>
+                  <option value="" disabled>
+                    Select Sales Order
+                  </option>
+                  {salesOrders.map((order) => (
+                    <option key={order.id} value={order.id}>
+                      {order.so_number || order.order_number || `Sales Order #${order.id}`}
+                    </option>
+                  ))}
+                </Select>
+                <FiChevronDown />
+              </SelectWrapper>
+            )}
           </FormGroup>
 
           <FormGroup>
@@ -226,9 +185,11 @@ const AddingInvoice = () => {
             <Input
               placeholder="INV001"
               value={invoiceNumber}
-              onChange={(e) => setInvoiceNumber(e.target.value)}
+              onChange={(e) => handleInvoiceNumberChange(e.target.value)}
               readOnly={isEditMode}
+              style={errors.invoiceNumber ? errorStyle : undefined}
             />
+            <ErrorText>{errors.invoiceNumber}</ErrorText>
           </FormGroup>
 
           <FormGroup>
@@ -237,11 +198,26 @@ const AddingInvoice = () => {
               <Input
                 type="date"
                 value={invoiceDate}
-                onChange={(e) => setInvoiceDate(e.target.value)}
+                onChange={(e) => handleInvoiceDateChange(e.target.value)}
                 readOnly={isEditMode}
                 disabled={isEditMode}
+                style={errors.invoiceDate ? errorStyle : undefined}
               />
             </CalendarInput>
+            <ErrorText>{errors.invoiceDate}</ErrorText>
+          </FormGroup>
+
+          <FormGroup>
+            <Label>DUE DATE</Label>
+            <CalendarInput>
+              <Input
+                type="date"
+                value={dueDate}
+                onChange={(e) => handleDueDateChange(e.target.value)}
+                style={errors.dueDate ? errorStyle : undefined}
+              />
+            </CalendarInput>
+            <ErrorText>{errors.dueDate}</ErrorText>
           </FormGroup>
 
           <FormGroup>
@@ -249,17 +225,34 @@ const AddingInvoice = () => {
             <SelectWrapper>
               <Select
                 value={paymentStatus}
-                onChange={(e) => setPaymentStatus(e.target.value)}
+                onChange={(e) => handlePaymentStatusChange(e.target.value)}
+                style={errors.paymentStatus ? errorStyle : undefined}
               >
                 <option value="" disabled>
                   Select Payment Status
                 </option>
                 <option value="paid">Paid</option>
                 <option value="pending">Pending</option>
-                <option value="partial">Partially Paid</option>
+                <option value="partially_paid">Partially Paid</option>
               </Select>
               <FiChevronDown />
             </SelectWrapper>
+            <ErrorText>{errors.paymentStatus}</ErrorText>
+          </FormGroup>
+
+          <FormGroup>
+            <Label>AMOUNT PAID</Label>
+            <Input
+              type="number"
+              min="0"
+              step="0.01"
+              placeholder="0.00"
+              value={amountPaid}
+              onChange={(e) => handleAmountPaidChange(e.target.value)}
+              readOnly={paymentStatus === "paid" || paymentStatus === "pending"}
+              style={errors.amountPaid ? errorStyle : undefined}
+            />
+            <ErrorText>{errors.amountPaid}</ErrorText>
           </FormGroup>
 
           <FormGroup>
@@ -267,9 +260,11 @@ const AddingInvoice = () => {
             <Input
               placeholder="TUNGSTON LABS"
               value={from.name}
-              onChange={(e) => setFrom({ ...from, name: e.target.value })}
+              onChange={(e) => updateFrom("name", e.target.value)}
               readOnly={isEditMode}
+              style={errors.fromName ? errorStyle : undefined}
             />
+            <ErrorText>{errors.fromName}</ErrorText>
           </FormGroup>
 
           <FormGroup>
@@ -277,7 +272,7 @@ const AddingInvoice = () => {
             <Input
               placeholder="Tungston Labs, Ullampilly Building,..."
               value={from.address}
-              onChange={(e) => setFrom({ ...from, address: e.target.value })}
+              onChange={(e) => updateFrom("address", e.target.value)}
               readOnly={isEditMode}
             />
           </FormGroup>
@@ -287,9 +282,11 @@ const AddingInvoice = () => {
             <Input
               placeholder="+91 97783 77526"
               value={from.phone}
-              onChange={(e) => setFrom({ ...from, phone: e.target.value })}
+              onChange={(e) => updateFrom("phone", e.target.value)}
               readOnly={isEditMode}
+              style={errors.fromPhone ? errorStyle : undefined}
             />
+            <ErrorText>{errors.fromPhone}</ErrorText>
           </FormGroup>
 
           <FormGroup>
@@ -297,9 +294,11 @@ const AddingInvoice = () => {
             <Input
               placeholder="info@tungstonlabs.com"
               value={from.email}
-              onChange={(e) => setFrom({ ...from, email: e.target.value })}
+              onChange={(e) => updateFrom("email", e.target.value)}
               readOnly={isEditMode}
+              style={errors.fromEmail ? errorStyle : undefined}
             />
+            <ErrorText>{errors.fromEmail}</ErrorText>
           </FormGroup>
 
           <FormGroup>
@@ -307,17 +306,24 @@ const AddingInvoice = () => {
             <SelectWrapper>
               <Select
                 value={billTo.client}
-                onChange={(e) => setBillTo({ ...billTo, client: e.target.value })}
+                onChange={handleCustomerChange}
                 disabled={isEditMode}
+                style={errors.billToClient ? errorStyle : undefined}
               >
                 <option value="" disabled>
                   Company/Client Name
                 </option>
-                <option value="client1">Company 1</option>
-                <option value="client2">Company 2</option>
+                {customers.map((customer) => (
+                  <option key={customer.id} value={customer.id}>
+                    {customer.name ||
+                      customer.customer_name ||
+                      `Customer #${customer.id}`}
+                  </option>
+                ))}
               </Select>
               <FiChevronDown />
             </SelectWrapper>
+            <ErrorText>{errors.billToClient}</ErrorText>
           </FormGroup>
 
           <FormGroup>
@@ -325,9 +331,7 @@ const AddingInvoice = () => {
             <Input
               placeholder="Company/Client ADDRESS"
               value={billTo.address}
-              onChange={(e) =>
-                setBillTo({ ...billTo, address: e.target.value })
-              }
+              onChange={(e) => updateBillTo("address", e.target.value)}
               readOnly={isEditMode}
             />
           </FormGroup>
@@ -337,11 +341,11 @@ const AddingInvoice = () => {
             <Input
               placeholder="Company/Client Phone Number"
               value={billTo.phone}
-              onChange={(e) =>
-                setBillTo({ ...billTo, phone: e.target.value })
-              }
+              onChange={(e) => updateBillTo("phone", e.target.value)}
               readOnly={isEditMode}
+              style={errors.billToPhone ? errorStyle : undefined}
             />
+            <ErrorText>{errors.billToPhone}</ErrorText>
           </FormGroup>
 
           <FormGroup>
@@ -349,11 +353,11 @@ const AddingInvoice = () => {
             <Input
               placeholder="Company/Client Email ID"
               value={billTo.email}
-              onChange={(e) =>
-                setBillTo({ ...billTo, email: e.target.value })
-              }
+              onChange={(e) => updateBillTo("email", e.target.value)}
               readOnly={isEditMode}
+              style={errors.billToEmail ? errorStyle : undefined}
             />
+            <ErrorText>{errors.billToEmail}</ErrorText>
           </FormGroup>
         </FormGrid>
 
@@ -367,6 +371,8 @@ const AddingInvoice = () => {
           )}
         </InvoiceItemsHeader>
 
+        <ErrorText>{errors.itemsGeneral}</ErrorText>
+
         <InvoiceTableWrapper>
           <InvoiceTable>
             <thead>
@@ -378,83 +384,94 @@ const AddingInvoice = () => {
                 <th>HS Code</th>
                 <th>Rate</th>
                 <th>VAT (%)</th>
-                <th>VAT (SAR)</th>
+                <th>VAT </th>
                 <th>Amount</th>
                 <th>Action</th>
               </tr>
             </thead>
 
             <tbody>
-              {items.map((item) => (
-                <tr key={item.id}>
-                  <td>{item.slNo}</td>
-                  <td>
-                    <input
-                      placeholder="App Design"
-                      value={item.service}
-                      onChange={(e) => updateItem(item.id, "service", e.target.value)}
-                      readOnly={isEditMode}
-                    />
-                  </td>
-                  <td>
-                    <input
-                      placeholder="Wireframe Of 15 Pages"
-                      value={item.particular}
-                      onChange={(e) => updateItem(item.id, "particular", e.target.value)}
-                      readOnly={isEditMode}
-                    />
-                  </td>
-                  <td>
-                    <input
-                      value={item.qty}
-                      onChange={(e) => updateItem(item.id, "qty", e.target.value)}
-                      readOnly={isEditMode}
-                    />
-                  </td>
-                  <td>
-                    <input
-                      value={item.hsCode}
-                      onChange={(e) => updateItem(item.id, "hsCode", e.target.value)}
-                      readOnly={isEditMode}
-                    />
-                  </td>
-                  <td>
-                    <input
-                      value={item.rate}
-                      onChange={(e) => updateItem(item.id, "rate", e.target.value)}
-                      readOnly={isEditMode}
-                    />
-                  </td>
-                  <td>
-                    <input
-                      value={item.vat}
-                      onChange={(e) => updateItem(item.id, "vat", e.target.value)}
-                      readOnly={isEditMode}
-                    />
-                  </td>
-                  <td>
-                    <input
-                      value={item.vatAmount}
-                      onChange={(e) => updateItem(item.id, "vatAmount", e.target.value)}
-                      readOnly={isEditMode}
-                    />
-                  </td>
-                  <td>
-                    <input
-                      value={item.amount}
-                      onChange={(e) => updateItem(item.id, "amount", e.target.value)}
-                      readOnly={isEditMode}
-                    />
-                  </td>
-                  <td>
-                    {!isEditMode && (
-                      <DeleteButton onClick={() => removeItem(item.id)}>
-                        <FiX />
-                      </DeleteButton>
-                    )}
-                  </td>
-                </tr>
-              ))}
+              {items.map((item) => {
+                const rowErrors = errors.items?.[item.id] || {};
+                return (
+                  <tr key={item.id}>
+                    <td>{item.slNo}</td>
+                    <td>
+                      <input
+                        placeholder="App Design"
+                        value={item.service}
+                        onChange={(e) => updateItem(item.id, "service", e.target.value)}
+                        readOnly={isEditMode}
+                        style={rowErrors.service ? errorStyle : undefined}
+                      />
+                      <ErrorText>{rowErrors.service}</ErrorText>
+                    </td>
+                    <td>
+                      <input
+                        placeholder="Wireframe Of 15 Pages"
+                        value={item.particular}
+                        onChange={(e) => updateItem(item.id, "particular", e.target.value)}
+                        readOnly={isEditMode}
+                      />
+                    </td>
+                    <td>
+                      <input
+                        value={item.qty}
+                        onChange={(e) => updateItem(item.id, "qty", e.target.value)}
+                        readOnly={isEditMode}
+                        style={rowErrors.qty ? errorStyle : undefined}
+                      />
+                      <ErrorText>{rowErrors.qty}</ErrorText>
+                    </td>
+                    <td>
+                      <input
+                        value={item.hsCode}
+                        onChange={(e) => updateItem(item.id, "hsCode", e.target.value)}
+                        readOnly={isEditMode}
+                      />
+                    </td>
+                    <td>
+                      <input
+                        value={item.rate}
+                        onChange={(e) => updateItem(item.id, "rate", e.target.value)}
+                        readOnly={isEditMode}
+                        style={rowErrors.rate ? errorStyle : undefined}
+                      />
+                      <ErrorText>{rowErrors.rate}</ErrorText>
+                    </td>
+                    <td>
+                      <input
+                        value={item.vat}
+                        onChange={(e) => updateItem(item.id, "vat", e.target.value)}
+                        readOnly={isEditMode}
+                        style={rowErrors.vat ? errorStyle : undefined}
+                      />
+                      <ErrorText>{rowErrors.vat}</ErrorText>
+                    </td>
+                    <td>
+                      <input
+                        value={item.vatAmount}
+                        onChange={(e) => updateItem(item.id, "vatAmount", e.target.value)}
+                        readOnly={isEditMode}
+                      />
+                    </td>
+                    <td>
+                      <input
+                        value={item.amount}
+                        onChange={(e) => updateItem(item.id, "amount", e.target.value)}
+                        readOnly={isEditMode}
+                      />
+                    </td>
+                    <td>
+                      {!isEditMode && (
+                        <DeleteButton onClick={() => removeItem(item.id)}>
+                          <FiX />
+                        </DeleteButton>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </InvoiceTable>
         </InvoiceTableWrapper>
@@ -472,9 +489,7 @@ const AddingInvoice = () => {
                 <Input
                   placeholder="TUNGSTON LABS"
                   value={payment.accountHolder}
-                  onChange={(e) =>
-                    setPayment({ ...payment, accountHolder: e.target.value })
-                  }
+                  onChange={(e) => updatePayment("accountHolder", e.target.value)}
                   readOnly={isEditMode}
                 />
               </FormGroup>
@@ -484,9 +499,7 @@ const AddingInvoice = () => {
                 <Input
                   placeholder="12534789652135"
                   value={payment.accountNumber}
-                  onChange={(e) =>
-                    setPayment({ ...payment, accountNumber: e.target.value })
-                  }
+                  onChange={(e) => updatePayment("accountNumber", e.target.value)}
                   readOnly={isEditMode}
                 />
               </FormGroup>
@@ -496,9 +509,11 @@ const AddingInvoice = () => {
                 <Input
                   placeholder="2654559"
                   value={payment.iban}
-                  onChange={(e) => setPayment({ ...payment, iban: e.target.value })}
+                  onChange={(e) => updatePayment("iban", e.target.value)}
                   readOnly={isEditMode}
+                  style={errors.iban ? errorStyle : undefined}
                 />
+                <ErrorText>{errors.iban}</ErrorText>
               </FormGroup>
 
               <FormGroup>
@@ -513,52 +528,36 @@ const AddingInvoice = () => {
           <PaymentRight>
             <SummaryRow>
               <span>Sub Total</span>
-              <strong>{summary.subTotal || "SAR 0"}</strong>
+              <strong>{summary.subTotal || "0"}</strong>
             </SummaryRow>
             <SummaryRow>
               <span>Total VAT (15%)</span>
-              <strong>{summary.vat || "SAR 0"}</strong>
+              <strong>{summary.vat || "0"}</strong>
             </SummaryRow>
             <SummaryRow>
               <span>Discount</span>
-              <strong className="discount">{summary.discount || "SAR 0"}</strong>
+              <strong className="discount">{summary.discount || "0"}</strong>
             </SummaryRow>
             <SummaryRow>
               <span>Round Off</span>
-              <strong>{summary.roundOff || "SAR 0"}</strong>
+              <strong>{summary.roundOff || "0"}</strong>
             </SummaryRow>
             <TotalAmount>
               <span>TOTAL AMOUNT</span>
-              <strong>{summary.total || "SAR 0"}</strong>
+              <strong>{summary.total || " 0"}</strong>
             </TotalAmount>
           </PaymentRight>
         </PaymentSection>
 
         <ButtonWrapper>
           <CancelButton onClick={handleCancel}>CANCEL</CancelButton>
-          <PreviewButton onClick={handleSave}>
-            {isEditMode ? "UPDATE" : "PREVIEW"}
+          <PreviewButton onClick={handleSave} disabled={isSaving}>
+            {isSaving ? "SAVING..." : isEditMode ? "UPDATE" : "PREVIEW"}
           </PreviewButton>
         </ButtonWrapper>
       </InvoiceForm>
     </InvoiceContainer>
   );
 };
-
-const UploadBox = ({ children }) => (
-  <div
-    style={{
-      height: "30px",
-      border: "1px solid #e5e5e5",
-      borderRadius: "3px",
-      display: "flex",
-      alignItems: "center",
-      paddingLeft: "15px",
-      color: "#111",
-    }}
-  >
-    {children}
-  </div>
-);
 
 export default AddingInvoice;

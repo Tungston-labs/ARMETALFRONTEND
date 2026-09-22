@@ -7,6 +7,7 @@ import {
     FiMoreVertical,
     FiEdit2,
     FiTrash2,
+    FiLoader,
 } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
 import {
@@ -20,6 +21,7 @@ const InvoiceActions = ({
     onDelete,
 }) => {
     const [open, setOpen] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
     const navigate = useNavigate();
     const wrapperRef = useRef(null);
 
@@ -46,11 +48,29 @@ const InvoiceActions = ({
                 handleClickOutside
             );
     }, []);
+
     const handleEdit = (invoice) => {
         navigate(`/sales/invoices/edit/${invoice.id}`, {
             state: { invoiceData: invoice },
         });
     };
+
+    const handleDelete = async () => {
+        if (!onDelete || isDeleting) return;
+
+        setOpen(false);
+        setIsDeleting(true);
+
+        try {
+            await onDelete(row);
+        } catch (err) {
+
+            console.error("Failed to delete invoice:", err);
+        } finally {
+            setIsDeleting(false);
+        }
+    };
+
     return (
         <ActionWrapper ref={wrapperRef}>
             {/* MORE BUTTON */}
@@ -62,13 +82,14 @@ const InvoiceActions = ({
                     setOpen((prev) => !prev);
                 }}
                 title="Actions"
+                disabled={isDeleting}
             >
-                <FiMoreVertical size={12} />
+                {isDeleting ? (
+                    <FiLoader size={12} className="spin" />
+                ) : (
+                    <FiMoreVertical size={12} />
+                )}
             </ActionButton>
-
-            {/* VIEW */}
-
-
 
             {/* EDIT */}
 
@@ -98,9 +119,7 @@ const InvoiceActions = ({
                 onClick={(e) => {
                     e.stopPropagation();
 
-                    onDelete?.(row);
-
-                    setOpen(false);
+                    handleDelete();
                 }}
             >
                 <FiTrash2 size={12} />

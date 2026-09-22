@@ -19,7 +19,8 @@ import categoryReducer from "./finance/Product/categorySlice";
 import productReducer from "./finance/Product/ProductSlice";
 import customerReducer from "./finance/Sales/CustomerSlice";
 import inventoryReducer from "../Redux/inventorySlice";
-import salesOrderReducer from "../Redux/finance/Salesorderslice";
+import salesOrderReducer from "../Redux/finance/Sales/Salesorderslice";
+import invoiceReducer from "../Redux/finance/Sales/InvoiceSlice";
 export const store = configureStore({
   reducer: {
 
@@ -45,5 +46,6 @@ export const store = configureStore({
     warehouse: warehouseReducer,
     inventory: inventoryReducer,
        salesOrder: salesOrderReducer,
+    invoice: invoiceReducer,
   },
 });

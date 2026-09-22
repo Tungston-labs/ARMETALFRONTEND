@@ -3,7 +3,6 @@ import React from "react";
 import {
     FiDownload,
 } from "react-icons/fi";
-
 import ReusableHeader from "../../../../Components/ReusableTable/ReusableHeader";
 import ReusableFilter from "../../../../Components/ReusableTable/ReusableFilter";
 import ReusableTable from "../../../../Components/ReusableTable/ReusableTable";
@@ -17,20 +16,21 @@ import {
     DateSeparator,
     ExportButton,
 } from "./SalesInvoices.styles";
-
-import {
-    salesInvoiceStats,
-} from "./SalesInvoices.columns";
-
 import useSalesInvoices from "./UseSalesInvoices";
+import ReusableConfirmModal from "../../../../Components/modals/ReusableConfirmModal";
 
 const SalesInvoices = () => {
-      const navigate = useNavigate();
+    const navigate = useNavigate();
+
     const {
         salesInvoiceColumns,
         paginatedData,
         totalRecords,
         totalPages,
+
+        loading,
+        error,
+        successMessage,
 
         search,
         status,
@@ -41,7 +41,8 @@ const SalesInvoices = () => {
         currentPage,
 
         salesOrderStats,
-
+        customerOptions,
+        deleteModal,
         handleSearch,
         handleStatus,
         handleCustomer,
@@ -50,10 +51,9 @@ const SalesInvoices = () => {
         handleEndDateChange,
         handleExport,
         setCurrentPage,
+        handleDeleteCancel,
+        handleDeleteConfirm
     } = useSalesInvoices();
-
-    const statsCards =
-        salesInvoiceStats(salesOrderStats);
 
     return (
         <div style={{ padding: 20 }}>
@@ -116,10 +116,46 @@ const SalesInvoices = () => {
                 </DateRangeWrapper>
             </ReusableHeader>
 
+            {/* TRANSIENT ERROR / SUCCESS MESSAGES */}
+
+            {error && (
+                <div
+                    style={{
+                        background: "#FDECEC",
+                        color: "#E5484D",
+                        padding: "8px 14px",
+                        borderRadius: 6,
+                        marginBottom: 12,
+                        fontSize: 13,
+                    }}
+                >
+                    {typeof error === "string"
+                        ? error
+                        : error?.message ||
+                        error?.detail ||
+                        "Something went wrong."}
+                </div>
+            )}
+
+            {successMessage && (
+                <div
+                    style={{
+                        background: "#E8F8EF",
+                        color: "#22A06B",
+                        padding: "8px 14px",
+                        borderRadius: 6,
+                        marginBottom: 12,
+                        fontSize: 13,
+                    }}
+                >
+                    {successMessage}
+                </div>
+            )}
+
             {/* STATS */}
 
             <StatsCards
-                cards={statsCards}
+                cards={salesOrderStats}
             />
 
             {/* FILTERS */}
@@ -132,9 +168,9 @@ const SalesInvoices = () => {
 
                 status={status}
                 statuses={[
-                    "Completed",
+                    "Paid",
+                    "Partially Paid",
                     "Pending",
-                    "Cancelled",
                 ]}
                 onStatus={handleStatus}
                 showStatus
@@ -145,32 +181,7 @@ const SalesInvoices = () => {
                         value: customer,
                         onChange:
                             handleCustomer,
-                        options: [
-                            {
-                                label:
-                                    "ABC Trading",
-                                value:
-                                    "ABC Trading",
-                            },
-                            {
-                                label:
-                                    "Riyadh Tech",
-                                value:
-                                    "Riyadh Tech",
-                            },
-                            {
-                                label:
-                                    "Al Noor Company",
-                                value:
-                                    "Al Noor Company",
-                            },
-                            {
-                                label:
-                                    "Saudi Solutions",
-                                value:
-                                    "Saudi Solutions",
-                            },
-                        ],
+                        options: customerOptions,
                         placeholder:
                             "All Customer",
                     },
@@ -209,18 +220,22 @@ const SalesInvoices = () => {
                             "All Due Date",
                     },
                 ]}
-
-               
             />
 
             {/* TABLE */}
 
-            <ReusableTable
-                columns={
-                    salesInvoiceColumns
-                }
-                data={paginatedData}
-            />
+            {loading ? (
+                <div style={{ padding: 24, textAlign: "center" }}>
+                    Loading invoices…
+                </div>
+            ) : (
+                <ReusableTable
+                    columns={
+                        salesInvoiceColumns
+                    }
+                    data={paginatedData}
+                />
+            )}
 
             {/* PAGINATION */}
 
@@ -234,6 +249,21 @@ const SalesInvoices = () => {
                     setCurrentPage
                 }
             />
+                 <ReusableConfirmModal
+    show={deleteModal.isOpen}
+    title="Delete Invoice"
+    message={
+        deleteModal.invoice
+            ? `Are you sure you want to delete invoice ${deleteModal.invoice.invoice_number}?`
+            : "Are you sure you want to delete this invoice?"
+    }
+    confirmText="Delete"
+    cancelText="Cancel"
+    confirmVariant="danger"
+    loadingText="Deleting..."
+    onClose={handleDeleteCancel}
+    onConfirm={handleDeleteConfirm}
+/>
 
         </div>
     );

@@ -94,9 +94,14 @@ const getSidebarData = (user) => {
     if (modules.project) {
       items.push({ title: "ORDERS", icon: <FiCodesandbox />, path: "/sales/orders" });
     }
-  
 
-    
+    if (modules.project) {
+      items.push({ title: "Invoice", icon: <FiCodesandbox />, path: "/sales/invoices" });
+    }
+
+    if (modules.project) {
+      items.push({ title: "Customer-ledger", icon: <FiCodesandbox />, path: "/sales/customer-ledger" });
+    }
     return items;
   }
 

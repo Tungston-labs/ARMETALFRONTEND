@@ -1,14 +1,16 @@
 import styled from "styled-components";
 
 export const ModalOverlay = styled.div`
-  position: fixed;
-  inset: 0;
-  background: rgba(15, 23, 42, 0.45);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 20px;
-  z-index: 2000;
+      position: fixed;
+    inset: 0;
+
+    background: rgba(0, 0, 0, 0.45);
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    z-index: 1000;
 `;
 
 export const ModalContainer = styled.div`
@@ -35,17 +37,17 @@ export const ModalContainer = styled.div`
 `;
 
 export const ModalTitle = styled.h3`
-  margin: 0 0 14px;
-  font-size: 22px;
-  font-weight: 700;
-  color: #111827;
+    margin: 0 0 8px;
+    font-size: 16px;
+    font-weight: 600;
+    color: #111827;
 `;
 
 export const Message = styled.p`
-  margin: 0;
-  color: #6b7280;
-  font-size: 15px;
-  line-height: 1.6;
+ margin: 0 0 20px;
+    font-size: 14px;
+    color: #4b5563;
+    line-height: 1.5;
 `;
 
 export const ButtonRow = styled.div`
