@@ -10,7 +10,6 @@ import {
 
 import OrderActions from "./action/OrderAction";
 
-// Real backend order_status values: pending | confirmed | rejected | processing
 export const ORDER_STATUS_OPTIONS = [
     { value: "pending", label: "Pending" },
     { value: "confirmed", label: "Confirmed" },
@@ -18,7 +17,6 @@ export const ORDER_STATUS_OPTIONS = [
     { value: "rejected", label: "Rejected" },
 ];
 
-// Real backend payment_terms values
 export const PAYMENT_TERMS_OPTIONS = [
     { value: "due_on_receipt", label: "Due on Receipt" },
     { value: "net_7", label: "Net 7" },
@@ -28,7 +26,6 @@ export const PAYMENT_TERMS_OPTIONS = [
     { value: "net_60", label: "Net 60" },
 ];
 
-// Real backend delivery_status values (separate from order_status)
 export const DELIVERY_STATUS_OPTIONS = [
     { value: "pending", label: "Pending" },
     { value: "partially_delivered", label: "Partially Delivered" },
@@ -51,9 +48,19 @@ export const formatCurrency = (value) => {
         maximumFractionDigits: 2,
     });
 };
+export const formatDate = (value) => {
+    if (!value) return "-";
 
-// Columns are a factory so the page can wire a real delete handler
-// (dispatching removeSalesOrder) instead of a hardcoded console.log.
+    const date = new Date(value);
+
+    if (Number.isNaN(date.getTime())) return value;
+
+    return date.toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+    });
+};
 export const getSalesOrderColumns = ({ onDelete }) => [
     {
         header: "SO Number",
@@ -64,13 +71,15 @@ export const getSalesOrderColumns = ({ onDelete }) => [
         accessor: "customer_name",
     },
     {
-        header: "Order Date",
-        accessor: "order_date",
-    },
-    {
-        header: "Delivery Date",
-        accessor: "delivery_date",
-    },
+    header: "Order Date",
+    accessor: "order_date",
+    render: (row) => formatDate(row.order_date),
+},
+{
+    header: "Delivery Date",
+    accessor: "delivery_date",
+    render: (row) => formatDate(row.delivery_date),
+},
     {
         header: "Amount",
         accessor: "order_value",

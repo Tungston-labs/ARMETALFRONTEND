@@ -71,14 +71,6 @@ const SalesInvoices = () => {
                     navigate("/sales/invoices/add")
                 }
             >
-                <ExportButton
-                    type="button"
-                    onClick={handleExport}
-                >
-                    <FiDownload />
-                    <span>Export</span>
-                </ExportButton>
-
                 <DateRangeWrapper>
                     <DatePickerContainer>
 

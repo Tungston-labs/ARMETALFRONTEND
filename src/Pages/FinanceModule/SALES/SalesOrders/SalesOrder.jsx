@@ -15,7 +15,6 @@ import {
     DatePickerContainer,
     DateInput,
     DateSeparator,
-    ExportButton,
 } from "./SalesOrder.styles";
 
 import {
@@ -86,7 +85,7 @@ const SalesOrder = () => {
 
     // Delete confirmation modal state
     const [orderToDelete, setOrderToDelete] = useState(null);
-const [deleteError, setDeleteError] = useState("");
+    const [deleteError, setDeleteError] = useState("");
     const debouncedSearch = useDebouncedValue(search);
 
     useEffect(() => {
@@ -143,38 +142,38 @@ const [deleteError, setDeleteError] = useState("");
         setCurrentPage(1);
     };
 
- const handleDelete = (order) => {
-    setDeleteError("");
-    setOrderToDelete(order);
-};
+    const handleDelete = (order) => {
+        setDeleteError("");
+        setOrderToDelete(order);
+    };
 
-const handleCloseDeleteModal = () => {
-    setOrderToDelete(null);
-    setDeleteError("");
-};
-
-const handleConfirmDelete = async () => {
-    if (!orderToDelete) return;
-
-    setDeleteError("");
-
-    const result = await dispatch(
-        removeSalesOrder(orderToDelete.id)
-    );
-
-    if (!result.error) {
-        dispatch(getSalesOrderSummary());
+    const handleCloseDeleteModal = () => {
         setOrderToDelete(null);
-        return;
-    }
+        setDeleteError("");
+    };
 
-    const errorMessage =
-        result.payload?.detail ||
-        result.payload?.message ||
-        "This Sales Order cannot be deleted.";
+    const handleConfirmDelete = async () => {
+        if (!orderToDelete) return;
 
-    setDeleteError(errorMessage);
-};
+        setDeleteError("");
+
+        const result = await dispatch(
+            removeSalesOrder(orderToDelete.id)
+        );
+
+        if (!result.error) {
+            dispatch(getSalesOrderSummary());
+            setOrderToDelete(null);
+            return;
+        }
+
+        const errorMessage =
+            result.payload?.detail ||
+            result.payload?.message ||
+            "This Sales Order cannot be deleted.";
+
+        setDeleteError(errorMessage);
+    };
     const columns = useMemo(
         () => getSalesOrderColumns({ onDelete: handleDelete }),
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -242,7 +241,7 @@ const handleConfirmDelete = async () => {
                         placeholder: "All Customers",
                     },
                 ]}
-               
+
             />
 
             <ReusableTable
@@ -257,25 +256,25 @@ const handleConfirmDelete = async () => {
                 onPageChange={setCurrentPage}
             />
 
-          <ReusableConfirmModal
-    show={!!orderToDelete}
-    title={deleteError ? "Unable to Delete Sales Order" : "Delete Sales Order"}
-    message={
-        deleteError ||
-        (orderToDelete
-            ? `Are you sure you want to delete sales order ${orderToDelete.so_number}?`
-            : "")
-    }
-    confirmText={deleteError ? "Close" : "Delete"}
-    confirmVariant={deleteError ? "secondary" : "danger"}
-    loadingText="Deleting..."
-    onConfirm={
-        deleteError
-            ? handleCloseDeleteModal
-            : handleConfirmDelete
-    }
-    onClose={handleCloseDeleteModal}
-/>
+            <ReusableConfirmModal
+                show={!!orderToDelete}
+                title={deleteError ? "Unable to Delete Sales Order" : "Delete Sales Order"}
+                message={
+                    deleteError ||
+                    (orderToDelete
+                        ? `Are you sure you want to delete sales order ${orderToDelete.so_number}?`
+                        : "")
+                }
+                confirmText={deleteError ? "Close" : "Delete"}
+                confirmVariant={deleteError ? "secondary" : "danger"}
+                loadingText="Deleting..."
+                onConfirm={
+                    deleteError
+                        ? handleCloseDeleteModal
+                        : handleConfirmDelete
+                }
+                onClose={handleCloseDeleteModal}
+            />
         </div>
     );
 };

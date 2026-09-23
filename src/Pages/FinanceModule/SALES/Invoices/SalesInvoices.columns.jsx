@@ -66,7 +66,19 @@ export const getInvoiceStatusMeta = (row) => {
             };
     }
 };
+export const formatDate = (value) => {
+    if (!value) return "-";
 
+    const date = new Date(value);
+
+    if (Number.isNaN(date.getTime())) return value;
+
+    return date.toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+    });
+};
 export const getSalesInvoiceColumns = (onDelete) => [
     {
         header: "Invoice No",
@@ -86,16 +98,17 @@ export const getSalesInvoiceColumns = (onDelete) => [
             row.customer_name ||
             "—",
     },
+{
+    header: "Invoice Date",
+    accessor: "invoice_date",
+    render: (row) => formatDate(row.invoice_date),
+},
 
-    {
-        header: "Invoice Date",
-        accessor: "invoice_date",
-    },
-
-    {
-        header: "Due Date",
-        accessor: "due_date",
-    },
+{
+    header: "Due Date",
+    accessor: "due_date",
+    render: (row) => formatDate(row.due_date),
+},
 
     {
         header: "Amount",
