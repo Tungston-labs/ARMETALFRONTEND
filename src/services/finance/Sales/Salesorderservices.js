@@ -1,4 +1,4 @@
-import API from "../api";
+import API from "../../api";
 
 // GET: /api/finance/sales-order/
 export const fetchSalesOrders = async (params = {}) => {

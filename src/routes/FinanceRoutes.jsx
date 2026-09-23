@@ -17,13 +17,13 @@ import CompanyLayout from "../Pages/FinanceModule/SALES/Customer/layout/CompanyL
 import Invoices from "../Pages/FinanceModule/SALES/Customer/Invoices/Invoices";
 
 import SalesOrder from "../Pages/FinanceModule/SALES/SalesOrders/SalesOrder";
-import SalesInvoices from "../Pages/FinanceModule/SALES/Invoices/SalesInvoices";
-import AddingInvoice from "../Pages/FinanceModule/SALES/Invoices/AddingInvoice/AddingInvoice";
 
 import CategoriesList from "../Pages/FinanceModule/PRODUCTS/Categories/CategoriesList";
 import CustomerLedger from "../Pages/FinanceModule/SALES/CustomerLedger/CustomerLedger.jsx";
 
+import AddingInvoice from "../Pages/FinanceModule/SALES/Invoices/AddingInvoice/AddingInvoice.jsx";
 import AddingOrder from "../Pages/FinanceModule/SALES/SalesOrders/modal/AddingOrder.jsx";
+import SalesInvoices from "../Pages/FinanceModule/SALES/Invoices/SalesInvoices.jsx";
 
 import DeliveryNotes from "../Pages/FinanceModule/SALES/DeliveryNotes/DeliveryNotes.jsx";
 import Createdeliverynotes from "../Pages/FinanceModule/SALES/DeliveryNotes/modal/CreatedeliveryNotes.jsx";
@@ -60,6 +60,9 @@ const FinanceRoutes = () => {
 
       {/* Sales Orders */}
       <Route path="sales/orders" element={<SalesOrder />} />
+      <Route path="sales/invoices" element={<SalesInvoices />} />
+      <Route path="sales/invoices/add" element={<AddingInvoice />} />
+      <Route path="sales/invoices/edit/:id" element={<AddingInvoice />} />
       <Route path="sales/orders/add" element={<AddingOrder />} />
       <Route path="sales/orders/edit/:id" element={<AddingOrder />} />
 

@@ -8,7 +8,7 @@ import {
     removeCategory,
     getParentCategories,
     getCategorySummary,
-} from "../../../../Redux/finance/categorySlice";
+} from "../../../../Redux/finance/Product/categorySlice";
 
 export const useCategoriesList = () => {
     const dispatch = useDispatch();

@@ -1,5 +1,5 @@
 // services/finance/categoryServices.js
-import API from "../api";
+import API from "../../api";
 
 // =====================================================
 // GET ALL (paginated)

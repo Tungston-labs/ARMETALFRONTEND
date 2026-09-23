@@ -15,13 +15,14 @@ import companyReducer from "../Redux/companySlice";
 import financeReducer from "./financeSlice";
 import salaryIncrementReducer from "../Redux/salaryIncrementSlice";
 import warehouseReducer from "../Redux/warehouseSlice";
-import categoryReducer from "./finance/categorySlice";
-import productReducer from "./finance/ProductSlice";
 import quotationReducer from "./quotationSlice";
-import customerReducer from "./finance/CustomerSlice";
-import inventoryReducer from "../Redux/inventorySlice";
-import salesOrderReducer from "../Redux/finance/Salesorderslice";
 import deliveryNotesReducer from "../Redux/finance/deliveryNotesSlice";
+import categoryReducer from "./finance/Product/categorySlice";
+import productReducer from "./finance/Product/ProductSlice";
+import customerReducer from "./finance/Sales/CustomerSlice";
+import inventoryReducer from "../Redux/inventorySlice";
+import salesOrderReducer from "../Redux/finance/Sales/Salesorderslice";
+import invoiceReducer from "../Redux/finance/Sales/InvoiceSlice";
 export const store = configureStore({
   reducer: {
 
@@ -49,5 +50,6 @@ export const store = configureStore({
     inventory: inventoryReducer,
     salesOrder: salesOrderReducer,
     deliveryNotes: deliveryNotesReducer,
+    invoice: invoiceReducer,
   },
 });

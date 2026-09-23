@@ -17,7 +17,7 @@ import {
     patchSalesOrder,
     deleteSalesOrder,
     updateItemDelivery,
-} from "../../services/finance/Salesorderservices";
+} from "../../../services/finance/Sales/Salesorderservices";
 
 /* =========================
    GET SALES ORDERS

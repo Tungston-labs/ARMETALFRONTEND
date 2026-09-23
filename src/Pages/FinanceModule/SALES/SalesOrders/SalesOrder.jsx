@@ -8,13 +8,13 @@ import ReusableFilter from "../../../../Components/ReusableTable/ReusableFilter"
 import ReusableTable from "../../../../Components/ReusableTable/ReusableTable";
 import ReusablePagination from "../../../../Components/Pagination/ReusablePagination";
 import StatsCards from "../../../../Components/StatsCards/StatsCards";
+import ReusableConfirmModal from "../../../../Components/modals/ReusableConfirmModal";
 
 import {
     DateRangeWrapper,
     DatePickerContainer,
     DateInput,
     DateSeparator,
-    ExportButton,
 } from "./SalesOrder.styles";
 
 import {
@@ -33,10 +33,11 @@ import {
     selectSalesOrderKPI,
     selectSalesOrderLoading,
     selectCustomers,
-} from "../../../../Redux/finance/Salesorderslice";
+} from "../../../../Redux/finance/Sales/Salesorderslice";
 
 const getCurrentMonthRange = () => {
-    const today = new Date();
+    const today = new Date(2026, 8, 21); // Sep 21, 2026
+
     const year = today.getFullYear();
     const month = today.getMonth();
 
@@ -53,7 +54,6 @@ const getCurrentMonthRange = () => {
     return { start: formatDate(firstDay), end: formatDate(lastDay) };
 };
 
-// Debounce free-text search so every keystroke doesn't fire a request.
 const useDebouncedValue = (value, delay = 400) => {
     const [debounced, setDebounced] = useState(value);
 
@@ -83,9 +83,11 @@ const SalesOrder = () => {
     const [endDate, setEndDate] = useState(currentMonth.end);
     const [currentPage, setCurrentPage] = useState(1);
 
+    // Delete confirmation modal state
+    const [orderToDelete, setOrderToDelete] = useState(null);
+    const [deleteError, setDeleteError] = useState("");
     const debouncedSearch = useDebouncedValue(search);
 
-    // Customer dropdown options, sourced from the real customers lookup.
     useEffect(() => {
         dispatch(getCustomers());
     }, [dispatch]);
@@ -99,7 +101,6 @@ const SalesOrder = () => {
         [customers]
     );
 
-    // Server-side list fetch — re-runs whenever a filter or the page changes.
     useEffect(() => {
         const params = { page: currentPage };
 
@@ -112,7 +113,6 @@ const SalesOrder = () => {
         dispatch(getSalesOrders(params));
     }, [dispatch, debouncedSearch, orderStatus, customer, startDate, endDate, currentPage]);
 
-    // KPI cards come from the dedicated summary endpoint, not the list page.
     useEffect(() => {
         dispatch(getSalesOrderSummary());
     }, [dispatch]);
@@ -142,22 +142,38 @@ const SalesOrder = () => {
         setCurrentPage(1);
     };
 
-    const handleExport = () => {
-        console.log("Export Sales Orders", { startDate, endDate, search, orderStatus, customer });
-        // Add Excel/PDF export logic here
-    };
-
     const handleDelete = (order) => {
-        if (!window.confirm(`Delete sales order ${order.so_number}?`)) return;
-
-        dispatch(removeSalesOrder(order.id)).then((result) => {
-            if (!result.error) {
-                // Refresh the current page + KPIs after a successful delete
-                dispatch(getSalesOrderSummary());
-            }
-        });
+        setDeleteError("");
+        setOrderToDelete(order);
     };
 
+    const handleCloseDeleteModal = () => {
+        setOrderToDelete(null);
+        setDeleteError("");
+    };
+
+    const handleConfirmDelete = async () => {
+        if (!orderToDelete) return;
+
+        setDeleteError("");
+
+        const result = await dispatch(
+            removeSalesOrder(orderToDelete.id)
+        );
+
+        if (!result.error) {
+            dispatch(getSalesOrderSummary());
+            setOrderToDelete(null);
+            return;
+        }
+
+        const errorMessage =
+            result.payload?.detail ||
+            result.payload?.message ||
+            "This Sales Order cannot be deleted.";
+
+        setDeleteError(errorMessage);
+    };
     const columns = useMemo(
         () => getSalesOrderColumns({ onDelete: handleDelete }),
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -172,11 +188,6 @@ const SalesOrder = () => {
                 buttonText="+ ADD NEW SALES ORDER"
                 onButtonClick={() => navigate("/sales/orders/add")}
             >
-                <ExportButton type="button" onClick={handleExport}>
-                    <FiDownload />
-                    <span>Export</span>
-                </ExportButton>
-
                 <DateRangeWrapper>
                     <DatePickerContainer>
                         <DateInput
@@ -230,7 +241,7 @@ const SalesOrder = () => {
                         placeholder: "All Customers",
                     },
                 ]}
-               
+
             />
 
             <ReusableTable
@@ -243,6 +254,26 @@ const SalesOrder = () => {
                 currentPage={pagination.currentPage || currentPage}
                 totalPages={pagination.totalPages || 1}
                 onPageChange={setCurrentPage}
+            />
+
+            <ReusableConfirmModal
+                show={!!orderToDelete}
+                title={deleteError ? "Unable to Delete Sales Order" : "Delete Sales Order"}
+                message={
+                    deleteError ||
+                    (orderToDelete
+                        ? `Are you sure you want to delete sales order ${orderToDelete.so_number}?`
+                        : "")
+                }
+                confirmText={deleteError ? "Close" : "Delete"}
+                confirmVariant={deleteError ? "secondary" : "danger"}
+                loadingText="Deleting..."
+                onConfirm={
+                    deleteError
+                        ? handleCloseDeleteModal
+                        : handleConfirmDelete
+                }
+                onClose={handleCloseDeleteModal}
             />
         </div>
     );

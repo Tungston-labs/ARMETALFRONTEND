@@ -35,9 +35,9 @@ import {
     selectProductCreateLoading,
     selectProductUpdateLoading,
     selectProductDeleteLoading,
-} from "../../../../Redux/finance/ProductSlice";
+} from "../../../../Redux/finance/Product/ProductSlice.js";
 
-import { getCategories } from "../../../../Redux/finance/categorySlice";
+import { getCategories } from "../../../../Redux/finance/Product/categorySlice.js";
 import { getWarehouses } from "../../../../services/warehouseService";
 
 import { useProductList } from "./productHooks";
