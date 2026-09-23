@@ -20,7 +20,7 @@ import CategoriesList from "../Pages/FinanceModule/PRODUCTS/Categories/Categorie
 import CustomerLedger from "../Pages/FinanceModule/SALES/CustomerLedger/CustomerLedger.jsx";
 import AddingInvoice from "../Pages/FinanceModule/SALES/Invoices/AddingInvoice/AddingInvoice.jsx";
 import AddingOrder from "../Pages/FinanceModule/SALES/SalesOrders/modal/AddingOrder.jsx";
-import SalesInvoices from "../Pages/FinanceModule/SALES/Invoices/SalesInvoices.jsx";
+
 
 const FinanceRoutes = () => {
   return (
