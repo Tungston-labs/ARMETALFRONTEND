@@ -7,9 +7,6 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 import CategoriesList from "../../../Pages/FinanceModule/PRODUCTS/Categories/CategoriesList";
 import { useCategoriesList } from "../../../Pages/FinanceModule/PRODUCTS/Categories/useCategoriesList";
 
-// ---- Mock child pieces that aren't the concern of this test ----
-// Paths below are resolved relative to THIS test file and must point
-// at the same real modules CategoriesList.jsx itself imports.
 
 vi.mock("../../Pages/FinanceModule/PRODUCTS/Categories/useCategoriesList");
 

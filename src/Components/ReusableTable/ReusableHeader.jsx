@@ -1,6 +1,4 @@
-// ReusableHeader.jsx
 import React from "react";
-
 import {
   HeaderContainer,
   LeftSection,
@@ -70,26 +68,28 @@ const ReusableHeader = ({
       <LeftSection>
         <TitleRow>
           {showBack && (
-            <BackButton onClick={handleBack}>
+            <BackButton
+              type="button"
+              onClick={handleBack}
+              aria-label="Go back"
+            >
               <IoArrowBack />
             </BackButton>
           )}
 
           <PageTitle>{title}</PageTitle>
-
-          
         </TitleRow>
 
         {formattedSubtitle && (
           <Subtitle>
-            {formattedSubtitle}
+            <span>{formattedSubtitle}</span>
+
             {badge && (
-            <Badge $variant={badgeVariant}>
-              {badge}
-            </Badge>
-          )}
+              <Badge $variant={badgeVariant}>
+                {badge}
+              </Badge>
+            )}
           </Subtitle>
-          
         )}
 
         {breadcrumbs.length > 0 && (
@@ -103,7 +103,7 @@ const ReusableHeader = ({
             </BreadcrumbItem>
 
             {breadcrumbs.map((item, index) => (
-              <React.Fragment key={index}>
+              <React.Fragment key={`${item}-${index}`}>
                 <Separator>›</Separator>
 
                 <BreadcrumbItem
@@ -123,7 +123,10 @@ const ReusableHeader = ({
         {children}
 
         {buttonText && (
-          <ActionButton onClick={onButtonClick}>
+          <ActionButton
+            type="button"
+            onClick={onButtonClick}
+          >
             {buttonText}
           </ActionButton>
         )}

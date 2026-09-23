@@ -10,7 +10,7 @@ import {
     updateProduct,
     patchProduct,
     deleteProduct,
-} from "../../services/finance/productServices";
+} from "../../../services/finance/Product/productServices";
 
 /* =========================
    GET PRODUCTS

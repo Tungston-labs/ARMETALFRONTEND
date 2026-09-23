@@ -1,34 +1,42 @@
-import React, { useMemo, useState } from "react";
-import {
-    FiShoppingCart,
-    FiDollarSign,
-    FiCheckCircle,
-    FiClock,
-    FiXCircle,
-    FiDownload,
-} from "react-icons/fi";
-
-import {
-    employeeColumns,
-    employeeData,
-} from "../../../../Components/ReusableTable/dummydata";
+import React, { useEffect, useMemo, useState } from "react";
+import { FiDownload } from "react-icons/fi";
+import { useNavigate } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
 
 import ReusableHeader from "../../../../Components/ReusableTable/ReusableHeader";
 import ReusableFilter from "../../../../Components/ReusableTable/ReusableFilter";
 import ReusableTable from "../../../../Components/ReusableTable/ReusableTable";
 import ReusablePagination from "../../../../Components/Pagination/ReusablePagination";
 import StatsCards from "../../../../Components/StatsCards/StatsCards";
+import ReusableConfirmModal from "../../../../Components/modals/ReusableConfirmModal";
 
 import {
     DateRangeWrapper,
     DatePickerContainer,
     DateInput,
     DateSeparator,
-    ExportButton,
 } from "./SalesOrder.styles";
 
+import {
+    getSalesOrderColumns,
+    buildSalesOrderStats,
+    ORDER_STATUS_OPTIONS,
+} from "./SalesOrders.columns";
+
+import {
+    getSalesOrders,
+    getSalesOrderSummary,
+    getCustomers,
+    removeSalesOrder,
+    selectSalesOrders,
+    selectSalesOrderPagination,
+    selectSalesOrderKPI,
+    selectSalesOrderLoading,
+    selectCustomers,
+} from "../../../../Redux/finance/Sales/Salesorderslice";
+
 const getCurrentMonthRange = () => {
-    const today = new Date();
+    const today = new Date(2026, 8, 21); // Sep 21, 2026
 
     const year = today.getFullYear();
     const month = today.getMonth();
@@ -37,153 +45,149 @@ const getCurrentMonthRange = () => {
     const lastDay = new Date(year, month + 1, 0);
 
     const formatDate = (date) => {
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, "0");
-        const day = String(date.getDate()).padStart(2, "0");
-
-        return `${year}-${month}-${day}`;
+        const y = date.getFullYear();
+        const m = String(date.getMonth() + 1).padStart(2, "0");
+        const d = String(date.getDate()).padStart(2, "0");
+        return `${y}-${m}-${d}`;
     };
 
-    return {
-        start: formatDate(firstDay),
-        end: formatDate(lastDay),
-    };
+    return { start: formatDate(firstDay), end: formatDate(lastDay) };
+};
+
+const useDebouncedValue = (value, delay = 400) => {
+    const [debounced, setDebounced] = useState(value);
+
+    useEffect(() => {
+        const timer = setTimeout(() => setDebounced(value), delay);
+        return () => clearTimeout(timer);
+    }, [value, delay]);
+
+    return debounced;
 };
 
 const SalesOrder = () => {
+    const navigate = useNavigate();
+    const dispatch = useDispatch();
     const currentMonth = getCurrentMonthRange();
 
+    const salesOrders = useSelector(selectSalesOrders);
+    const pagination = useSelector(selectSalesOrderPagination);
+    const kpi = useSelector(selectSalesOrderKPI);
+    const loading = useSelector(selectSalesOrderLoading);
+    const customers = useSelector(selectCustomers);
+
     const [search, setSearch] = useState("");
-    const [status, setStatus] = useState("");
+    const [orderStatus, setOrderStatus] = useState("");
     const [customer, setCustomer] = useState("");
-
-    const [startDate, setStartDate] = useState(
-        currentMonth.start
-    );
-
-    const [endDate, setEndDate] = useState(
-        currentMonth.end
-    );
-
-    const rowsPerPage = 10;
+    const [startDate, setStartDate] = useState(currentMonth.start);
+    const [endDate, setEndDate] = useState(currentMonth.end);
     const [currentPage, setCurrentPage] = useState(1);
 
-    const salesOrderStats = [
-        {
-            title: "Total Orders",
-            count: employeeData.length,
-            icon: <FiShoppingCart />,
-            backgroundColor: "#E8F1FF",
-            iconColor: "#3478F6",
-        },
-        {
-            title: "Total Amount",
-            count: " 0.00",
-            icon: <FiDollarSign />,
-            backgroundColor: "#FFF4E5",
-            iconColor: "#F59E0B",
-        },
-        {
-            title: "Completed Orders",
-            count: 0,
-            icon: <FiCheckCircle />,
-            backgroundColor: "#E8F8EF",
-            iconColor: "#22A06B",
-        },
-        {
-            title: "Pending Orders",
-            count: 0,
-            icon: <FiClock />,
-            backgroundColor: "#FFF4E5",
-            iconColor: "#F59E0B",
-        },
-        {
-            title: "Cancelled Orders",
-            count: 0,
-            icon: <FiXCircle />,
-            backgroundColor: "#FDECEC",
-            iconColor: "#E5484D",
-        },
-    ];
+    // Delete confirmation modal state
+    const [orderToDelete, setOrderToDelete] = useState(null);
+    const [deleteError, setDeleteError] = useState("");
+    const debouncedSearch = useDebouncedValue(search);
 
-    const totalPages = Math.ceil(
-        employeeData.length / rowsPerPage
+    useEffect(() => {
+        dispatch(getCustomers());
+    }, [dispatch]);
+
+    const customerOptions = useMemo(
+        () =>
+            customers.map((c) => ({
+                label: c.name || c.customer_name || `Customer #${c.id}`,
+                value: String(c.id),
+            })),
+        [customers]
     );
 
-    const paginatedData = useMemo(() => {
-        const start =
-            (currentPage - 1) * rowsPerPage;
+    useEffect(() => {
+        const params = { page: currentPage };
 
-        return employeeData.slice(
-            start,
-            start + rowsPerPage
-        );
-    }, [currentPage]);
+        if (debouncedSearch) params.search = debouncedSearch;
+        if (orderStatus) params.order_status = orderStatus;
+        if (customer) params.customer = customer;
+        if (startDate) params.order_date_after = startDate;
+        if (endDate) params.order_date_before = endDate;
+
+        dispatch(getSalesOrders(params));
+    }, [dispatch, debouncedSearch, orderStatus, customer, startDate, endDate, currentPage]);
+
+    useEffect(() => {
+        dispatch(getSalesOrderSummary());
+    }, [dispatch]);
+
+    const stats = useMemo(() => buildSalesOrderStats(kpi), [kpi]);
 
     const handleStartDateChange = (e) => {
         const value = e.target.value;
-
+        setCurrentPage(1);
         if (!value) {
             setStartDate("");
             return;
         }
-
         setStartDate(value);
-        setCurrentPage(1);
-
-        if (endDate && value > endDate) {
-            setEndDate(value);
-        }
+        if (endDate && value > endDate) setEndDate(value);
     };
 
     const handleEndDateChange = (e) => {
         const value = e.target.value;
-
         if (!value) {
             setEndDate("");
+            setCurrentPage(1);
             return;
         }
-
-        if (startDate && value < startDate) {
-            return;
-        }
-
+        if (startDate && value < startDate) return;
         setEndDate(value);
         setCurrentPage(1);
     };
 
-    const handleExport = () => {
-        console.log("Export Sales Orders", {
-            startDate,
-            endDate,
-            search,
-            status,
-            customer,
-        });
-
-        // Add Excel/PDF export logic here
+    const handleDelete = (order) => {
+        setDeleteError("");
+        setOrderToDelete(order);
     };
+
+    const handleCloseDeleteModal = () => {
+        setOrderToDelete(null);
+        setDeleteError("");
+    };
+
+    const handleConfirmDelete = async () => {
+        if (!orderToDelete) return;
+
+        setDeleteError("");
+
+        const result = await dispatch(
+            removeSalesOrder(orderToDelete.id)
+        );
+
+        if (!result.error) {
+            dispatch(getSalesOrderSummary());
+            setOrderToDelete(null);
+            return;
+        }
+
+        const errorMessage =
+            result.payload?.detail ||
+            result.payload?.message ||
+            "This Sales Order cannot be deleted.";
+
+        setDeleteError(errorMessage);
+    };
+    const columns = useMemo(
+        () => getSalesOrderColumns({ onDelete: handleDelete }),
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        []
+    );
 
     return (
         <div style={{ padding: 20 }}>
             <ReusableHeader
                 title="Sales Orders"
-                breadcrumbs={[
-                    "Sales",
-                    "Sales Orders",
-                ]}
+                breadcrumbs={["Sales", "Sales Orders"]}
                 buttonText="+ ADD NEW SALES ORDER"
-                onButtonClick={() =>
-                    console.log("Add Sales Order")
-                }
+                onButtonClick={() => navigate("/sales/orders/add")}
             >
-                 <ExportButton
-                        type="button"
-                        onClick={handleExport}
-                    >
-                        <FiDownload />
-                        <span>Export</span>
-                    </ExportButton>
                 <DateRangeWrapper>
                     <DatePickerContainer>
                         <DateInput
@@ -193,11 +197,7 @@ const SalesOrder = () => {
                             max={endDate || undefined}
                             aria-label="Start date"
                         />
-
-                        <DateSeparator>
-                            -
-                        </DateSeparator>
-
+                        <DateSeparator>-</DateSeparator>
                         <DateInput
                             type="date"
                             value={endDate}
@@ -206,14 +206,10 @@ const SalesOrder = () => {
                             aria-label="End date"
                         />
                     </DatePickerContainer>
-
-                   
                 </DateRangeWrapper>
             </ReusableHeader>
 
-            <StatsCards
-                cards={salesOrderStats}
-            />
+            <StatsCards cards={stats} />
 
             <ReusableFilter
                 search={search}
@@ -221,21 +217,18 @@ const SalesOrder = () => {
                     setSearch(value);
                     setCurrentPage(1);
                 }}
-                searchPlaceholder="Search Order"
+                searchPlaceholder="Search SO Number or Customer"
                 showSearch
-
-                status={status}
-                statuses={[
-                    "Completed",
-                    "Pending",
-                    "Cancelled",
-                ]}
+                status={orderStatus}
+                statuses={ORDER_STATUS_OPTIONS.map((s) => s.label)}
                 onStatus={(value) => {
-                    setStatus(value);
+                    const match = ORDER_STATUS_OPTIONS.find(
+                        (s) => s.label === value
+                    );
+                    setOrderStatus(match ? match.value : "");
                     setCurrentPage(1);
                 }}
                 showStatus
-
                 filters={[
                     {
                         key: "customer",
@@ -244,44 +237,43 @@ const SalesOrder = () => {
                             setCustomer(value);
                             setCurrentPage(1);
                         },
-                        options: [
-                            {
-                                label: "ABC Trading",
-                                value: "ABC Trading",
-                            },
-                            {
-                                label: "Riyadh Tech",
-                                value: "Riyadh Tech",
-                            },
-                            {
-                                label: "Al Noor Company",
-                                value: "Al Noor Company",
-                            },
-                            {
-                                label: "Saudi Solutions",
-                                value: "Saudi Solutions",
-                            },
-                        ],
-                        placeholder: "All Customer",
+                        options: customerOptions,
+                        placeholder: "All Customers",
                     },
                 ]}
 
-                showFilterButton
-                filterButtonText="Filter"
-                onFilterClick={() => {
-                    console.log("Filter clicked");
-                }}
             />
 
             <ReusableTable
-                columns={employeeColumns}
-                data={paginatedData}
+                columns={columns}
+                data={salesOrders}
+                loading={loading}
             />
 
             <ReusablePagination
-                currentPage={currentPage}
-                totalPages={totalPages}
+                currentPage={pagination.currentPage || currentPage}
+                totalPages={pagination.totalPages || 1}
                 onPageChange={setCurrentPage}
+            />
+
+            <ReusableConfirmModal
+                show={!!orderToDelete}
+                title={deleteError ? "Unable to Delete Sales Order" : "Delete Sales Order"}
+                message={
+                    deleteError ||
+                    (orderToDelete
+                        ? `Are you sure you want to delete sales order ${orderToDelete.so_number}?`
+                        : "")
+                }
+                confirmText={deleteError ? "Close" : "Delete"}
+                confirmVariant={deleteError ? "secondary" : "danger"}
+                loadingText="Deleting..."
+                onConfirm={
+                    deleteError
+                        ? handleCloseDeleteModal
+                        : handleConfirmDelete
+                }
+                onClose={handleCloseDeleteModal}
             />
         </div>
     );
