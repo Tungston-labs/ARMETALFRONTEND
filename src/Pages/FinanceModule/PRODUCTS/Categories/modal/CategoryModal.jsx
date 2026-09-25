@@ -662,7 +662,7 @@ const CategoryModal = ({
                             type="submit"
                             disabled={saving}
                         >
-                            <FiSave />
+                           <FiSave /> 
 
                             {saving
                                 ? "SAVING..."

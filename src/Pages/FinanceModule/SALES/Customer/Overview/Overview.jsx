@@ -1,14 +1,6 @@
-
 import React from "react";
-import {
-  UserRound,
-  Mail,
-  BadgeCheck,
-  Download,
-  FileText,
-  PlusCircle,
-} from "lucide-react";
-
+import { Download, FileText, PlusCircle } from "lucide-react";
+import { useCustomerOverview } from "./Usecustomeroverview";
 import {
   HeaderWrapper,
   TopSection,
@@ -38,294 +30,135 @@ import {
 } from "./Overview.styles";
 
 const Overview = () => {
-  /* =========================================================
-     CONTACT DETAILS
-  ========================================================= */
+  const {
+    detailLoading,
+    uploadLoading,
+    error,
+    customer,
+    documents,
+    contacts,
+    companyInfo,
+    companyAddress,
+    fileInputRef,
+    handleUploadClick,
+    handleFileChange,
+    resolveDocumentUrl,
+  } = useCustomerOverview();
 
-  const contacts = [
-    {
-      label: "Phone Number",
-      value: "+966 50 123 4567",
-      icon: UserRound,
-    },
-    {
-      label: "Admin Contact",
-      value: "info@riyadhtech.sa",
-      icon: Mail,
-    },
-    {
-      label: "Financial Contact",
-      value: "info@riyadhtech.sa",
-      icon: Mail,
-    },
-    {
-      label: "Technical Contact",
-      value: "info@riyadhtech.sa",
-      icon: Mail,
-    },
-  ];
 
-  /* =========================================================
-     COMPANY INFORMATION
-  ========================================================= */
+  if (detailLoading) {
+    return <HeaderWrapper>Loading customer overview...</HeaderWrapper>;
+  }
 
-  const companyInfo = [
-    {
-      label: "CR Number",
-      value: "1010123456",
-      icon: UserRound,
-    },
-    {
-      label: "VAT Number",
-      value: "300123456700003",
-      icon: BadgeCheck,
-    },
-    {
-      label: "Trade License Number",
-      value: "2050123456",
-      icon: BadgeCheck,
-    },
-    {
-      label: "Currency",
-      value: "SAR - Saudi Riyal",
-      icon: BadgeCheck,
-    },
-    {
-      label: "Credit Limit",
-      value: "SAR 500,000.00",
-      icon: BadgeCheck,
-    },
-    {
-      label: "Payment Terms",
-      value: "15 days",
-      icon: BadgeCheck,
-    },
-    {
-      label: "Opening Balance",
-      value: "SAR 00.00",
-      icon: BadgeCheck,
-    },
-  ];
-
-  /* =========================================================
-     DOCUMENTS
-  ========================================================= */
-
-  const documents = [
-    {
-      name: "CR Certificate",
-      size: "245 KB",
-    },
-    {
-      name: "VAT Certificate",
-      size: "245 KB",
-    },
-    {
-      name: "Trade License",
-      size: "245 KB",
-    },
-    {
-      name: "CR Certificate",
-      size: "245 KB",
-    },
-    {
-      name: "Company Profile",
-      size: "245 KB",
-    },
-  ];
-
-  /* =========================================================
-     RETURN
-  ========================================================= */
+  if (error) {
+    return <HeaderWrapper>Failed to load customer overview.</HeaderWrapper>;
+  }
 
   return (
     <HeaderWrapper>
-
-      {/* =====================================================
-          COMPANY + CONTACT SECTION
-      ===================================================== */}
-
       <TopSection>
-
-        {/* ===================================================
-            COMPANY
-        =================================================== */}
-
         <CompanyCard>
           <CompanyDetails>
-
             <CompanyName>
-              Nexora Tech Solutions
+              {customer.company_name || customer.customer_name || "—"}
             </CompanyName>
 
-            <CompanyText>
-              Nexora Tech Solutions
-            </CompanyText>
+            <CompanyText>{customer.customer_name || "—"}</CompanyText>
 
-            <CompanyText>
-              PO Box 12345, King Fahd Road
-            </CompanyText>
+            <CompanyText>{customer.billing_address || "—"}</CompanyText>
 
-            <CompanyText>
-              Riyadh, Saudi Arabia
-            </CompanyText>
-
+            <CompanyText>{companyAddress}</CompanyText>
           </CompanyDetails>
-
         </CompanyCard>
 
-
-        {/* ===================================================
-            CONTACTS
-        =================================================== */}
-
         <ContactCard>
-
           {contacts.map((contact, index) => {
-
             const Icon = contact.icon;
-
             return (
               <ContactItem key={index}>
-
                 <ContactTitle>
-
-                  <Icon
-                    size={15}
-                    strokeWidth={1.5}
-                  />
-
-                  <span>
-                    {contact.label}
-                  </span>
-
+                  <Icon size={15} strokeWidth={1.5} />
+                  <span>{contact.label}</span>
                 </ContactTitle>
-
-                <ContactValue>
-                  {contact.value}
-                </ContactValue>
-
+                <ContactValue>{contact.value}</ContactValue>
               </ContactItem>
             );
           })}
-
         </ContactCard>
-
       </TopSection>
 
-
-      {/* =====================================================
-          COMPANY INFORMATION
-      ===================================================== */}
-
       <InfoCard>
-
         {companyInfo.map((item, index) => {
-
           const Icon = item.icon;
-
           return (
             <InfoItem key={index}>
-
               <InfoLabel>
-
-                <Icon
-                  size={14}
-                  strokeWidth={1.5}
-                />
-
-                <span>
-                  {item.label}
-                </span>
-
+                <Icon size={14} strokeWidth={1.5} />
+                <span>{item.label}</span>
               </InfoLabel>
-
-              <InfoValue>
-                {item.value}
-              </InfoValue>
-
+              <InfoValue>{item.value}</InfoValue>
             </InfoItem>
           );
         })}
-
       </InfoCard>
 
-
-      {/* =====================================================
-          DOCUMENTS
-      ===================================================== */}
-
       <DocumentsCard>
-
-        <DocumentsTitle>
-          Documents
-        </DocumentsTitle>
-
+        <DocumentsTitle>Documents</DocumentsTitle>
 
         <DocumentsContent>
-
           <DocumentsList>
-
-            {documents.map((document, index) => (
-
-              <DocumentItem key={index}>
-
-                <DocumentIcon>
-
-                  <FileText size={19} />
-
-                </DocumentIcon>
-
-
+            {documents.length === 0 ? (
+              <DocumentItem>
                 <DocumentDetails>
-
-                  <DocumentName>
-                    {document.name}
-                  </DocumentName>
-
-                  <DocumentSize>
-                    PDF · {document.size}
-                  </DocumentSize>
-
+                  <DocumentName>No documents uploaded</DocumentName>
                 </DocumentDetails>
-
-
-                <DownloadButton
-                  type="button"
-                  title="Download"
-                >
-
-                  <Download size={14} />
-
-                </DownloadButton>
-
               </DocumentItem>
-
-            ))}
-
+            ) : (
+              documents.map((document) => (
+                <DocumentItem key={document.id}>
+                  <DocumentIcon>
+                    <FileText size={19} />
+                  </DocumentIcon>
+                  <DocumentDetails>
+                    <DocumentName>{document.document_name}</DocumentName>
+                    <DocumentSize>
+                      {document.created_at
+                        ? new Date(document.created_at).toLocaleDateString()
+                        : ""}
+                    </DocumentSize>
+                  </DocumentDetails>
+                  <DownloadButton
+                    type="button"
+                    title="Download"
+                    onClick={() =>
+                      window.open(resolveDocumentUrl(document.document), "_blank")
+                    }
+                  >
+                    <Download size={14} />
+                  </DownloadButton>
+                </DocumentItem>
+              ))
+            )}
           </DocumentsList>
 
-
-          {/* =================================================
-              UPLOAD DOCUMENT
-          ================================================= */}
+          <input
+            type="file"
+            ref={fileInputRef}
+            style={{ display: "none" }}
+            onChange={handleFileChange}
+            accept=".pdf,.jpg,.jpeg,.png"
+          />
 
           <UploadButton
             type="button"
+            onClick={handleUploadClick}
+            disabled={uploadLoading}
           >
-
-            <span>
-              Upload Document
-            </span>
-
+            <span>{uploadLoading ? "Uploading..." : "Upload Document"}</span>
             <PlusCircle size={14} />
-
           </UploadButton>
-
         </DocumentsContent>
-
       </DocumentsCard>
-
     </HeaderWrapper>
   );
 };

@@ -1,87 +1,99 @@
+import React, { useEffect, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { useParams } from "react-router-dom";
+import { FiFileText, FiCheckCircle, FiXCircle, FiDollarSign } from "react-icons/fi";
 
-import React, { useMemo, useState } from "react";
-import { FiFileText, FiCheckCircle, FiXCircle, FiDollarSign, FiRefreshCw } from "react-icons/fi";
-
-import {
-  employeeColumns,
-  employeeData,
-} from "../../../../../Components/ReusableTable/dummydata";
-
+import { ordersColumns } from "./ordersColumns";
 import ReusableFilter from "../../../../../Components/ReusableTable/ReusableFilter";
 import ReusableTable from "../../../../../Components/ReusableTable/ReusableTable";
 import ReusablePagination from "../../../../../Components/Pagination/ReusablePagination";
 import StatsCards from "../../../../../Components/StatsCards/StatsCards";
 
+import {
+  getCustomerOrders,
+  getCustomerOrdersSummary,
+} from "../../../../../Redux/finance/Sales/CustomerSlice";
+
 const Orders = () => {
+  const dispatch = useDispatch();
+  const { customerId } = useParams();
+
   const [search, setSearch] = useState("");
-
-  const rowsPerPage = 10;
-
   const [currentPage, setCurrentPage] = useState(1);
 
+  const {
+    orders,
+    ordersTotalPages,
+    ordersLoading,
+    ordersSummary,
+    ordersSummaryLoading,
+  } = useSelector((state) => state.customer);
 
   /* =========================================================
-     QUOTATION STATS
+     FETCH ORDERS
   ========================================================= */
 
-const quotationStats = [
-  {
-    title: "Total Orders",
-    count: employeeData.length,
-    icon: <FiFileText />,
-    backgroundColor: "#E8F1FF",
-    iconColor: "#3478F6",
-  },
+  useEffect(() => {
+    if (!customerId) return;
 
-  {
-    title: "Open Orders",
-    count: 0,
-    icon: <FiDollarSign />,
-    backgroundColor: "#FFF4E5",
-    iconColor: "#F59E0B",
-  },
-
-  {
-    title: "Completed Orders",
-    count: 0,
-    icon: <FiRefreshCw />,
-    backgroundColor: "#E8F8EF",
-    iconColor: "#22A06B",
-  },
-
-  {
-    title: "Order Value",
-    count: 0,
-    icon: <FiXCircle />,
-    backgroundColor: "#FDECEC",
-    iconColor: "#E5484D",
-  },
-
-];
-
-  /* =========================================================
-     PAGINATION
-  ========================================================= */
-
-  const totalPages = Math.ceil(
-    employeeData.length / rowsPerPage
-  );
-
-
-  /* =========================================================
-     PAGINATED DATA
-  ========================================================= */
-
-  const paginatedData = useMemo(() => {
-    const start =
-      (currentPage - 1) * rowsPerPage;
-
-    return employeeData.slice(
-      start,
-      start + rowsPerPage
+    dispatch(
+      getCustomerOrders({
+        customerId,
+        params: {
+          page: currentPage,
+          search: search || undefined,
+        },
+      })
     );
-  }, [currentPage]);
+  }, [dispatch, customerId, currentPage, search]);
 
+  /* =========================================================
+     FETCH ORDERS SUMMARY
+  ========================================================= */
+
+  useEffect(() => {
+    if (!customerId) return;
+
+    dispatch(getCustomerOrdersSummary(customerId));
+  }, [dispatch, customerId]);
+
+  /* =========================================================
+     STATS
+  ========================================================= */
+
+  const orderStats = [
+    {
+      title: "Total Orders",
+      count: ordersSummary?.total_orders ?? 0,
+      icon: <FiFileText />,
+      backgroundColor: "#E8F1FF",
+      iconColor: "#3478F6",
+    },
+    {
+      title: "Open Orders",
+      count: ordersSummary?.open_orders ?? 0,
+      icon: <FiDollarSign />,
+      backgroundColor: "#FFF4E5",
+      iconColor: "#F59E0B",
+    },
+    {
+      title: "Completed Orders",
+      count: ordersSummary?.completed_orders ?? 0,
+      icon: <FiCheckCircle />,
+      backgroundColor: "#E8F8EF",
+      iconColor: "#22A06B",
+    },
+    {
+      title: "Order Value",
+      count: Number(ordersSummary?.total_order_amount ?? 0).toLocaleString(
+        "en-US",
+        { minimumFractionDigits: 2, maximumFractionDigits: 2 }
+      ),
+      icon: <FiXCircle />,
+      backgroundColor: "#FDECEC",
+      iconColor: "#E5484D",
+    },
+  ];
 
   /* =========================================================
      RETURN
@@ -89,18 +101,7 @@ const quotationStats = [
 
   return (
     <>
-      {/* =====================================================
-          STATS CARDS
-      ===================================================== */}
-
-      <StatsCards
-        cards={quotationStats}
-      />
-
-
-      {/* =====================================================
-          FILTER
-      ===================================================== */}
+      <StatsCards cards={orderStats} loading={ordersSummaryLoading} />
 
       <ReusableFilter
         search={search}
@@ -111,24 +112,15 @@ const quotationStats = [
         showSearch
       />
 
-
-      {/* =====================================================
-          TABLE
-      ===================================================== */}
-
       <ReusableTable
-        columns={employeeColumns}
-        data={paginatedData}
+        columns={ordersColumns}
+        data={orders}
+        loading={ordersLoading}
       />
-
-
-      {/* =====================================================
-          PAGINATION
-      ===================================================== */}
 
       <ReusablePagination
         currentPage={currentPage}
-        totalPages={totalPages}
+        totalPages={ordersTotalPages}
         onPageChange={setCurrentPage}
       />
     </>

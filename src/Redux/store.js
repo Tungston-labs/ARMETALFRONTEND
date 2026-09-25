@@ -28,6 +28,7 @@ import creditNotesReducer from "../Redux/finance/Sales/creditNoteSlice";
 import salesReturnsReducer from "./finance/Sales/Salesreturnslice";
 
 
+import customerLedgerReducer from "./finance/Sales/Customerledgerslice"
 export const store = configureStore({
   reducer: {
 
@@ -59,5 +60,6 @@ export const store = configureStore({
     payments: paymentReducer,
     creditNotes: creditNotesReducer,
     salesReturns: salesReturnsReducer,
+    customerLedger: customerLedgerReducer,
   },
 });
