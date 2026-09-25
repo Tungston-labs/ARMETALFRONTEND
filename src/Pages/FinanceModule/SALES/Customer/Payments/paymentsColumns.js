@@ -2,8 +2,8 @@
 export const paymentsColumns = [
   {
     header: "Payment No",
-    accessor: "payment_receipt_number",
-    render: (row) => row.payment_receipt_number || "-",
+    accessor: "receipt_number",
+    render: (row) => row.receipt_number || "-",
   },
   {
     header: "Related Invoice",
@@ -22,9 +22,9 @@ export const paymentsColumns = [
   },
   {
     header: "Amount",
-    accessor: "amount",
+    accessor: "amount_received",
     render: (row) =>
-      Number(row.amount || 0).toLocaleString("en-US", {
+      Number(row.amount_received || 0).toLocaleString("en-US", {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2,
       }),

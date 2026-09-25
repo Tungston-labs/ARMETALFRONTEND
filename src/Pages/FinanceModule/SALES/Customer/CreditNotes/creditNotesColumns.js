@@ -2,18 +2,18 @@
 export const creditNotesColumns = [
   {
     header: "Credit Note No",
-    accessor: "credit_note_number",
-    render: (row) => row.credit_note_number || "-",
+    accessor: "cn_number",
+    render: (row) => row.cn_number || "-",
   },
   {
     header: "Related Invoice",
-    accessor: "invoice_number",
-    render: (row) => row.invoice_number || "-",
+    accessor: "invoice_ref",
+    render: (row) => row.invoice_ref || "-",
   },
   {
     header: "Date",
-    accessor: "credit_note_date",
-    render: (row) => row.credit_note_date || "-",
+    accessor: "issue_date",
+    render: (row) => row.issue_date || "-",
   },
   {
     header: "Reason",
