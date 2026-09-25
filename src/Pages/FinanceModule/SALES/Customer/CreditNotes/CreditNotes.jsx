@@ -1,86 +1,76 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { useParams } from "react-router-dom";
 import { FiFileText, FiCheckCircle, FiXCircle, FiDollarSign, FiRefreshCw } from "react-icons/fi";
-
-import {
-  employeeColumns,
-  employeeData,
-} from "../../../../../Components/ReusableTable/dummydata";
-
+import { creditNotesColumns } from "./creditNotesColumns";
 import ReusableFilter from "../../../../../Components/ReusableTable/ReusableFilter";
 import ReusableTable from "../../../../../Components/ReusableTable/ReusableTable";
 import ReusablePagination from "../../../../../Components/Pagination/ReusablePagination";
 import StatsCards from "../../../../../Components/StatsCards/StatsCards";
 
-const Ledger = () => {
+import { getCustomerCreditNotes } from "../../../../../Redux/finance/Sales/CustomerSlice";
+
+const CreditNotes = () => {
+  const dispatch = useDispatch();
+  const { customerId } = useParams();
+
   const [search, setSearch] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const {
+    creditNotes,
+    creditNotesTotalItems,
+    creditNotesTotalPages,
+    creditNotesKpis,
+    creditNotesLoading,
+  } = useSelector((state) => state.customer);
 
   const rowsPerPage = 10;
 
-  const [currentPage, setCurrentPage] = useState(1);
-
-
   /* =========================================================
-     QUOTATION STATS
+     FETCH CREDIT NOTES
   ========================================================= */
 
-const quotationStats = [
-  {
-    title: "Total Credit Notes",
-    count: employeeData.length,
-    icon: <FiFileText />,
-    backgroundColor: "#E8F1FF",
-    iconColor: "#3478F6",
-  },
-
-  {
-    title: "Total Credit Value",
-    count: 0,
-    icon: <FiDollarSign />,
-    backgroundColor: "#FFF4E5",
-    iconColor: "#F59E0B",
-  },
-
-  {
-    title: "This Month",
-    count: 0,
-    icon: <FiRefreshCw />,
-    backgroundColor: "#E8F8EF",
-    iconColor: "#22A06B",
-  },
-
-  {
-    title: "Open Credit Notes",
-    count: 0,
-    icon: <FiXCircle />,
-    backgroundColor: "#FDECEC",
-    iconColor: "#E5484D",
-  },
-
-];
+  useEffect(() => {
+    console.log("CreditNotes effect", { customerId });
+    if (!customerId) return;
+    dispatch(getCustomerCreditNotes({ customerId, params: { page: currentPage, search: search || undefined } }));
+  }, [dispatch, customerId, currentPage, search]);
 
   /* =========================================================
-     PAGINATION
+     STATS
   ========================================================= */
 
-  const totalPages = Math.ceil(
-    employeeData.length / rowsPerPage
-  );
-
-
-  /* =========================================================
-     PAGINATED DATA
-  ========================================================= */
-
-  const paginatedData = useMemo(() => {
-    const start =
-      (currentPage - 1) * rowsPerPage;
-
-    return employeeData.slice(
-      start,
-      start + rowsPerPage
-    );
-  }, [currentPage]);
-
+  const creditNoteStats = [
+    {
+      title: "Total Credit Notes",
+      count: creditNotesKpis?.total_credit_notes ?? 0,
+      icon: <FiFileText />,
+      backgroundColor: "#E8F1FF",
+      iconColor: "#3478F6",
+    },
+    {
+      title: "Total Credit Value",
+      count: creditNotesKpis?.total_credit_value ?? 0,
+      icon: <FiDollarSign />,
+      backgroundColor: "#FFF4E5",
+      iconColor: "#F59E0B",
+    },
+    {
+      title: "This Month",
+      count: creditNotesKpis?.this_month ?? 0,
+      icon: <FiRefreshCw />,
+      backgroundColor: "#E8F8EF",
+      iconColor: "#22A06B",
+    },
+    {
+      title: "Open Credit Notes",
+      count: creditNotesKpis?.open_credit_notes ?? 0,
+      icon: <FiXCircle />,
+      backgroundColor: "#FDECEC",
+      iconColor: "#E5484D",
+    },
+  ];
 
   /* =========================================================
      RETURN
@@ -88,18 +78,7 @@ const quotationStats = [
 
   return (
     <>
-      {/* =====================================================
-          STATS CARDS
-      ===================================================== */}
-
-      <StatsCards
-        cards={quotationStats}
-      />
-
-
-      {/* =====================================================
-          FILTER
-      ===================================================== */}
+      <StatsCards cards={creditNoteStats} />
 
       <ReusableFilter
         search={search}
@@ -110,28 +89,19 @@ const quotationStats = [
         showSearch
       />
 
-
-      {/* =====================================================
-          TABLE
-      ===================================================== */}
-
       <ReusableTable
-        columns={employeeColumns}
-        data={paginatedData}
+        columns={creditNotesColumns}
+        data={creditNotes}
+        loading={creditNotesLoading}
       />
-
-
-      {/* =====================================================
-          PAGINATION
-      ===================================================== */}
 
       <ReusablePagination
         currentPage={currentPage}
-        totalPages={totalPages}
+        totalPages={creditNotesTotalPages}
         onPageChange={setCurrentPage}
       />
     </>
   );
 };
 
-export default Ledger;
+export default CreditNotes;

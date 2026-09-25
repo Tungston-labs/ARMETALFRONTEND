@@ -120,57 +120,104 @@ export const getCustomerLedgerColumns = () => [
     },
 ];
 
-/**
- * customerLedgerStats
- * ----------------------
- * Builds the stats cards from a `stats` object — pass in whatever
- * you have available:
- *   - the per-customer `/ledger/summary/?customer_id=` payload
- *     (opening_balance, total_debit, total_credit, closing_balance), or
- *   - page-level totals computed client-side from the loaded rows
- *     (total_debit, total_credit, entry_count) when no customer filter
- *     is active and the summary endpoint can't be called.
- *
- * Any field not present in `stats` defaults to 0 rather than blowing up.
- */
-export const customerLedgerStats = (stats = {}) => [
+export const dashboardSummaryStats = (data = {}) => [
     {
-        title: "Opening Balance",
-        count: formatCurrency(stats.opening_balance ?? 0),
+        title: "Total Receivable",
+        count: data.total_receivable,
         icon: <FiDollarSign />,
         backgroundColor: "#EEF2FF",
         iconColor: "#4F46E5",
     },
-
     {
-        title: "Total Debit",
-        count: formatCurrency(stats.total_debit ?? 0),
-        icon: <FiArrowUpCircle />,
+        title: "Total Invoice",
+        count: data.total_invoice,
+        icon: <FiFileText />,
         backgroundColor: "#FFF4E5",
         iconColor: "#F59E0B",
     },
-
     {
-        title: "Total Credit",
-        count: formatCurrency(stats.total_credit ?? 0),
+        title: "Total Collection",
+        count: data.total_collection,
         icon: <FiArrowDownCircle />,
         backgroundColor: "#E8F8EF",
         iconColor: "#22A06B",
     },
-
     {
-        title: "Closing Balance",
-        count: formatCurrency(stats.closing_balance ?? 0),
+        title: "Total Credit",
+        count: data.total_credit,
         icon: <FiCheckCircle />,
         backgroundColor: "#E0F3F7",
         iconColor: "#4455EF",
     },
+    {
+        title: "Overdue",
+        count: data.overdue_amount,
+        icon: <FiArrowUpCircle />,
+        backgroundColor: "#FDECEC",
+        iconColor: "#E5484D",
+    },
+];
 
+// Kept for potential future use (e.g. a per-customer detail view backed by
+// GET /finance/ledger/summary/?customer_id=...). Not currently used by
+// useCustomerLedger — dashboardSummaryStats is the one wired to the cards.
+export const customerLedgerStats = (data = {}) => [
+    {
+        title: "Total Debit",
+        count: data.total_debit,
+        icon: <FiArrowUpCircle />,
+        backgroundColor: "#FDECEC",
+        iconColor: "#E5484D",
+    },
+    {
+        title: "Total Credit",
+        count: formatCurrency(data.total_credit),
+        icon: <FiArrowDownCircle />,
+        backgroundColor: "#E8F8EF",
+        iconColor: "#22A06B",
+    },
+    {
+        title: "Closing Balance",
+        count: formatCurrency(data.closing_balance),
+        icon: <FiDollarSign />,
+        backgroundColor: "#EEF2FF",
+        iconColor: "#4F46E5",
+    },
     {
         title: "Entries",
-        count: String(stats.entry_count ?? 0).padStart(2, "0"),
+        count: data.entry_count || 0,
         icon: <FiFileText />,
         backgroundColor: "#F3EFEC",
-        iconColor: "#000000",
+        iconColor: "#6B7280",
+    },
+];
+
+export const getCustomerSummaryColumns = () => [
+    {
+        header: "Customer",
+        accessor: "customer_name",
+    },
+
+    {
+        header: "Customer ID",
+        accessor: "customer_id_code",
+    },
+
+    {
+        header: "Total Debit",
+        accessor: "total_debit",
+        render: (row) => formatCurrency(row.total_debit),
+    },
+
+    {
+        header: "Total Credit",
+        accessor: "total_credit",
+        render: (row) => formatCurrency(row.total_credit),
+    },
+
+    {
+        header: "Balance",
+        accessor: "balance",
+        render: (row) => formatCurrency(row.balance),
     },
 ];

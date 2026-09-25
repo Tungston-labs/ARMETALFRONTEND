@@ -17,9 +17,9 @@ import SalesOrder from "../Pages/FinanceModule/SALES/SalesOrders/SalesOrder";
 import SalesInvoices from "../Pages/FinanceModule/SALES/Invoices/SalesInvoices";
 import RecurringBilling from "../Pages/FinanceModule/SALES/Recurring Billing/RecurringBilling";
 import CategoriesList from "../Pages/FinanceModule/PRODUCTS/Categories/CategoriesList";
-import CustomerLedger from "../Pages/FinanceModule/SALES/CustomerLedger/CustomerLedger.jsx";
 import AddingInvoice from "../Pages/FinanceModule/SALES/Invoices/AddingInvoice/AddingInvoice.jsx";
 import AddingOrder from "../Pages/FinanceModule/SALES/SalesOrders/modal/AddingOrder.jsx";
+import CustomerLedger from "../Pages/FinanceModule/SALES/Ledger/Customerledger.jsx";
 
 
 const FinanceRoutes = () => {
@@ -30,8 +30,6 @@ const FinanceRoutes = () => {
       <Route path="Warehouse-List" element={<Warehouse />} />
       <Route path="warehouse/:id" element={<WarehouseDetails />} />
       <Route path="Inventory-List" element={<InventoryList />} />
-
-      {/* customer list (table of all customers) */}
       <Route path="sales/customers" element={<CustomerList />} />
 
       <Route path="sales/customers/:customerId" element={<CompanyLayout />}>
@@ -48,11 +46,11 @@ const FinanceRoutes = () => {
       <Route path="sales/orders" element={<SalesOrder />} />
       <Route path="sales/invoices" element={<SalesInvoices />} />
       <Route path="sales/recurring-billing" element={<RecurringBilling />} />
+      <Route path="sales/customer-ledger" element={<CustomerLedger />} />
        <Route path="sales/invoices/add" element={<AddingInvoice />} />
        <Route path="sales/invoices/edit/:id" element={<AddingInvoice />} />
       <Route path="sales/orders/add" element={<AddingOrder />} />
       <Route path="sales/orders/edit/:id" element={<AddingOrder />} />
-      <Route path="sales/customer-ledger" element={<CustomerLedger />} />
 
 
 

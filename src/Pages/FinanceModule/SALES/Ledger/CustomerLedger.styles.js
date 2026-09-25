@@ -98,3 +98,38 @@ export const ExportButton = styled.button`
         }
     }
 `;
+
+export const SummaryHeader = styled.div`
+    margin-top: 20px;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background-color: white;
+    padding: 10px;
+    border-radius: 5px;
+`;
+
+export const SummaryTitle = styled.h3`
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+`;
+
+export const SummarySearch = styled.input`
+    width: 280px;
+    height: 38px;
+    padding: 0 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    outline: none;
+    font-size: 14px;
+
+    &:focus {
+        border-color: #9ca3af;
+    }
+
+    &::placeholder {
+        color: #9ca3af;
+    }
+`;

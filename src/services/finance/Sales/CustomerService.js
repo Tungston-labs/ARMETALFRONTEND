@@ -73,3 +73,100 @@ export const fetchCustomerSummary = async (params = {}) => {
 
     return response.data;
 };
+
+export const fetchCustomerOverview = async (id) => {
+    const response = await API.get(
+        `/finance/customer/${id}/overview/`
+    );
+
+    return response.data;
+};
+// POST: /api/finance/customer/{id}/upload_document/
+export const uploadCustomerDocument = async (id, formData) => {
+    const response = await API.post(
+        `/finance/customer/${id}/upload_document/`,
+        formData
+    );
+
+    return response.data;
+};
+
+// GET: /api/finance/customer/{id}/quotations/
+export const fetchCustomerQuotations = async (id, params = {}) => {
+    const response = await API.get(
+        `/finance/customer/${id}/quotations/`,
+        { params }
+    );
+
+    return response.data;
+};
+// GET: /api/finance/customer/{customer_id}/payments/
+export const fetchCustomerPayments = async (
+    customerId,
+    params = {}
+) => {
+    const response = await API.get(
+        `/finance/customer/${customerId}/payments/`,
+        { params }
+    );
+
+    return response.data;
+};
+// GET: /api/finance/customer/{customer_id}/ledger/
+export const fetchCustomerLedger = async (customerId, params = {}) => {
+    const response = await API.get(
+        `/finance/customer/${customerId}/ledger/`,
+        { params }
+    );
+
+    return response.data;
+};
+// GET: /api/finance/customer/{customer_id}/credit_notes/
+export const fetchCustomerCreditNotes = async (
+    customerId,
+    params = {}
+) => {
+    const response = await API.get(
+        `/finance/customer/${customerId}/credit_notes/`,
+        { params }
+    );
+
+    return response.data;
+};
+// GET: /api/finance/sales-order/customer/{customer_id}/orders/
+export const fetchCustomerOrders = async (customerId, params = {}) => {
+    const response = await API.get(
+        `/finance/sales-order/customer/${customerId}/orders/`,
+        { params }
+    );
+
+    return response.data;
+};
+
+// GET: /api/finance/sales-order/customer/{customer_id}/orders/summary/
+export const fetchCustomerOrdersSummary = async (customerId) => {
+    const response = await API.get(
+        `/finance/sales-order/customer/${customerId}/orders/summary/`
+    );
+
+    return response.data;
+};
+
+// GET: /api/finance/invoice/customer/{customer_id}/invoices/
+export const fetchCustomerInvoices = async (customerId, params = {}) => {
+    const response = await API.get(
+        `/finance/invoice/customer/${customerId}/invoices/`,
+        { params }
+    );
+
+    return response.data;
+};
+
+// GET: /api/finance/invoice/customer/{customer_id}/invoices/summary/
+export const fetchCustomerInvoicesSummary = async (customerId) => {
+    const response = await API.get(
+        `/finance/invoice/customer/${customerId}/invoices/summary/`
+    );
+
+    return response.data;
+};

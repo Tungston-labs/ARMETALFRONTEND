@@ -1,85 +1,98 @@
 import React from "react";
 import { PiDownloadSimple } from "react-icons/pi";
 import { IoClose } from "react-icons/io5";
+
+const formatDate = (dateStr) => {
+  if (!dateStr) return "-";
+
+  const d = new Date(dateStr);
+
+  if (isNaN(d)) return dateStr;
+
+  return d.toLocaleDateString("en-US", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+};
+
+
+
+const STATUS_COLORS = {
+  draft: "#8A8F98",
+  sent: "#3478F6",
+  approved: "#22A06B",
+  negotiation: "#F59E0B",
+  rejected: "#E5484D",
+  converted: "#22A06B",
+  expired: "#E5484D",
+};
+
 export const quotationColumns = [
   {
-    header: "Quotation No",
-    accessor: "quotationNo",
+    header: "Quote No",
+    accessor: "quote_number",
     width: "140px",
     sortable: true,
   },
 
   {
-    header: "Date",
-    accessor: "date",
+    header: "Issue Date",
+    accessor: "issue_date",
     width: "120px",
     sortable: true,
+    render: (row) => formatDate(row.issue_date),
   },
 
   {
-    header: "Reference",
-    accessor: "reference",
-    width: "180px",
-    sortable: true,
-  },
-
-  {
-    header: "Amount",
-    accessor: "amount",
-    width: "150px",
-    sortable: true,
-  },
-
- {
-  header: "Status",
-  accessor: "status",
-  width: "130px",
-  sortable: true,
-
-  render: (row) => {
-    const status = row.status?.toLowerCase();
-
-    let color = "#555";
-
-    if (status === "approved") {
-      color = "#22A06B";
-    }
-
-    if (status === "negotiation") {
-      color = "#F59E0B";
-    }
-
-    if (status === "rejected") {
-      color = "#E5484D";
-    }
-
-    return (
-      <span
-        style={{
-          color,
-          fontSize: "12px",
-          fontWeight: 500,
-        }}
-      >
-        {row.status}
-      </span>
-    );
-  },
-},
-
-  {
-    header: "Valid Until",
-    accessor: "validUntil",
+    header: "Valid Till",
+    accessor: "valid_till",
     width: "130px",
     sortable: true,
+    render: (row) => formatDate(row.valid_till),
   },
 
   {
-    header: "Created By",
-    accessor: "createdBy",
-    width: "140px",
+    header: "Quote Amount",
+    accessor: "quote_amount",
+    width: "150px",
     sortable: true,
+
   },
+
+  {
+    header: "Negotiation Amount",
+    accessor: "negotiation_amount",
+    width: "160px",
+    sortable: true,
+
+  },
+
+  {
+    header: "Status",
+    accessor: "status",
+    width: "130px",
+    sortable: true,
+    render: (row) => {
+      const status = row.status?.toLowerCase();
+      const color = STATUS_COLORS[status] || "#555";
+
+      return (
+        <span
+          style={{
+            color,
+            fontSize: "12px",
+            fontWeight: 500,
+            textTransform: "capitalize",
+          }}
+        >
+          {row.status}
+        </span>
+      );
+    },
+  },
+
+ 
 
   {
     header: "Action",
@@ -127,7 +140,7 @@ export const quotationColumns = [
             alignItems: "center",
             justifyContent: "center",
             cursor: "pointer",
-            color:"red"
+            color: "red",
           }}
           onClick={() => console.log("Delete quotation:", row)}
         >

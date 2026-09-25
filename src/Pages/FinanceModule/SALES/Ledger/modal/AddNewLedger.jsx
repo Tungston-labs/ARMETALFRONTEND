@@ -1,35 +1,34 @@
 import React, { useState } from "react";
-import { FiCalendar, FiSave } from "react-icons/fi";
+import { FiCalendar, FiSave, FiX } from "react-icons/fi";
 
 import {
   Overlay,
   ModalContainer,
   ModalHeader,
-  Title,
-  Subtitle,
+  ModalTitle,
+  ModalDescription,
+  Form,
   FormGroup,
   Label,
   InputWrapper,
   Input,
-  DateInput,
-  RadioSection,
-  RadioOption,
-  RadioLabel,
+  CalendarIcon,
+  ModeWrapper,
+  ModeOption,
   RadioInput,
-  ButtonSection,
+  ModeLabel,
+  ButtonWrapper,
   CancelButton,
   SaveButton,
-} from "./AddLedgerModal.styles";
+} from "./AddNewLedger.styles";
 
-const AddLedgerModal = ({ isOpen, onClose, onSave }) => {
+const AddNewLedger = ({ isOpen, onClose, onSave }) => {
   const [formData, setFormData] = useState({
     amount: "",
     date: "",
     reference: "",
     mode: "debit",
   });
-
-  if (!isOpen) return null;
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -43,32 +42,44 @@ const AddLedgerModal = ({ isOpen, onClose, onSave }) => {
   const handleSubmit = (e) => {
     e.preventDefault();
 
+    if (!formData.amount || !formData.date) {
+      return;
+    }
+
     if (onSave) {
       onSave(formData);
     }
 
-    console.log("Ledger Data:", formData);
+    setFormData({
+      amount: "",
+      date: "",
+      reference: "",
+      mode: "debit",
+    });
+
+    onClose();
   };
 
-  const handleOverlayClick = (e) => {
-    if (e.target === e.currentTarget) {
-      onClose();
-    }
-  };
+  if (!isOpen) return null;
 
   return (
-    <Overlay onClick={handleOverlayClick}>
-      <ModalContainer>
+    <Overlay onClick={onClose}>
+      <ModalContainer onClick={(e) => e.stopPropagation()}>
         <ModalHeader>
-          <Title>Add New Ledger</Title>
-          <Subtitle>Record essential journal information.</Subtitle>
+          <ModalTitle>Add New Ledger</ModalTitle>
+
+          <ModalDescription>
+            Record essential journal information.
+          </ModalDescription>
         </ModalHeader>
 
-        <form onSubmit={handleSubmit}>
+        <Form onSubmit={handleSubmit}>
+          {/* Amount */}
           <FormGroup>
-            <Label>Amount</Label>
+            <Label htmlFor="amount">Amount</Label>
 
             <Input
+              id="amount"
               type="number"
               name="amount"
               value={formData.amount}
@@ -76,25 +87,31 @@ const AddLedgerModal = ({ isOpen, onClose, onSave }) => {
             />
           </FormGroup>
 
+          {/* Date */}
           <FormGroup>
-            <Label>Date</Label>
+            <Label htmlFor="date">Date</Label>
 
             <InputWrapper>
-              <DateInput
+              <Input
+                id="date"
                 type="date"
                 name="date"
                 value={formData.date}
                 onChange={handleChange}
               />
 
-              <FiCalendar />
+              <CalendarIcon>
+                <FiCalendar />
+              </CalendarIcon>
             </InputWrapper>
           </FormGroup>
 
+          {/* Reference */}
           <FormGroup>
-            <Label>Reference</Label>
+            <Label htmlFor="reference">Reference</Label>
 
             <Input
+              id="reference"
               type="text"
               name="reference"
               value={formData.reference}
@@ -102,13 +119,12 @@ const AddLedgerModal = ({ isOpen, onClose, onSave }) => {
             />
           </FormGroup>
 
-          <RadioSection>
+          {/* Mode */}
+          <FormGroup>
             <Label>Mode</Label>
 
-            <RadioOption>
-              <RadioLabel>
-                Debit
-
+            <ModeWrapper>
+              <ModeOption>
                 <RadioInput
                   type="radio"
                   name="mode"
@@ -116,11 +132,11 @@ const AddLedgerModal = ({ isOpen, onClose, onSave }) => {
                   checked={formData.mode === "debit"}
                   onChange={handleChange}
                 />
-              </RadioLabel>
 
-              <RadioLabel>
-                Credit
+                <ModeLabel>Debit</ModeLabel>
+              </ModeOption>
 
+              <ModeOption>
                 <RadioInput
                   type="radio"
                   name="mode"
@@ -128,12 +144,18 @@ const AddLedgerModal = ({ isOpen, onClose, onSave }) => {
                   checked={formData.mode === "credit"}
                   onChange={handleChange}
                 />
-              </RadioLabel>
-            </RadioOption>
-          </RadioSection>
 
-          <ButtonSection>
-            <CancelButton type="button" onClick={onClose}>
+                <ModeLabel>Credit</ModeLabel>
+              </ModeOption>
+            </ModeWrapper>
+          </FormGroup>
+
+          {/* Buttons */}
+          <ButtonWrapper>
+            <CancelButton
+              type="button"
+              onClick={onClose}
+            >
               CANCEL
             </CancelButton>
 
@@ -141,11 +163,11 @@ const AddLedgerModal = ({ isOpen, onClose, onSave }) => {
               <FiSave />
               SAVE
             </SaveButton>
-          </ButtonSection>
-        </form>
+          </ButtonWrapper>
+        </Form>
       </ModalContainer>
     </Overlay>
   );
 };
 
-export default AddLedgerModal;
+export default AddNewLedger;
