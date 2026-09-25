@@ -651,12 +651,12 @@ const CreateSalesReturnAction = () => {
     const result = await dispatch(action);
 
     if (!result.error) {
-      navigate("/sales/returns");
+      navigate("/sales-return");
     }
   };
 
   const handleCancel = () => {
-    navigate("/sales/returns");
+    navigate("/sales-return");
   };
 
   const isSaving = isEditMode ? updateLoading : createLoading;

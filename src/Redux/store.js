@@ -20,7 +20,7 @@ import deliveryNotesReducer from "../Redux/finance/Sales/deliveryNotesSlice";
 import categoryReducer from "./finance/Product/categorySlice";
 import productReducer from "./finance/Product/ProductSlice";
 import customerReducer from "./finance/Sales/CustomerSlice";
-import inventoryReducer from "../Redux/inventorySlice";
+import inventoryReducer from "../Redux/finance/Product/inventorySlice";
 import salesOrderReducer from "../Redux/finance/Sales/Salesorderslice";
 import invoiceReducer from "../Redux/finance/Sales/InvoiceSlice";
 import paymentReducer from "../Redux/finance/Sales/paymentSlice";

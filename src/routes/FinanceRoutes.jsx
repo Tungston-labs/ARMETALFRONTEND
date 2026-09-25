@@ -26,7 +26,6 @@ import AddingInvoice from "../Pages/FinanceModule/SALES/Invoices/AddingInvoice/A
 import AddingOrder from "../Pages/FinanceModule/SALES/SalesOrders/modal/AddingOrder.jsx";
 import CustomerLedger from "../Pages/FinanceModule/SALES/Ledger/Customerledger.jsx";
 
-
 import DeliveryNotes from "../Pages/FinanceModule/SALES/DeliveryNotes/DeliveryNotes.jsx";
 import Createdeliverynotes from "../Pages/FinanceModule/SALES/DeliveryNotes/modal/CreatedeliveryNotes.jsx";
 
@@ -79,8 +78,8 @@ const FinanceRoutes = () => {
 
       <Route path="sales/recurring-billing" element={<RecurringBilling />} />
       <Route path="sales/customer-ledger" element={<CustomerLedger />} />
-       <Route path="sales/invoices/add" element={<AddingInvoice />} />
-       <Route path="sales/invoices/edit/:id" element={<AddingInvoice />} />
+      <Route path="sales/invoices/add" element={<AddingInvoice />} />
+      <Route path="sales/invoices/edit/:id" element={<AddingInvoice />} />
       <Route path="sales/orders/add" element={<AddingOrder />} />
       <Route path="sales/orders/edit/:id" element={<AddingOrder />} />
 
