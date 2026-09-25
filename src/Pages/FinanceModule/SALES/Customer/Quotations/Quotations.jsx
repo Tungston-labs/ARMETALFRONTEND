@@ -64,14 +64,14 @@ const Quotations = () => {
     },
     {
       title: "Total Amount",
-      count: `AED ${(quotationsKpiCards?.total_amount ?? 0).toLocaleString()}`,
+      count: quotationsKpiCards?.total_amount ?? 0,
       icon: <FiDollarSign />,
       backgroundColor: "#FFF4E5",
       iconColor: "#F59E0B",
     },
     {
       title: "Negotiation Amount",
-      count: `AED ${(quotationsKpiCards?.negotiation_amount ?? 0).toLocaleString()}`,
+      count: quotationsKpiCards?.negotiation_amount ?? 0,
       icon: <FiRefreshCw />,
       backgroundColor: "#E8F8EF",
       iconColor: "#22A06B",
