@@ -15,6 +15,8 @@ import companyReducer from "../Redux/companySlice";
 import financeReducer from "./financeSlice";
 import salaryIncrementReducer from "../Redux/salaryIncrementSlice";
 import warehouseReducer from "../Redux/warehouseSlice";
+import quotationReducer from "./quotationSlice";
+import deliveryNotesReducer from "../Redux/finance/Sales/deliveryNotesSlice";
 import categoryReducer from "./finance/Product/categorySlice";
 import productReducer from "./finance/Product/ProductSlice";
 import customerReducer from "./finance/Sales/CustomerSlice";
@@ -24,6 +26,12 @@ import invoiceReducer from "../Redux/finance/Sales/InvoiceSlice";
 import customerLedgerReducer from "./finance/Sales/Customerledgerslice";
 import recurringReducer from "../Redux/finance/Sales/recurringSlice";
 
+import paymentReducer from "../Redux/finance/Sales/paymentSlice";
+import creditNotesReducer from "../Redux/finance/Sales/creditNoteSlice";
+import salesReturnsReducer from "./finance/Sales/Salesreturnslice";
+
+
+import customerLedgerReducer from "./finance/Sales/Customerledgerslice"
 export const store = configureStore({
   reducer: {
 
@@ -41,6 +49,7 @@ export const store = configureStore({
     projects: projectReducer,
     company: companyReducer,
     finance: financeReducer,
+    quotation: quotationReducer,
     salaryIncrement: salaryIncrementReducer,
 
     category: categoryReducer,
@@ -48,9 +57,14 @@ export const store = configureStore({
     customer: customerReducer,
     warehouse: warehouseReducer,
     inventory: inventoryReducer,
-       salesOrder: salesOrderReducer,
+    salesOrder: salesOrderReducer,
+    deliveryNotes: deliveryNotesReducer,
     invoice: invoiceReducer,
     customerLedger: customerLedgerReducer,
     recurring: recurringReducer,
+    payments: paymentReducer,
+    creditNotes: creditNotesReducer,
+    salesReturns: salesReturnsReducer,
+    customerLedger: customerLedgerReducer,
   },
 });
