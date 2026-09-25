@@ -79,56 +79,56 @@ const getStockStatusClass = (status) => {
 
 export const inventoryColumns = [
   {
-    key: "code",
-    title: "Code",
+    accessor: "code",
+    header: "Code",
     render: (row) => row?.code || "-",
   },
 
   {
-    key: "product_name",
-    title: "Product",
+    accessor: "product_name",
+    header: "Product",
     render: (row) => row?.product_name || "-",
   },
 
   {
-    key: "category_name",
-    title: "Category",
+    accessor: "category_name",
+    header: "Category",
     render: (row) => row?.category_name || "-",
   },
 
   {
-    key: "warehouse_name",
-    title: "Warehouse",
+    accessor: "warehouse_name",
+    header: "Warehouse",
     render: (row) => row?.warehouse_name || "-",
   },
 
   {
-    key: "available_qty",
-    title: "Available Qty",
+    accessor: "available_qty",
+    header: "Available Qty",
     render: (row) => formatNumber(row?.available_qty),
   },
 
   {
-    key: "reserved_qty",
-    title: "Reserved Qty",
+    accessor: "reserved_qty",
+    header: "Reserved Qty",
     render: (row) => formatNumber(row?.reserved_qty),
   },
 
   {
-    key: "unit",
-    title: "Unit",
+    accessor: "unit",
+    header: "Unit",
     render: (row) => row?.unit || "-",
   },
 
   {
-    key: "reorder_level",
-    title: "Reorder Level",
+    accessor: "reorder_level",
+    header: "Reorder Level",
     render: (row) => formatNumber(row?.reorder_level),
   },
 
   {
-    key: "stock_status",
-    title: "Stock Status",
+    accessor: "stock_status",
+    header: "Stock Status",
     render: (row) => (
       <span className={getStockStatusClass(row?.stock_status)}>
         {row?.stock_status || "-"}
@@ -137,20 +137,20 @@ export const inventoryColumns = [
   },
 
   {
-    key: "inventory_value",
-    title: "Inventory Value",
+    accessor: "inventory_value",
+    header: "Inventory Value",
     render: (row) => formatCurrency(row?.inventory_value),
   },
 
   {
-    key: "updated_at",
-    title: "Last Updated",
+    accessor: "updated_at",
+    header: "Last Updated",
     render: (row) => formatDate(row?.updated_at),
   },
 
   {
-    key: "action",
-    title: "Action",
+    accessor: "action",
+    header: "Action",
     render: (row) => (
       <button
         type="button"
