@@ -23,6 +23,9 @@ import customerReducer from "./finance/Sales/CustomerSlice";
 import inventoryReducer from "../Redux/inventorySlice";
 import salesOrderReducer from "../Redux/finance/Sales/Salesorderslice";
 import invoiceReducer from "../Redux/finance/Sales/InvoiceSlice";
+
+import recurringReducer from "../Redux/finance/Sales/recurringSlice";
+
 import paymentReducer from "../Redux/finance/Sales/paymentSlice";
 import creditNotesReducer from "../Redux/finance/Sales/creditNoteSlice";
 import salesReturnsReducer from "./finance/Sales/Salesreturnslice";
@@ -57,9 +60,11 @@ export const store = configureStore({
     salesOrder: salesOrderReducer,
     deliveryNotes: deliveryNotesReducer,
     invoice: invoiceReducer,
+    customerLedger: customerLedgerReducer,
+    recurring: recurringReducer,
     payments: paymentReducer,
     creditNotes: creditNotesReducer,
     salesReturns: salesReturnsReducer,
-    customerLedger: customerLedgerReducer,
+
   },
 });
