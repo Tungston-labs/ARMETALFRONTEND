@@ -37,10 +37,10 @@ import {
   fetchDeliveryNoteById,
   addDeliveryNote,
   editDeliveryNote,
-} from "../../../../../Redux/finance/deliveryNotesSlice";
+} from "../../../../../Redux/finance/Sales/deliveryNotesSlice";
 
-import { getCustomers as getCustomerList } from "../../../../../Redux/finance/CustomerSlice";
-import { getProducts } from "../../../../../Redux/finance/ProductSlice";
+import { getCustomers as getCustomerList } from "../../../../../Redux/finance/Sales/CustomerSlice";
+import { getProducts } from "../../../../../Redux/finance/Product/ProductSlice";
 
 /* =========================================================
    CONSTANTS
@@ -221,7 +221,8 @@ const getProductId = (item, products = []) => {
     return normalizeId(rawProduct);
   }
 
-  const productText = typeof item?.product === "string" ? item.product.trim() : "";
+  const productText =
+    typeof item?.product === "string" ? item.product.trim() : "";
 
   if (productText) {
     if (/^\d+$/.test(productText)) {
@@ -230,10 +231,7 @@ const getProductId = (item, products = []) => {
 
     const matchedProduct = products.find((product) => {
       const productId =
-        product?.id ??
-        product?.pk ??
-        product?.product_id ??
-        null;
+        product?.id ?? product?.pk ?? product?.product_id ?? null;
 
       const productName =
         product?.name ??
@@ -251,9 +249,7 @@ const getProductId = (item, products = []) => {
 
     if (matchedProduct) {
       return normalizeId(
-        matchedProduct?.id ??
-          matchedProduct?.pk ??
-          matchedProduct?.product_id,
+        matchedProduct?.id ?? matchedProduct?.pk ?? matchedProduct?.product_id,
       );
     }
 
@@ -731,10 +727,7 @@ const Createdeliverynotes = ({ onCancel, onPreview }) => {
   };
 
   const productOptions = useMemo(
-    () =>
-      Array.isArray(products)
-        ? products.filter(Boolean)
-        : [],
+    () => (Array.isArray(products) ? products.filter(Boolean) : []),
     [products],
   );
 
@@ -1424,7 +1417,12 @@ const Createdeliverynotes = ({ onCancel, onPreview }) => {
           <datalist id="delivery-product-options">
             {productOptions.map((product) => (
               <option
-                key={product?.id ?? product?.pk ?? product?.product_id ?? Math.random()}
+                key={
+                  product?.id ??
+                  product?.pk ??
+                  product?.product_id ??
+                  Math.random()
+                }
                 value={
                   product?.product_name ||
                   product?.name ||

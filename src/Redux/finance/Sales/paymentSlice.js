@@ -9,7 +9,7 @@ import {
     deletePayment as deletePaymentApi,
     getPaymentKPI,
     exportPayments as exportPaymentsApi,
-} from "../../services/finance/paymentService";
+} from "../../../services/finance/Sales/paymentService.js";
 
 /* =========================================================
    HELPERS

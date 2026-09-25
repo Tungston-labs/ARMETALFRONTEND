@@ -1,5 +1,5 @@
 import axios from "axios";
-import { BASE_URL } from "../api";
+import { BASE_URL } from "../../api";
 
 const API_ROOT = `${String(BASE_URL).replace(/\/$/, "")}/api/finance/payments`;
 
@@ -13,8 +13,8 @@ const getAuthConfig = () => {
             "Content-Type": "application/json",
             ...(accessToken
                 ? {
-                      Authorization: `Bearer ${accessToken}`,
-                  }
+                    Authorization: `Bearer ${accessToken}`,
+                }
                 : {}),
         },
     };

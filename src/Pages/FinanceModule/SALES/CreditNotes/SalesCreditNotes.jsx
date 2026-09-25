@@ -18,18 +18,18 @@ import {
   DateInput,
   DateSeparator,
   ExportButton,
-} from "./DeliveryNotes.style";
+} from "./SalesCreditNotes.style";
 
-import { salesOrderColumns, salesOrderStats } from "./DeliveryNotesColoumns";
+import { creditNoteColumns, creditNoteStats } from "./CreditNotesColoumn";
 
 import {
-  fetchDeliveryNotes,
-  fetchDeliveryNoteKpi,
-  removeDeliveryNote,
-} from "../../../../Redux/finance/Sales/deliveryNotesSlice";
+  fetchCreditNotes,
+  fetchCreditNoteKpi,
+  removeCreditNote,
+} from "../../../../Redux/finance/Sales/creditNoteSlice";
 
 /* =========================================================
-   DATE HELPERS
+   DATE
 ========================================================= */
 
 const getCurrentMonthRange = () => {
@@ -39,14 +39,11 @@ const getCurrentMonthRange = () => {
   const month = today.getMonth();
 
   const firstDay = new Date(year, month, 1);
-
   const lastDay = new Date(year, month + 1, 0);
 
   const formatDate = (date) => {
     const y = date.getFullYear();
-
     const m = String(date.getMonth() + 1).padStart(2, "0");
-
     const d = String(date.getDate()).padStart(2, "0");
 
     return `${y}-${m}-${d}`;
@@ -59,7 +56,7 @@ const getCurrentMonthRange = () => {
 };
 
 /* =========================================================
-   AMOUNT HELPER
+   NUMBER
 ========================================================= */
 
 const parseAmount = (value) => {
@@ -75,7 +72,7 @@ const parseAmount = (value) => {
 };
 
 /* =========================================================
-   KPI HELPER
+   KPI
 ========================================================= */
 
 const getKpiValue = (kpi, keys, fallback = 0) => {
@@ -89,7 +86,7 @@ const getKpiValue = (kpi, keys, fallback = 0) => {
 };
 
 /* =========================================================
-   STATUS HELPERS
+   STATUS
 ========================================================= */
 
 const normalizeStatus = (value) => {
@@ -103,21 +100,20 @@ const normalizeStatus = (value) => {
    COMPONENT
 ========================================================= */
 
-const DeliveryNotes = () => {
+const SalesCreditNotes = () => {
   const navigate = useNavigate();
 
   const dispatch = useDispatch();
 
-  const { deliveryNotes, kpi, totalItems, totalPages, loading, error } =
-    useSelector((state) => state.deliveryNotes);
+  const { creditNotes, kpi, totalItems, totalPages, loading, error } =
+    useSelector((state) => state.creditNotes);
 
   const currentMonth = useMemo(() => getCurrentMonthRange(), []);
 
   const [search, setSearch] = useState("");
-
-  const [status, setStatus] = useState("");
-
   const [customer, setCustomer] = useState("");
+  const [status, setStatus] = useState("");
+  const [reason, setReason] = useState("");
 
   const [startDate, setStartDate] = useState(currentMonth.start);
 
@@ -130,8 +126,8 @@ const DeliveryNotes = () => {
   const [currentPage, setCurrentPage] = useState(1);
 
   /* =======================================================
-     API PARAMETERS
-  ======================================================= */
+       API PARAMS
+    ======================================================= */
 
   const apiParams = useMemo(() => {
     const params = {
@@ -143,17 +139,17 @@ const DeliveryNotes = () => {
       params.search = search.trim();
     }
 
-    if (status) {
-      params.status = status;
-    }
-
     if (customer) {
       params.customer = customer;
     }
 
-    /*
-     * Warehouse intentionally removed.
-     */
+    if (status) {
+      params.status = status;
+    }
+
+    if (reason) {
+      params.reason = reason;
+    }
 
     if (dateFilterChanged && startDate) {
       params.start_date = startDate;
@@ -167,45 +163,48 @@ const DeliveryNotes = () => {
   }, [
     currentPage,
     search,
-    status,
     customer,
+    status,
+    reason,
     startDate,
     endDate,
     dateFilterChanged,
   ]);
 
   /* =======================================================
-     FETCH LIST
-  ======================================================= */
+       LOAD LIST
+    ======================================================= */
 
-  const loadDeliveryNotes = useCallback(() => {
-    dispatch(fetchDeliveryNotes(apiParams));
+  const loadCreditNotes = useCallback(() => {
+    dispatch(fetchCreditNotes(apiParams));
   }, [dispatch, apiParams]);
 
   useEffect(() => {
-    loadDeliveryNotes();
-  }, [loadDeliveryNotes]);
+    loadCreditNotes();
+  }, [loadCreditNotes]);
 
   /* =======================================================
-     FETCH KPI
-  ======================================================= */
+       KPI
+    ======================================================= */
 
   useEffect(() => {
-    dispatch(fetchDeliveryNoteKpi());
+    dispatch(fetchCreditNoteKpi());
   }, [dispatch]);
 
   /* =======================================================
-     DELETE
-  ======================================================= */
+       DELETE
+    ======================================================= */
 
   const handleDelete = useCallback(
     async (row) => {
-      if (!row?.id) {
+      const id = row?.id ?? row?.credit_note_id ?? row?.pk;
+
+      if (!id) {
         return;
       }
 
       const confirmed = window.confirm(
-        "Are you sure you want to delete this delivery note?",
+        "Are you sure you want to delete this credit note?",
       );
 
       if (!confirmed) {
@@ -213,75 +212,74 @@ const DeliveryNotes = () => {
       }
 
       try {
-        await dispatch(removeDeliveryNote(row.id)).unwrap();
+        await dispatch(removeCreditNote(id)).unwrap();
 
-        dispatch(fetchDeliveryNotes(apiParams));
+        dispatch(fetchCreditNotes(apiParams));
 
-        dispatch(fetchDeliveryNoteKpi());
+        dispatch(fetchCreditNoteKpi());
       } catch (deleteError) {
-        console.error("Delete delivery note failed:", deleteError);
+        console.error("Delete credit note failed:", deleteError);
       }
     },
     [dispatch, apiParams],
   );
 
   /* =======================================================
-     TABLE DATA
-  ======================================================= */
+       ROWS
+    ======================================================= */
 
-  const normalizedRows = useMemo(() => {
-    if (!Array.isArray(deliveryNotes)) {
-      return [];
-    }
-
-    return deliveryNotes;
-  }, [deliveryNotes]);
+  const normalizedRows = useMemo(
+    () => (Array.isArray(creditNotes) ? creditNotes : []),
+    [creditNotes],
+  );
 
   /* =======================================================
-     STATUS FALLBACK COUNTS
-  ======================================================= */
+       STATUS COUNT
+    ======================================================= */
 
   const getStatusCount = useCallback(
     (targetStatus) => {
-      const normalizedTarget = normalizeStatus(targetStatus);
+      const target = normalizeStatus(targetStatus);
 
       return normalizedRows.filter((row) => {
-        const rowStatus = normalizeStatus(
-          row?.deliveryStatus || row?.delivery_status || row?.status,
+        const current = normalizeStatus(
+          row?.status || row?.credit_status || row?.creditStatus,
         );
 
-        if (normalizedTarget === "partially") {
+        if (target === "partiallyapplied") {
           return (
-            rowStatus === "partially" ||
-            rowStatus === "partial" ||
-            rowStatus === "partiallydelivered"
+            current === "partiallyapplied" ||
+            current === "partial" ||
+            current === "partially"
           );
         }
 
-        if (normalizedTarget === "delivered") {
-          return rowStatus === "delivered" || rowStatus === "fullydelivered";
+        if (target === "cancelled") {
+          return current === "cancelled" || current === "canceled";
         }
 
-        return rowStatus === normalizedTarget;
+        if (target === "applied") {
+          return current === "applied" || current === "closed";
+        }
+
+        return current === target;
       }).length;
     },
     [normalizedRows],
   );
 
   /* =======================================================
-     AMOUNT FALLBACK
-  ======================================================= */
+       TOTAL VALUE
+    ======================================================= */
 
-  const totalAmount = useMemo(() => {
+  const totalCreditValue = useMemo(() => {
     return normalizedRows.reduce((sum, row) => {
       const value =
-        row.deliveryValue ??
-        row.delivery_value ??
-        row.amount ??
-        row.total_amount ??
-        row.thisDelivery ??
-        row.this_delivery ??
-        row.orderedValue ??
+        row?.credit_amount ??
+        row?.creditAmount ??
+        row?.this_credit_note ??
+        row?.thisCreditNote ??
+        row?.total_credit_amount ??
         0;
 
       return sum + parseAmount(value);
@@ -289,87 +287,79 @@ const DeliveryNotes = () => {
   }, [normalizedRows]);
 
   /* =======================================================
-     KPI CARDS
-  ======================================================= */
+       KPI CARDS
+    ======================================================= */
 
-  const deliveryValue = getKpiValue(
+  const totalValue = getKpiValue(
     kpi,
-    ["delivery_value", "total_delivery_value", "total_value"],
-    totalAmount,
+    [
+      "total_credit_value",
+      "total_credit_amount",
+      "credit_value",
+      "total_value",
+    ],
+    totalCreditValue,
   );
 
-  const formattedDeliveryValue =
-    typeof deliveryValue === "number"
-      ? `SAR ${deliveryValue.toLocaleString("en-US")}`
-      : String(deliveryValue || "SAR 0")
+  const formattedTotalValue =
+    typeof totalValue === "number"
+      ? `SAR ${totalValue.toLocaleString("en-US")}`
+      : String(totalValue || "SAR 0")
             .toUpperCase()
             .includes("SAR")
-        ? deliveryValue
-        : `SAR ${deliveryValue}`;
+        ? totalValue
+        : `SAR ${totalValue}`;
 
-  const stats = salesOrderStats({
-    totalDeliveries: getKpiValue(
+  const stats = creditNoteStats({
+    totalCreditNotes: getKpiValue(
       kpi,
-      ["total_deliveries", "total_delivery_notes", "total"],
+      ["total_credit_notes", "total_creditnotes", "total"],
       totalItems,
     ),
 
-    pendingDeliveries: getKpiValue(
+    totalCreditValue: formattedTotalValue,
+
+    openCredits: getKpiValue(
       kpi,
-      ["pending_deliveries", "pending"],
-      getStatusCount("Pending"),
+      ["open_credits", "open_credit_notes", "open"],
+      getStatusCount("Open"),
     ),
 
-    partiallyDelivered: getKpiValue(
+    appliedCredits: getKpiValue(
       kpi,
-      ["partially_delivered", "partial_deliveries", "partial"],
-      getStatusCount("Partially"),
+      ["applied_credits", "applied_credit_notes", "applied"],
+      getStatusCount("Applied"),
     ),
 
-    delivered: getKpiValue(
+    cancelledCredits: getKpiValue(
       kpi,
-      ["delivered", "delivered_deliveries"],
-      getStatusCount("Delivered"),
+      ["cancelled_credits", "cancelled_credit_notes", "cancelled"],
+      getStatusCount("Cancelled"),
     ),
-
-    deliveryValue: formattedDeliveryValue,
   });
 
   /* =======================================================
-     DATE HANDLERS
-  ======================================================= */
+       DATE
+    ======================================================= */
 
-  const handleStartDateChange = (e) => {
-    const value = e.target.value;
+  const handleStartDateChange = (event) => {
+    const value = event.target.value;
 
     setDateFilterChanged(true);
-
-    if (!value) {
-      setStartDate("");
-      setCurrentPage(1);
-      return;
-    }
-
     setStartDate(value);
     setCurrentPage(1);
 
-    if (endDate && value > endDate) {
+    if (value && endDate && value > endDate) {
       setEndDate(value);
     }
   };
 
-  const handleEndDateChange = (e) => {
-    const value = e.target.value;
+  const handleEndDateChange = (event) => {
+    const value = event.target.value;
 
     setDateFilterChanged(true);
 
-    if (!value) {
-      setEndDate("");
-      setCurrentPage(1);
-      return;
-    }
-
-    if (startDate && value < startDate) {
+    if (startDate && value && value < startDate) {
       return;
     }
 
@@ -378,42 +368,39 @@ const DeliveryNotes = () => {
   };
 
   /* =======================================================
-     EXPORT
-  ======================================================= */
+       EXPORT
+    ======================================================= */
 
   const handleExport = () => {
-    console.log("Export Delivery Notes", {
+    console.log("Export Credit Notes", {
       startDate,
       endDate,
       search,
-      status,
       customer,
+      status,
+      reason,
     });
   };
 
   /* =======================================================
-     TABLE COLUMNS
-  ======================================================= */
+       COLUMNS
+    ======================================================= */
 
   const tableColumns = useMemo(
-    () => salesOrderColumns(handleDelete),
+    () => creditNoteColumns(handleDelete),
     [handleDelete],
   );
 
   /* =======================================================
-     RENDER
-  ======================================================= */
+       RENDER
+    ======================================================= */
 
   return (
-    <div
-      style={{
-        padding: 20,
-      }}
-    >
+    <div style={{ padding: 20 }}>
       <ReusableHeader
-        title="Delivery Notes"
-        breadcrumbs={["Sales", "Delivery Notes"]}
-        buttonText="+ CREATE DELIVERY NOTE"
+        title="Credit Notes"
+        breadcrumbs={["Sales", "Credit Notes"]}
+        buttonText="+ CREATE CREDIT NOTE"
         onButtonClick={() => navigate("add")}
       >
         <ExportButton type="button" onClick={handleExport}>
@@ -453,10 +440,10 @@ const DeliveryNotes = () => {
           setSearch(value);
           setCurrentPage(1);
         }}
-        searchPlaceholder="Search Delivery Note"
+        searchPlaceholder="Search Credit Note"
         showSearch
         status={status}
-        statuses={["Delivered", "Partially", "Pending", "Dispatched"]}
+        statuses={["Open", "Partially Applied", "Closed", "Cancelled"]}
         onStatus={(value) => {
           setStatus(value);
           setCurrentPage(1);
@@ -465,53 +452,88 @@ const DeliveryNotes = () => {
         filters={[
           {
             key: "customer",
-
             value: customer,
-
             onChange: (value) => {
               setCustomer(value);
               setCurrentPage(1);
             },
-
             options: [
               {
-                label: "ABC Trading",
-                value: "ABC Trading",
+                label: "Mediora",
+                value: "Mediora",
               },
               {
-                label: "Riyadh Tech",
-                value: "Riyadh Tech",
+                label: "Chincking",
+                value: "Chincking",
               },
               {
-                label: "Al Noor Company",
-                value: "Al Noor Company",
+                label: "Nexora Tech",
+                value: "Nexora Tech",
               },
               {
-                label: "Saudi Solutions",
-                value: "Saudi Solutions",
+                label: "CloudSync Systems",
+                value: "CloudSync Systems",
+              },
+              {
+                label: "BluePeak Digital",
+                value: "BluePeak Digital",
+              },
+              {
+                label: "ElevateX Labs",
+                value: "ElevateX Labs",
+              },
+              {
+                label: "NovaSphere Tech",
+                value: "NovaSphere Tech",
+              },
+              {
+                label: "LogicBridge Systems",
+                value: "LogicBridge Systems",
               },
             ],
-
             placeholder: "All Customer",
+          },
+          {
+            key: "reason",
+            value: reason,
+            onChange: (value) => {
+              setReason(value);
+              setCurrentPage(1);
+            },
+            options: [
+              {
+                label: "Sales Return",
+                value: "Sales Return",
+              },
+              {
+                label: "Price Adjustment",
+                value: "Price Adjustment",
+              },
+              {
+                label: "Damaged Goods",
+                value: "Damaged Goods",
+              },
+              {
+                label: "Discount Adjustment",
+                value: "Discount Adjustment",
+              },
+              {
+                label: "Pricing Error",
+                value: "Pricing Error",
+              },
+            ],
+            placeholder: "Reason",
           },
         ]}
         showFilterButton
         filterButtonText="Filter"
         onFilterClick={() => {
           setCurrentPage(1);
-          loadDeliveryNotes();
+          loadCreditNotes();
         }}
       />
 
-      {loading && (
-        <div
-          style={{
-            padding: 20,
-          }}
-        >
-          Loading delivery notes...
-        </div>
-      )}
+      {loading && <div style={{ padding: 20 }}>Loading credit notes...</div>}
 
       {error && (
         <div
@@ -520,7 +542,7 @@ const DeliveryNotes = () => {
             color: "red",
           }}
         >
-          {typeof error === "string" ? error : "Failed to load delivery notes"}
+          {typeof error === "string" ? error : "Failed to load credit notes"}
         </div>
       )}
 
@@ -540,4 +562,4 @@ const DeliveryNotes = () => {
   );
 };
 
-export default DeliveryNotes;
+export default SalesCreditNotes;

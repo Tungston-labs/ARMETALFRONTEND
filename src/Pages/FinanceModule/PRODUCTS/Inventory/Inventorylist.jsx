@@ -14,9 +14,9 @@ import { FiDownload } from "react-icons/fi";
 import StockAdjustmentModal from "../../../../Components/InventoryModal/InventoryModal";
 
 import { fetchInventory } from "../../../../Redux/inventorySlice";
-import { getCategories } from "../../../../Redux/finance/categorySlice";
+import { getCategories } from "../../../../Redux/finance/Product/categorySlice.js";
 import { getWarehouses } from "../../../../services/warehouseService";
-import { fetchProducts } from "../../../../services/finance/productServices";
+import { fetchProducts } from "../../../../services/finance/Product/productServices";
 
 import { inventoryColumns } from "../../../../Components/ReusableTable/inventoryColumns.jsx";
 

@@ -8,7 +8,7 @@ import {
   patchDeliveryNote,
   deleteDeliveryNote,
   getDeliveryNoteKpi,
-} from "../../services/finance/deliveryNotesService.js";
+} from "../../../services/finance/Sales/deliveryNotesService";
 
 /* =========================================================
    THUNKS

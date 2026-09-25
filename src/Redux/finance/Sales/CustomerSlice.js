@@ -410,4 +410,35 @@ export const {
     clearSelectedCustomer,
 } = customerSlice.actions;
 
+// Selectors
+export const selectCustomers = (state) =>
+    state.customer?.customers || [];
+
+export const selectSelectedCustomer = (state) =>
+    state.customer?.selectedCustomer || null;
+
+export const selectCustomerLoading = (state) =>
+    state.customer?.loading || false;
+
+export const selectCustomerDetailLoading = (state) =>
+    state.customer?.detailLoading || false;
+
+export const selectCustomerCreateLoading = (state) =>
+    state.customer?.createLoading || false;
+
+export const selectCustomerUpdateLoading = (state) =>
+    state.customer?.updateLoading || false;
+
+export const selectCustomerDeleteLoading = (state) =>
+    state.customer?.deleteLoading || false;
+
+export const selectCustomerSummary = (state) =>
+    state.customer?.summary || null;
+
+export const selectCustomerSummaryLoading = (state) =>
+    state.customer?.summaryLoading || false;
+
+export const selectCustomerError = (state) =>
+    state.customer?.error || null;
+
 export default customerSlice.reducer;

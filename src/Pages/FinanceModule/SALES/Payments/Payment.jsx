@@ -40,8 +40,8 @@ import {
   selectPaymentLoading,
   selectPaymentCreateLoading,
   selectPaymentError,
-} from "../../../../Redux/finance/paymentSlice";
-import { getCustomers } from "../../../../Redux/finance/CustomerSlice";
+} from "../../../../Redux/finance/Sales/paymentSlice";
+import { getCustomers } from "../../../../Redux/finance/Sales/CustomerSlice";
 import { normalizePaymentPayload } from "./paymentPayload";
 
 /* =========================================================
