@@ -19,7 +19,8 @@ import RecurringBilling from "../Pages/FinanceModule/SALES/Recurring Billing/Rec
 import CategoriesList from "../Pages/FinanceModule/PRODUCTS/Categories/CategoriesList";
 import AddingInvoice from "../Pages/FinanceModule/SALES/Invoices/AddingInvoice/AddingInvoice.jsx";
 import AddingOrder from "../Pages/FinanceModule/SALES/SalesOrders/modal/AddingOrder.jsx";
-import SalesInvoices from "../Pages/FinanceModule/SALES/Invoices/SalesInvoices.jsx";
+import CustomerLedger from "../Pages/FinanceModule/SALES/Ledger/Customerledger.jsx";
+
 
 const FinanceRoutes = () => {
   return (
@@ -29,8 +30,6 @@ const FinanceRoutes = () => {
       <Route path="Warehouse-List" element={<Warehouse />} />
       <Route path="warehouse/:id" element={<WarehouseDetails />} />
       <Route path="Inventory-List" element={<InventoryList />} />
-
-      {/* customer list (table of all customers) */}
       <Route path="sales/customers" element={<CustomerList />} />
 
       <Route path="sales/customers/:customerId" element={<CompanyLayout />}>

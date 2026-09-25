@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Outlet, useLocation, useParams } from "react-router-dom";
+import { Outlet, useLocation, useParams, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 
 import ReusableHeader from "../../../../../Components/ReusableTable/ReusableHeader";
@@ -28,8 +28,7 @@ const pageMeta = {
 
   quotations: {
     title: "Quotations",
-    showAddButton: true,
-    buttonText: "+ Generate Quote",
+    showAddButton: false,
   },
 
   orders: {
@@ -57,8 +56,7 @@ const pageMeta = {
 
   "credit-notes": {
     title: "Credit Notes",
-    showAddButton: true,
-    buttonText: "+ New Credit Note",
+    showAddButton: false,
   },
 };
 
@@ -112,7 +110,7 @@ const CompanyLayout = () => {
   const { customerId } = useParams();
   const dispatch = useDispatch();
   const location = useLocation();
-
+  const navigate = useNavigate();
   /* =========================================================
      CUSTOMER
   ========================================================= */
@@ -255,7 +253,7 @@ const CompanyLayout = () => {
         }
 
         showBack
-
+  onBack={() => navigate("/sales/customers")}
         showButton={showAddButton}
 
         buttonText={buttonText}

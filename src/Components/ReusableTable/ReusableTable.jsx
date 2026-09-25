@@ -13,6 +13,10 @@ import {
   EmptyState,
   LoadingState,
   LoadingContent,
+  TotalRow,
+  TotalDebit,
+  TotalCredit,
+  TotalBalance,
 } from "./ReusableTable.styles";
 
 const ReusableTable = ({
@@ -22,6 +26,8 @@ const ReusableTable = ({
   onRowClick,
   emptyMessage = "No Records Found",
   loadingMessage = "Loading...",
+   totalRow, // NEW: object keyed by accessor, e.g. { debit: "10,000.00", credit: "0.00", balance: "10,000.00" }
+  totalRowLabel = "TOTAL",
 }) => {
   const [sortKey, setSortKey] = useState("");
   const [sortDirection, setSortDirection] = useState("asc");
@@ -151,6 +157,23 @@ const ReusableTable = ({
                 </Tr>
               ))}
           </Tbody>
+
+        {totalRow && !loading && (
+  <tfoot>
+    <TotalRow>
+      {columns.map((column, i) => {
+        const value = i === 0 ? totalRowLabel : (totalRow[column.accessor] ?? "");
+
+        let content = value;
+        if (column.accessor === "debit") content = <TotalDebit>{value}</TotalDebit>;
+        if (column.accessor === "credit") content = <TotalCredit>{value}</TotalCredit>;
+        if (column.accessor === "balance") content = <TotalBalance>{value}</TotalBalance>;
+
+        return <Td key={column.accessor}>{content}</Td>;
+      })}
+    </TotalRow>
+  </tfoot>
+)}
         </StyledTable>
       </TableScrollContainer>
     </Container>
