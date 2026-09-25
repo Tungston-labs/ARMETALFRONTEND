@@ -1,93 +1,109 @@
-import React, { useMemo, useState } from "react";
-import { FiFileText, FiCheckCircle, FiXCircle, FiDollarSign, FiRefreshCw } from "react-icons/fi";
+import React, { useEffect, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { useParams } from "react-router-dom";
+import { FiFileText, FiCheckCircle, FiXCircle, FiDollarSign } from "react-icons/fi";
 
-import {
-  employeeColumns,
-  employeeData,
-} from "../../../../../Components/ReusableTable/dummydata";
-
+import { invoicesColumns } from "./InvoiceColumns";
 import ReusableFilter from "../../../../../Components/ReusableTable/ReusableFilter";
 import ReusableTable from "../../../../../Components/ReusableTable/ReusableTable";
 import ReusablePagination from "../../../../../Components/Pagination/ReusablePagination";
 import StatsCards from "../../../../../Components/StatsCards/StatsCards";
 
+import {
+  getCustomerInvoices,
+  getCustomerInvoicesSummary,
+} from "../../../../../Redux/finance/Sales/CustomerSlice";
+
 const Invoices = () => {
+  const dispatch = useDispatch();
+  const { customerId } = useParams();
+
   const [search, setSearch] = useState("");
-
-  const rowsPerPage = 10;
-
   const [currentPage, setCurrentPage] = useState(1);
 
+  const {
+    invoices,
+    invoicesTotalPages,
+    invoicesLoading,
+    invoicesSummary,
+    invoicesSummaryLoading,
+  } = useSelector((state) => state.customer);
 
   /* =========================================================
-     QUOTATION STATS
+     FETCH INVOICES
   ========================================================= */
 
-const quotationStats = [
-  {
-    title: "Total Invoices",
-    count: employeeData.length,
-    icon: <FiFileText />,
-    backgroundColor: "#E8F1FF",
-    iconColor: "#3478F6",
-  },
+  useEffect(() => {
+    if (!customerId) return;
 
-  {
-    title: "Total Invoice Value",
-    count: 0,
-    icon: <FiDollarSign />,
-    backgroundColor: "#FFF4E5",
-    iconColor: "#F59E0B",
-  },
-
-  {
-    title: "Paid Invoices",
-    count: 0,
-    icon: <FiRefreshCw />,
-    backgroundColor: "#E8F8EF",
-    iconColor: "#22A06B",
-  },
-
-  {
-    title: "Outstanding Amount",
-    count: 0,
-    icon: <FiXCircle />,
-    backgroundColor: "#FDECEC",
-    iconColor: "#E5484D",
-  },
-  {
-    title: "Pending Invoices",
-    count: 0,
-    icon: <FiXCircle />,
-    backgroundColor: "#FDECEC",
-    iconColor: "#E5484D",
-  },
-
-];
-
-  /* =========================================================
-     PAGINATION
-  ========================================================= */
-
-  const totalPages = Math.ceil(
-    employeeData.length / rowsPerPage
-  );
-
-
-  /* =========================================================
-     PAGINATED DATA
-  ========================================================= */
-
-  const paginatedData = useMemo(() => {
-    const start =
-      (currentPage - 1) * rowsPerPage;
-
-    return employeeData.slice(
-      start,
-      start + rowsPerPage
+    dispatch(
+      getCustomerInvoices({
+        customerId,
+        params: {
+          page: currentPage,
+          search: search || undefined,
+        },
+      })
     );
-  }, [currentPage]);
+  }, [dispatch, customerId, currentPage, search]);
 
+  /* =========================================================
+     FETCH INVOICES SUMMARY
+  ========================================================= */
+
+  useEffect(() => {
+    if (!customerId) return;
+
+    dispatch(getCustomerInvoicesSummary(customerId));
+  }, [dispatch, customerId]);
+
+  /* =========================================================
+     STATS
+  ========================================================= */
+
+  const invoiceStats = [
+    {
+      title: "Total Invoices",
+      count: invoicesSummary?.total_invoice ?? 0,
+      icon: <FiFileText />,
+      backgroundColor: "#E8F1FF",
+      iconColor: "#3478F6",
+    },
+    {
+      title: "Total Invoice Value",
+      count: Number(invoicesSummary?.total_invoice_value ?? 0).toLocaleString(
+        "en-US",
+        { minimumFractionDigits: 2, maximumFractionDigits: 2 }
+      ),
+      icon: <FiDollarSign />,
+      backgroundColor: "#FFF4E5",
+      iconColor: "#F59E0B",
+    },
+    {
+      title: "Paid Invoices",
+      count: invoicesSummary?.paid_invoice ?? 0,
+      icon: <FiCheckCircle />,
+      backgroundColor: "#E8F8EF",
+      iconColor: "#22A06B",
+    },
+    {
+      title: "Outstanding Amount",
+      count: Number(invoicesSummary?.outstanding_amount ?? 0).toLocaleString(
+        "en-US",
+        { minimumFractionDigits: 2, maximumFractionDigits: 2 }
+      ),
+      icon: <FiXCircle />,
+      backgroundColor: "#FDECEC",
+      iconColor: "#E5484D",
+    },
+    {
+      title: "Pending Invoices",
+      count: invoicesSummary?.pending_invoice ?? 0,
+      icon: <FiXCircle />,
+      backgroundColor: "#FDECEC",
+      iconColor: "#E5484D",
+    },
+  ];
 
   /* =========================================================
      RETURN
@@ -95,18 +111,7 @@ const quotationStats = [
 
   return (
     <>
-      {/* =====================================================
-          STATS CARDS
-      ===================================================== */}
-
-      <StatsCards
-        cards={quotationStats}
-      />
-
-
-      {/* =====================================================
-          FILTER
-      ===================================================== */}
+      <StatsCards cards={invoiceStats} loading={invoicesSummaryLoading} />
 
       <ReusableFilter
         search={search}
@@ -117,24 +122,15 @@ const quotationStats = [
         showSearch
       />
 
-
-      {/* =====================================================
-          TABLE
-      ===================================================== */}
-
       <ReusableTable
-        columns={employeeColumns}
-        data={paginatedData}
+        columns={invoicesColumns}
+        data={invoices}
+        loading={invoicesLoading}
       />
-
-
-      {/* =====================================================
-          PAGINATION
-      ===================================================== */}
 
       <ReusablePagination
         currentPage={currentPage}
-        totalPages={totalPages}
+        totalPages={invoicesTotalPages}
         onPageChange={setCurrentPage}
       />
     </>
