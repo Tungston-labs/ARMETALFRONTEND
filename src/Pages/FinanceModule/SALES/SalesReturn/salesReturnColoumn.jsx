@@ -8,7 +8,7 @@ import {
   FiUserX,
 } from "react-icons/fi";
 
-import SalesReturnAction from "./Action/SalesReturnAction";
+import SalesReturnAction from "./action/SalesReturnAction";
 
 export const SALES_RETURN_STATUS_OPTIONS = [
   {

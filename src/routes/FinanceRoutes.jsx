@@ -17,11 +17,9 @@ import CompanyLayout from "../Pages/FinanceModule/SALES/Customer/layout/CompanyL
 import Invoices from "../Pages/FinanceModule/SALES/Customer/Invoices/Invoices";
 
 import SalesOrder from "../Pages/FinanceModule/SALES/SalesOrders/SalesOrder";
-
 import SalesInvoices from "../Pages/FinanceModule/SALES/Invoices/SalesInvoices";
 import RecurringBilling from "../Pages/FinanceModule/SALES/Recurring Billing/RecurringBilling";
 import CategoriesList from "../Pages/FinanceModule/PRODUCTS/Categories/CategoriesList";
-
 import AddingInvoice from "../Pages/FinanceModule/SALES/Invoices/AddingInvoice/AddingInvoice.jsx";
 import AddingOrder from "../Pages/FinanceModule/SALES/SalesOrders/modal/AddingOrder.jsx";
 import CustomerLedger from "../Pages/FinanceModule/SALES/Ledger/Customerledger.jsx";
@@ -37,20 +35,16 @@ import SalesCreditNotes from "../Pages/FinanceModule/SALES/CreditNotes/SalesCred
 import CreateCreditNotes from "../Pages/FinanceModule/SALES/CreditNotes/modal/CreateCreditNotes.jsx";
 import SalesReturn from "../Pages/FinanceModule/SALES/SalesReturn/SalesReturn.jsx";
 import CreateSalesReturnAction from "../Pages/FinanceModule/SALES/SalesReturn/modal/CreateSalesReturnAction.jsx";
-import SalesReturnAction from "../Pages/FinanceModule/SALES/SalesReturn/Action/SalesReturnAction.jsx";
+import SalesReturnAction from "../Pages/FinanceModule/SALES/SalesReturn/action/SalesReturnAction.jsx";
 import CreditAction from "../Pages/FinanceModule/SALES/CreditNotes/action/CreditAction.jsx";
 
 const FinanceRoutes = () => {
   return (
     <>
       <Route path="Categories-List" element={<CategoriesList />} />
-
       <Route path="Product-List" element={<ProductList />} />
-
       <Route path="Warehouse-List" element={<Warehouse />} />
-
       <Route path="warehouse/:id" element={<WarehouseDetails />} />
-
       <Route path="Inventory-List" element={<InventoryList />} />
 
       {/* Customer list */}
@@ -72,17 +66,19 @@ const FinanceRoutes = () => {
 
       {/* Sales Orders */}
       <Route path="sales/orders" element={<SalesOrder />} />
+      <Route path="sales/orders/add" element={<AddingOrder />} />
+      <Route path="sales/orders/edit/:id" element={<AddingOrder />} />
 
+      {/* Sales Invoice */}
       <Route path="sales/invoices" element={<SalesInvoices />} />
       <Route path="sales/invoices/add" element={<AddingInvoice />} />
       <Route path="sales/invoices/edit/:id" element={<AddingInvoice />} />
 
+      {/* Sales Recurring */}
       <Route path="sales/recurring-billing" element={<RecurringBilling />} />
+
+      {/* Sales customer-ledger */}
       <Route path="sales/customer-ledger" element={<CustomerLedger />} />
-       <Route path="sales/invoices/add" element={<AddingInvoice />} />
-       <Route path="sales/invoices/edit/:id" element={<AddingInvoice />} />
-      <Route path="sales/orders/add" element={<AddingOrder />} />
-      <Route path="sales/orders/edit/:id" element={<AddingOrder />} />
 
       {/* Quotations */}
       <Route path="Quotation-List" element={<QuotationsList />} />
@@ -99,7 +95,6 @@ const FinanceRoutes = () => {
       <Route path="credit-notes" element={<SalesCreditNotes />} />
       <Route path="credit-notes/add" element={<CreateCreditNotes />} />
       <Route path="credit-notes/edit/:id" element={<CreateCreditNotes />} />
-
       <Route path="sales-return" element={<SalesReturn />} />
       <Route path="sales-return/add" element={<CreateSalesReturnAction />} />
       <Route path="sales-return/edit/:id" element={<SalesReturnAction />} />
