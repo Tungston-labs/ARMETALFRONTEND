@@ -102,6 +102,10 @@ const getSidebarData = (user) => {
       if (modules.project) {
       items.push({ title: "Custom-ledger", icon: <FiCodesandbox />, path: "/sales/customer-ledger" });
     }
+
+      if (modules.project) {
+      items.push({ title: "Recurring-billing", icon: <FiCodesandbox />, path: "/sales/recurring-billing" });
+    }
     return items;
   }
 

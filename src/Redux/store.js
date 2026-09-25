@@ -21,7 +21,9 @@ import customerReducer from "./finance/Sales/CustomerSlice";
 import inventoryReducer from "../Redux/inventorySlice";
 import salesOrderReducer from "../Redux/finance/Sales/Salesorderslice";
 import invoiceReducer from "../Redux/finance/Sales/InvoiceSlice";
-import customerLedgerReducer from "./finance/Sales/Customerledgerslice"
+import customerLedgerReducer from "./finance/Sales/Customerledgerslice";
+import recurringReducer from "../Redux/finance/Sales/recurringSlice";
+
 export const store = configureStore({
   reducer: {
 
@@ -49,5 +51,6 @@ export const store = configureStore({
        salesOrder: salesOrderReducer,
     invoice: invoiceReducer,
     customerLedger: customerLedgerReducer,
+    recurring: recurringReducer,
   },
 });
