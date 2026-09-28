@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { FiX, FiUpload, FiChevronDown, FiSave } from "react-icons/fi";
 
 import {
@@ -39,59 +39,6 @@ const parseReminderDays = (label) => {
     return match ? Number(match[0]) : 0;
 };
 
-const initialFormData = {
-    // ---- service ----
-    product: "",
-    productCode: "",
-    productName: "",
-    category: "",
-    hsCode: "",
-    vatRate: "",
-    basePrice: "",
-    unitType: "Month",
-    billingType: "recurring",
-    discount: "",
-    finalPrice: "",
-    status: "active",
-    technology: "",
-    database: "",
-
-    // ---- pricing plans ----
-    starterServiceId: "",
-    starterUsers: "10",
-    starterBillingCycle: "monthly",
-    starterDiscount: "10",
-    starterPrice: "",
-
-    professionalServiceId: "",
-    professionalUsers: "25",
-    professionalBillingCycle: "monthly",
-    professionalDiscount: "10",
-    professionalPrice: "",
-
-    enterpriseServiceId: "",
-    enterpriseUsers: "",
-    enterpriseBillingCycle: "monthly",
-    enterpriseDiscount: "10",
-    enterprisePrice: "",
-
-    // ---- billing / contract ----
-    customer: "",
-    recurringType: "invoice",
-    frequency: "monthly",
-    startDate: "",
-    endDateOption: "never",
-    endDateValue: "",
-    recurringVat: "",
-    reminderBeforeRenewal: "Before 5 Days",
-    recurringBillingCycle: "advance",
-    autoEmailTo: "",
-    totalRecurrence: "24",
-    recurrenceStatus: "active",
-    additionalNotes: "",
-    whatsappNumber: "",
-};
-
 const ProductServiceModal = ({
     isOpen,
     onClose,
@@ -104,7 +51,57 @@ const ProductServiceModal = ({
     // "existing" -> pick a product.Product row and prefill from it.
     const [productMode, setProductMode] = useState("new");
 
-    const [formData, setFormData] = useState(initialFormData);
+    const [formData, setFormData] = useState({
+        // ---- service ----
+        product: "", // FK id of an existing product.Product, if any
+        productName: "",
+        category: "",
+        hsCode: "",
+        vatRate: "",
+        basePrice: "",
+        unitType: "Month",
+        billingType: "recurring",
+        discount: "",
+        finalPrice: "",
+        status: "active",
+        technology: "",
+        database: "",
+
+        // ---- pricing plans ----
+        starterServiceId: "",
+        starterUsers: "10",
+        starterBillingCycle: "monthly",
+        starterDiscount: "10",
+        starterPrice: "",
+
+        professionalServiceId: "",
+        professionalUsers: "25",
+        professionalBillingCycle: "monthly",
+        professionalDiscount: "10",
+        professionalPrice: "",
+
+        enterpriseServiceId: "",
+        enterpriseUsers: "",
+        enterpriseBillingCycle: "monthly",
+        enterpriseDiscount: "10",
+        enterprisePrice: "",
+
+        // ---- billing / contract ----
+        customer: "",
+        recurringType: "invoice",
+        frequency: "monthly",
+        startDate: "",
+        endDateOption: "never",
+        endDateValue: "",
+        recurringVat: "",
+        reminderBeforeRenewal: "Before 5 Days",
+        recurringBillingCycle: "advance",
+        autoEmailTo: "",
+        totalRecurrence: "24",
+        recurrenceStatus: "active",
+        additionalNotes: "",
+        whatsappNumber: "",
+    });
 
     const [files, setFiles] = useState({
         product_icon: null,
@@ -114,17 +111,6 @@ const ProductServiceModal = ({
     const [autoGenerateInvoice, setAutoGenerateInvoice] = useState(true);
     const [autoSendInvoice, setAutoSendInvoice] = useState(true);
     const [includeTax, setIncludeTax] = useState(true);
-
-    useEffect(() => {
-        if (isOpen) {
-            setProductMode("new");
-            setFormData(initialFormData);
-            setFiles({ product_icon: null, screenshot: null });
-            setAutoGenerateInvoice(true);
-            setAutoSendInvoice(true);
-            setIncludeTax(true);
-        }
-    }, [isOpen]);
 
     if (!isOpen) return null;
 
@@ -152,7 +138,6 @@ const ProductServiceModal = ({
             setFormData((prev) => ({
                 ...prev,
                 product: "",
-                productCode: "",
                 productName: "",
                 category: "",
                 hsCode: "",
@@ -188,7 +173,7 @@ const ProductServiceModal = ({
         setFormData((prev) => {
             const basePrice =
                 product.selling_price !== undefined &&
-                product.selling_price !== null
+                    product.selling_price !== null
                     ? product.selling_price
                     : prev.basePrice;
 
@@ -202,7 +187,6 @@ const ProductServiceModal = ({
             const updated = {
                 ...prev,
                 product: product.id,
-                productCode: product.code || "",
                 productName: product.product_name || "",
                 category: product.category || "",
                 hsCode: product.hsn_sac_code || "",
@@ -221,16 +205,6 @@ const ProductServiceModal = ({
 
             return updated;
         });
-    };
-
-    const handleProductSelection = (e) => {
-        const val = e.target.value;
-        if (val === "new") {
-             handleProductModeChange({ target: { value: "new" } });
-        } else {
-             handleProductModeChange({ target: { value: "existing" } });
-             handleExistingProductSelect(e);
-        }
     };
 
     const calculateFinalPrice = (base, discount, vat) => {
@@ -325,7 +299,9 @@ const ProductServiceModal = ({
 
     const buildPayload = () => {
         const service = {
-            product_code: formData.productCode,
+            // product_code is generated server-side (PRD00001...)
+            // and is read-only on RecurringServiceSerializer, so
+            // it's intentionally not sent here.
             product:
                 productMode === "existing" && formData.product
                     ? formData.product
@@ -440,28 +416,20 @@ const ProductServiceModal = ({
 
                             <FormGrid>
                                 <FormGroup>
-                                    <Label>Select Product</Label>
+                                    <Label>Product Source</Label>
 
                                     <SelectWrapper>
                                         <StyledSelect
-                                            name="productSelection"
-                                            value={productMode === "new" ? "new" : formData.product}
-                                            onChange={handleProductSelection}
+                                            name="productMode"
+                                            value={productMode}
+                                            onChange={handleProductModeChange}
                                         >
                                             <option value="new">
-                                                + Add New Product
+                                                New Product
                                             </option>
-                                            <option disabled>
-                                                ───────────────
+                                            <option value="existing">
+                                                Existing Product
                                             </option>
-                                            {products.map((p) => (
-                                                <option
-                                                    key={p.id}
-                                                    value={p.id}
-                                                >
-                                                    {p.product_name}
-                                                </option>
-                                            ))}
                                         </StyledSelect>
 
                                         <SelectIcon>
@@ -470,13 +438,49 @@ const ProductServiceModal = ({
                                     </SelectWrapper>
                                 </FormGroup>
 
+                                {productMode === "existing" && (
+                                    <FormGroup>
+                                        <Label>Select Product</Label>
+
+                                        <SelectWrapper>
+                                            <StyledSelect
+                                                name="product"
+                                                value={formData.product}
+                                                onChange={
+                                                    handleExistingProductSelect
+                                                }
+                                            >
+                                                <option value="">
+                                                    Select an existing
+                                                    product
+                                                </option>
+                                                {products.map((p) => (
+                                                    <option
+                                                        key={p.id}
+                                                        value={p.id}
+                                                    >
+                                                        {p.code
+                                                            ? `${p.code} - ${p.product_name}`
+                                                            : p.product_name}
+                                                    </option>
+                                                ))}
+                                            </StyledSelect>
+
+                                            <SelectIcon>
+                                                <FiChevronDown />
+                                            </SelectIcon>
+                                        </SelectWrapper>
+                                    </FormGroup>
+                                )}
+
                                 <FormGroup>
                                     <Label>Product Code</Label>
                                     <Input
                                         name="productCode"
-                                        placeholder="Enter Product Code"
-                                        value={formData.productCode || ""}
-                                        onChange={handleChange}
+                                        placeholder="Auto-generated on save"
+                                        value=""
+                                        disabled
+                                        readOnly
                                     />
                                 </FormGroup>
 
@@ -1480,7 +1484,7 @@ const ProductServiceModal = ({
                         type="submit"
                         onClick={handleSubmit}
                     >
-                                 <FiSave /> 
+                        <FiSave />
                         Save Product / Service
                     </SaveButton>
                 </ModalFooter>

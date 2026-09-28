@@ -7,11 +7,29 @@ import {
     FiFileText,
 } from "react-icons/fi";
 
-export const formatCurrency = (value) =>
-    `SAR ${Number(value || 0).toLocaleString("en-US", {
+// Format amount without currency symbol
+export const formatAmount = (value) =>
+    Number(value || 0).toLocaleString("en-US", {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2,
-    })}`;
+    });
+
+// Format date as: Sep 28, 2026
+export const formatDate = (value) => {
+    if (!value) return "—";
+
+    const date = new Date(value);
+
+    if (isNaN(date.getTime())) {
+        return value;
+    }
+
+    return date.toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+    });
+};
 
 const TRANSACTION_TYPE_COLORS = {
     opening_balance: {
@@ -71,6 +89,7 @@ export const getCustomerLedgerColumns = () => [
     {
         header: "Date",
         accessor: "transaction_date",
+        render: (row) => formatDate(row.transaction_date),
     },
 
     {
@@ -104,85 +123,89 @@ export const getCustomerLedgerColumns = () => [
     {
         header: "Debit",
         accessor: "debit",
-        render: (row) => formatCurrency(row.debit),
+        render: (row) => formatAmount(row.debit),
     },
 
     {
         header: "Credit",
         accessor: "credit",
-        render: (row) => formatCurrency(row.credit),
+        render: (row) => formatAmount(row.credit),
     },
 
     {
         header: "Balance",
         accessor: "balance",
-        render: (row) => formatCurrency(row.balance),
+        render: (row) => formatAmount(row.balance),
     },
 ];
 
 export const dashboardSummaryStats = (data = {}) => [
     {
         title: "Total Receivable",
-        count: data.total_receivable,
+        count: formatAmount(data.total_receivable),
         icon: <FiDollarSign />,
         backgroundColor: "#EEF2FF",
         iconColor: "#4F46E5",
     },
+
     {
         title: "Total Invoice",
-        count: data.total_invoice,
+        count: formatAmount(data.total_invoice),
         icon: <FiFileText />,
         backgroundColor: "#FFF4E5",
         iconColor: "#F59E0B",
     },
+
     {
         title: "Total Collection",
-        count: data.total_collection,
+        count: formatAmount(data.total_collection),
         icon: <FiArrowDownCircle />,
         backgroundColor: "#E8F8EF",
         iconColor: "#22A06B",
     },
+
     {
         title: "Total Credit",
-        count: data.total_credit,
+        count: formatAmount(data.total_credit),
         icon: <FiCheckCircle />,
         backgroundColor: "#E0F3F7",
         iconColor: "#4455EF",
     },
+
     {
         title: "Overdue",
-        count: data.overdue_amount,
+        count: formatAmount(data.overdue_amount),
         icon: <FiArrowUpCircle />,
         backgroundColor: "#FDECEC",
         iconColor: "#E5484D",
     },
 ];
 
-// Kept for potential future use (e.g. a per-customer detail view backed by
-// GET /finance/ledger/summary/?customer_id=...). Not currently used by
-// useCustomerLedger — dashboardSummaryStats is the one wired to the cards.
 export const customerLedgerStats = (data = {}) => [
     {
         title: "Total Debit",
-        count: data.total_debit,
+        count: formatAmount(data.total_debit),
         icon: <FiArrowUpCircle />,
         backgroundColor: "#FDECEC",
         iconColor: "#E5484D",
     },
+
     {
         title: "Total Credit",
-        count: formatCurrency(data.total_credit),
+        count: formatAmount(data.total_credit),
         icon: <FiArrowDownCircle />,
         backgroundColor: "#E8F8EF",
         iconColor: "#22A06B",
     },
+
     {
         title: "Closing Balance",
-        count: formatCurrency(data.closing_balance),
+        count: formatAmount(data.closing_balance),
         icon: <FiDollarSign />,
         backgroundColor: "#EEF2FF",
         iconColor: "#4F46E5",
     },
+
     {
         title: "Entries",
         count: data.entry_count || 0,
@@ -194,30 +217,42 @@ export const customerLedgerStats = (data = {}) => [
 
 export const getCustomerSummaryColumns = () => [
     {
+        header: "Customer Code",
+        accessor: "customer_code",
+    },
+
+    {
         header: "Customer",
         accessor: "customer_name",
     },
 
     {
-        header: "Customer ID",
-        accessor: "customer_id_code",
+        header: "Total Invoices",
+        accessor: "total_invoice",
+        render: (row) => formatAmount(row.total_invoice),
     },
 
     {
-        header: "Total Debit",
-        accessor: "total_debit",
-        render: (row) => formatCurrency(row.total_debit),
+        header: "Total Payments",
+        accessor: "total_payment",
+        render: (row) => formatAmount(row.total_payment),
     },
 
     {
-        header: "Total Credit",
-        accessor: "total_credit",
-        render: (row) => formatCurrency(row.total_credit),
+        header: "Credit Notes",
+        accessor: "credit_note",
+        render: (row) => formatAmount(row.credit_note),
     },
 
     {
-        header: "Balance",
-        accessor: "balance",
-        render: (row) => formatCurrency(row.balance),
+        header: "Outstanding",
+        accessor: "outstanding",
+        render: (row) => formatAmount(row.outstanding),
+    },
+
+    {
+        header: "Overdue",
+        accessor: "overdue",
+        render: (row) => formatAmount(row.overdue),
     },
 ];

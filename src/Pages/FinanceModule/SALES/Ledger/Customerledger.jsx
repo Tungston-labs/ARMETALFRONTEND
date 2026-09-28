@@ -42,13 +42,15 @@ const CustomerLedger = () => {
 
         cards,
         loading,
+        createLoading,
+        dashboardSummaryLoading,
+        customerSummaryLoading,
         error,
 
         statusOptions,
         transactionTypeOptions,
         customerOptions,
 
-        // Customer summary
         // Customer summary
         customerSummarySearch,
         handleCustomerSummarySearch,
@@ -116,12 +118,12 @@ const CustomerLedger = () => {
                 >
                     {typeof error === "string"
                         ? error
-                        : "Something went wrong loading the ledger."}
+                        : "Something went wrong. Please check your input and try again."}
                 </div>
             )}
 
             {/* Stats */}
-            <StatsCards cards={cards} loading={loading} />
+            <StatsCards cards={cards} loading={dashboardSummaryLoading} />
 
             {/* =====================================================
                 TABLE 1 - CUSTOMER LEDGER
@@ -189,7 +191,7 @@ const CustomerLedger = () => {
             <ReusableTable
                 columns={customerSummaryColumns}
                 data={customerSummaryData}
-                loading={loading}
+                loading={customerSummaryLoading}
             />
 
             <ReusablePagination
@@ -204,6 +206,8 @@ const CustomerLedger = () => {
                 isOpen={isLedgerModalOpen}
                 onClose={handleCloseLedger}
                 onSave={handleSaveLedger}
+                customerOptions={customerOptions}
+                saving={createLoading}
             />
         </div>
     );

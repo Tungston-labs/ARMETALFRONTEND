@@ -89,7 +89,6 @@ const getCurrentMonthRange = () => {
 
 /* =========================================================
    FORMAT DATE FOR DISPLAY
-   2026-09-01 -> 01/09/2026
 ========================================================= */
 
 const formatDisplayDate = (dateString) => {
@@ -108,9 +107,11 @@ const formatDisplayDate = (dateString) => {
 
 const CompanyLayout = () => {
   const { customerId } = useParams();
+
   const dispatch = useDispatch();
   const location = useLocation();
   const navigate = useNavigate();
+
   /* =========================================================
      CUSTOMER
   ========================================================= */
@@ -163,6 +164,55 @@ const CompanyLayout = () => {
     showAddButton,
     buttonText,
   } = pageMeta[activeKey];
+
+  /* =========================================================
+     HEADER BUTTON CLICK
+  ========================================================= */
+
+  const handleHeaderButtonClick = () => {
+    if (!customerId) {
+      return;
+    }
+
+    /* -----------------------------------------
+       INVOICE
+       Navigate to invoice creation page
+    ----------------------------------------- */
+
+    if (activeKey === "invoices") {
+      navigate(
+        `/sales/invoices/add`
+      );
+
+      return;
+    }
+
+    /* -----------------------------------------
+       PAYMENTS
+       Open payment modal
+    ----------------------------------------- */
+
+    if (activeKey === "payments") {
+      // Call your modal state/function here
+      // Example:
+      // setShowPaymentModal(true);
+
+      return;
+    }
+
+    /* -----------------------------------------
+       LEDGER
+       Navigate to journal entry page
+    ----------------------------------------- */
+
+    if (activeKey === "ledger") {
+      navigate(
+        `/finance/ledger/create?customer_id=${customerId}`
+      );
+
+      return;
+    }
+  };
 
   /* =========================================================
      START DATE CHANGE
@@ -253,10 +303,13 @@ const CompanyLayout = () => {
         }
 
         showBack
-  onBack={() => navigate("/sales/customers")}
+        onBack={() => navigate("/sales/customers")}
+
         showButton={showAddButton}
 
         buttonText={buttonText}
+
+        onButtonClick={handleHeaderButtonClick}
       >
 
         {/* ===================================================
@@ -267,8 +320,6 @@ const CompanyLayout = () => {
 
           <DatePickerContainer>
 
-            {/* START DATE */}
-
             <DateInput
               type="date"
               value={startDate}
@@ -277,13 +328,9 @@ const CompanyLayout = () => {
               aria-label="Start date"
             />
 
-            {/* SEPARATOR */}
-
             <DateSeparator>
               -
             </DateSeparator>
-
-            {/* END DATE */}
 
             <DateInput
               type="date"

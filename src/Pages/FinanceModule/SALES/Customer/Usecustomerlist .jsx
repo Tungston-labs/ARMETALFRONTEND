@@ -109,7 +109,7 @@ export const useCustomerList = () => {
         },
         {
             title: "Active Customers",
-            count: formatCurrency(totalCreditLimit),
+            count: totalCreditLimit,
             icon: <FiDollarSign />,
             backgroundColor: "#e3e7ff",
             iconColor: "#3250B5",
@@ -123,14 +123,14 @@ export const useCustomerList = () => {
         },
         {
             title: "Inactive Customers",
-            count: formatCurrency(totalPaymentsReceived),
+            count: totalPaymentsReceived,
             icon: <FiCheckCircle />,
             backgroundColor: "#fff3f3",
             iconColor: "#DB0F12",
         },
         {
             title: "Payments Received",
-            count: formatCurrency(totalOutstanding),
+            count: totalOutstanding,
             icon: <FiAlertCircle />,
             backgroundColor: "#f4fff2",
             iconColor: "#21C034",
