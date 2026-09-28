@@ -8,6 +8,11 @@ import {
 } from "../../../../Redux/finance/Sales/Customerledgerslice";
 
 import {
+    getCustomers,
+    selectCustomers,
+} from "../../../../Redux/finance/Sales/CustomerSlice";
+
+import {
     getCustomerLedgerColumns,
     getCustomerSummaryColumns,
     dashboardSummaryStats,
@@ -16,6 +21,11 @@ import {
 const ROWS_PER_PAGE = 10;
 const SUMMARY_ROWS_PER_PAGE = 10;
 const SEARCH_DEBOUNCE_MS = 400;
+
+// Reads the customer name from whichever field your API returns.
+// Once you confirm the real field, keep just that one.
+const getCustomerName = (c) =>
+    c?.name || c?.customer_name || c?.company_name || "";
 
 const useCustomerLedger = () => {
     const dispatch = useDispatch();
@@ -31,6 +41,9 @@ const useCustomerLedger = () => {
         dashboardSummary = null,
         dashboardSummaryLoading = false,
     } = useSelector((state) => state.customerLedger) || {};
+
+    // ALL CUSTOMERS (for the "All Customers" filter)
+    const customers = useSelector(selectCustomers);
 
     // FILTERS (TABLE 1)
     const [search, setSearch] = useState("");
@@ -53,6 +66,11 @@ const useCustomerLedger = () => {
 
     // PAGINATION (TABLE 1)
     const [currentPage, setCurrentPage] = useState(1);
+
+    // FETCH — ALL CUSTOMERS (once, for the dropdown)
+    useEffect(() => {
+        dispatch(getCustomers({ page_size: 1000 }));
+    }, [dispatch]);
 
     // DEBOUNCE — table 1 search
     useEffect(() => {
@@ -159,11 +177,9 @@ const useCustomerLedger = () => {
 
     // ==========================================================
     // TABLE 2 — "Summary by Customer"
-    // LIMITATION: there is currently no backend endpoint that
-    // returns a list of all customers' balances. This aggregates
-    // only the entries currently loaded for Table 1 (one page's
-    // worth), so it is NOT a true all-time, all-customer summary.
-    // Replace this block once such an endpoint exists.
+    // LIMITATION: aggregates only the entries currently loaded for
+    // Table 1 (one page's worth), so it is NOT a true all-time,
+    // all-customer summary. Replace once a backend endpoint exists.
     // ==========================================================
 
     const customerSummary = useMemo(() => {
@@ -233,12 +249,17 @@ const useCustomerLedger = () => {
         { label: "Adjustment", value: "adjustment" },
     ];
 
-    const customerOptions = [
-        { label: "ABC Trading", value: "ABC Trading" },
-        { label: "Riyadh Tech", value: "Riyadh Tech" },
-        { label: "Al Noor Company", value: "Al Noor Company" },
-        { label: "Saudi Solutions", value: "Saudi Solutions" },
-    ];
+    // REAL CUSTOMER LIST for the "All Customers" filter.
+    // value = customer id, which matches row.customer in the ledger entries
+    // and is what the backend filter expects.
+    const customerOptions = useMemo(
+        () =>
+            (customers || []).map((c) => ({
+                label: getCustomerName(c) || `Customer #${c.id}`,
+                value: c.id,
+            })),
+        [customers]
+    );
 
     return {
         search,

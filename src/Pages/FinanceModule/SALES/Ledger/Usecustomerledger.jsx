@@ -6,22 +6,40 @@ import {
     clearLedgerError,
 } from "../../../../Redux/finance/Sales/Customerledgerslice";
 
+// Reuse the existing customers slice (adjust path/filename to match yours)
+import {
+    getCustomers,
+    selectCustomers,
+} from "../../../../Redux/finance/Sales/customerSlice";
+
 import {
     getCustomerLedgerColumns,
     customerLedgerStats,
 } from "./Columns";
 
 const ROWS_PER_PAGE = 10;
+const SUMMARY_ROWS_PER_PAGE = 10;
 const SEARCH_DEBOUNCE_MS = 400;
-const useCustomerLedger = () => {
-    const dispatch = useDispatch();
 
+// Keep this in one place so the dropdown, the summary table and any
+// other consumer all read the customer name the same way.
+// Keep only the field your API actually returns.
+const getCustomerName = (c) =>
+    c?.name || c?.customer_name || c?.company_name || "";
+
+const useCustomerLedger = () => {
+    
+    const dispatch = useDispatch();
     const {
         entries = [],
         totalItems = 0,
         loading = false,
         error = null,
     } = useSelector((state) => state.customerLedger) || {};
+console.log("customers from store:", customers);
+
+    // All customers (from the existing customer slice)
+    const customers = useSelector(selectCustomers);
 
     // Filters
     const [search, setSearch] = useState("");
@@ -37,14 +55,24 @@ const useCustomerLedger = () => {
     // Modal
     const [isLedgerModalOpen, setIsLedgerModalOpen] = useState(false);
 
-    // Local-only entries added via the modal (see note 3 above — not
-    // persisted, purely for immediate feedback in the table).
+    // Local-only entries added via the modal (not persisted, purely for
+    // immediate feedback in the table).
     const [localEntries, setLocalEntries] = useState([]);
 
-    // Pagination
+    // Ledger pagination
     const [currentPage, setCurrentPage] = useState(1);
-    const totalPages =
-        Math.ceil(totalItems / ROWS_PER_PAGE) || 1;
+    const totalPages = Math.ceil(totalItems / ROWS_PER_PAGE) || 1;
+
+    // Summary-by-customer state
+    const [customerSummarySearch, setCustomerSummarySearch] = useState("");
+    const [customerSummaryCurrentPage, setCustomerSummaryCurrentPage] =
+        useState(1);
+
+    // ---- Load ALL customers once (for the dropdown + summary table) ----
+
+    useEffect(() => {
+        dispatch(getCustomers({ page_size: 1000 }));
+    }, [dispatch]);
 
     // ---- Debounce the search box before it hits the API ----
 
@@ -63,6 +91,7 @@ const useCustomerLedger = () => {
         dispatch(
             getLedgerEntries({
                 search: debouncedSearch || undefined,
+                customer: customer || undefined, // confirm param name: customer / customer_id
                 transaction_type: transactionType || undefined,
                 from_date: startDate || undefined,
                 to_date: endDate || undefined,
@@ -74,14 +103,14 @@ const useCustomerLedger = () => {
     }, [
         dispatch,
         debouncedSearch,
+        customer,
         transactionType,
         startDate,
         endDate,
         currentPage,
     ]);
 
-    // Clear any stale error once the filters change and a new request
-    // has gone out.
+    // Clear any stale error when the page unmounts.
     useEffect(() => {
         return () => {
             dispatch(clearLedgerError());
@@ -108,7 +137,7 @@ const useCustomerLedger = () => {
         setIsLedgerModalOpen(false);
     };
 
-    // See note 3 — this is local-only until a create endpoint exists.
+    // Local-only until a create endpoint exists.
     const handleSaveLedger = (newLedger) => {
         const newEntry = {
             ...newLedger,
@@ -126,7 +155,7 @@ const useCustomerLedger = () => {
     };
 
     const handleStatusChange = (value) => {
-        // Not sent to the API — see note 1.
+        // Not sent to the API yet.
         setStatus(value);
         setCurrentPage(1);
     };
@@ -137,9 +166,13 @@ const useCustomerLedger = () => {
     };
 
     const handleCustomerChange = (value) => {
-        // Not sent to the API yet — see note 2.
         setCustomer(value);
         setCurrentPage(1);
+    };
+
+    const handleCustomerSummarySearch = (value) => {
+        setCustomerSummarySearch(value);
+        setCustomerSummaryCurrentPage(1);
     };
 
     // ---- Derived data ----
@@ -148,6 +181,7 @@ const useCustomerLedger = () => {
         () => [...localEntries, ...(entries || [])],
         [localEntries, entries]
     );
+
     const cards = useMemo(() => {
         const totalDebit = entries.reduce(
             (sum, row) => sum + Number(row.debit || 0),
@@ -167,8 +201,60 @@ const useCustomerLedger = () => {
         });
     }, [entries]);
 
-    const ledgerColumns = useMemo(
-        () => getCustomerLedgerColumns(),
+    const ledgerColumns = useMemo(() => getCustomerLedgerColumns(), []);
+
+    // Real customer names for the "All Customers" dropdown
+    const customerOptions = useMemo(
+        () =>
+            customers
+                .map((c) => ({
+                    label: getCustomerName(c),
+                    value: c.id,
+                }))
+                .filter((opt) => opt.label),
+        [customers]
+    );
+
+    // ---- Summary by Customer (built from the customer list) ----
+    // Client-side search + pagination. Add balance/debit/credit columns
+    // here once you have a summary endpoint that returns them.
+
+    const filteredCustomerSummary = useMemo(() => {
+        const term = customerSummarySearch.trim().toLowerCase();
+
+        return customers
+            .map((c) => ({
+                id: c.id,
+                customer_name: getCustomerName(c),
+                email: c.email || "-",
+                phone: c.phone || c.mobile || "-",
+            }))
+            .filter(
+                (row) =>
+                    !term || row.customer_name.toLowerCase().includes(term)
+            );
+    }, [customers, customerSummarySearch]);
+
+    const customerSummaryTotalItems = filteredCustomerSummary.length;
+    const customerSummaryTotalPages =
+        Math.ceil(customerSummaryTotalItems / SUMMARY_ROWS_PER_PAGE) || 1;
+
+    const customerSummaryData = useMemo(() => {
+        const start = (customerSummaryCurrentPage - 1) * SUMMARY_ROWS_PER_PAGE;
+        return filteredCustomerSummary.slice(
+            start,
+            start + SUMMARY_ROWS_PER_PAGE
+        );
+    }, [filteredCustomerSummary, customerSummaryCurrentPage]);
+
+    // NOTE: match this shape to whatever ReusableTable expects
+    // (same format as getCustomerLedgerColumns in ./Columns).
+    const customerSummaryColumns = useMemo(
+        () => [
+            { key: "customer_name", label: "Customer" },
+            { key: "email", label: "Email" },
+            { key: "phone", label: "Phone" },
+        ],
         []
     );
 
@@ -182,17 +268,8 @@ const useCustomerLedger = () => {
         { label: "Adjustment", value: "adjustment" },
     ];
 
-    // Placeholder until a real customer-lookup endpoint is wired up
-    // (see note 2).
-    const customerOptions = [
-        { label: "ABC Trading", value: "ABC Trading" },
-        { label: "Riyadh Tech", value: "Riyadh Tech" },
-        { label: "Al Noor Company", value: "Al Noor Company" },
-        { label: "Saudi Solutions", value: "Saudi Solutions" },
-    ];
-
     return {
-        // filter state + setters
+        // filter state
         search,
         status,
         transactionType,
@@ -203,12 +280,12 @@ const useCustomerLedger = () => {
         // modal state
         isLedgerModalOpen,
 
-        // pagination
+        // ledger pagination
         currentPage,
         totalPages,
         setCurrentPage,
 
-        // data
+        // ledger data
         ledgerData,
         paginatedData: ledgerData,
         ledgerColumns,
@@ -217,10 +294,20 @@ const useCustomerLedger = () => {
         loading,
         error,
 
-        // static options
+        // options
         statusOptions,
         transactionTypeOptions,
         customerOptions,
+
+        // customer summary
+        customerSummarySearch,
+        handleCustomerSummarySearch,
+        customerSummaryData,
+        customerSummaryColumns,
+        customerSummaryCurrentPage,
+        customerSummaryTotalPages,
+        customerSummaryTotalItems,
+        setCustomerSummaryCurrentPage,
 
         // handlers
         handleStartDateChange,
