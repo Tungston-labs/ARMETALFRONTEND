@@ -33,55 +33,79 @@ import {
     SaveButton,
 } from "./AddingRecurringBilling.styles";
 
-const ProductServiceModal = ({ isOpen, onClose, onSubmit }) => {
+// Pull a human-friendly count out of "Before 5 Days" -> 5
+const parseReminderDays = (label) => {
+    const match = /\d+/.exec(label || "");
+    return match ? Number(match[0]) : 0;
+};
+
+const ProductServiceModal = ({
+    isOpen,
+    onClose,
+    onSubmit,
+    customers = [],
+    categories = [],
+    products = [],
+}) => {
+    // "new" -> user types everything in fresh.
+    // "existing" -> pick a product.Product row and prefill from it.
+    const [productMode, setProductMode] = useState("new");
+
     const [formData, setFormData] = useState({
-        productCode: "",
+        // ---- service ----
+        product: "", // FK id of an existing product.Product, if any
         productName: "",
         category: "",
         hsCode: "",
         vatRate: "",
         basePrice: "",
-        unitType: "Monthly",
-        billingType: "One Time",
+        unitType: "Month",
+        billingType: "recurring",
         discount: "",
         finalPrice: "",
-        status: "Active",
+        status: "active",
         technology: "",
         database: "",
 
+        // ---- pricing plans ----
         starterServiceId: "",
         starterUsers: "10",
-        starterBillingCycle: "Monthly",
+        starterBillingCycle: "monthly",
         starterDiscount: "10",
-        starterPrice: "15000",
+        starterPrice: "",
 
         professionalServiceId: "",
         professionalUsers: "25",
-        professionalBillingCycle: "Monthly",
+        professionalBillingCycle: "monthly",
         professionalDiscount: "10",
-        professionalPrice: "18000",
+        professionalPrice: "",
 
         enterpriseServiceId: "",
-        enterpriseUsers: "Unlimited",
-        enterpriseBillingCycle: "Monthly",
+        enterpriseUsers: "",
+        enterpriseBillingCycle: "monthly",
         enterpriseDiscount: "10",
         enterprisePrice: "",
 
-        recurringType: "",
-        frequency: "",
-        every: "",
+        // ---- billing / contract ----
+        customer: "",
+        recurringType: "invoice",
+        frequency: "monthly",
         startDate: "",
-        endDate: "Never",
-        defaultItemService: "",
-        amount: "",
+        endDateOption: "never",
+        endDateValue: "",
         recurringVat: "",
         reminderBeforeRenewal: "Before 5 Days",
-        recurringBillingCycle: "Advanced",
+        recurringBillingCycle: "advance",
         autoEmailTo: "",
         totalRecurrence: "24",
-        recurrenceStatus: "Active",
+        recurrenceStatus: "active",
         additionalNotes: "",
         whatsappNumber: "",
+    });
+
+    const [files, setFiles] = useState({
+        product_icon: null,
+        screenshot: null,
     });
 
     const [autoGenerateInvoice, setAutoGenerateInvoice] = useState(true);
@@ -97,6 +121,90 @@ const ProductServiceModal = ({ isOpen, onClose, onSubmit }) => {
             ...prev,
             [name]: value,
         }));
+    };
+
+    const handleFileChange = (field) => (e) => {
+        const file = e.target.files?.[0] || null;
+        setFiles((prev) => ({ ...prev, [field]: file }));
+    };
+
+    // Switching between "new" and "existing" product
+    const handleProductModeChange = (e) => {
+        const mode = e.target.value;
+        setProductMode(mode);
+
+        if (mode === "new") {
+            // Starting fresh - clear anything an existing product filled in
+            setFormData((prev) => ({
+                ...prev,
+                product: "",
+                productName: "",
+                category: "",
+                hsCode: "",
+                vatRate: "",
+                basePrice: "",
+                unitType: "Month",
+                status: "active",
+                finalPrice: "",
+            }));
+        }
+    };
+
+    // Fill the service fields from a selected product.Product row.
+    // Everything stays editable afterwards - this only sets the
+    // starting values, it doesn't lock the fields.
+    const handleExistingProductSelect = (e) => {
+        const productId = e.target.value;
+
+        if (!productId) {
+            setFormData((prev) => ({ ...prev, product: "" }));
+            return;
+        }
+
+        const product = products.find(
+            (p) => String(p.id) === String(productId)
+        );
+
+        if (!product) {
+            setFormData((prev) => ({ ...prev, product: productId }));
+            return;
+        }
+
+        setFormData((prev) => {
+            const basePrice =
+                product.selling_price !== undefined &&
+                    product.selling_price !== null
+                    ? product.selling_price
+                    : prev.basePrice;
+
+            const vatRate =
+                product.tax_rate !== undefined && product.tax_rate !== null
+                    ? product.tax_rate
+                    : prev.vatRate;
+
+            const discount = prev.discount || "0";
+
+            const updated = {
+                ...prev,
+                product: product.id,
+                productName: product.product_name || "",
+                category: product.category || "",
+                hsCode: product.hsn_sac_code || "",
+                basePrice,
+                unitType: product.unit || prev.unitType,
+                vatRate,
+                status: product.status || prev.status,
+                discount,
+            };
+
+            updated.finalPrice = calculateFinalPrice(
+                basePrice,
+                discount,
+                vatRate
+            );
+
+            return updated;
+        });
     };
 
     const calculateFinalPrice = (base, discount, vat) => {
@@ -143,18 +251,125 @@ const ProductServiceModal = ({ isOpen, onClose, onSubmit }) => {
         });
     };
 
+    // Only include a pricing tier if the user actually priced it
+    const buildPricingPlans = () => {
+        const plans = [];
+
+        if (formData.starterPrice) {
+            plans.push({
+                plan_type: "starter",
+                service_id: formData.starterServiceId,
+                users: formData.starterUsers
+                    ? Number(formData.starterUsers)
+                    : null,
+                billing_cycle: formData.starterBillingCycle,
+                discount_percent: formData.starterDiscount || 0,
+                price: formData.starterPrice,
+            });
+        }
+
+        if (formData.professionalPrice) {
+            plans.push({
+                plan_type: "professional",
+                service_id: formData.professionalServiceId,
+                users: formData.professionalUsers
+                    ? Number(formData.professionalUsers)
+                    : null,
+                billing_cycle: formData.professionalBillingCycle,
+                discount_percent: formData.professionalDiscount || 0,
+                price: formData.professionalPrice,
+            });
+        }
+
+        if (formData.enterprisePrice) {
+            plans.push({
+                plan_type: "enterprise",
+                service_id: formData.enterpriseServiceId,
+                users: formData.enterpriseUsers
+                    ? Number(formData.enterpriseUsers)
+                    : null,
+                billing_cycle: formData.enterpriseBillingCycle,
+                discount_percent: formData.enterpriseDiscount || 0,
+                price: formData.enterprisePrice,
+            });
+        }
+
+        return plans;
+    };
+
+    const buildPayload = () => {
+        const service = {
+            // product_code is generated server-side (PRD00001...)
+            // and is read-only on RecurringServiceSerializer, so
+            // it's intentionally not sent here.
+            product:
+                productMode === "existing" && formData.product
+                    ? formData.product
+                    : null,
+            product_service_name: formData.productName,
+            category: formData.category || null,
+            hs_code: formData.hsCode,
+            vat_rate: formData.vatRate || 0,
+            base_price: formData.basePrice || 0,
+            unit_price: formData.basePrice || 0,
+            unit: formData.unitType,
+            billing_type: formData.billingType,
+            discount: formData.discount || 0,
+            final_price: formData.finalPrice || 0,
+            technology: formData.technology,
+            database: formData.database,
+            status: formData.status,
+        };
+
+        const pricing_plans = buildPricingPlans();
+
+        const billing = {
+            customer: formData.customer,
+            recurring_type: formData.recurringType,
+            start_date: formData.startDate,
+            end_date:
+                formData.endDateOption === "specific"
+                    ? formData.endDateValue || null
+                    : null,
+            frequency: formData.frequency,
+            total_recurrence:
+                formData.totalRecurrence === "Unlimited"
+                    ? null
+                    : Number(formData.totalRecurrence),
+            unlimited_recurrence:
+                formData.totalRecurrence === "Unlimited",
+            billing_cycle: formData.recurringBillingCycle,
+            auto_email_to: formData.autoEmailTo,
+            whatsapp_number: formData.whatsappNumber,
+            auto_generate_invoice: autoGenerateInvoice,
+            auto_send: autoSendInvoice,
+            include_tax: includeTax,
+            recurrence_status: formData.recurrenceStatus,
+            additional_notes: formData.additionalNotes,
+            reminder_before_renewal_days: parseReminderDays(
+                formData.reminderBeforeRenewal
+            ),
+        };
+
+        return { service, pricing_plans, billing };
+    };
+
     const handleSubmit = (e) => {
         e.preventDefault();
 
-        const payload = {
-            ...formData,
-            autoGenerateInvoice,
-            autoSendInvoice,
-            includeTax,
-        };
+        if (!formData.customer) {
+            // Customer is a required FK on RecurringBilling
+            alert("Please select a customer before saving.");
+            return;
+        }
+
+        const payload = buildPayload();
 
         if (onSubmit) {
-            onSubmit(payload);
+            // Images go up separately as a follow-up multipart PATCH,
+            // since the create endpoint accepts JSON for the nested
+            // service/pricing_plans/billing payload.
+            onSubmit(payload, files);
         }
     };
 
@@ -195,18 +410,77 @@ const ProductServiceModal = ({ isOpen, onClose, onSubmit }) => {
                             </SectionTitle>
 
                             <SectionDescription>
-                                Create a new product/service with pricing,
-                                tax and other details.
+                                Pick an existing product to reuse its
+                                details, or start a brand new one.
                             </SectionDescription>
 
                             <FormGrid>
                                 <FormGroup>
+                                    <Label>Product Source</Label>
+
+                                    <SelectWrapper>
+                                        <StyledSelect
+                                            name="productMode"
+                                            value={productMode}
+                                            onChange={handleProductModeChange}
+                                        >
+                                            <option value="new">
+                                                New Product
+                                            </option>
+                                            <option value="existing">
+                                                Existing Product
+                                            </option>
+                                        </StyledSelect>
+
+                                        <SelectIcon>
+                                            <FiChevronDown />
+                                        </SelectIcon>
+                                    </SelectWrapper>
+                                </FormGroup>
+
+                                {productMode === "existing" && (
+                                    <FormGroup>
+                                        <Label>Select Product</Label>
+
+                                        <SelectWrapper>
+                                            <StyledSelect
+                                                name="product"
+                                                value={formData.product}
+                                                onChange={
+                                                    handleExistingProductSelect
+                                                }
+                                            >
+                                                <option value="">
+                                                    Select an existing
+                                                    product
+                                                </option>
+                                                {products.map((p) => (
+                                                    <option
+                                                        key={p.id}
+                                                        value={p.id}
+                                                    >
+                                                        {p.code
+                                                            ? `${p.code} - ${p.product_name}`
+                                                            : p.product_name}
+                                                    </option>
+                                                ))}
+                                            </StyledSelect>
+
+                                            <SelectIcon>
+                                                <FiChevronDown />
+                                            </SelectIcon>
+                                        </SelectWrapper>
+                                    </FormGroup>
+                                )}
+
+                                <FormGroup>
                                     <Label>Product Code</Label>
                                     <Input
                                         name="productCode"
-                                        placeholder="ERP-001"
-                                        value={formData.productCode}
-                                        onChange={handleChange}
+                                        placeholder="Auto-generated on save"
+                                        value=""
+                                        disabled
+                                        readOnly
                                     />
                                 </FormGroup>
 
@@ -234,15 +508,14 @@ const ProductServiceModal = ({ isOpen, onClose, onSubmit }) => {
                                             <option value="">
                                                 Select Category
                                             </option>
-                                            <option value="software">
-                                                Software
-                                            </option>
-                                            <option value="service">
-                                                Service
-                                            </option>
-                                            <option value="subscription">
-                                                Subscription
-                                            </option>
+                                            {categories.map((cat) => (
+                                                <option
+                                                    key={cat.id}
+                                                    value={cat.id}
+                                                >
+                                                    {cat.name || cat.category_name}
+                                                </option>
+                                            ))}
                                         </StyledSelect>
 
                                         <SelectIcon>
@@ -296,7 +569,7 @@ const ProductServiceModal = ({ isOpen, onClose, onSubmit }) => {
                                 </FormGroup>
 
                                 <FormGroup>
-                                    <Label>Unit Type</Label>
+                                    <Label>Unit</Label>
 
                                     <SelectWrapper>
                                         <StyledSelect
@@ -304,21 +577,15 @@ const ProductServiceModal = ({ isOpen, onClose, onSubmit }) => {
                                             value={formData.unitType}
                                             onChange={handleChange}
                                         >
-                                            <option value="Monthly">
-                                                Monthly
-                                            </option>
-                                            <option value="Yearly">
-                                                Yearly
-                                            </option>
-                                            <option value="Weekly">
-                                                Weekly
-                                            </option>
-                                            <option value="Daily">
-                                                Daily
-                                            </option>
-                                            <option value="One Time">
-                                                One Time
-                                            </option>
+                                            <option value="PCS">Piece (PCS)</option>
+                                            <option value="Box">Box</option>
+                                            <option value="Pack">Pack</option>
+                                            <option value="Month">Month</option>
+                                            <option value="Project">Project</option>
+                                            <option value="Set">Set</option>
+                                            <option value="Kg">Kilogram (Kg)</option>
+                                            <option value="Meter">Meter</option>
+                                            <option value="Other">Other</option>
                                         </StyledSelect>
 
                                         <SelectIcon>
@@ -336,10 +603,10 @@ const ProductServiceModal = ({ isOpen, onClose, onSubmit }) => {
                                             value={formData.billingType}
                                             onChange={handleChange}
                                         >
-                                            <option value="One Time">
+                                            <option value="one_time">
                                                 One Time
                                             </option>
-                                            <option value="Recurring">
+                                            <option value="recurring">
                                                 Recurring
                                             </option>
                                         </StyledSelect>
@@ -387,10 +654,10 @@ const ProductServiceModal = ({ isOpen, onClose, onSubmit }) => {
                                             value={formData.status}
                                             onChange={handleChange}
                                         >
-                                            <option value="Active">
+                                            <option value="active">
                                                 Active
                                             </option>
-                                            <option value="Inactive">
+                                            <option value="inactive">
                                                 Inactive
                                             </option>
                                         </StyledSelect>
@@ -407,9 +674,16 @@ const ProductServiceModal = ({ isOpen, onClose, onSubmit }) => {
                                     </Label>
 
                                     <UploadBox>
-                                        <input type="file" />
+                                        <input
+                                            type="file"
+                                            accept="image/*"
+                                            onChange={handleFileChange("product_icon")}
+                                        />
                                         <FiUpload />
                                     </UploadBox>
+                                    {files.product_icon && (
+                                        <small>{files.product_icon.name}</small>
+                                    )}
                                 </FormGroup>
 
                                 <FormGroup>
@@ -418,9 +692,16 @@ const ProductServiceModal = ({ isOpen, onClose, onSubmit }) => {
                                     </Label>
 
                                     <UploadBox>
-                                        <input type="file" />
+                                        <input
+                                            type="file"
+                                            accept="image/*"
+                                            onChange={handleFileChange("screenshot")}
+                                        />
                                         <FiUpload />
                                     </UploadBox>
+                                    {files.screenshot && (
+                                        <small>{files.screenshot.name}</small>
+                                    )}
                                 </FormGroup>
 
                                 <FormGroup>
@@ -491,8 +772,8 @@ const ProductServiceModal = ({ isOpen, onClose, onSubmit }) => {
                             </SectionTitle>
 
                             <SectionDescription>
-                                Create a new product/service with pricing,
-                                tax and other details.
+                                Only tiers with a price filled in will be
+                                saved as pricing plans.
                             </SectionDescription>
 
                             <PricingRow>
@@ -541,10 +822,10 @@ const ProductServiceModal = ({ isOpen, onClose, onSubmit }) => {
                                             }
                                             onChange={handleChange}
                                         >
-                                            <option value="Monthly">
+                                            <option value="monthly">
                                                 Monthly
                                             </option>
-                                            <option value="Yearly">
+                                            <option value="yearly">
                                                 Yearly
                                             </option>
                                         </StyledSelect>
@@ -641,10 +922,10 @@ const ProductServiceModal = ({ isOpen, onClose, onSubmit }) => {
                                             }
                                             onChange={handleChange}
                                         >
-                                            <option value="Monthly">
+                                            <option value="monthly">
                                                 Monthly
                                             </option>
-                                            <option value="Yearly">
+                                            <option value="yearly">
                                                 Yearly
                                             </option>
                                         </StyledSelect>
@@ -712,6 +993,7 @@ const ProductServiceModal = ({ isOpen, onClose, onSubmit }) => {
                                     <Label>Users</Label>
                                     <Input
                                         name="enterpriseUsers"
+                                        placeholder="Leave blank for unlimited"
                                         value={formData.enterpriseUsers}
                                         onChange={handleChange}
                                     />
@@ -727,10 +1009,10 @@ const ProductServiceModal = ({ isOpen, onClose, onSubmit }) => {
                                             }
                                             onChange={handleChange}
                                         >
-                                            <option value="Monthly">
+                                            <option value="monthly">
                                                 Monthly
                                             </option>
-                                            <option value="Yearly">
+                                            <option value="yearly">
                                                 Yearly
                                             </option>
                                         </StyledSelect>
@@ -794,6 +1076,35 @@ const ProductServiceModal = ({ isOpen, onClose, onSubmit }) => {
 
                             <FormGrid>
                                 <FormGroup>
+                                    <Label>CUSTOMER</Label>
+
+                                    <SelectWrapper>
+                                        <StyledSelect
+                                            name="customer"
+                                            value={formData.customer}
+                                            onChange={handleChange}
+                                            required
+                                        >
+                                            <option value="">
+                                                Select Customer
+                                            </option>
+                                            {customers.map((cust) => (
+                                                <option
+                                                    key={cust.id}
+                                                    value={cust.id}
+                                                >
+                                                    {cust.customer_name || cust.name}
+                                                </option>
+                                            ))}
+                                        </StyledSelect>
+
+                                        <SelectIcon>
+                                            <FiChevronDown />
+                                        </SelectIcon>
+                                    </SelectWrapper>
+                                </FormGroup>
+
+                                <FormGroup>
                                     <Label>RECURRING TYPE</Label>
 
                                     <SelectWrapper>
@@ -802,14 +1113,11 @@ const ProductServiceModal = ({ isOpen, onClose, onSubmit }) => {
                                             value={formData.recurringType}
                                             onChange={handleChange}
                                         >
-                                            <option value="">
-                                                Select Recurring Type
-                                            </option>
-                                            <option value="Invoice">
+                                            <option value="invoice">
                                                 Invoice
                                             </option>
-                                            <option value="Subscription">
-                                                Subscription
+                                            <option value="bill">
+                                                Bill
                                             </option>
                                         </StyledSelect>
 
@@ -828,19 +1136,19 @@ const ProductServiceModal = ({ isOpen, onClose, onSubmit }) => {
                                             value={formData.frequency}
                                             onChange={handleChange}
                                         >
-                                            <option value="">
-                                                Select Frequency
-                                            </option>
-                                            <option value="Daily">
-                                                Daily
-                                            </option>
-                                            <option value="Weekly">
+                                            <option value="weekly">
                                                 Weekly
                                             </option>
-                                            <option value="Monthly">
+                                            <option value="monthly">
                                                 Monthly
                                             </option>
-                                            <option value="Yearly">
+                                            <option value="quarterly">
+                                                Quarterly
+                                            </option>
+                                            <option value="half_yearly">
+                                                Half Yearly
+                                            </option>
+                                            <option value="yearly">
                                                 Yearly
                                             </option>
                                         </StyledSelect>
@@ -852,17 +1160,6 @@ const ProductServiceModal = ({ isOpen, onClose, onSubmit }) => {
                                 </FormGroup>
 
                                 <FormGroup>
-                                    <Label>EVERY</Label>
-
-                                    <Input
-                                        name="every"
-                                        placeholder="00 Period(s)"
-                                        value={formData.every}
-                                        onChange={handleChange}
-                                    />
-                                </FormGroup>
-
-                                <FormGroup>
                                     <Label>START DATE</Label>
 
                                     <Input
@@ -870,6 +1167,7 @@ const ProductServiceModal = ({ isOpen, onClose, onSubmit }) => {
                                         name="startDate"
                                         value={formData.startDate}
                                         onChange={handleChange}
+                                        required
                                     />
                                 </FormGroup>
 
@@ -878,14 +1176,14 @@ const ProductServiceModal = ({ isOpen, onClose, onSubmit }) => {
 
                                     <SelectWrapper>
                                         <StyledSelect
-                                            name="endDate"
-                                            value={formData.endDate}
+                                            name="endDateOption"
+                                            value={formData.endDateOption}
                                             onChange={handleChange}
                                         >
-                                            <option value="Never">
+                                            <option value="never">
                                                 Never
                                             </option>
-                                            <option value="Specific Date">
+                                            <option value="specific">
                                                 Specific Date
                                             </option>
                                         </StyledSelect>
@@ -896,49 +1194,18 @@ const ProductServiceModal = ({ isOpen, onClose, onSubmit }) => {
                                     </SelectWrapper>
                                 </FormGroup>
 
-                                <FormGroup>
-                                    <Label>
-                                        DEFAULT ITEM/SERVICE
-                                    </Label>
+                                {formData.endDateOption === "specific" && (
+                                    <FormGroup>
+                                        <Label>END DATE VALUE</Label>
 
-                                    <SelectWrapper>
-                                        <StyledSelect
-                                            name="defaultItemService"
-                                            value={
-                                                formData.defaultItemService
-                                            }
+                                        <Input
+                                            type="date"
+                                            name="endDateValue"
+                                            value={formData.endDateValue}
                                             onChange={handleChange}
-                                        >
-                                            <option value="">
-                                                Select Service
-                                            </option>
-                                            <option value="starter">
-                                                Starter
-                                            </option>
-                                            <option value="professional">
-                                                Professional
-                                            </option>
-                                            <option value="enterprise">
-                                                Enterprise
-                                            </option>
-                                        </StyledSelect>
-
-                                        <SelectIcon>
-                                            <FiChevronDown />
-                                        </SelectIcon>
-                                    </SelectWrapper>
-                                </FormGroup>
-
-                                <FormGroup>
-                                    <Label>AMOUNT</Label>
-
-                                    <Input
-                                        name="amount"
-                                        placeholder="----"
-                                        value={formData.amount}
-                                        onChange={handleChange}
-                                    />
-                                </FormGroup>
+                                        />
+                                    </FormGroup>
+                                )}
 
                                 <FormGroup>
                                     <Label>VAT (%)</Label>
@@ -1013,14 +1280,11 @@ const ProductServiceModal = ({ isOpen, onClose, onSubmit }) => {
                                             }
                                             onChange={handleChange}
                                         >
-                                            <option value="Advanced">
-                                                Advanced
+                                            <option value="advance">
+                                                Advance
                                             </option>
-                                            <option value="Monthly">
-                                                Monthly
-                                            </option>
-                                            <option value="Yearly">
-                                                Yearly
+                                            <option value="arrears">
+                                                Arrears
                                             </option>
                                         </StyledSelect>
 
@@ -1084,10 +1348,10 @@ const ProductServiceModal = ({ isOpen, onClose, onSubmit }) => {
                                             }
                                             onChange={handleChange}
                                         >
-                                            <option value="Active">
+                                            <option value="active">
                                                 Active
                                             </option>
-                                            <option value="Inactive">
+                                            <option value="inactive">
                                                 Inactive
                                             </option>
                                         </StyledSelect>
@@ -1220,7 +1484,7 @@ const ProductServiceModal = ({ isOpen, onClose, onSubmit }) => {
                         type="submit"
                         onClick={handleSubmit}
                     >
-                                 <FiSave /> 
+                        <FiSave />
                         Save Product / Service
                     </SaveButton>
                 </ModalFooter>

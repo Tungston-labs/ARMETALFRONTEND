@@ -1,6 +1,4 @@
-import axios from "axios";
-
-const BASE_URL = "http://127.0.0.1:8000";
+import API from "./api";
 
 const inventoryService = {
   getInventory: async ({
@@ -30,11 +28,79 @@ const inventoryService = {
       params.stock_status = stock_status;
     }
 
-    const response = await axios.get(
-      `${BASE_URL}/api/finance/inventory/`,
-      {
-        params,
-      },
+    const response = await API.get(
+      "/finance/inventory/",
+      { params },
+    );
+
+    return response.data;
+  },
+
+  getInventoryKPI: async () => {
+    const response = await API.get(
+      "/finance/inventory/kpi/",
+    );
+
+    return response.data;
+  },
+
+  listAdjustments: async ({
+    page = 1,
+    page_size = 20,
+    search = "",
+  } = {}) => {
+    const params = { page, page_size };
+
+    if (search?.trim()) {
+      params.search = search.trim();
+    }
+
+    const response = await API.get(
+      "/finance/inventory/adjustments/",
+      { params },
+    );
+
+    return response.data;
+  },
+
+  createAdjustment: async (payload = {}) => {
+    const response = await API.post(
+      "/finance/inventory/adjustments/",
+      payload,
+    );
+
+    return response.data;
+  },
+
+  getAdjustmentById: async (id) => {
+    const response = await API.get(
+      `/finance/inventory/adjustments/${encodeURIComponent(id)}/`,
+    );
+
+    return response.data;
+  },
+
+  updateAdjustment: async (id, payload = {}) => {
+    const response = await API.put(
+      `/finance/inventory/adjustments/${encodeURIComponent(id)}/`,
+      payload,
+    );
+
+    return response.data;
+  },
+
+  patchAdjustment: async (id, payload = {}) => {
+    const response = await API.patch(
+      `/finance/inventory/adjustments/${encodeURIComponent(id)}/`,
+      payload,
+    );
+
+    return response.data;
+  },
+
+  deleteAdjustment: async (id) => {
+    const response = await API.delete(
+      `/finance/inventory/adjustments/${encodeURIComponent(id)}/`,
     );
 
     return response.data;
