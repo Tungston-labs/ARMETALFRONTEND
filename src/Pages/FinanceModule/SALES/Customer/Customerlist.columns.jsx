@@ -30,42 +30,41 @@ export const getCustomerColumns = ({
     {
         accessor: "customer_id",
         header: "Code",
-        width: "9%",
         priority: 2,
     },
+
     {
         accessor: "customer_name",
         header: "Customer Name",
-        width: "13%",
-        priority: 1, // always visible — primary identifier
+        priority: 1,
         render: (row) => (
             <LinkName type="button" onClick={() => handleViewOverview(row)}>
                 {row.customer_name}
             </LinkName>
         ),
     },
-    {
-        accessor: "credit_limit",
-        header: "Credit Limit",
-        width: "10%",
-        priority: 4,
-    },
+
+    // {
+    //     accessor: "credit_limit",
+    //     header: "Credit Limit",
+    //     priority: 4,
+    // },
+
     {
         accessor: "total_invoices",
         header: "Total Invoices",
-        width: "10%",
         priority: 4,
     },
-    {
-        accessor: "payments_received",
-        header: "Payments Received",
-        width: "10%",
-        priority: 5,
-    },
+
+    // {
+    //     accessor: "payments_received",
+    //     header: "Payments Received",
+    //     priority: 5,
+    // },
+
     {
         accessor: "balance",
         header: "Balance",
-        width: "10%",
         priority: 2,
         render: (row) => (
             <BalanceAmount $negative={Number(row.balance) > 0}>
@@ -73,23 +72,23 @@ export const getCustomerColumns = ({
             </BalanceAmount>
         ),
     },
+
     {
         accessor: "outstanding_days",
         header: "Outstanding Days",
-        width: "10%",
         priority: 5,
     },
+
     {
         accessor: "last_payment_date",
         header: "Last Payment",
-        width: "9%",
         priority: 3,
     },
+
     {
         accessor: "actions",
         header: "Actions",
-        width: "300px",
-        priority: 1, // always visible — row actions
+        priority: 1,
         render: (row) => {
             const rowId = row.id ?? row.customer_id;
             const isMenuOpen = openMenuId === rowId;

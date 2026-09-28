@@ -73,11 +73,6 @@ const CustomerList = () => {
                 buttonText="+ NEW CUSTOMER"
                 onButtonClick={handleAddCustomer}
             >
-                <ExportButton type="button" onClick={handleExport}>
-                    <FiDownload />
-                    <span>Export</span>
-                </ExportButton>
-
                 <DateRangeWrapper>
                     <DatePickerContainer>
                         <DateInput
