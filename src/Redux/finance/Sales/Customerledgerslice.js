@@ -2,10 +2,23 @@ import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 
 import {
     fetchLedgerEntries,
+    createLedgerEntry,
     fetchCustomerLedgerEntries,
     fetchLedgerSummary,
     fetchDashboardSummary,
+    fetchCustomerWiseSummary,
 } from "../../../services/finance/Sales/Customerledgerservice";
+
+// Normalises list responses: { results: [] } | { data: [] } | []
+const extractList = (payload) =>
+    payload?.results || payload?.data || (Array.isArray(payload) ? payload : []);
+
+const extractTotalItems = (payload) =>
+    payload?.count || payload?.total_items || 0;
+
+// ==========================================
+// THUNKS
+// ==========================================
 
 // GET Ledger Entries (all)
 export const getLedgerEntries = createAsyncThunk(
@@ -13,6 +26,18 @@ export const getLedgerEntries = createAsyncThunk(
     async (params = {}, { rejectWithValue }) => {
         try {
             return await fetchLedgerEntries(params);
+        } catch (error) {
+            return rejectWithValue(error.response?.data || error.message);
+        }
+    }
+);
+
+// POST Create Ledger Entry (manual debit / credit)
+export const addLedgerEntry = createAsyncThunk(
+    "customerLedger/addLedgerEntry",
+    async (payload, { rejectWithValue }) => {
+        try {
+            return await createLedgerEntry(payload);
         } catch (error) {
             return rejectWithValue(error.response?.data || error.message);
         }
@@ -31,7 +56,7 @@ export const getCustomerLedgerEntries = createAsyncThunk(
     }
 );
 
-// GET Ledger Summary (per-customer — kept for future use, not used on this page)
+// GET Ledger Summary (single customer, needs customer_id)
 export const getLedgerSummary = createAsyncThunk(
     "customerLedger/getLedgerSummary",
     async (params = {}, { rejectWithValue }) => {
@@ -55,11 +80,32 @@ export const getDashboardSummary = createAsyncThunk(
     }
 );
 
+// GET Customer-wise Summary (powers the "Summary by Customer" table)
+export const getCustomerWiseSummary = createAsyncThunk(
+    "customerLedger/getCustomerWiseSummary",
+    async (params = {}, { rejectWithValue }) => {
+        try {
+            return await fetchCustomerWiseSummary(params);
+        } catch (error) {
+            return rejectWithValue(error.response?.data || error.message);
+        }
+    }
+);
+
+// ==========================================
+// STATE
+// ==========================================
+
 const initialState = {
     entries: [],
     customerEntries: [],
     summary: null,
     dashboardSummary: null,
+
+    customerWiseSummary: [],
+    customerWiseSummaryTotalItems: 0,
+    customerWiseSummaryTotalPages: 0,
+    customerWiseSummaryCurrentPage: 1,
 
     totalItems: 0,
     totalPages: 0,
@@ -70,11 +116,14 @@ const initialState = {
     customerCurrentPage: 1,
 
     loading: false,
+    createLoading: false,
     customerLoading: false,
     summaryLoading: false,
     dashboardSummaryLoading: false,
+    customerWiseSummaryLoading: false,
 
     error: null,
+    successMessage: null,
 };
 
 const customerLedgerSlice = createSlice({
@@ -84,6 +133,9 @@ const customerLedgerSlice = createSlice({
     reducers: {
         clearLedgerError: (state) => {
             state.error = null;
+        },
+        clearLedgerMessage: (state) => {
+            state.successMessage = null;
         },
         clearCustomerLedgerEntries: (state) => {
             state.customerEntries = [];
@@ -98,20 +150,15 @@ const customerLedgerSlice = createSlice({
 
     extraReducers: (builder) => {
         builder
-            // GET LEDGER ENTRIES (ALL)
+            // ---------- GET LEDGER ENTRIES (ALL) ----------
             .addCase(getLedgerEntries.pending, (state) => {
                 state.loading = true;
                 state.error = null;
             })
             .addCase(getLedgerEntries.fulfilled, (state, action) => {
                 state.loading = false;
-                state.entries =
-                    action.payload?.results ||
-                    action.payload?.data ||
-                    action.payload ||
-                    [];
-                state.totalItems =
-                    action.payload?.count || action.payload?.total_items || 0;
+                state.entries = extractList(action.payload);
+                state.totalItems = extractTotalItems(action.payload);
                 state.totalPages = action.payload?.total_pages || 0;
                 state.currentPage = action.payload?.current_page || 1;
             })
@@ -120,20 +167,31 @@ const customerLedgerSlice = createSlice({
                 state.error = action.payload;
             })
 
-            // GET CUSTOMER LEDGER ENTRIES
+            // ---------- CREATE LEDGER ENTRY ----------
+            .addCase(addLedgerEntry.pending, (state) => {
+                state.createLoading = true;
+                state.error = null;
+            })
+            .addCase(addLedgerEntry.fulfilled, (state, action) => {
+                state.createLoading = false;
+                state.successMessage =
+                    action.payload?.message ||
+                    "Ledger entry created successfully.";
+            })
+            .addCase(addLedgerEntry.rejected, (state, action) => {
+                state.createLoading = false;
+                state.error = action.payload;
+            })
+
+            // ---------- GET CUSTOMER LEDGER ENTRIES ----------
             .addCase(getCustomerLedgerEntries.pending, (state) => {
                 state.customerLoading = true;
                 state.error = null;
             })
             .addCase(getCustomerLedgerEntries.fulfilled, (state, action) => {
                 state.customerLoading = false;
-                state.customerEntries =
-                    action.payload?.results ||
-                    action.payload?.data ||
-                    action.payload ||
-                    [];
-                state.customerTotalItems =
-                    action.payload?.count || action.payload?.total_items || 0;
+                state.customerEntries = extractList(action.payload);
+                state.customerTotalItems = extractTotalItems(action.payload);
                 state.customerTotalPages = action.payload?.total_pages || 0;
                 state.customerCurrentPage = action.payload?.current_page || 1;
             })
@@ -142,7 +200,7 @@ const customerLedgerSlice = createSlice({
                 state.error = action.payload;
             })
 
-            // GET LEDGER SUMMARY (per-customer)
+            // ---------- GET LEDGER SUMMARY (single customer) ----------
             .addCase(getLedgerSummary.pending, (state) => {
                 state.summaryLoading = true;
                 state.error = null;
@@ -156,24 +214,48 @@ const customerLedgerSlice = createSlice({
                 state.error = action.payload;
             })
 
-            // GET DASHBOARD SUMMARY (aggregate stat cards)
+            // ---------- GET DASHBOARD SUMMARY (stat cards) ----------
             .addCase(getDashboardSummary.pending, (state) => {
                 state.dashboardSummaryLoading = true;
                 state.error = null;
             })
             .addCase(getDashboardSummary.fulfilled, (state, action) => {
                 state.dashboardSummaryLoading = false;
-                state.dashboardSummary =
-                    action.payload?.data || action.payload;
+                state.dashboardSummary = action.payload?.data || action.payload;
             })
             .addCase(getDashboardSummary.rejected, (state, action) => {
                 state.dashboardSummaryLoading = false;
+                state.error = action.payload;
+            })
+
+            // ---------- GET CUSTOMER-WISE SUMMARY ----------
+            .addCase(getCustomerWiseSummary.pending, (state) => {
+                state.customerWiseSummaryLoading = true;
+                state.error = null;
+            })
+            .addCase(getCustomerWiseSummary.fulfilled, (state, action) => {
+                state.customerWiseSummaryLoading = false;
+                state.customerWiseSummary = extractList(action.payload);
+                state.customerWiseSummaryTotalItems =
+                    extractTotalItems(action.payload) ||
+                    state.customerWiseSummary.length;
+                state.customerWiseSummaryTotalPages =
+                    action.payload?.total_pages || 1;
+                state.customerWiseSummaryCurrentPage =
+                    action.payload?.current_page || 1;
+            })
+            .addCase(getCustomerWiseSummary.rejected, (state, action) => {
+                state.customerWiseSummaryLoading = false;
                 state.error = action.payload;
             });
     },
 });
 
-export const { clearLedgerError, clearCustomerLedgerEntries, clearLedgerSummary } =
-    customerLedgerSlice.actions;
+export const {
+    clearLedgerError,
+    clearLedgerMessage,
+    clearCustomerLedgerEntries,
+    clearLedgerSummary,
+} = customerLedgerSlice.actions;
 
 export default customerLedgerSlice.reducer;

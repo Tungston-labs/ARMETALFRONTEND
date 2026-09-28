@@ -1,10 +1,13 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
 import {
     getLedgerEntries,
     getDashboardSummary,
+    getCustomerWiseSummary,
+    addLedgerEntry,
     clearLedgerError,
+    clearLedgerMessage,
 } from "../../../../Redux/finance/Sales/Customerledgerslice";
 
 import {
@@ -33,13 +36,16 @@ const useCustomerLedger = () => {
     const {
         entries = [],
         totalItems = 0,
-        totalPages = 1,
-        currentPage: backendCurrentPage = 1,
         loading = false,
+        createLoading = false,
         error = null,
 
         dashboardSummary = null,
         dashboardSummaryLoading = false,
+
+        customerWiseSummary = [],
+        customerWiseSummaryTotalItems = 0,
+        customerWiseSummaryLoading = false,
     } = useSelector((state) => state.customerLedger) || {};
 
     // ALL CUSTOMERS (for the "All Customers" filter)
@@ -52,8 +58,9 @@ const useCustomerLedger = () => {
     const [transactionType, setTransactionType] = useState("");
     const [customer, setCustomer] = useState("");
 
-    // CUSTOMER SUMMARY SEARCH (TABLE 2 — client-side)
+    // CUSTOMER SUMMARY (TABLE 2 — server-side)
     const [customerSummarySearch, setCustomerSummarySearch] = useState("");
+    const [debouncedSummarySearch, setDebouncedSummarySearch] = useState("");
     const [customerSummaryCurrentPage, setCustomerSummaryCurrentPage] =
         useState(1);
 
@@ -66,23 +73,11 @@ const useCustomerLedger = () => {
 
     // PAGINATION (TABLE 1)
     const [currentPage, setCurrentPage] = useState(1);
+    const totalPages = Math.ceil(totalItems / ROWS_PER_PAGE) || 1;
 
-    // FETCH — ALL CUSTOMERS (once, for the dropdown)
-    useEffect(() => {
-        dispatch(getCustomers({ page_size: 1000 }));
-    }, [dispatch]);
+    // ---- Fetch helpers (reused after creating an entry) ----
 
-    // DEBOUNCE — table 1 search
-    useEffect(() => {
-        const timer = setTimeout(() => {
-            setDebouncedSearch(search);
-            setCurrentPage(1);
-        }, SEARCH_DEBOUNCE_MS);
-        return () => clearTimeout(timer);
-    }, [search]);
-
-    // FETCH — TABLE 1 (ledger entries)
-    useEffect(() => {
+    const fetchLedger = useCallback(() => {
         dispatch(
             getLedgerEntries({
                 search: debouncedSearch || undefined,
@@ -107,8 +102,7 @@ const useCustomerLedger = () => {
         currentPage,
     ]);
 
-    // FETCH — DASHBOARD SUMMARY (stat cards), scoped to same date range
-    useEffect(() => {
+    const fetchDashboard = useCallback(() => {
         dispatch(
             getDashboardSummary({
                 from_date: startDate || undefined,
@@ -117,30 +111,108 @@ const useCustomerLedger = () => {
         );
     }, [dispatch, startDate, endDate]);
 
-    // CLEAR ERROR ON UNMOUNT
+    const fetchCustomerSummary = useCallback(() => {
+        dispatch(
+            getCustomerWiseSummary({
+                search: debouncedSummarySearch || undefined,
+                from_date: startDate || undefined,
+                to_date: endDate || undefined,
+                page: customerSummaryCurrentPage,
+                page_size: SUMMARY_ROWS_PER_PAGE,
+            })
+        );
+    }, [
+        dispatch,
+        debouncedSummarySearch,
+        startDate,
+        endDate,
+        customerSummaryCurrentPage,
+    ]);
+
+    // ---- Effects ----
+
+    // All customers, once (for the dropdown)
+    useEffect(() => {
+        dispatch(getCustomers({ page_size: 1000 }));
+    }, [dispatch]);
+
+    // Debounce — table 1 search
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedSearch(search);
+            setCurrentPage(1);
+        }, SEARCH_DEBOUNCE_MS);
+        return () => clearTimeout(timer);
+    }, [search]);
+
+    // Debounce — table 2 search
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedSummarySearch(customerSummarySearch);
+            setCustomerSummaryCurrentPage(1);
+        }, SEARCH_DEBOUNCE_MS);
+        return () => clearTimeout(timer);
+    }, [customerSummarySearch]);
+
+    // Table 1
+    useEffect(() => {
+        fetchLedger();
+    }, [fetchLedger]);
+
+    // Stat cards
+    useEffect(() => {
+        fetchDashboard();
+    }, [fetchDashboard]);
+
+    // Table 2
+    useEffect(() => {
+        fetchCustomerSummary();
+    }, [fetchCustomerSummary]);
+
+    // Clear error/message on unmount
     useEffect(() => {
         return () => {
             dispatch(clearLedgerError());
+            dispatch(clearLedgerMessage());
         };
     }, [dispatch]);
 
-    // HANDLERS
+    // ---- Handlers ----
+
     const handleStartDateChange = (event) => {
         setStartDate(event.target.value);
         setCurrentPage(1);
+        setCustomerSummaryCurrentPage(1);
     };
 
     const handleEndDateChange = (event) => {
         setEndDate(event.target.value);
         setCurrentPage(1);
+        setCustomerSummaryCurrentPage(1);
     };
 
     const handleAddLedger = () => setIsLedgerModalOpen(true);
     const handleCloseLedger = () => setIsLedgerModalOpen(false);
 
-    // NOTE: no create/POST endpoint exists yet in Customerledgerservice.js
-    const handleSaveLedger = (_newLedger) => {
-        setIsLedgerModalOpen(false);
+    // POST /finance/ledger/
+    // newLedger must be: { customer, transaction_date, reference_number,
+    //                      description, mode: "debit" | "credit", amount }
+    const handleSaveLedger = async (newLedger) => {
+        const result = await dispatch(addLedgerEntry(newLedger));
+
+        if (addLedgerEntry.fulfilled.match(result)) {
+            setIsLedgerModalOpen(false);
+
+            // Jump to page 1 (the effect refetches if the page changed),
+            // and explicitly refresh everything else.
+            if (currentPage !== 1) {
+                setCurrentPage(1);
+            } else {
+                fetchLedger();
+            }
+            fetchDashboard();
+            fetchCustomerSummary();
+        }
     };
 
     const handleSearch = (value) => setSearch(value);
@@ -162,82 +234,30 @@ const useCustomerLedger = () => {
 
     const handleCustomerSummarySearch = (value) => {
         setCustomerSummarySearch(value);
-        setCustomerSummaryCurrentPage(1);
     };
 
-    // LEDGER DATA (TABLE 1)
+    // ---- Derived data ----
+
     const ledgerData = entries;
     const ledgerColumns = useMemo(() => getCustomerLedgerColumns(), []);
 
-    // STAT CARDS — from the real dashboard-summary endpoint
     const cards = useMemo(
         () => dashboardSummaryStats(dashboardSummary || {}),
         [dashboardSummary]
     );
 
-    // ==========================================================
-    // TABLE 2 — "Summary by Customer"
-    // LIMITATION: aggregates only the entries currently loaded for
-    // Table 1 (one page's worth), so it is NOT a true all-time,
-    // all-customer summary. Replace once a backend endpoint exists.
-    // ==========================================================
-
-    const customerSummary = useMemo(() => {
-        const summaryMap = {};
-
-        (entries || []).forEach((row) => {
-            const customerId = row.customer;
-            if (!customerId) return;
-
-            if (!summaryMap[customerId]) {
-                summaryMap[customerId] = {
-                    customer: customerId,
-                    customer_name: row.customer_name || "-",
-                    customer_id_code: row.customer_id_code || "-",
-                    total_debit: 0,
-                    total_credit: 0,
-                    balance: 0,
-                };
-            }
-
-            summaryMap[customerId].total_debit += Number(row.debit || 0);
-            summaryMap[customerId].total_credit += Number(row.credit || 0);
-            summaryMap[customerId].balance =
-                summaryMap[customerId].total_debit -
-                summaryMap[customerId].total_credit;
-        });
-
-        let list = Object.values(summaryMap);
-
-        if (customerSummarySearch.trim()) {
-            const q = customerSummarySearch.toLowerCase().trim();
-            list = list.filter((item) => {
-                const name = item.customer_name?.toLowerCase() || "";
-                const code = item.customer_id_code?.toLowerCase() || "";
-                return name.includes(q) || code.includes(q);
-            });
-        }
-
-        return list;
-    }, [entries, customerSummarySearch]);
-
-    const customerSummaryTotalItems = customerSummary.length;
-
+    // Summary by Customer — now straight from /finance/ledger/customer-summary/
+    const customerSummaryData = customerWiseSummary;
+    const customerSummaryTotalItems = customerWiseSummaryTotalItems;
     const customerSummaryTotalPages =
         Math.ceil(customerSummaryTotalItems / SUMMARY_ROWS_PER_PAGE) || 1;
-
-    const customerSummaryData = useMemo(() => {
-        const start =
-            (customerSummaryCurrentPage - 1) * SUMMARY_ROWS_PER_PAGE;
-        return customerSummary.slice(start, start + SUMMARY_ROWS_PER_PAGE);
-    }, [customerSummary, customerSummaryCurrentPage]);
 
     const customerSummaryColumns = useMemo(
         () => getCustomerSummaryColumns(),
         []
     );
 
-    // FILTER OPTIONS
+    // Filter options
     const statusOptions = ["Paid", "Pending", "Partially Paid", "Overdue"];
 
     const transactionTypeOptions = [
@@ -249,9 +269,7 @@ const useCustomerLedger = () => {
         { label: "Adjustment", value: "adjustment" },
     ];
 
-    // REAL CUSTOMER LIST for the "All Customers" filter.
-    // value = customer id, which matches row.customer in the ledger entries
-    // and is what the backend filter expects.
+    // Real customers for the "All Customers" filter (value = customer id)
     const customerOptions = useMemo(
         () =>
             (customers || []).map((c) => ({
@@ -272,9 +290,10 @@ const useCustomerLedger = () => {
         customerSummarySearch,
         isLedgerModalOpen,
 
-        currentPage: backendCurrentPage,
+        currentPage,
         totalPages,
         totalItems,
+        setCurrentPage,
 
         ledgerData,
         ledgerColumns,
@@ -289,14 +308,14 @@ const useCustomerLedger = () => {
         cards,
 
         loading,
+        createLoading,
         dashboardSummaryLoading,
+        customerSummaryLoading: customerWiseSummaryLoading,
         error,
 
         statusOptions,
         transactionTypeOptions,
         customerOptions,
-
-        setCurrentPage,
 
         handleStartDateChange,
         handleEndDateChange,

@@ -14,6 +14,23 @@ export const formatAmount = (value) =>
         maximumFractionDigits: 2,
     });
 
+// Format date as: Sep 28, 2026
+export const formatDate = (value) => {
+    if (!value) return "—";
+
+    const date = new Date(value);
+
+    if (isNaN(date.getTime())) {
+        return value;
+    }
+
+    return date.toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+    });
+};
+
 const TRANSACTION_TYPE_COLORS = {
     opening_balance: {
         bg: "#EEF2FF",
@@ -72,6 +89,7 @@ export const getCustomerLedgerColumns = () => [
     {
         header: "Date",
         accessor: "transaction_date",
+        render: (row) => formatDate(row.transaction_date),
     },
 
     {
@@ -163,9 +181,6 @@ export const dashboardSummaryStats = (data = {}) => [
     },
 ];
 
-// Kept for potential future use
-// e.g. a per-customer detail view backed by
-// GET /finance/ledger/summary/?customer_id=...
 export const customerLedgerStats = (data = {}) => [
     {
         title: "Total Debit",
@@ -202,30 +217,42 @@ export const customerLedgerStats = (data = {}) => [
 
 export const getCustomerSummaryColumns = () => [
     {
+        header: "Customer Code",
+        accessor: "customer_code",
+    },
+
+    {
         header: "Customer",
         accessor: "customer_name",
     },
 
     {
-        header: "Customer ID",
-        accessor: "customer_id_code",
+        header: "Total Invoices",
+        accessor: "total_invoice",
+        render: (row) => formatAmount(row.total_invoice),
     },
 
     {
-        header: "Total Debit",
-        accessor: "total_debit",
-        render: (row) => formatAmount(row.total_debit),
+        header: "Total Payments",
+        accessor: "total_payment",
+        render: (row) => formatAmount(row.total_payment),
     },
 
     {
-        header: "Total Credit",
-        accessor: "total_credit",
-        render: (row) => formatAmount(row.total_credit),
+        header: "Credit Notes",
+        accessor: "credit_note",
+        render: (row) => formatAmount(row.credit_note),
     },
 
     {
-        header: "Balance",
-        accessor: "balance",
-        render: (row) => formatAmount(row.balance),
+        header: "Outstanding",
+        accessor: "outstanding",
+        render: (row) => formatAmount(row.outstanding),
+    },
+
+    {
+        header: "Overdue",
+        accessor: "overdue",
+        render: (row) => formatAmount(row.overdue),
     },
 ];
