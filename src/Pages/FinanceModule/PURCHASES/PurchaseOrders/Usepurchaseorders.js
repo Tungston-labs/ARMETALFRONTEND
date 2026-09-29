@@ -12,6 +12,10 @@ import {
 
 const ROWS_PER_PAGE = 10;
 const ADD_ROUTE = "/purchases/purchase-orders/add";
+const EDIT_ROUTE = "/purchases/purchase-orders/edit"; // + "/:id"
+
+// Field on each row used by the date range filter (YYYY-MM-DD or ISO string)
+const DATE_FIELD = "order_date";
 
 // Filter shows labels; rows store keys like "partially_received"
 const STATUS_OPTIONS = [
@@ -38,6 +42,8 @@ const usePurchaseOrders = () => {
     const [search, setSearch] = useState("");
     const [vendor, setVendor] = useState("");
     const [status, setStatus] = useState("");
+    const [startDate, setStartDate] = useState("");
+    const [endDate, setEndDate] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
 
     // Vendor filter options come from the vendors already in the app
@@ -71,9 +77,17 @@ const usePurchaseOrders = () => {
                 !`${o.po_number} ${o.vendor_name}`.toLowerCase().includes(term)
             )
                 return false;
+
+            // Date range (inclusive). Compare as YYYY-MM-DD strings.
+            if (startDate || endDate) {
+                const d = o[DATE_FIELD] ? String(o[DATE_FIELD]).slice(0, 10) : "";
+                if (!d) return false;
+                if (startDate && d < startDate) return false;
+                if (endDate && d > endDate) return false;
+            }
             return true;
         });
-    }, [orders, search, vendor, status]);
+    }, [orders, search, vendor, status, startDate, endDate]);
 
     // ---- Pagination ----
 
@@ -104,10 +118,23 @@ const usePurchaseOrders = () => {
         setStatus(value);
         setCurrentPage(1);
     };
+    const handleStartDateChange = (e) => {
+        setStartDate(e.target.value);
+        setCurrentPage(1);
+    };
+    const handleEndDateChange = (e) => {
+        setEndDate(e.target.value);
+        setCurrentPage(1);
+    };
 
     // ---- Actions ----
 
     const handleAddPurchaseOrder = () => navigate(ADD_ROUTE);
+
+    const handleEditPurchaseOrder = useCallback(
+        (row) => navigate(`${EDIT_ROUTE}/${row.id}`),
+        [navigate]
+    );
 
     const handleDeletePurchaseOrder = useCallback((row) => {
         const confirmed = window.confirm(
@@ -126,9 +153,10 @@ const usePurchaseOrders = () => {
     const columns = useMemo(
         () =>
             getPurchaseOrderColumns({
+                onEdit: handleEditPurchaseOrder,
                 onDelete: handleDeletePurchaseOrder,
             }),
-        [handleDeletePurchaseOrder]
+        [handleEditPurchaseOrder, handleDeletePurchaseOrder]
     );
 
     return {
@@ -136,6 +164,8 @@ const usePurchaseOrders = () => {
         search,
         vendor,
         status,
+        startDate,
+        endDate,
 
         // pagination
         currentPage,
@@ -157,6 +187,8 @@ const usePurchaseOrders = () => {
         handleSearch,
         handleVendorChange,
         handleStatusChange,
+        handleStartDateChange,
+        handleEndDateChange,
         handleAddPurchaseOrder,
     };
 };

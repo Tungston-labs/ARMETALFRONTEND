@@ -40,6 +40,15 @@ import CreditAction from "../Pages/FinanceModule/SALES/CreditNotes/action/Credit
 import PurchaseOrders from "../Pages/FinanceModule/PURCHASES/PurchaseOrders/PurchaseOrders.jsx";
 import Vendors from "../Pages/FinanceModule/PURCHASES/Vendors/Vendors.jsx";
 import AddingPurchaseOrder from "../Pages/FinanceModule/PURCHASES/PurchaseOrders/modal/ Addingpurchaseorder.jsx";
+import VendorLedger from "../Pages/FinanceModule/PURCHASES/VendorLedger/VendorLedger.jsx";
+import VendorOverview from "../Pages/FinanceModule/PURCHASES/Vendors/Overview/VendorOverview.jsx";
+import VendorPurchaseOrders from "../Pages/FinanceModule/PURCHASES/Vendors/Orders/VendorPurchaseOrders.jsx";
+import VendorPayments from "../Pages/FinanceModule/PURCHASES/Vendors/Payments/VendorPayments.jsx";
+import VendorLedgerTab from "../Pages/FinanceModule/PURCHASES/Vendors/Ledger/VendorLedgerTab.jsx";
+import VendorLayout from "../Pages/FinanceModule/PURCHASES/Vendors/layout/Vendorlayout.jsx";
+import VendorCreditNotes from "../Pages/FinanceModule/PURCHASES/DebitNotes/VendorCreditNotes.jsx";
+import VendorQuotations from "../Pages/FinanceModule/PURCHASES/Vendors/Quoatations/VendorQuotations.jsx";
+import VendorBills from "../Pages/FinanceModule/PURCHASES/Vendors/Bills/VendorBills.jsx";
 
 const FinanceRoutes = () => {
   return (
@@ -104,8 +113,23 @@ const FinanceRoutes = () => {
 
       <Route path="purchase/vendors" element={<Vendors />} />
       <Route path="purchase/purchaseorder" element={<PurchaseOrders />} />
-    <Route path="purchases/purchase-orders/add" element={<AddingPurchaseOrder />} />
-    <Route path="purchases/purchase-orders/edit/:id" element={<AddingPurchaseOrder />} />
+      <Route path="purchases/purchase-orders/add" element={<AddingPurchaseOrder />} />
+      <Route path="purchases/purchase-orders/edit/:id" element={<AddingPurchaseOrder />} />
+      <Route path="purchases/vendor-ledger" element={<VendorLedger />} />
+
+
+   <Route path="purchase/vendors/:vendorId" element={<VendorLayout />}>
+  <Route index element={<VendorOverview />} />
+  <Route path="overview" element={<VendorOverview />} />
+  <Route path="quotations" element={<VendorQuotations />} />
+  <Route path="purchase-orders" element={<VendorPurchaseOrders />} />
+  <Route path="bills" element={<VendorBills />} />
+  <Route path="payments" element={<VendorPayments />} />
+  <Route path="ledger" element={<VendorLedgerTab />} />
+  <Route path="debit-notes" element={<VendorCreditNotes />} />
+</Route>
+
+
 
     </>
   );

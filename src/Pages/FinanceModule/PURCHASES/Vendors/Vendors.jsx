@@ -54,6 +54,7 @@ const Vendors = () => {
         handleAddVendor,
         handleCloseVendor,
         handleSaveVendor,
+        handleViewVendor,
     } = useVendors();
 
     return (
@@ -136,6 +137,7 @@ const Vendors = () => {
                 columns={columns}
                 data={paginatedData}
                 loading={loading}
+                    onRowClick={handleViewVendor}
             />
 
             <ReusablePagination

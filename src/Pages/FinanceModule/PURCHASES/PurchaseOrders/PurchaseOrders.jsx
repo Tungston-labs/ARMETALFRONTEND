@@ -7,12 +7,20 @@ import ReusablePagination from "../../../../Components/Pagination/ReusablePagina
 import StatsCards from "../../../../Components/StatsCards/StatsCards";
 
 import usePurchaseOrders from "./Usepurchaseorders";
+import {
+    DateInput,
+    DatePickerContainer,
+    DateRangeWrapper,
+    DateSeparator,
+} from "./PurchaseOrders.styles";
 
 const PurchaseOrders = () => {
     const {
         search,
         vendor,
         status,
+        startDate,
+        endDate,
 
         currentPage,
         totalPages,
@@ -30,6 +38,8 @@ const PurchaseOrders = () => {
         handleSearch,
         handleVendorChange,
         handleStatusChange,
+        handleStartDateChange,
+        handleEndDateChange,
         handleAddPurchaseOrder,
     } = usePurchaseOrders();
 
@@ -40,7 +50,29 @@ const PurchaseOrders = () => {
                 breadcrumbs={["Purchase Orders"]}
                 buttonText="+ ADD NEW PURCHASE ORDER"
                 onButtonClick={handleAddPurchaseOrder}
-            />
+            >
+                <DateRangeWrapper>
+                    <DatePickerContainer>
+                        <DateInput
+                            type="date"
+                            value={startDate}
+                            onChange={handleStartDateChange}
+                            max={endDate || undefined}
+                            aria-label="Start date"
+                        />
+
+                        <DateSeparator>-</DateSeparator>
+
+                        <DateInput
+                            type="date"
+                            value={endDate}
+                            onChange={handleEndDateChange}
+                            min={startDate || undefined}
+                            aria-label="End date"
+                        />
+                    </DatePickerContainer>
+                </DateRangeWrapper>
+            </ReusableHeader>
 
             <StatsCards cards={cards} />
 

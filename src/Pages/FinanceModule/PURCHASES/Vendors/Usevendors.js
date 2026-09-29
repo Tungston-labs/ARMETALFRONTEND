@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-
+import { useNavigate } from "react-router-dom";
 import {
     getVendors,
     getVendorDashboard,
@@ -25,7 +25,7 @@ const SEARCH_DEBOUNCE_MS = 400;
 
 const useVendors = () => {
     const dispatch = useDispatch();
-
+const navigate = useNavigate();
     const {
         vendors = [],
         totalItems = 0,
@@ -143,7 +143,10 @@ const useVendors = () => {
         setEndDate(event.target.value);
         setCurrentPage(1);
     };
-
+const handleViewVendor = useCallback(
+    (row) => navigate(`/purchase/vendors/${row.id}`),
+    [navigate]
+);
     // ---- Modal handlers ----
 
     const handleAddVendor = () => {
@@ -235,13 +238,14 @@ const useVendors = () => {
     );
 
     const columns = useMemo(
-        () =>
-            getVendorColumns({
-                onEdit: handleEditVendor,
-                onDelete: handleDeleteVendor,
-            }),
-        [handleEditVendor, handleDeleteVendor]
-    );
+    () =>
+        getVendorColumns({
+            onView: handleViewVendor,
+            onEdit: handleEditVendor,
+            onDelete: handleDeleteVendor,
+        }),
+    [handleViewVendor, handleEditVendor, handleDeleteVendor]
+);
 
     return {
         // filters
@@ -295,6 +299,7 @@ const useVendors = () => {
         handleDeleteVendor,
         handleCloseVendor,
         handleSaveVendor,
+            handleViewVendor,
     };
 };
 

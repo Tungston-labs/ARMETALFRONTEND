@@ -15,7 +15,11 @@ const formatAmount = (value) =>
 
 export const getVendorColumns = ({ onEdit, onDelete } = {}) => [
     { header: "Code", accessor: "vendor_id" },
-    { header: "Vendor Name", accessor: "name" },
+{
+        header: "Vendor Name",
+        accessor: "name",
+       
+    },
     { header: "Vendor Group", accessor: "vendor_type_name" },
     { header: "Phone Number", accessor: "phno" },
     { header: "Payment Terms", accessor: "payment_term_name" },
