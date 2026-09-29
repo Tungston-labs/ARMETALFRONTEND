@@ -4,8 +4,6 @@ import {
     FiDollarSign,
     FiClock,
     FiTruck,
-    FiEdit2,
-    FiTrash2,
 } from "react-icons/fi";
 import PurchaseOrderActions from "./action/Purchaseorderactions";
 
@@ -30,15 +28,19 @@ const formatDate = (value) => {
               year: "numeric",
           });
 };
+
+// "partially_received" -> "Partially Received"
 const humanize = (value) =>
     value
         ? String(value).replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())
         : "-";
+
 // key -> label + badge colours
 export const STATUS_META = {
     draft: { label: "Draft", bg: "#F3F4F6", color: "#4B5563" },
     pending: { label: "Pending", bg: "#FFF7ED", color: "#B06000" },
     approved: { label: "Approved", bg: "#E8F0FE", color: "#1A73E8" },
+    ordered: { label: "Ordered", bg: "#EEF2FF", color: "#4F46E5" },
     partially_received: { label: "Partially Received", bg: "#FEF7E0", color: "#B06000" },
     received: { label: "Received", bg: "#E6F4EA", color: "#188038" },
     cancelled: { label: "Cancelled", bg: "#FDEEEE", color: "#B00020" },
@@ -46,7 +48,7 @@ export const STATUS_META = {
 
 const StatusBadge = ({ status }) => {
     const meta = STATUS_META[status] || {
-        label: status || "-",
+        label: humanize(status),
         bg: "#F3F4F6",
         color: "#4B5563",
     };
@@ -69,13 +71,11 @@ const StatusBadge = ({ status }) => {
     );
 };
 
-
-
 // ===============================
-// Table columns
+// Table columns (match the API list fields)
 // ===============================
-// A function because the action buttons need handlers from the hook.
-// Usage: getPurchaseOrderColumns({ onEdit, onDelete })
+// A function because the action buttons need the delete handler from the hook.
+// Usage: getPurchaseOrderColumns({ onDelete })
 
 export const getPurchaseOrderColumns = ({ onDelete } = {}) => [
     { header: "PO Number", accessor: "po_number" },
@@ -93,13 +93,12 @@ export const getPurchaseOrderColumns = ({ onDelete } = {}) => [
     {
         header: "Order Value",
         accessor: "total_amount",
-        render: (row) =>
-            `${row.currency || ""} ${formatAmount(row.total_amount)}`.trim(),
+        render: (row) => formatAmount(row.total_amount),
     },
     {
         header: "Order Status",
-        accessor: "order_status",
-        render: (row) => <StatusBadge status={row.order_status} />,
+        accessor: "status",
+        render: (row) => <StatusBadge status={row.status} />,
     },
     {
         header: "Receipt Status",
@@ -129,31 +128,47 @@ export const getPurchaseOrderColumns = ({ onDelete } = {}) => [
 // ===============================
 // Stat cards
 // ===============================
-// Computed from the rows for now. When the API has a dashboard endpoint,
-// swap this to read from it like vendorStats does.
+// `dashboard` is the response of GET /finance/purchase-order/dashboard/.
+// I haven't seen its shape, so each card tries a few likely key names.
+// Once you send a sample response, replace the key lists with the real ones.
 
-export const purchaseOrderStats = (orders = []) => {
-    const active = orders.filter((o) => o.order_status !== "cancelled");
-    const totalValue = active.reduce(
-        (sum, o) => sum + Number(o.total_amount || 0),
-        0
-    );
-    const pending = orders.filter((o) => o.order_status === "pending").length;
-    const partial = orders.filter(
-        (o) => o.order_status === "partially_received"
-    ).length;
+const pick = (obj, keys) => {
+    for (const key of keys) {
+        if (obj?.[key] !== undefined && obj?.[key] !== null) {
+            return Number(obj[key]);
+        }
+    }
+    return null;
+};
+
+export const purchaseOrderStats = (dashboard = {}, totalItems = 0) => {
+    const d = dashboard || {};
+
+    const total =
+        pick(d, ["total_purchase_orders", "total_orders", "total_count", "total"]) ??
+        totalItems;
+    const value =
+        pick(d, ["total_purchase_value", "total_value", "total_amount"]) ?? 0;
+    const pending =
+        pick(d, ["pending_orders", "pending_count", "pending"]) ?? 0;
+    const partial =
+        pick(d, [
+            "partially_received",
+            "partially_received_orders",
+            "partially_received_count",
+        ]) ?? 0;
 
     return [
         {
             title: "Total Purchase Orders",
-            count: orders.length,
+            count: total,
             icon: <FiFileText size={22} />,
             backgroundColor: "#EEF2FF",
             iconColor: "#4F46E5",
         },
         {
             title: "Total Purchase Value",
-            count: formatAmount(totalValue),
+            count: formatAmount(value),
             icon: <FiDollarSign size={22} />,
             backgroundColor: "#ECFDF5",
             iconColor: "#10B981",

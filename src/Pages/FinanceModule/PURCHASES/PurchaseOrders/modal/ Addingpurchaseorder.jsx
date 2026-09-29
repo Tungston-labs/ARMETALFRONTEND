@@ -1,8 +1,8 @@
 import React from "react";
+import styled from "styled-components";
 import { FiChevronDown, FiPlus, FiX } from "react-icons/fi";
 
-// Copy AddingInvoice.styles.js next to this file and rename it to
-// AddingPurchaseOrder.styles.js so both pages look identical.
+// Copy of AddingInvoice.styles.js
 import {
   InvoiceContainer,
   InvoiceForm,
@@ -32,11 +32,45 @@ import ReusableHeader from "../../../../../Components/ReusableTable/ReusableHead
 import useAddingPurchaseOrder, {
   PAYMENT_TERMS,
   ORDER_STATUSES,
-  WAREHOUSES,
   SHIPPING_METHODS,
 } from "./Useaddingpurchaseorder";
 
 const errorStyle = { borderColor: "#c0392b" };
+
+// Editable amounts in the summary (Discount, Round Off)
+const SummaryInput = styled.input`
+  width: 110px;
+  height: 30px;
+  padding: 0 8px;
+  box-sizing: border-box;
+  text-align: right;
+
+  border: 1px solid #e2e5ea;
+  border-radius: 4px;
+
+  font-family: "Poppins", sans-serif;
+  font-size: 12px;
+  outline: none;
+
+  &:focus {
+    border-color: #3049a3;
+  }
+`;
+
+// Product <select> inside the items table, styled like the table's inputs
+const cellSelectStyle = {
+  width: "100%",
+  height: 32,
+  boxSizing: "border-box",
+  padding: "0 6px",
+  border: "1px solid #e3e5e8",
+  borderRadius: 3,
+  background: "#fff",
+  color: "#4b5563",
+  fontFamily: "Poppins, sans-serif",
+  fontSize: 11,
+  outline: "none",
+};
 
 const ErrorText = ({ children }) =>
   children ? (
@@ -82,26 +116,24 @@ const AddingPurchaseOrder = () => {
   const {
     form,
     errors,
-    vendors,
+    saveError,
     rows,
     summary,
     isSaving,
     isEdit,
     isLoading,
+    vendorOptions,
+    warehouseOptions,
+    productOptions,
     setField,
     handleVendorChange,
     addItem,
     removeItem,
     updateItem,
+    selectProduct,
     handleSave,
     handleCancel,
-    navigate,
   } = useAddingPurchaseOrder();
-
-  const vendorOptions = vendors.map((v) => ({
-    value: String(v.id),
-    label: v.name || `Vendor #${v.id}`,
-  }));
 
   const onSelect = (e) => setField(e.target.name, e.target.value);
 
@@ -111,8 +143,23 @@ const AddingPurchaseOrder = () => {
         title={isEdit ? "Edit Purchase Order" : "Create Purchase Order"}
         breadcrumbs={["Purchases", "Purchase Orders"]}
         showBack
-        onBack={() => navigate(-1)}
+        onBack={handleCancel}
       />
+
+      {saveError && (
+        <div
+          style={{
+            margin: "12px 0 0",
+            padding: "10px 14px",
+            borderRadius: 6,
+            background: "#FDEEEE",
+            color: "#B00020",
+            fontSize: 14,
+          }}
+        >
+          {saveError}
+        </div>
+      )}
 
       {isLoading ? (
         <p style={{ padding: "24px" }}>Loading purchase order...</p>
@@ -133,12 +180,20 @@ const AddingPurchaseOrder = () => {
               <Label>PO NUMBER</Label>
               <Input
                 name="poNumber"
-                placeholder="PO001"
+                placeholder="Auto-generated"
                 value={form.poNumber}
-                onChange={(e) => setField("poNumber", e.target.value)}
-                style={errors.poNumber ? errorStyle : undefined}
+                readOnly
               />
-              <ErrorText>{errors.poNumber}</ErrorText>
+            </FormGroup>
+
+            <FormGroup>
+              <Label>PR REFERENCE</Label>
+              <Input
+                name="prReference"
+                placeholder="PR-2026-001"
+                value={form.prReference}
+                onChange={(e) => setField("prReference", e.target.value)}
+              />
             </FormGroup>
 
             <FormGroup>
@@ -194,7 +249,7 @@ const AddingPurchaseOrder = () => {
               name="warehouse"
               value={form.warehouse}
               onChange={onSelect}
-              options={WAREHOUSES}
+              options={warehouseOptions}
               placeholder="Select Warehouse"
               error={errors.warehouse}
             />
@@ -224,10 +279,10 @@ const AddingPurchaseOrder = () => {
               <thead>
                 <tr>
                   <th>SL No</th>
-                  <th>Item</th>
+                  <th>Product</th>
                   <th>Description</th>
                   <th>QTY</th>
-                  <th>Unit</th>
+                  <th>HS Code</th>
                   <th>Rate</th>
                   <th>VAT (%)</th>
                   <th>VAT</th>
@@ -243,13 +298,22 @@ const AddingPurchaseOrder = () => {
                     <tr key={row.id}>
                       <td>{row.slNo}</td>
                       <td>
-                        <input
-                          placeholder="Item name"
-                          value={row.item}
-                          onChange={(e) => updateItem(row.id, "item", e.target.value)}
-                          style={rowErrors.item ? errorStyle : undefined}
-                        />
-                        <ErrorText>{rowErrors.item}</ErrorText>
+                        <select
+                          value={row.product}
+                          onChange={(e) => selectProduct(row.id, e.target.value)}
+                          style={{
+                            ...cellSelectStyle,
+                            ...(rowErrors.product ? errorStyle : {}),
+                          }}
+                        >
+                          <option value="">Select</option>
+                          {productOptions.map((o) => (
+                            <option key={o.value} value={o.value}>
+                              {o.label}
+                            </option>
+                          ))}
+                        </select>
+                        <ErrorText>{rowErrors.product}</ErrorText>
                       </td>
                       <td>
                         <input
@@ -272,9 +336,9 @@ const AddingPurchaseOrder = () => {
                       </td>
                       <td>
                         <input
-                          placeholder="Nos"
-                          value={row.unit}
-                          onChange={(e) => updateItem(row.id, "unit", e.target.value)}
+                          placeholder="HS code"
+                          value={row.hsCode}
+                          onChange={(e) => updateItem(row.id, "hsCode", e.target.value)}
                         />
                       </td>
                       <td>
@@ -332,11 +396,24 @@ const AddingPurchaseOrder = () => {
               </SummaryRow>
               <SummaryRow>
                 <span>Discount</span>
-                <strong className="discount">{summary.discount}</strong>
+                <SummaryInput
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  placeholder="0.00"
+                  value={form.discount}
+                  onChange={(e) => setField("discount", e.target.value)}
+                />
               </SummaryRow>
               <SummaryRow>
                 <span>Round Off</span>
-                <strong>{summary.roundOff}</strong>
+                <SummaryInput
+                  type="number"
+                  step="0.01"
+                  placeholder="0.00"
+                  value={form.roundOff}
+                  onChange={(e) => setField("roundOff", e.target.value)}
+                />
               </SummaryRow>
               <TotalAmount>
                 <span>TOTAL AMOUNT</span>
