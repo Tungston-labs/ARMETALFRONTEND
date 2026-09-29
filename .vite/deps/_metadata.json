@@ -1,0 +1,250 @@
+{
+  "hash": "be9f3e92",
+  "configHash": "f68522c2",
+  "lockfileHash": "8bcb4662",
+  "browserHash": "c05050d5",
+  "optimized": {
+    "react": {
+      "src": "../../node_modules/react/index.js",
+      "file": "react.js",
+      "fileHash": "dfa58692",
+      "needsInterop": true
+    },
+    "react-dom/client": {
+      "src": "../../node_modules/react-dom/client.js",
+      "file": "react-dom_client.js",
+      "fileHash": "b9f8644e",
+      "needsInterop": true
+    },
+    "react-router-dom": {
+      "src": "../../node_modules/react-router-dom/dist/index.mjs",
+      "file": "react-router-dom.js",
+      "fileHash": "68e4e260",
+      "needsInterop": false
+    },
+    "react-redux": {
+      "src": "../../node_modules/react-redux/dist/react-redux.mjs",
+      "file": "react-redux.js",
+      "fileHash": "6ccf77b2",
+      "needsInterop": false
+    },
+    "@reduxjs/toolkit": {
+      "src": "../../node_modules/@reduxjs/toolkit/dist/redux-toolkit.modern.mjs",
+      "file": "@reduxjs_toolkit.js",
+      "fileHash": "863e1b56",
+      "needsInterop": false
+    },
+    "styled-components": {
+      "src": "../../node_modules/styled-components/dist/styled-components.browser.esm.js",
+      "file": "styled-components.js",
+      "fileHash": "06188ca8",
+      "needsInterop": false
+    },
+    "axios": {
+      "src": "../../node_modules/axios/index.js",
+      "file": "axios.js",
+      "fileHash": "61b3e44b",
+      "needsInterop": false
+    },
+    "react-icons/fa": {
+      "src": "../../node_modules/react-icons/fa/index.mjs",
+      "file": "react-icons_fa.js",
+      "fileHash": "65fd66f6",
+      "needsInterop": false
+    },
+    "react-icons/pi": {
+      "src": "../../node_modules/react-icons/pi/index.mjs",
+      "file": "react-icons_pi.js",
+      "fileHash": "bec550e4",
+      "needsInterop": false
+    },
+    "react-icons/lu": {
+      "src": "../../node_modules/react-icons/lu/index.mjs",
+      "file": "react-icons_lu.js",
+      "fileHash": "d3fbebe2",
+      "needsInterop": false
+    },
+    "react-icons/fi": {
+      "src": "../../node_modules/react-icons/fi/index.mjs",
+      "file": "react-icons_fi.js",
+      "fileHash": "34eec3b2",
+      "needsInterop": false
+    },
+    "lucide-react": {
+      "src": "../../node_modules/lucide-react/dist/esm/lucide-react.mjs",
+      "file": "lucide-react.js",
+      "fileHash": "cf76593a",
+      "needsInterop": false
+    },
+    "sweetalert2": {
+      "src": "../../node_modules/sweetalert2/dist/sweetalert2.esm.all.js",
+      "file": "sweetalert2.js",
+      "fileHash": "403696dc",
+      "needsInterop": false
+    },
+    "react-spinners/SyncLoader": {
+      "src": "../../node_modules/react-spinners/SyncLoader.js",
+      "file": "react-spinners_SyncLoader.js",
+      "fileHash": "8991872c",
+      "needsInterop": true
+    },
+    "react-icons/vsc": {
+      "src": "../../node_modules/react-icons/vsc/index.mjs",
+      "file": "react-icons_vsc.js",
+      "fileHash": "9053fd39",
+      "needsInterop": false
+    },
+    "react-icons/tb": {
+      "src": "../../node_modules/react-icons/tb/index.mjs",
+      "file": "react-icons_tb.js",
+      "fileHash": "44825f2f",
+      "needsInterop": false
+    },
+    "react-spinners": {
+      "src": "../../node_modules/react-spinners/esm/index.js",
+      "file": "react-spinners.js",
+      "fileHash": "941d14b9",
+      "needsInterop": false
+    },
+    "react-icons/fa6": {
+      "src": "../../node_modules/react-icons/fa6/index.mjs",
+      "file": "react-icons_fa6.js",
+      "fileHash": "d829b728",
+      "needsInterop": false
+    },
+    "react-icons/hi2": {
+      "src": "../../node_modules/react-icons/hi2/index.mjs",
+      "file": "react-icons_hi2.js",
+      "fileHash": "fc3a2bb6",
+      "needsInterop": false
+    },
+    "react-icons/ri": {
+      "src": "../../node_modules/react-icons/ri/index.mjs",
+      "file": "react-icons_ri.js",
+      "fileHash": "f5bfce5d",
+      "needsInterop": false
+    },
+    "react-icons/go": {
+      "src": "../../node_modules/react-icons/go/index.mjs",
+      "file": "react-icons_go.js",
+      "fileHash": "ee4254e8",
+      "needsInterop": false
+    },
+    "react-icons/bs": {
+      "src": "../../node_modules/react-icons/bs/index.mjs",
+      "file": "react-icons_bs.js",
+      "fileHash": "c50c2c93",
+      "needsInterop": false
+    },
+    "react-icons/md": {
+      "src": "../../node_modules/react-icons/md/index.mjs",
+      "file": "react-icons_md.js",
+      "fileHash": "85f28419",
+      "needsInterop": false
+    },
+    "react-dom": {
+      "src": "../../node_modules/react-dom/index.js",
+      "file": "react-dom.js",
+      "fileHash": "80b6ab8a",
+      "needsInterop": true
+    },
+    "react-icons/io5": {
+      "src": "../../node_modules/react-icons/io5/index.mjs",
+      "file": "react-icons_io5.js",
+      "fileHash": "ef83e5aa",
+      "needsInterop": false
+    },
+    "react-icons/ai": {
+      "src": "../../node_modules/react-icons/ai/index.mjs",
+      "file": "react-icons_ai.js",
+      "fileHash": "c1eedbe1",
+      "needsInterop": false
+    },
+    "antd": {
+      "src": "../../node_modules/antd/es/index.js",
+      "file": "antd.js",
+      "fileHash": "046839b6",
+      "needsInterop": false
+    },
+    "recharts": {
+      "src": "../../node_modules/recharts/es6/index.js",
+      "file": "recharts.js",
+      "fileHash": "a7a45479",
+      "needsInterop": false
+    },
+    "sweetalert2-react-content": {
+      "src": "../../node_modules/sweetalert2-react-content/dist/sweetalert2-react-content.es.js",
+      "file": "sweetalert2-react-content.js",
+      "fileHash": "ecfd1568",
+      "needsInterop": false
+    },
+    "react-icons/bi": {
+      "src": "../../node_modules/react-icons/bi/index.mjs",
+      "file": "react-icons_bi.js",
+      "fileHash": "84c05c56",
+      "needsInterop": false
+    },
+    "react-icons/ci": {
+      "src": "../../node_modules/react-icons/ci/index.mjs",
+      "file": "react-icons_ci.js",
+      "fileHash": "9b06e159",
+      "needsInterop": false
+    },
+    "world-countries": {
+      "src": "../../node_modules/world-countries/index.mjs",
+      "file": "world-countries.js",
+      "fileHash": "7e58cefc",
+      "needsInterop": false
+    },
+    "country-state-city": {
+      "src": "../../node_modules/country-state-city/lib/index.js",
+      "file": "country-state-city.js",
+      "fileHash": "a0198dfc",
+      "needsInterop": false
+    },
+    "react-icons/sl": {
+      "src": "../../node_modules/react-icons/sl/index.mjs",
+      "file": "react-icons_sl.js",
+      "fileHash": "d14f1d25",
+      "needsInterop": false
+    },
+    "react-to-print": {
+      "src": "../../node_modules/react-to-print/lib/index.js",
+      "file": "react-to-print.js",
+      "fileHash": "aa2e5cf4",
+      "needsInterop": true
+    },
+    "react-icons/io": {
+      "src": "../../node_modules/react-icons/io/index.mjs",
+      "file": "react-icons_io.js",
+      "fileHash": "5493856c",
+      "needsInterop": false
+    }
+  },
+  "chunks": {
+    "chunk-CPPISIX3": {
+      "file": "chunk-CPPISIX3.js"
+    },
+    "chunk-XHC6SRYQ": {
+      "file": "chunk-XHC6SRYQ.js"
+    },
+    "chunk-OHFQCQ2S": {
+      "file": "chunk-OHFQCQ2S.js"
+    },
+    "chunk-6YWW6UYX": {
+      "file": "chunk-6YWW6UYX.js"
+    },
+    "chunk-ENV2BMAK": {
+      "file": "chunk-ENV2BMAK.js"
+    },
+    "chunk-OAKSN6S4": {
+      "file": "chunk-OAKSN6S4.js"
+    },
+    "chunk-O2Q6JZ3H": {
+      "file": "chunk-O2Q6JZ3H.js"
+    },
+    "chunk-DC5AMYBS": {
+      "file": "chunk-DC5AMYBS.js"
+    }
+  }
+}
