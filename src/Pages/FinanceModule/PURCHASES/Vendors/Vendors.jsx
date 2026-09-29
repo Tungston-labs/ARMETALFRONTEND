@@ -6,22 +6,27 @@ import ReusableTable from "../../../../Components/ReusableTable/ReusableTable";
 import ReusablePagination from "../../../../Components/Pagination/ReusablePagination";
 import StatsCards from "../../../../Components/StatsCards/StatsCards";
 
-import usePurchaseOrders from "./Usepurchaseorders";
+import AddNewVendor from "./modal/AddVendorModal";
+import useVendors from "./Usevendors";
+import { formatApiError } from "./Vendorpayload";
 import {
     DateInput,
     DatePickerContainer,
     DateRangeWrapper,
     DateSeparator,
-} from "./PurchaseOrders.styles";
+} from "./Vendors.styles";
 
-const PurchaseOrders = () => {
+const Vendors = () => {
     const {
         search,
-        vendor,
         status,
+        vendorType,
+        paymentTerm,
         startDate,
         endDate,
 
+        isVendorModalOpen,
+        editingVendor,
         currentPage,
         totalPages,
         totalItems,
@@ -30,26 +35,35 @@ const PurchaseOrders = () => {
         cards,
         columns,
         paginatedData,
-        loading,
 
-        vendorOptions,
+        loading,
+        isSaving,
+        dashboardLoading,
+        error,
+
         statusOptions,
+        vendorTypeOptions,
+        paymentTermOptions,
 
         handleSearch,
-        handleVendorChange,
         handleStatusChange,
+        handleVendorType,
+        handlePaymentTerm,
         handleStartDateChange,
         handleEndDateChange,
-        handleAddPurchaseOrder,
-    } = usePurchaseOrders();
+        handleAddVendor,
+        handleCloseVendor,
+        handleSaveVendor,
+        handleViewVendor,
+    } = useVendors();
 
     return (
         <div style={{ padding: 20 }}>
             <ReusableHeader
-                title="Purchase Orders"
-                breadcrumbs={["Purchase Orders"]}
-                buttonText="+ ADD NEW PURCHASE ORDER"
-                onButtonClick={handleAddPurchaseOrder}
+                title="Vendors"
+                breadcrumbs={["Vendors"]}
+                buttonText="+ ADD NEW VENDOR"
+                onButtonClick={handleAddVendor}
             >
                 <DateRangeWrapper>
                     <DatePickerContainer>
@@ -74,12 +88,28 @@ const PurchaseOrders = () => {
                 </DateRangeWrapper>
             </ReusableHeader>
 
-            <StatsCards cards={cards} />
+            {/* Page-level error; while the modal is open the error shows inside it */}
+            {error && !isVendorModalOpen && (
+                <div
+                    style={{
+                        margin: "12px 0",
+                        padding: "10px 14px",
+                        borderRadius: 6,
+                        background: "#FDEEEE",
+                        color: "#B00020",
+                        fontSize: 14,
+                    }}
+                >
+                    {formatApiError(error)}
+                </div>
+            )}
+
+            <StatsCards cards={cards} loading={dashboardLoading} />
 
             <ReusableFilter
                 search={search}
                 onSearch={handleSearch}
-                searchPlaceholder="Search PO number or vendor"
+                searchPlaceholder="Search Vendor"
                 showSearch
                 status={status}
                 statuses={statusOptions}
@@ -87,11 +117,18 @@ const PurchaseOrders = () => {
                 showStatus
                 filters={[
                     {
-                        key: "vendor",
-                        value: vendor,
-                        onChange: handleVendorChange,
-                        options: vendorOptions,
-                        placeholder: "All Vendors",
+                        key: "vendorType",
+                        value: vendorType,
+                        onChange: handleVendorType,
+                        options: vendorTypeOptions,
+                        placeholder: "All Vendor Types",
+                    },
+                    {
+                        key: "paymentTerm",
+                        value: paymentTerm,
+                        onChange: handlePaymentTerm,
+                        options: paymentTermOptions,
+                        placeholder: "All Payment Terms",
                     },
                 ]}
             />
@@ -100,6 +137,7 @@ const PurchaseOrders = () => {
                 columns={columns}
                 data={paginatedData}
                 loading={loading}
+                    onRowClick={handleViewVendor}
             />
 
             <ReusablePagination
@@ -108,8 +146,17 @@ const PurchaseOrders = () => {
                 totalRecords={totalItems}
                 onPageChange={setCurrentPage}
             />
+
+            <AddNewVendor
+                isOpen={isVendorModalOpen}
+                vendor={editingVendor}
+                onClose={handleCloseVendor}
+                onSave={handleSaveVendor}
+                saving={isSaving}
+                error={error}
+            />
         </div>
     );
 };
 
-export default PurchaseOrders;
+export default Vendors;
