@@ -1,12 +1,13 @@
 import React, { useMemo, useState } from "react";
-import ReusableTable from "../Components/ReusableTable/ReusableTable";
-import ReusablePagination from "../Components/Pagination/ReusablePagination";
 import {
     employeeColumns,
     employeeData,
 } from "../Components/ReusableTable/dummydata";
-import ReusableFilter from "../Components/ReusableTable/ReusableFilter";
-import ReusableHeader from "../Components/ReusableTable/ReusableHeader";
+import ReusableHeader from "../../../../Components/ReusableTable/ReusableHeader";
+import ReusableFilter from "../../../../Components/ReusableTable/ReusableFilter";
+import ReusableTable from "../../../../Components/ReusableTable/ReusableTable";
+import ReusablePagination from "../../../../Components/Pagination/ReusablePagination";
+
 
 const VendorLedger = () => {
     const [search, setSearch] = useState("");
@@ -41,7 +42,8 @@ const VendorLedger = () => {
                 breadcrumbs={["Dashboard", "Employees"]}
                 buttonText="ADD NEW EMPLOYEE"
                 onButtonClick={() => console.log("Add Employee")}
-            />           <ReusableFilter
+            />       
+                <ReusableFilter
                 search={search}
                 onSearch={setSearch}
 

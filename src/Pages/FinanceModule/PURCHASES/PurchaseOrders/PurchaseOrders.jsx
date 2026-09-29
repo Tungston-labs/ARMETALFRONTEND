@@ -1,89 +1,82 @@
-import React, { useMemo, useState } from "react";
-import ReusableTable from "../Components/ReusableTable/ReusableTable";
-import ReusablePagination from "../Components/Pagination/ReusablePagination";
-import {
-    employeeColumns,
-    employeeData,
-} from "../Components/ReusableTable/dummydata";
-import ReusableFilter from "../Components/ReusableTable/ReusableFilter";
-import ReusableHeader from "../Components/ReusableTable/ReusableHeader";
+import React from "react";
+
+import ReusableHeader from "../../../../Components/ReusableTable/ReusableHeader";
+import ReusableFilter from "../../../../Components/ReusableTable/ReusableFilter";
+import ReusableTable from "../../../../Components/ReusableTable/ReusableTable";
+import ReusablePagination from "../../../../Components/Pagination/ReusablePagination";
+import StatsCards from "../../../../Components/StatsCards/StatsCards";
+
+import usePurchaseOrders from "./Usepurchaseorders";
 
 const PurchaseOrders = () => {
-    const [search, setSearch] = useState("");
-    const [department, setDepartment] = useState("");
-    const [status, setStatus] = useState("");
-    const [month, setMonth] = useState("");
-    const rowsPerPage = 10;
+    const {
+        search,
+        vendor,
+        status,
 
-    const [currentPage, setCurrentPage] = useState(1);
+        currentPage,
+        totalPages,
+        totalItems,
+        setCurrentPage,
 
-    const totalPages = Math.ceil(
-        employeeData.length / rowsPerPage
-    );
+        cards,
+        columns,
+        paginatedData,
+        loading,
 
-    const paginatedData = useMemo(() => {
+        vendorOptions,
+        statusOptions,
 
-        const start =
-            (currentPage - 1) * rowsPerPage;
-
-        return employeeData.slice(
-            start,
-            start + rowsPerPage
-        );
-
-    }, [currentPage]);
+        handleSearch,
+        handleVendorChange,
+        handleStatusChange,
+        handleAddPurchaseOrder,
+    } = usePurchaseOrders();
 
     return (
-
         <div style={{ padding: 20 }}>
             <ReusableHeader
-                title="Employees"
-                breadcrumbs={["Dashboard", "Employees"]}
-                buttonText="ADD NEW EMPLOYEE"
-                onButtonClick={() => console.log("Add Employee")}
-            />           <ReusableFilter
+                title="Purchase Orders"
+                breadcrumbs={["Purchase Orders"]}
+                buttonText="+ ADD NEW PURCHASE ORDER"
+                onButtonClick={handleAddPurchaseOrder}
+            />
+
+            <StatsCards cards={cards} />
+
+            <ReusableFilter
                 search={search}
-                onSearch={setSearch}
-
-                department={department}
-                departments={[
-                    "HR",
-                    "Finance",
-                    "Development",
-                    "Marketing",
-                ]}
-                onDepartment={setDepartment}
-
-                status={status}
-                statuses={[
-                    "Present",
-                    "Absent",
-                    "On Leave",
-                ]}
-                onStatus={setStatus}
-
-                date={month}
-                onDate={setMonth}
-
+                onSearch={handleSearch}
+                searchPlaceholder="Search PO number or vendor"
                 showSearch
-                showDepartment
+                status={status}
+                statuses={statusOptions}
+                onStatus={handleStatusChange}
                 showStatus
-                showDate
+                filters={[
+                    {
+                        key: "vendor",
+                        value: vendor,
+                        onChange: handleVendorChange,
+                        options: vendorOptions,
+                        placeholder: "All Vendors",
+                    },
+                ]}
             />
 
             <ReusableTable
-                columns={employeeColumns}
+                columns={columns}
                 data={paginatedData}
+                loading={loading}
             />
 
             <ReusablePagination
                 currentPage={currentPage}
                 totalPages={totalPages}
+                totalRecords={totalItems}
                 onPageChange={setCurrentPage}
             />
-
         </div>
-
     );
 };
 

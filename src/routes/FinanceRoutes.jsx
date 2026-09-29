@@ -37,6 +37,9 @@ import SalesReturn from "../Pages/FinanceModule/SALES/SalesReturn/SalesReturn.js
 import CreateSalesReturnAction from "../Pages/FinanceModule/SALES/SalesReturn/modal/CreateSalesReturnAction.jsx";
 import SalesReturnAction from "../Pages/FinanceModule/SALES/SalesReturn/action/SalesReturnAction.jsx";
 import CreditAction from "../Pages/FinanceModule/SALES/CreditNotes/action/CreditAction.jsx";
+import PurchaseOrders from "../Pages/FinanceModule/PURCHASES/PurchaseOrders/PurchaseOrders.jsx";
+import Vendors from "../Pages/FinanceModule/PURCHASES/Vendors/Vendors.jsx";
+import AddingPurchaseOrder from "../Pages/FinanceModule/PURCHASES/PurchaseOrders/modal/ Addingpurchaseorder.jsx";
 
 const FinanceRoutes = () => {
   return (
@@ -98,6 +101,12 @@ const FinanceRoutes = () => {
       <Route path="sales-return" element={<SalesReturn />} />
       <Route path="sales-return/add" element={<CreateSalesReturnAction />} />
       <Route path="sales-return/edit/:id" element={<SalesReturnAction />} />
+
+      <Route path="purchase/vendors" element={<Vendors />} />
+      <Route path="purchase/purchaseorder" element={<PurchaseOrders />} />
+    <Route path="purchases/purchase-orders/add" element={<AddingPurchaseOrder />} />
+    <Route path="purchases/purchase-orders/edit/:id" element={<AddingPurchaseOrder />} />
+
     </>
   );
 };
