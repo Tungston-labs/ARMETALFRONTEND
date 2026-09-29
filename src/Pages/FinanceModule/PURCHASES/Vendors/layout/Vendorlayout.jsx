@@ -17,12 +17,6 @@ import { DUMMY_VENDORS } from "./Vendordummydata";
 const pageMeta = {
   overview: { title: "Overview", showAddButton: false },
 
-  quotations: {
-    title: "Quotations",
-    showAddButton: true,
-    buttonText: "+ New Quotation",
-  },
-
   "purchase-orders": {
     title: "Purchase Orders",
     showAddButton: true,

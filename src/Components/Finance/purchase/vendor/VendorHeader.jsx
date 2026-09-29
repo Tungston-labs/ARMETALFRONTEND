@@ -4,8 +4,7 @@ import { HeaderWrapper, Tabs, Tab } from "./VendorHeader.styles";
 
 const tabs = [
   { label: "Overview", path: "overview" },
-  { label: "Quotations", path: "quotations" },
-  { label: "Orders", path: "purchase-orders" },
+  { label: "Purchase Orders", path: "purchase-orders" },
   { label: "Bills", path: "bills" },
   { label: "Payments", path: "payments" },
   { label: "Ledger", path: "ledger" },
