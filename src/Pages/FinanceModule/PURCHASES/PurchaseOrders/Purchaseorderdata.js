@@ -1,7 +1,3 @@
-// Temporary data until the purchase order API exists.
-// Field names mimic what a Django serializer would likely return.
-// Delete this file once the slice + service are wired up.
-
 export const purchaseOrderData = [
     {
         id: 1,

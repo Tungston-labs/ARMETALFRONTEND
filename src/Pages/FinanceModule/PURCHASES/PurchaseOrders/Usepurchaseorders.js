@@ -2,120 +2,178 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 
-import { getVendors } from "../../../../Redux/finance/purchases/vendorsSlice";
+import {
+    getPurchaseOrders,
+    getPurchaseOrderDashboard,
+    getVendorOptions,
+    removePurchaseOrder,
+    clearPurchaseOrderError,
+    clearPurchaseOrderMessage,
+} from "../../../../Redux/finance/purchases/Purchaseordersslice";
 
-import { purchaseOrderData } from "./Purchaseorderdata";
 import {
     getPurchaseOrderColumns,
     purchaseOrderStats,
 } from "./Purchaseorderstats";
 
 const ROWS_PER_PAGE = 10;
+const SEARCH_DEBOUNCE_MS = 400;
 const ADD_ROUTE = "/purchases/purchase-orders/add";
-const EDIT_ROUTE = "/purchases/purchase-orders/edit"; // + "/:id"
 
-// Field on each row used by the date range filter (YYYY-MM-DD or ISO string)
-const DATE_FIELD = "order_date";
-
-// Filter shows labels; rows store keys like "partially_received"
 const STATUS_OPTIONS = [
     "Draft",
     "Pending",
     "Approved",
+    "Ordered",
     "Partially Received",
     "Received",
     "Cancelled",
 ];
 const toStatusKey = (label) => label.toLowerCase().replace(/\s+/g, "_");
 
+const RECEIPT_STATUS_OPTIONS = [
+    { label: "Pending", value: "pending" },
+    { label: "Partially Received", value: "partially_received" },
+    { label: "Received", value: "received" },
+];
+
+const BILL_STATUS_OPTIONS = [
+    { label: "Pending", value: "pending" },
+    { label: "Partially Billed", value: "partially_billed" },
+    { label: "Billed", value: "billed" },
+];
+
+// Turns a DRF error ({ field: ["msg"] } | { detail } | string) into text
+const formatError = (error) => {
+    if (!error) return "";
+    if (typeof error === "string") return error;
+    if (error.detail) return error.detail;
+    return Object.entries(error)
+        .map(([field, msg]) =>
+            `${field}: ${Array.isArray(msg) ? msg.join(", ") : msg}`
+        )
+        .join(" | ");
+};
+
 const usePurchaseOrders = () => {
     const dispatch = useDispatch();
     const navigate = useNavigate();
 
-    const vendors = useSelector((state) => state.vendor?.vendors) || [];
-
-    // TODO: replace with redux state (state.purchaseOrder) when the API exists
-    const [orders, setOrders] = useState(purchaseOrderData);
-    const loading = false;
+    const {
+        purchaseOrders = [],
+        totalItems = 0,
+        loading = false,
+        dashboard = null,
+        dashboardLoading = false,
+        vendorOptions: rawVendorOptions = [],
+        error = null,
+    } = useSelector((state) => state.purchaseOrder) || {};
 
     // Filters
     const [search, setSearch] = useState("");
+    const [debouncedSearch, setDebouncedSearch] = useState("");
     const [vendor, setVendor] = useState("");
     const [status, setStatus] = useState("");
+    const [receiptStatus, setReceiptStatus] = useState("");
+    const [billStatus, setBillStatus] = useState("");
+
+    // NOTE: the purchase order API docs don't list date params. from_date /
+    // to_date are sent below; if the backend ignores them the range has no effect.
     const [startDate, setStartDate] = useState("");
     const [endDate, setEndDate] = useState("");
+
     const [currentPage, setCurrentPage] = useState(1);
-
-    // Vendor filter options come from the vendors already in the app
-    useEffect(() => {
-        if (!vendors.length) {
-            dispatch(getVendors({ page: 1, page_size: 100, ordering: "name" }));
-        }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [dispatch]);
-
-    const vendorOptions = useMemo(
-        () =>
-            vendors.map((v) => ({
-                label: v.name || `Vendor #${v.id}`,
-                value: String(v.id),
-            })),
-        [vendors]
-    );
-
-    // ---- Filtering (client-side for now; move to API params later) ----
-
-    const filtered = useMemo(() => {
-        const term = search.trim().toLowerCase();
-        const statusKey = status ? toStatusKey(status) : "";
-
-        return orders.filter((o) => {
-            if (vendor && String(o.vendor_id) !== String(vendor)) return false;
-            if (statusKey && o.order_status !== statusKey) return false;
-            if (
-                term &&
-                !`${o.po_number} ${o.vendor_name}`.toLowerCase().includes(term)
-            )
-                return false;
-
-            // Date range (inclusive). Compare as YYYY-MM-DD strings.
-            if (startDate || endDate) {
-                const d = o[DATE_FIELD] ? String(o[DATE_FIELD]).slice(0, 10) : "";
-                if (!d) return false;
-                if (startDate && d < startDate) return false;
-                if (endDate && d > endDate) return false;
-            }
-            return true;
-        });
-    }, [orders, search, vendor, status, startDate, endDate]);
-
-    // ---- Pagination ----
-
-    const totalItems = filtered.length;
     const totalPages = Math.ceil(totalItems / ROWS_PER_PAGE) || 1;
 
-    const paginatedData = useMemo(() => {
-        const start = (currentPage - 1) * ROWS_PER_PAGE;
-        return filtered.slice(start, start + ROWS_PER_PAGE);
-    }, [filtered, currentPage]);
+    // ---- Fetch helpers ----
 
-    // Keep the page valid if rows shrink (e.g. after a delete)
+    const fetchList = useCallback(() => {
+        dispatch(
+            getPurchaseOrders({
+                search: debouncedSearch || undefined,
+                vendor: vendor || undefined,
+                status: status ? toStatusKey(status) : undefined,
+                receipt_status: receiptStatus || undefined,
+                bill_status: billStatus || undefined,
+                from_date: startDate || undefined,
+                to_date: endDate || undefined,
+                page: currentPage,
+                page_size: ROWS_PER_PAGE,
+            })
+        );
+    }, [
+        dispatch,
+        debouncedSearch,
+        vendor,
+        status,
+        receiptStatus,
+        billStatus,
+        startDate,
+        endDate,
+        currentPage,
+    ]);
+
+    const fetchDashboard = useCallback(() => {
+        dispatch(getPurchaseOrderDashboard());
+    }, [dispatch]);
+
+    // ---- Effects ----
+
     useEffect(() => {
-        if (currentPage > totalPages) setCurrentPage(totalPages);
-    }, [currentPage, totalPages]);
+        const timer = setTimeout(() => {
+            setDebouncedSearch(search);
+            setCurrentPage(1);
+        }, SEARCH_DEBOUNCE_MS);
+        return () => clearTimeout(timer);
+    }, [search]);
+
+    useEffect(() => {
+        fetchList();
+    }, [fetchList]);
+
+    useEffect(() => {
+        fetchDashboard();
+    }, [fetchDashboard]);
+
+    useEffect(() => {
+        dispatch(getVendorOptions());
+    }, [dispatch]);
+
+    useEffect(() => {
+        return () => {
+            dispatch(clearPurchaseOrderError());
+            dispatch(clearPurchaseOrderMessage());
+        };
+    }, [dispatch]);
+
+    // Vendor dropdown rows -> { label, value } for the filter
+    const vendorOptions = useMemo(
+        () =>
+            rawVendorOptions.map((v) => ({
+                label: v.name || v.vendor_name || v.label || `Vendor #${v.id}`,
+                value: String(v.id ?? v.value),
+            })),
+        [rawVendorOptions]
+    );
 
     // ---- Filter handlers ----
 
-    const handleSearch = (value) => {
-        setSearch(value);
-        setCurrentPage(1);
-    };
+    const handleSearch = (value) => setSearch(value);
+
     const handleVendorChange = (value) => {
         setVendor(value);
         setCurrentPage(1);
     };
     const handleStatusChange = (value) => {
         setStatus(value);
+        setCurrentPage(1);
+    };
+    const handleReceiptStatusChange = (value) => {
+        setReceiptStatus(value);
+        setCurrentPage(1);
+    };
+    const handleBillStatusChange = (value) => {
+        setBillStatus(value);
         setCurrentPage(1);
     };
     const handleStartDateChange = (e) => {
@@ -129,34 +187,43 @@ const usePurchaseOrders = () => {
 
     // ---- Actions ----
 
-    const handleAddPurchaseOrder = () => navigate(ADD_ROUTE);
+    const handleAddPurchaseOrder = () => {
+        dispatch(clearPurchaseOrderError());
+        navigate(ADD_ROUTE);
+    };
 
-    const handleEditPurchaseOrder = useCallback(
-        (row) => navigate(`${EDIT_ROUTE}/${row.id}`),
-        [navigate]
+    // DELETE /finance/purchase-order/:id/  (edit navigates inside the actions component)
+    const handleDeletePurchaseOrder = useCallback(
+        async (row) => {
+            const confirmed = window.confirm(
+                `Delete purchase order "${row.po_number}"? This cannot be undone.`
+            );
+            if (!confirmed) return;
+
+            const result = await dispatch(removePurchaseOrder(row.id));
+            if (!removePurchaseOrder.fulfilled.match(result)) return; // error shows in banner
+
+            // If that was the last row on this page, step back one page
+            if (purchaseOrders.length === 1 && currentPage > 1) {
+                setCurrentPage((p) => p - 1); // effect refetches
+            } else {
+                fetchList();
+            }
+            fetchDashboard();
+        },
+        [dispatch, purchaseOrders.length, currentPage, fetchList, fetchDashboard]
     );
-
-    const handleDeletePurchaseOrder = useCallback((row) => {
-        const confirmed = window.confirm(
-            `Delete purchase order "${row.po_number}"? This cannot be undone.`
-        );
-        if (!confirmed) return;
-
-        // TODO: dispatch(removePurchaseOrder(row.id)) once the API exists
-        setOrders((prev) => prev.filter((o) => o.id !== row.id));
-    }, []);
 
     // ---- Derived ----
 
-    const cards = useMemo(() => purchaseOrderStats(orders), [orders]);
+    const cards = useMemo(
+        () => purchaseOrderStats(dashboard, totalItems),
+        [dashboard, totalItems]
+    );
 
     const columns = useMemo(
-        () =>
-            getPurchaseOrderColumns({
-                onEdit: handleEditPurchaseOrder,
-                onDelete: handleDeletePurchaseOrder,
-            }),
-        [handleEditPurchaseOrder, handleDeletePurchaseOrder]
+        () => getPurchaseOrderColumns({ onDelete: handleDeletePurchaseOrder }),
+        [handleDeletePurchaseOrder]
     );
 
     return {
@@ -164,6 +231,8 @@ const usePurchaseOrders = () => {
         search,
         vendor,
         status,
+        receiptStatus,
+        billStatus,
         startDate,
         endDate,
 
@@ -176,17 +245,25 @@ const usePurchaseOrders = () => {
         // data
         cards,
         columns,
-        paginatedData,
+        paginatedData: purchaseOrders,
+
+        // loading / error
         loading,
+        dashboardLoading,
+        errorMessage: formatError(error),
 
         // options
         vendorOptions,
         statusOptions: STATUS_OPTIONS,
+        receiptStatusOptions: RECEIPT_STATUS_OPTIONS,
+        billStatusOptions: BILL_STATUS_OPTIONS,
 
         // handlers
         handleSearch,
         handleVendorChange,
         handleStatusChange,
+        handleReceiptStatusChange,
+        handleBillStatusChange,
         handleStartDateChange,
         handleEndDateChange,
         handleAddPurchaseOrder,
