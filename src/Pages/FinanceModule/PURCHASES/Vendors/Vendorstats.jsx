@@ -20,9 +20,9 @@ export const getVendorColumns = ({ onEdit, onDelete } = {}) => [
         accessor: "name",
        
     },
-    { header: "Vendor Group", accessor: "vendor_type_name" },
+    { header: "Vendor Group", accessor: "vendor_type_display" },
     { header: "Phone Number", accessor: "phno" },
-    { header: "Payment Terms", accessor: "payment_term_name" },
+    { header: "Payment Terms", accessor: "payment_term_display" },
     {
         header: "Credit Limit",
         accessor: "credit_limit",

@@ -27,11 +27,10 @@ export const createPurchaseOrder = async (data) => {
     return response.data;
 };
 
-// PATCH: /finance/purchase-order/:id/
-// NOTE: not in your API docs. Standard DRF ViewSet route; confirm the backend
-// supports it, otherwise remove this and the edit thunk.
+// PUT: /finance/purchase-order/:id/
+// Full update: send every required field, not just the changed ones.
 export const updatePurchaseOrder = async (id, data) => {
-    const response = await API.patch(`/finance/purchase-order/${id}/`, data);
+    const response = await API.put(`/finance/purchase-order/${id}/`, data);
     return response.data;
 };
 

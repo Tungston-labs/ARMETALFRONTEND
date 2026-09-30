@@ -100,39 +100,39 @@ const PurchaseOrders = () => {
 
             <StatsCards cards={cards} loading={dashboardLoading} />
 
-         <ReusableFilter
-    search={search}
-    onSearch={handleSearch}
-    searchPlaceholder="Search PO number or vendor"
-    showSearch
-    status={status}
-    statuses={statusOptions || []}
-    onStatus={handleStatusChange}
-    showStatus
-    filters={[
-        {
-            key: "vendor",
-            value: vendor,
-            onChange: handleVendorChange,
-            options: vendorOptions || [],
-            placeholder: "All Vendors",
-        },
-        {
-            key: "receiptStatus",
-            value: receiptStatus,
-            onChange: handleReceiptStatusChange,
-            options: receiptStatusOptions || [],
-            placeholder: "All Receipt Status",
-        },
-        {
-            key: "billStatus",
-            value: billStatus,
-            onChange: handleBillStatusChange,
-            options: billStatusOptions || [],
-            placeholder: "All Bill Status",
-        },
-    ]}
-/>
+            <ReusableFilter
+                search={search}
+                onSearch={handleSearch}
+                searchPlaceholder="Search PO number or vendor"
+                showSearch
+                status={status}
+                statuses={statusOptions || []}
+                onStatus={handleStatusChange}
+                showStatus
+                filters={[
+                    {
+                        key: "vendor",
+                        value: vendor,
+                        onChange: handleVendorChange,
+                        options: vendorOptions || [],
+                        placeholder: "All Vendors",
+                    },
+                    {
+                        key: "receiptStatus",
+                        value: receiptStatus,
+                        onChange: handleReceiptStatusChange,
+                        options: receiptStatusOptions || [],
+                        placeholder: "All Receipt Status",
+                    },
+                    {
+                        key: "billStatus",
+                        value: billStatus,
+                        onChange: handleBillStatusChange,
+                        options: billStatusOptions || [],
+                        placeholder: "All Bill Status",
+                    },
+                ]}
+            />
 
             <ReusableTable
                 columns={columns}

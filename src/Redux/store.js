@@ -33,6 +33,8 @@ import salesReturnsReducer from "./finance/Sales/Salesreturnslice";
 
 import customerLedgerReducer from "./finance/Sales/Customerledgerslice"
 import vendorReducer from "./finance/purchases/vendorsSlice";
+import purchaseOrderReducer from "./finance/purchases/Purchaseordersslice";
+import vendorDetailReducer from "./finance/purchases/Vendordetailslice";
 export const store = configureStore({
   reducer: {
 
@@ -67,6 +69,8 @@ export const store = configureStore({
     creditNotes: creditNotesReducer,
     salesReturns: salesReturnsReducer,
         vendor: vendorReducer, 
+          purchaseOrder: purchaseOrderReducer,
+             vendorDetail: vendorDetailReducer,
 
   },
 });

@@ -396,24 +396,26 @@ const AddingPurchaseOrder = () => {
               </SummaryRow>
               <SummaryRow>
                 <span>Discount</span>
-                <SummaryInput
+                 <strong className="discount">{summary.discount}</strong>
+                {/* <SummaryInput
                   type="number"
                   min="0"
                   step="0.01"
                   placeholder="0.00"
                   value={form.discount}
                   onChange={(e) => setField("discount", e.target.value)}
-                />
+                /> */}
               </SummaryRow>
               <SummaryRow>
                 <span>Round Off</span>
-                <SummaryInput
+                <strong>{summary.roundOff}</strong>
+                {/* <SummaryInput
                   type="number"
                   step="0.01"
                   placeholder="0.00"
                   value={form.roundOff}
                   onChange={(e) => setField("roundOff", e.target.value)}
-                />
+                /> */}
               </SummaryRow>
               <TotalAmount>
                 <span>TOTAL AMOUNT</span>

@@ -20,7 +20,6 @@ const ROWS_PER_PAGE = 10;
 const SEARCH_DEBOUNCE_MS = 400;
 const ADD_ROUTE = "/purchases/purchase-orders/add";
 
-// Status filter shows labels; the API expects keys like "partially_received"
 const STATUS_OPTIONS = [
     "Draft",
     "Pending",
