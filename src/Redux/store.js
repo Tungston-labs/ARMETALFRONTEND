@@ -36,6 +36,8 @@ import vendorReducer from "./finance/purchases/vendorsSlice";
 import billReducer from "./finance/purchases/BillSlice";
 
 
+import purchaseOrderReducer from "./finance/purchases/Purchaseordersslice";
+import vendorDetailReducer from "./finance/purchases/Vendordetailslice";
 export const store = configureStore({
   reducer: {
 
@@ -71,6 +73,8 @@ export const store = configureStore({
     salesReturns: salesReturnsReducer,
     vendor: vendorReducer,
     bill: billReducer,
+          purchaseOrder: purchaseOrderReducer,
+             vendorDetail: vendorDetailReducer,
 
   },
 });

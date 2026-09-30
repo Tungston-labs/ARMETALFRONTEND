@@ -19,6 +19,8 @@ const PurchaseOrders = () => {
         search,
         vendor,
         status,
+        receiptStatus,
+        billStatus,
         startDate,
         endDate,
 
@@ -30,14 +32,21 @@ const PurchaseOrders = () => {
         cards,
         columns,
         paginatedData,
+
         loading,
+        dashboardLoading,
+        errorMessage,
 
         vendorOptions,
         statusOptions,
+        receiptStatusOptions,
+        billStatusOptions,
 
         handleSearch,
         handleVendorChange,
         handleStatusChange,
+        handleReceiptStatusChange,
+        handleBillStatusChange,
         handleStartDateChange,
         handleEndDateChange,
         handleAddPurchaseOrder,
@@ -74,7 +83,22 @@ const PurchaseOrders = () => {
                 </DateRangeWrapper>
             </ReusableHeader>
 
-            <StatsCards cards={cards} />
+            {errorMessage && (
+                <div
+                    style={{
+                        margin: "12px 0",
+                        padding: "10px 14px",
+                        borderRadius: 6,
+                        background: "#FDEEEE",
+                        color: "#B00020",
+                        fontSize: 14,
+                    }}
+                >
+                    {errorMessage}
+                </div>
+            )}
+
+            <StatsCards cards={cards} loading={dashboardLoading} />
 
             <ReusableFilter
                 search={search}
@@ -82,7 +106,7 @@ const PurchaseOrders = () => {
                 searchPlaceholder="Search PO number or vendor"
                 showSearch
                 status={status}
-                statuses={statusOptions}
+                statuses={statusOptions || []}
                 onStatus={handleStatusChange}
                 showStatus
                 filters={[
@@ -90,8 +114,22 @@ const PurchaseOrders = () => {
                         key: "vendor",
                         value: vendor,
                         onChange: handleVendorChange,
-                        options: vendorOptions,
+                        options: vendorOptions || [],
                         placeholder: "All Vendors",
+                    },
+                    {
+                        key: "receiptStatus",
+                        value: receiptStatus,
+                        onChange: handleReceiptStatusChange,
+                        options: receiptStatusOptions || [],
+                        placeholder: "All Receipt Status",
+                    },
+                    {
+                        key: "billStatus",
+                        value: billStatus,
+                        onChange: handleBillStatusChange,
+                        options: billStatusOptions || [],
+                        placeholder: "All Bill Status",
                     },
                 ]}
             />
