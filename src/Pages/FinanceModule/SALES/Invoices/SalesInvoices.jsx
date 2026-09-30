@@ -1,8 +1,4 @@
 import React from "react";
-
-import {
-    FiDownload,
-} from "react-icons/fi";
 import ReusableHeader from "../../../../Components/ReusableTable/ReusableHeader";
 import ReusableFilter from "../../../../Components/ReusableTable/ReusableFilter";
 import ReusableTable from "../../../../Components/ReusableTable/ReusableTable";
@@ -14,7 +10,6 @@ import {
     DatePickerContainer,
     DateInput,
     DateSeparator,
-    ExportButton,
 } from "./SalesInvoices.styles";
 import useSalesInvoices from "./UseSalesInvoices";
 import ReusableConfirmModal from "../../../../Components/modals/ReusableConfirmModal";
@@ -39,7 +34,6 @@ const SalesInvoices = () => {
         startDate,
         endDate,
         currentPage,
-
         salesOrderStats,
         customerOptions,
         deleteModal,
@@ -49,7 +43,6 @@ const SalesInvoices = () => {
         handleDueDate,
         handleStartDateChange,
         handleEndDateChange,
-        handleExport,
         setCurrentPage,
         handleDeleteCancel,
         handleDeleteConfirm
