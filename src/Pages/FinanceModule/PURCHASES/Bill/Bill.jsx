@@ -38,12 +38,12 @@ import {
   selectBillLoading,
   selectBillDeleteLoading,
   selectBillExportLoading,
-} from "../../../../Redux/finance/Purchases/BillSlice";
+} from "../../../../Redux/finance/purchases/BillSlice";
 
 import {
   getVendors,
   selectVendors,
-} from "../../../../Redux/finance/Purchases/VendorSlice";
+} from "../../../../Redux/finance/purchases/vendorsSlice";
 
 /* =========================================================
    CURRENT MONTH
@@ -351,7 +351,7 @@ const Bill = () => {
       getBillColumns({
         onDelete: handleDelete,
       }),
-    [],
+    [handleDelete],
   );
 
   /* =======================================================

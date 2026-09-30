@@ -210,39 +210,39 @@ const vendorSlice = createSlice({
                 state.error = action.payload;
             })
             // ---------- UPDATE VENDOR ----------
-.addCase(editVendor.pending, (state) => {
-    state.updateLoading = true;
-    state.error = null;
-})
-.addCase(editVendor.fulfilled, (state, action) => {
-    state.updateLoading = false;
-    state.successMessage = action.payload?.message || "Vendor updated successfully.";
-    const updated = action.payload?.data;
-    if (updated) {
-        const i = state.vendors.findIndex((v) => v.id === updated.id);
-        if (i !== -1) state.vendors[i] = updated;
-    }
-})
-.addCase(editVendor.rejected, (state, action) => {
-    state.updateLoading = false;
-    state.error = action.payload;
-})
+            .addCase(editVendor.pending, (state) => {
+                state.updateLoading = true;
+                state.error = null;
+            })
+            .addCase(editVendor.fulfilled, (state, action) => {
+                state.updateLoading = false;
+                state.successMessage = action.payload?.message || "Vendor updated successfully.";
+                const updated = action.payload?.data;
+                if (updated) {
+                    const i = state.vendors.findIndex((v) => v.id === updated.id);
+                    if (i !== -1) state.vendors[i] = updated;
+                }
+            })
+            .addCase(editVendor.rejected, (state, action) => {
+                state.updateLoading = false;
+                state.error = action.payload;
+            })
 
-// ---------- DELETE VENDOR ----------
-.addCase(removeVendor.pending, (state) => {
-    state.deleteLoading = true;
-    state.error = null;
-})
-.addCase(removeVendor.fulfilled, (state, action) => {
-    state.deleteLoading = false;
-    state.successMessage = "Vendor deleted successfully.";
-    state.vendors = state.vendors.filter((v) => v.id !== action.payload);
-    state.totalItems = Math.max(0, state.totalItems - 1);
-})
-.addCase(removeVendor.rejected, (state, action) => {
-    state.deleteLoading = false;
-    state.error = action.payload;
-});
+            // ---------- DELETE VENDOR ----------
+            .addCase(removeVendor.pending, (state) => {
+                state.deleteLoading = true;
+                state.error = null;
+            })
+            .addCase(removeVendor.fulfilled, (state, action) => {
+                state.deleteLoading = false;
+                state.successMessage = "Vendor deleted successfully.";
+                state.vendors = state.vendors.filter((v) => v.id !== action.payload);
+                state.totalItems = Math.max(0, state.totalItems - 1);
+            })
+            .addCase(removeVendor.rejected, (state, action) => {
+                state.deleteLoading = false;
+                state.error = action.payload;
+            });
     },
 });
 

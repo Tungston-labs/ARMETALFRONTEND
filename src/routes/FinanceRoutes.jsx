@@ -187,24 +187,32 @@ const FinanceRoutes = () => {
 
       <Route path="purchase/vendors" element={<Vendors />} />
       <Route path="purchase/purchaseorder" element={<PurchaseOrders />} />
-      <Route path="purchases/purchase-orders/add" element={<AddingPurchaseOrder />} />
-      <Route path="purchases/purchase-orders/edit/:id" element={<AddingPurchaseOrder />} />
+      <Route
+        path="purchases/purchase-orders/add"
+        element={<AddingPurchaseOrder />}
+      />
+      <Route
+        path="purchases/purchase-orders/edit/:id"
+        element={<AddingPurchaseOrder />}
+      />
       <Route path="purchases/vendor-ledger" element={<VendorLedger />} />
 
+      <Route path="purchase/vendors/:vendorId" element={<VendorLayout />}>
+        <Route index element={<VendorOverview />} />
+        <Route path="overview" element={<VendorOverview />} />
 
-   <Route path="purchase/vendors/:vendorId" element={<VendorLayout />}>
-  <Route index element={<VendorOverview />} />
-  <Route path="overview" element={<VendorOverview />} />
+        <Route path="purchase-orders" element={<VendorPurchaseOrders />} />
+        <Route path="bills" element={<VendorBills />} />
+        <Route path="payments" element={<VendorPayments />} />
+        <Route path="ledger" element={<VendorLedgerTab />} />
+        <Route path="debit-notes" element={<VendorCreditNotes />} />
 
-  <Route path="purchase-orders" element={<VendorPurchaseOrders />} />
-  <Route path="bills" element={<VendorBills />} />
-  <Route path="payments" element={<VendorPayments />} />
-  <Route path="ledger" element={<VendorLedgerTab />} />
-  <Route path="debit-notes" element={<VendorCreditNotes />} />
-</Route>
+        <Route path="purchases/bill" element={<Bill />} />
 
+        <Route path="purchases/bill/add" element={<CreateBill />} />
 
-
+        <Route path="purchases/bill/edit/:id" element={<CreateBill />} />
+      </Route>
     </>
   );
 };
