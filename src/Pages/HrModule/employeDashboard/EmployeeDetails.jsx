@@ -35,17 +35,14 @@ import {
 import { PiUsersThreeLight } from "react-icons/pi";
 import { CiAlarmOn } from "react-icons/ci";
 import { TbReportSearch } from "react-icons/tb";
-import { LuFileCheck } from "react-icons/lu";
+import { LuFileCheck, LuDownload } from "react-icons/lu";
 import MailModal from "./MailModal";
 import { HiUser } from "react-icons/hi2";
 
-const EmployeeDetails = ({
-  employee,
-  documents = [],
-  onTabChange,
-}) => {
+const EmployeeDetails = ({ employee, documents = [], onTabChange }) => {
   const [activeTab, setActiveTab] = useState("work");
   const [isMailOpen, setIsMailOpen] = useState(false);
+  const [downloadingKey, setDownloadingKey] = useState(null);
 
   const handleTabChange = (tab) => {
     setActiveTab(tab);
@@ -69,6 +66,49 @@ const EmployeeDetails = ({
     const year = d.getFullYear();
 
     return `${day}/${month}/${year}`;
+  };
+
+  // =====================================================
+  // Download a document
+  // Uses fetch -> blob so it works for cross-origin files too
+  // (the plain <a download> attribute is ignored cross-origin).
+  // Falls back to opening in a new tab if the fetch is blocked (CORS).
+  // =====================================================
+  const handleDownload = async (doc, index) => {
+    const key = `${doc.title}-${index}`;
+    setDownloadingKey(key);
+
+    try {
+      const response = await fetch(doc.url, { mode: "cors" });
+      if (!response.ok) throw new Error("Download failed");
+
+      const blob = await response.blob();
+
+      // Work out a file extension from the URL, else from the MIME type
+      const urlExt = doc.url.split("?")[0].split(".").pop()?.toLowerCase();
+      const ext =
+        urlExt && /^[a-z0-9]{2,5}$/.test(urlExt)
+          ? urlExt
+          : blob.type.split("/")[1] || "file";
+
+      const safeName = `${employee?.name || "employee"}_${doc.title}_${index + 1}`
+        .replace(/\s+/g, "_")
+        .replace(/[^\w.-]/g, "");
+
+      const blobUrl = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = blobUrl;
+      link.download = `${safeName}.${ext}`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(blobUrl);
+    } catch (error) {
+      // Fallback: open in new tab so the user can still save it manually
+      window.open(doc.url, "_blank");
+    } finally {
+      setDownloadingKey(null);
+    }
   };
 
   if (!employee) {
@@ -182,35 +222,37 @@ const EmployeeDetails = ({
   // Documents Information
   // =====================================================
 
-const documentsInfo = [
-  {
-    title: "Passport",
-    url: documents?.passport_image1_url,
-  },
-  {
-    title: "Passport",
-    url: documents?.passport_image2_url,
-  },
-  {
-    title: "Work Permit",
-    url: documents?.work_permit_urls?.[0],
-  },
-  {
-    title: "Contract",
-    url: documents?.contract_urls?.[0],
-  },
-  {
-    title: "Insurance",
-    url: documents?.insurance_image_url,
-  },
-  {
-    title: "Certificate",
-    url: documents?.certificate_urls?.[0],
-  },
-];
+  const documentsInfo = [
+    {
+      title: "Passport",
+      url: documents?.passport_image1_url,
+    },
+    {
+      title: "Passport",
+      url: documents?.passport_image2_url,
+    },
+    {
+      title: "Work Permit",
+      url: documents?.work_permit_urls?.[0],
+    },
+    {
+      title: "Contract",
+      url: documents?.contract_urls?.[0],
+    },
+    {
+      title: "Insurance",
+      url: documents?.insurance_image_url,
+    },
+    {
+      title: "Certificate",
+      url: documents?.certificate_urls?.[0],
+    },
+  ];
+
+  const availableDocuments = documentsInfo.filter((doc) => doc.url);
+
   return (
     <Wrapper>
-
       {/* =====================================================
           Header
       ===================================================== */}
@@ -223,21 +265,15 @@ const documentsInfo = [
             <span
               className="dot"
               style={{
-                backgroundColor: employee.is_active
-                  ? "green"
-                  : "red",
+                backgroundColor: employee.is_active ? "green" : "red",
               }}
             />
 
-            {employee.is_active ? "Active" : "Inactive"}
+            {employee.is_active ? "Present" : "Absent"}
           </Status>
         </LeftHeader>
 
-        <MailButton
-          onClick={() => setIsMailOpen(true)}
-        >
-          Send Mail
-        </MailButton>
+        <MailButton onClick={() => setIsMailOpen(true)}>Send Mail</MailButton>
       </HeaderRow>
 
       {/* =====================================================
@@ -249,10 +285,7 @@ const documentsInfo = [
           <ProfileSection>
             <Avatar>
               {employee?.profile_pic ? (
-                <img
-                  src={employee.profile_pic}
-                  alt={employee.name}
-                />
+                <img src={employee.profile_pic} alt={employee.name} />
               ) : (
                 <HiUser size={55} />
               )}
@@ -269,17 +302,11 @@ const documentsInfo = [
           <StatsGrid>
             {statsData.map((item, index) => (
               <StatCard key={index}>
-                <StatNumber>
-                  {item.number}
-                </StatNumber>
+                <StatNumber>{item.number}</StatNumber>
 
-                <StatLabel>
-                  {item.label}
-                </StatLabel>
+                <StatLabel>{item.label}</StatLabel>
 
-                <IconRight>
-                  {item.icon}
-                </IconRight>
+                <IconRight>{item.icon}</IconRight>
               </StatCard>
             ))}
           </StatsGrid>
@@ -290,41 +317,35 @@ const documentsInfo = [
           Tabs
       ===================================================== */}
 
-   <Tabs>
+      <Tabs>
+        <TabButton
+          active={activeTab === "work"}
+          onClick={() => handleTabChange("work")}
+        >
+          Work Info
+        </TabButton>
 
-  <TabButton
-    active={activeTab === "work"}
-    onClick={() => handleTabChange("work")}
-  >
-    Work Info
-  </TabButton>
+        <TabButton
+          active={activeTab === "personal"}
+          onClick={() => handleTabChange("personal")}
+        >
+          Personal Details
+        </TabButton>
 
-  <TabButton
-    active={activeTab === "personal"}
-    onClick={() => handleTabChange("personal")}
-  >
-    Personal Details
-  </TabButton>
-
-  <TabButton
-    active={activeTab === "documents"}
-    onClick={() => handleTabChange("documents")}
-  >
-    Documents
-  </TabButton>
-
-</Tabs>
+        <TabButton
+          active={activeTab === "documents"}
+          onClick={() => handleTabChange("documents")}
+        >
+          Documents
+        </TabButton>
+      </Tabs>
 
       {/* =====================================================
           Tab Content
       ===================================================== */}
 
       <ContentSection>
-
-        {/* =================================================
-            WORK INFO
-        ================================================= */}
-
+        {/* WORK INFO */}
         {activeTab === "work" && (
           <>
             <Title>Work Info</Title>
@@ -332,37 +353,22 @@ const documentsInfo = [
             <InfoGrid>
               {workInfo.map((row, index) => (
                 <InfoRow key={index}>
-
-                  <InfoTitle>
-                    {row.title}
-                  </InfoTitle>
-
-                  <InfoValue>
-                    {row.value}
-                  </InfoValue>
+                  <InfoTitle>{row.title}</InfoTitle>
+                  <InfoValue>{row.value}</InfoValue>
 
                   {row.title2 && (
                     <>
-                      <InfoTitle>
-                        {row.title2}
-                      </InfoTitle>
-
-                      <InfoValue>
-                        {row.value2}
-                      </InfoValue>
+                      <InfoTitle>{row.title2}</InfoTitle>
+                      <InfoValue>{row.value2}</InfoValue>
                     </>
                   )}
-
                 </InfoRow>
               ))}
             </InfoGrid>
           </>
         )}
 
-        {/* =================================================
-            PERSONAL DETAILS
-        ================================================= */}
-
+        {/* PERSONAL DETAILS */}
         {activeTab === "personal" && (
           <>
             <Title>Personal Details</Title>
@@ -370,64 +376,78 @@ const documentsInfo = [
             <InfoGrid>
               {personalInfo.map((row, index) => (
                 <InfoRow key={index}>
-
-                  <InfoTitle>
-                    {row.title}
-                  </InfoTitle>
-
-                  <InfoValue>
-                    {row.value}
-                  </InfoValue>
+                  <InfoTitle>{row.title}</InfoTitle>
+                  <InfoValue>{row.value}</InfoValue>
 
                   {row.title2 && (
                     <>
-                      <InfoTitle>
-                        {row.title2}
-                      </InfoTitle>
-
-                      <InfoValue>
-                        {row.value2}
-                      </InfoValue>
+                      <InfoTitle>{row.title2}</InfoTitle>
+                      <InfoValue>{row.value2}</InfoValue>
                     </>
                   )}
-
                 </InfoRow>
               ))}
             </InfoGrid>
           </>
         )}
 
-        {/* =================================================
-            DOCUMENTS
-        ================================================= */}
-{activeTab === "documents" && (
-  <>
-    <Title>Documents</Title>
+        {/* DOCUMENTS */}
+        {activeTab === "documents" && (
+          <>
+            <Title>Documents</Title>
 
-    <DocumentsGrid>
-      {documentsInfo
-        .filter((doc) => doc.url)
-        .map((doc, index) => (
-          <DocumentCard key={index}>
-            <DocumentPreview
-              src={doc.url}
-              alt={doc.title}
-              onClick={() => window.open(doc.url, "_blank")}
-            />
+            <DocumentsGrid>
+              {availableDocuments.map((doc, index) => {
+                const key = `${doc.title}-${index}`;
+                const isDownloading = downloadingKey === key;
 
-            <DocumentName>
-              {doc.title}
-            </DocumentName>
-          </DocumentCard>
-        ))}
-    </DocumentsGrid>
+                return (
+                  <DocumentCard key={key}>
+                    <DocumentPreview
+                      src={doc.url}
+                      alt={doc.title}
+                      onClick={() => window.open(doc.url, "_blank")}
+                    />
 
-    {documentsInfo.filter((doc) => doc.url).length === 0 && (
-      <p>No documents available.</p>
-    )}
-  </>
-)}
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: "8px",
+                      }}
+                    >
+                      <DocumentName>{doc.title}</DocumentName>
 
+                      <button
+                        type="button"
+                        title="Download"
+                        aria-label={`Download ${doc.title}`}
+                        onClick={() => handleDownload(doc, index)}
+                        disabled={isDownloading}
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          background: "none",
+                          border: "none",
+                          padding: "4px",
+                          cursor: isDownloading ? "wait" : "pointer",
+                          opacity: isDownloading ? 0.5 : 1,
+                          color: "#304EB0",
+                        }}
+                      >
+                        <LuDownload size={18} />
+                      </button>
+                    </div>
+                  </DocumentCard>
+                );
+              })}
+            </DocumentsGrid>
+
+            {availableDocuments.length === 0 && <p>No documents available.</p>}
+          </>
+        )}
       </ContentSection>
 
       {/* =====================================================
@@ -439,7 +459,6 @@ const documentsInfo = [
         onClose={() => setIsMailOpen(false)}
         employee={employee}
       />
-
     </Wrapper>
   );
 };

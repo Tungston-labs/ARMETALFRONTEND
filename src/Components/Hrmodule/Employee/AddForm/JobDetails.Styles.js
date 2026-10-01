@@ -41,6 +41,7 @@ export const FullWidthGroup = styled.div`
   grid-column: 1 / -1;
   display: flex;
   flex-direction: column;
+
 `;
 
 export const Label = styled.label`
@@ -149,7 +150,7 @@ export const TotalLeaveBox = styled.div`
   border: 1px solid lightgray;
   border-radius: 4px;
   font-size: 1rem;
-  margin-bottom: 10px;
+  margin-bottom: 16px;
   font-weight: 600;
   color: #172554;
 background-color:white;  
@@ -185,12 +186,26 @@ export const LeaveItem = styled.div`
   display: flex;
   flex-direction: column;
   gap: 6px;
+
 `;
 
 export const LeaveLabel = styled.span`
+  /* margin-bottom: 6px; */
+  font-family: "Poppins";
+  font-weight: 400;
+  font-style: Regular;
   font-size: 14px;
-  font-weight: 500;
-  color: #172554;
+  line-height: 100%;
+  letter-spacing: 0%;
+
+  ${(props) =>
+    props.$required &&
+    `
+      &::after {
+        content: " *";
+        color: #ef4444;
+      }
+    `}
 `;
 
 export const LeaveInput = styled(Input)`
