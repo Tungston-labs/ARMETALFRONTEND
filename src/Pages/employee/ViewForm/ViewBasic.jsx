@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { getEmployeeById, submitEmployee } from "../../../Redux/employeeSlice";
 import { getDepartments } from "../../../Redux/departmentSlice";
@@ -30,6 +30,14 @@ import {
   validateLegalIdentity,
 } from "../../../utils/employeeCountryFields";
 
+const LEAVE_FIELDS = [
+  "casual_leave",
+  "sick_leave",
+  "earned_leave",
+  "maternity_leave",
+  "other_leave",
+];
+
 const ViewBasic = () => {
   const dispatch = useDispatch();
   const { id } = useParams();
@@ -41,16 +49,19 @@ const ViewBasic = () => {
   const [formData, setFormData] = useState({});
   const [isEdited, setIsEdited] = useState(false);
 
-  const user =
-    JSON.parse(localStorage.getItem("user")) ||
-    JSON.parse(sessionStorage.getItem("user"));
+  // Memoized so it is not a new object on every render
+  const user = useMemo(
+    () =>
+      JSON.parse(localStorage.getItem("user")) ||
+      JSON.parse(sessionStorage.getItem("user")),
+    [],
+  );
 
-  const calculatedTotal =
-    Number(formData.casual_leave || 0) +
-    Number(formData.sick_leave || 0) +
-    Number(formData.earned_leave || 0) +
-    Number(formData.maternity_leave || 0) +
-    Number(formData.other_leave || 0);
+  const calculatedTotal = LEAVE_FIELDS.reduce(
+    (sum, field) => sum + Number(formData[field] || 0),
+    0,
+  );
+
   const country = formData?.company?.country || user?.company?.country || "IN";
   const legalConfig = getLegalFieldConfig(country);
 
@@ -87,11 +98,9 @@ const ViewBasic = () => {
 
     const updatedFormData = {
       ...employeeDetail,
-
-      employee_id: employeeDetail.employee_id || "", // ✅ ADDED HERE
-
+      employee_id: employeeDetail.employee_id || "",
       department: deptId,
-      total_leave: employeeDetail.total_leave || "",
+      total_leave: employeeDetail.total_leave ?? "",
       paid_leave: employeeDetail.paid_leave || "",
       contract_expiry_date: employeeDetail.contract_expiry_date || "",
       role: employeeDetail.role || "",
@@ -105,6 +114,7 @@ const ViewBasic = () => {
       setFormData(updatedFormData);
       setIsEdited(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [employeeDetail, departmentList, user]);
 
   const handleChange = (e) => {
@@ -112,16 +122,7 @@ const ViewBasic = () => {
     setFormData((prev) => ({ ...prev, [name]: value }));
     setIsEdited(true);
   };
-  const formatDate = (date) => {
-    if (!date) return "----";
 
-    const d = new Date(date);
-    const day = String(d.getDate()).padStart(2, "0");
-    const month = d.toLocaleString("en-US", { month: "short" });
-    const year = d.getFullYear();
-
-    return `${day}/${month}/${year}`;
-  };
   const handleImageChange = (file) => {
     setFormData((prev) => ({ ...prev, profile_pic: file }));
     setIsEdited(true);
@@ -129,6 +130,8 @@ const ViewBasic = () => {
 
   const handleSubmit = async () => {
     let payload = { ...formData };
+
+    // Remove empty values
     Object.keys(payload).forEach((key) => {
       if (
         payload[key] === "" ||
@@ -139,6 +142,13 @@ const ViewBasic = () => {
     });
     delete payload.company;
 
+    // ✅ Always send leave fields (blank => 0) and the recalculated total.
+    // Must come AFTER the cleanup loop so they are not deleted.
+    LEAVE_FIELDS.forEach((field) => {
+      payload[field] = Number(formData[field] || 0);
+    });
+    payload.total_leave = calculatedTotal;
+
     const legalErrors = validateLegalIdentity(country, payload);
 
     if (isIndiaCompany(country)) {
@@ -148,8 +158,7 @@ const ViewBasic = () => {
 
       if (!payload.aadar_number?.trim())
         return alert("Aadhaar number is required for India");
-      if (legalErrors.aadar_number)
-        return alert(legalErrors.aadar_number);
+      if (legalErrors.aadar_number) return alert(legalErrors.aadar_number);
     } else {
       delete payload.aadar_number;
       if (!payload[legalConfig.identityField]?.trim())
@@ -178,7 +187,25 @@ const ViewBasic = () => {
       if (!confirmResult.isConfirmed) return;
     }
 
-    await dispatch(submitEmployee(payload));
+    // ✅ Check the result so failures are not reported as success
+    const result = await dispatch(submitEmployee(payload));
+    if (submitEmployee.rejected.match(result)) {
+      const err = result.payload;
+      const message =
+        typeof err === "string"
+          ? err
+          : err
+            ? Object.entries(err)
+                .map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join(", ") : v}`)
+                .join("\n")
+            : "Update failed.";
+      return Swal.fire({
+        icon: "error",
+        title: "Update failed",
+        text: message,
+      });
+    }
+
     await dispatch(getEmployeeById(id));
 
     Swal.fire({
@@ -209,7 +236,6 @@ const ViewBasic = () => {
     }
   };
 
-
   if (loading || !formData || Object.keys(formData).length === 0) {
     return (
       <FullPageLoaderWrapper>
@@ -235,13 +261,12 @@ const ViewBasic = () => {
             <Rowes>
               <FieldGroup>
                 <Label> Username</Label>
-
                 <Input
                   name="employee_id"
                   value={formData.employee_id || ""}
                   onChange={handleChange}
                   placeholder="Enter employee username"
-                       autoComplete="off"
+                  autoComplete="off"
                 />
               </FieldGroup>
 
@@ -268,19 +293,21 @@ const ViewBasic = () => {
                   onChange={handleChange}
                 />
               </FieldGroup>
+
               <FieldGroup>
-  <Label>Employment Type</Label>
-  <Select
-    name="employment_type"
-    value={formData.employment_type || ""}
-    onChange={handleChange}
-  >
-    <option value="">Select Type</option>
-    <option value="Full-time">Full-time</option>
-    <option value="Part-time">Part-time</option>
-    <option value="Contract">Contract</option>
-  </Select>
-</FieldGroup>
+                <Label>Employment Type</Label>
+                <Select
+                  name="employment_type"
+                  value={formData.employment_type || ""}
+                  onChange={handleChange}
+                >
+                  <option value="">Select Type</option>
+                  <option value="Full-time">Full-time</option>
+                  <option value="Part-time">Part-time</option>
+                  <option value="Contract">Contract</option>
+                </Select>
+              </FieldGroup>
+
               <FieldGroup>
                 <Label>Department</Label>
                 <Select
@@ -297,91 +324,51 @@ const ViewBasic = () => {
                 </Select>
               </FieldGroup>
             </Rowes>
+
             <FieldGroup>
               <Label>Total Leave</Label>
-              <Input
-                type="number"
-                value={calculatedTotal}
-                readOnly
-              />
+              <Input type="number" value={calculatedTotal} readOnly />
             </FieldGroup>
+
             <Rowes>
-              <FieldGroup>
-                <Label>Casual Leave</Label>
-                <Input
-                  type="number"
-                  name="casual_leave"
-                  value={formData.casual_leave || ""}
-                  onChange={handleChange}
-                  min="0"
-                />
-              </FieldGroup>
-
-              <FieldGroup>
-                <Label>Sick Leave</Label>
-                <Input
-                  type="number"
-                  name="sick_leave"
-                  value={formData.sick_leave || ""}
-                  onChange={handleChange}
-                  min="0"
-                />
-              </FieldGroup>
-
-              <FieldGroup>
-                <Label>Earned Leave</Label>
-                <Input
-                  type="number"
-                  name="earned_leave"
-                  value={formData.earned_leave || ""}
-                  onChange={handleChange}
-                  min="0"
-                />
-              </FieldGroup>
-
-              <FieldGroup>
-                <Label>Maternity Leave</Label>
-                <Input
-                  type="number"
-                  name="maternity_leave"
-                  value={formData.maternity_leave || ""}
-                  onChange={handleChange}
-                  min="0"
-                />
-              </FieldGroup>
-
-              <FieldGroup>
-                <Label>Other Leave</Label>
-                <Input
-                  type="number"
-                  name="other_leave"
-                  value={formData.other_leave || ""}
-                  onChange={handleChange}
-                  min="0"
-                />
-              </FieldGroup>
-
+              {[
+                ["casual_leave", "Casual Leave"],
+                ["sick_leave", "Sick Leave"],
+                ["earned_leave", "Earned Leave"],
+                ["maternity_leave", "Maternity Leave"],
+                ["other_leave", "Other Leave"],
+              ].map(([name, label]) => (
+                <FieldGroup key={name}>
+                  <Label>{label}</Label>
+                  <Input
+                    type="number"
+                    name={name}
+                    value={formData[name] ?? ""}
+                    onChange={handleChange}
+                    min="0"
+                  />
+                </FieldGroup>
+              ))}
             </Rowes>
-
-
           </CardContent>
         </Card>
+
         <Card>
           <CardHeader>Employee Legal & ID Information</CardHeader>
           <CardContent>
             <Column>
               <Rowes>
-               
-                {!isIndiaCompany(country) && legalConfig.identityField !== "passport_number" && (
-                  <FieldGroup>
-                    <Label>Passport Number</Label>
-                    <Input
-                      name="passport_number"
-                      value={formData.passport_number || ""}
-                      onChange={handleChange}
-                    />
-                  </FieldGroup>
-                )}
+                {!isIndiaCompany(country) &&
+                  legalConfig.identityField !== "passport_number" && (
+                    <FieldGroup>
+                      <Label>Passport Number</Label>
+                      <Input
+                        name="passport_number"
+                        value={formData.passport_number || ""}
+                        onChange={handleChange}
+                      />
+                    </FieldGroup>
+                  )}
                 <FieldGroup>
                   <Label>Role</Label>
                   <Select
@@ -396,6 +383,7 @@ const ViewBasic = () => {
                   </Select>
                 </FieldGroup>
               </Rowes>
+
               <Rowes>
                 {isIndiaCompany(country) ? (
                   <>
@@ -469,9 +457,10 @@ const ViewBasic = () => {
                     type="file"
                     accept="image/*"
                     name="idcard"
-                    onChange={(e) =>
-                      setFormData({ ...formData, idcard: e.target.files[0] })
-                    }
+                    onChange={(e) => {
+                      setFormData({ ...formData, idcard: e.target.files[0] });
+                      setIsEdited(true);
+                    }}
                   />
                 </UploadButton>
               </FieldGroup>
