@@ -23,21 +23,18 @@ import customerReducer from "./finance/Sales/CustomerSlice";
 import inventoryReducer from "../Redux/finance/Product/inventorySlice";
 import salesOrderReducer from "../Redux/finance/Sales/Salesorderslice";
 import invoiceReducer from "../Redux/finance/Sales/InvoiceSlice";
-
 import recurringReducer from "../Redux/finance/Sales/recurringSlice";
-
 import paymentReducer from "../Redux/finance/Sales/paymentSlice";
 import creditNotesReducer from "../Redux/finance/Sales/creditNoteSlice";
 import salesReturnsReducer from "./finance/Sales/Salesreturnslice";
-
-
 import customerLedgerReducer from "./finance/Sales/Customerledgerslice"
 import vendorReducer from "./finance/purchases/vendorsSlice";
 import billReducer from "./finance/purchases/BillSlice";
-
-
 import purchaseOrderReducer from "./finance/purchases/Purchaseordersslice";
 import vendorDetailReducer from "./finance/purchases/Vendordetailslice";
+import debitNoteReducer from "./finance/purchases/debitNoteSlice";
+
+
 export const store = configureStore({
   reducer: {
 
@@ -73,8 +70,9 @@ export const store = configureStore({
     salesReturns: salesReturnsReducer,
     vendor: vendorReducer,
     bill: billReducer,
-          purchaseOrder: purchaseOrderReducer,
-             vendorDetail: vendorDetailReducer,
+    purchaseOrder: purchaseOrderReducer,
+    vendorDetail: vendorDetailReducer,
+    debitNote: debitNoteReducer,
 
   },
 });

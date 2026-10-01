@@ -41,21 +41,36 @@ import CreateSalesReturnAction from "../Pages/FinanceModule/SALES/SalesReturn/mo
 import SalesReturnAction from "../Pages/FinanceModule/SALES/SalesReturn/action/SalesReturnAction.jsx";
 
 import CreditAction from "../Pages/FinanceModule/SALES/CreditNotes/action/CreditAction.jsx";
+
 import PurchaseOrders from "../Pages/FinanceModule/PURCHASES/PurchaseOrders/PurchaseOrders.jsx";
 import Vendors from "../Pages/FinanceModule/PURCHASES/Vendors/Vendors.jsx";
 import AddingPurchaseOrder from "../Pages/FinanceModule/PURCHASES/PurchaseOrders/modal/ Addingpurchaseorder.jsx";
+
 import VendorLedger from "../Pages/FinanceModule/PURCHASES/VendorLedger/VendorLedger.jsx";
 import VendorOverview from "../Pages/FinanceModule/PURCHASES/Vendors/Overview/VendorOverview.jsx";
 import VendorPurchaseOrders from "../Pages/FinanceModule/PURCHASES/Vendors/Orders/VendorPurchaseOrders.jsx";
 import VendorPayments from "../Pages/FinanceModule/PURCHASES/Vendors/Payments/VendorPayments.jsx";
 import VendorLedgerTab from "../Pages/FinanceModule/PURCHASES/Vendors/Ledger/VendorLedgerTab.jsx";
 import VendorLayout from "../Pages/FinanceModule/PURCHASES/Vendors/layout/Vendorlayout.jsx";
-import VendorCreditNotes from "../Pages/FinanceModule/PURCHASES/DebitNotes/VendorCreditNotes.jsx";
-import VendorBills from "../Pages/FinanceModule/PURCHASES/Vendors/Bills/VendorBills.jsx";
+
+/* =========================================================
+   PURCHASES - DEBIT NOTES
+========================================================= */
+
+import PurchaseDebitNotes from "../Pages/FinanceModule/PURCHASES/DebitNotes/DebitNotes.jsx";
+import CreateDebitNote from "../Pages/FinanceModule/PURCHASES/DebitNotes/modal/CreateDebitNote.jsx";
+
+/* =========================================================
+   VENDOR - DEBIT NOTES
+========================================================= */
+
+import VendorDebitNotes from "../Pages/FinanceModule/PURCHASES/Vendors/DebitNotes/Debitnotes.jsx";
 
 /* =========================================================
    PURCHASES - BILL
 ========================================================= */
+
+import VendorBills from "../Pages/FinanceModule/PURCHASES/Vendors/Bills/VendorBills.jsx";
 
 import Bill from "../Pages/FinanceModule/PURCHASES/Bill/Bill.jsx";
 import CreateBill from "../Pages/FinanceModule/PURCHASES/Bill/modal/CreateBill.jsx";
@@ -86,6 +101,19 @@ const FinanceRoutes = () => {
       <Route path="purchases/bill/add" element={<CreateBill />} />
 
       <Route path="purchases/bill/edit/:id" element={<CreateBill />} />
+
+      {/* =====================================================
+          PURCHASE DEBIT NOTES
+      ===================================================== */}
+
+      <Route path="purchases/debit-notes" element={<PurchaseDebitNotes />} />
+
+      <Route path="purchases/debit-notes/add" element={<CreateDebitNote />} />
+
+      <Route
+        path="purchases/debit-notes/edit/:id"
+        element={<CreateDebitNote />}
+      />
 
       {/* =====================================================
           CUSTOMER
@@ -185,27 +213,48 @@ const FinanceRoutes = () => {
 
       <Route path="sales-return/edit/:id" element={<SalesReturnAction />} />
 
+      {/* =====================================================
+          PURCHASE VENDORS
+      ===================================================== */}
+
       <Route path="purchase/vendors" element={<Vendors />} />
+
       <Route path="purchase/purchaseorder" element={<PurchaseOrders />} />
+
       <Route
         path="purchases/purchase-orders/add"
         element={<AddingPurchaseOrder />}
       />
+
       <Route
         path="purchases/purchase-orders/edit/:id"
         element={<AddingPurchaseOrder />}
       />
+
       <Route path="purchases/vendor-ledger" element={<VendorLedger />} />
+
+      {/* =====================================================
+          VENDOR LAYOUT
+      ===================================================== */}
 
       <Route path="purchase/vendors/:vendorId" element={<VendorLayout />}>
         <Route index element={<VendorOverview />} />
+
         <Route path="overview" element={<VendorOverview />} />
 
         <Route path="purchase-orders" element={<VendorPurchaseOrders />} />
+
         <Route path="bills" element={<VendorBills />} />
+
         <Route path="payments" element={<VendorPayments />} />
+
         <Route path="ledger" element={<VendorLedgerTab />} />
-        <Route path="debit-notes" element={<VendorCreditNotes />} />
+
+        {/* =================================================
+            VENDOR DEBIT NOTES
+        ================================================= */}
+
+        <Route path="debit-notes" element={<VendorDebitNotes />} />
 
         <Route path="purchases/bill" element={<Bill />} />
 

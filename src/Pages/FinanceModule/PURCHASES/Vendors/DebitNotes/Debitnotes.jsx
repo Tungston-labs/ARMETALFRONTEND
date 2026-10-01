@@ -1,15 +1,24 @@
 import React, { useMemo, useState } from "react";
-import { FiCalendar, FiDownload, FiEdit2, FiX } from "react-icons/fi";
+import {
+  FiCalendar,
+  FiDownload,
+  FiEdit2,
+  FiX,
+} from "react-icons/fi";
 
-import { vendorLedgerColumns, vendorLedgerData } from "./dummydata";
+import {
+  debitNoteColumns,
+  debitNoteData,
+} from "./dummydata";
 
 import ReusableFilter from "../../../../../Components/ReusableTable/ReusableFilter";
 import ReusableTable from "../../../../../Components/ReusableTable/ReusableTable";
 import ReusablePagination from "../../../../../Components/Pagination/ReusablePagination";
 import StatsCards from "../../../../../Components/StatsCards/StatsCards";
 
-const VendorBill = () => {
+const DebitNote = () => {
   const [search, setSearch] = useState("");
+  const [reason, setReason] = useState("");
   const [status, setStatus] = useState("");
 
   const rowsPerPage = 8;
@@ -19,24 +28,29 @@ const VendorBill = () => {
   const filteredData = useMemo(() => {
     const searchValue = search.trim().toLowerCase();
 
-    return vendorLedgerData.filter((row) => {
+    return debitNoteData.filter((row) => {
       const matchesSearch =
         !searchValue ||
-        String(row.billNo || "")
+        String(row.debitNoteNo || "")
           .toLowerCase()
           .includes(searchValue) ||
-        String(row.againstPO || "")
+        String(row.againstBill || "")
           .toLowerCase()
           .includes(searchValue);
+
+      const matchesReason =
+        !reason ||
+        reason === "All Reason" ||
+        String(row.reason || "").toLowerCase() === reason.toLowerCase();
 
       const matchesStatus =
         !status ||
         status === "All Status" ||
         String(row.status || "").toLowerCase() === status.toLowerCase();
 
-      return matchesSearch && matchesStatus;
+      return matchesSearch && matchesReason && matchesStatus;
     });
-  }, [search, status]);
+  }, [search, reason, status]);
 
   const totalPages = Math.ceil(filteredData.length / rowsPerPage);
 
@@ -51,6 +65,11 @@ const VendorBill = () => {
     setCurrentPage(1);
   };
 
+  const handleReason = (value) => {
+    setReason(value);
+    setCurrentPage(1);
+  };
+
   const handleStatus = (value) => {
     setStatus(value);
     setCurrentPage(1);
@@ -58,36 +77,36 @@ const VendorBill = () => {
 
   const statsCards = [
     {
-      title: "Total Bills",
-      count: "24",
+      title: "Total Debit Notes",
+      count: "07",
       icon: <FiCalendar />,
       backgroundColor: "#ECFDF5",
       iconColor: "#16A34A",
     },
     {
-      title: "Total Billed",
-      count: "SAR 142,860.00",
+      title: "Total Debit Value",
+      count: "SAR 5,940.00",
       icon: <FiCalendar />,
       backgroundColor: "#F3E8FF",
       iconColor: "#9333EA",
     },
     {
-      title: "Total Paid",
-      count: "SAR 121,240.00",
+      title: "Applied to Bills",
+      count: "SAR 4,210.00",
       icon: <FiCalendar />,
       backgroundColor: "#ECFDF5",
       iconColor: "#16A34A",
     },
     {
-      title: "Balance Due",
-      count: "SAR 21,620.00",
+      title: "Pending / Unapplied",
+      count: "SAR 1,730.00",
       icon: <FiCalendar />,
       backgroundColor: "#FFF7ED",
       iconColor: "#F97316",
     },
     {
-      title: "Overdue Bills",
-      count: "03",
+      title: "Cancelled Note",
+      count: "01",
       icon: <FiCalendar />,
       backgroundColor: "#FEF2F2",
       iconColor: "#EF4444",
@@ -96,7 +115,7 @@ const VendorBill = () => {
 
   const columns = useMemo(
     () =>
-      vendorLedgerColumns.map((column) => {
+      debitNoteColumns.map((column) => {
         if (column.accessor !== "action") {
           return column;
         }
@@ -210,15 +229,45 @@ const VendorBill = () => {
         search={search}
         onSearch={handleSearch}
         searchPlaceholder="Search PO"
-        status={status}
-        statuses={["All Status", "Paid", "Partially Paid", "Unpaid", "Overdue"]}
-        onStatus={handleStatus}
+        status={reason}
+        statuses={[
+          "All Reason",
+          "Damaged Goods",
+          "Short Delivery",
+          "Purchase Return",
+          "Billing Error",
+        ]}
+        onStatus={handleReason}
         showSearch
         showStatus
         rightButton={dateRange}
       />
 
-      <ReusableTable columns={columns} data={paginatedData} />
+      <div
+        style={{
+          marginTop: "-1px",
+        }}
+      >
+        <ReusableFilter
+          search=""
+          onSearch={() => {}}
+          status={status}
+          statuses={[
+            "All Status",
+            "Issued",
+            "Pending",
+            "Cancelled",
+          ]}
+          onStatus={handleStatus}
+          showStatus
+          showSearch={false}
+        />
+      </div>
+
+      <ReusableTable
+        columns={columns}
+        data={paginatedData}
+      />
 
       <ReusablePagination
         currentPage={currentPage}
@@ -229,4 +278,4 @@ const VendorBill = () => {
   );
 };
 
-export default VendorBill;
+export default DebitNote;
