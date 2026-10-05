@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import {
     FiDollarSign,
     FiArrowDownCircle,
@@ -6,10 +7,8 @@ import {
     FiFileText,
 } from "react-icons/fi";
 
-import {
-    employeeColumns,
-    employeeData,
-} from "../../../../Components/ReusableTable/dummydata";
+import { getVendorLedgers } from "../../../../Redux/finance/purchases/vendorLedgerslice";
+import { getVendorLedgerColumns, formatAmount } from "./Vendorledgercolumns";
 
 import ReusableHeader from "../../../../Components/ReusableTable/ReusableHeader";
 import ReusableFilter from "../../../../Components/ReusableTable/ReusableFilter";
@@ -25,91 +24,104 @@ import {
 
 const ROWS_PER_PAGE = 10;
 
-// Row fields used by the filters. Change these to match your real ledger data.
-const VENDOR_FIELD = "vendor_id";
-const TYPE_FIELD = "transaction_type";
-const DATE_FIELD = "date";
-
-// Vendor dropdown
+// TODO: replace with your real vendor list (API / Redux) when you have one
 const VENDOR_OPTIONS = [
     { label: "ABC Trading LLC", value: "1" },
     { label: "XYZ Supplies", value: "2" },
     { label: "Global Suppliers", value: "3" },
 ];
 
+// Values match the backend's transaction_type filter
 const TRANSACTION_TYPE_OPTIONS = [
-    { label: "Purchase", value: "purchase" },
+    { label: "Bill", value: "bill" },
     { label: "Payment", value: "payment" },
+    { label: "Opening Balance", value: "opening_balance" },
+    { label: "Manual Entry", value: "manual" },
     { label: "Credit Note", value: "credit_note" },
     { label: "Debit Note", value: "debit_note" },
 ];
 
+const STATUS_OPTIONS = [
+    { label: "Open", value: "open" },
+    { label: "Partial", value: "partial" },
+    { label: "Settled", value: "settled" },
+    { label: "Cancelled", value: "cancelled" },
+];
+
 const VendorLedger = () => {
-    // TODO: replace employeeData with the real vendor ledger data / API
-    const data = employeeData;
+    const dispatch = useDispatch();
+
+    // Errors are shown by the global error handler
+    const { list, pagination, loading } = useSelector(
+        (state) => state.vendorLedger
+    );
 
     // Filters
     const [search, setSearch] = useState("");
+    const [debouncedSearch, setDebouncedSearch] = useState("");
     const [vendor, setVendor] = useState("");
     const [transactionType, setTransactionType] = useState("");
+    const [status, setStatus] = useState("");
     const [startDate, setStartDate] = useState("");
     const [endDate, setEndDate] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
 
-    // ---- Filtering (client-side) ----
+    // ---- Search debounce (also resets to page 1) ----
 
-    const filtered = useMemo(() => {
-        const term = search.trim().toLowerCase();
-
-        return data.filter((row) => {
-            if (vendor && String(row[VENDOR_FIELD]) !== String(vendor)) return false;
-            if (transactionType && row[TYPE_FIELD] !== transactionType) return false;
-
-            // Search across every value in the row
-            if (
-                term &&
-                !Object.values(row).join(" ").toLowerCase().includes(term)
-            )
-                return false;
-
-            // Date range (inclusive), compared as YYYY-MM-DD strings
-            if (startDate || endDate) {
-                const d = row[DATE_FIELD] ? String(row[DATE_FIELD]).slice(0, 10) : "";
-                if (!d) return false;
-                if (startDate && d < startDate) return false;
-                if (endDate && d > endDate) return false;
-            }
-            return true;
-        });
-    }, [data, search, vendor, transactionType, startDate, endDate]);
-
-    // ---- Pagination ----
-
-    const totalItems = filtered.length;
-    const totalPages = Math.ceil(totalItems / ROWS_PER_PAGE) || 1;
-
-    const paginatedData = useMemo(() => {
-        const start = (currentPage - 1) * ROWS_PER_PAGE;
-        return filtered.slice(start, start + ROWS_PER_PAGE);
-    }, [filtered, currentPage]);
-
-    // Keep the page valid if rows shrink
     useEffect(() => {
-        if (currentPage > totalPages) setCurrentPage(totalPages);
-    }, [currentPage, totalPages]);
+        const handler = setTimeout(() => {
+            setDebouncedSearch(search.trim());
+            setCurrentPage(1);
+        }, 300);
+
+        return () => clearTimeout(handler);
+    }, [search]);
+
+    // ---- Fetch (server-side filtering + pagination) ----
+
+    useEffect(() => {
+        dispatch(
+            getVendorLedgers({
+                page: currentPage,
+                pageSize: ROWS_PER_PAGE,
+                search: debouncedSearch,
+                vendor,
+                transaction_type: transactionType,
+                status,
+                from_date: startDate,
+                to_date: endDate,
+            })
+        );
+    }, [
+        dispatch,
+        currentPage,
+        debouncedSearch,
+        vendor,
+        transactionType,
+        status,
+        startDate,
+        endDate,
+    ]);
+
+    // Keep the page valid if the number of pages shrinks
+    useEffect(() => {
+        if (pagination.totalPages && currentPage > pagination.totalPages) {
+            setCurrentPage(pagination.totalPages);
+        }
+    }, [pagination.totalPages, currentPage]);
 
     // ---- Handlers (each resets to page 1) ----
 
-    const handleSearch = (value) => {
-        setSearch(value);
-        setCurrentPage(1);
-    };
     const handleVendorChange = (value) => {
         setVendor(value);
         setCurrentPage(1);
     };
     const handleTransactionTypeChange = (value) => {
         setTransactionType(value);
+        setCurrentPage(1);
+    };
+    const handleStatusChange = (value) => {
+        setStatus(value);
         setCurrentPage(1);
     };
     const handleStartDateChange = (e) => {
@@ -121,7 +133,36 @@ const VendorLedger = () => {
         setCurrentPage(1);
     };
 
+    const handlePageChange = (newPage) => {
+        if (newPage < 1 || newPage > (pagination.totalPages || 1)) return;
+        setCurrentPage(newPage);
+    };
+
+    // ---- Columns ----
+
+    const columns = useMemo(
+        () => getVendorLedgerColumns({ page: currentPage, pageSize: ROWS_PER_PAGE }),
+        [currentPage]
+    );
+
+    // ---- Total row (debit / credit / balance of the rows on this page) ----
+
+    const totalRow = useMemo(() => {
+        const debit = list.reduce((sum, r) => sum + Number(r.debit_amount || 0), 0);
+        const credit = list.reduce((sum, r) => sum + Number(r.credit_amount || 0), 0);
+
+        return {
+            debit: formatAmount(debit),
+            credit: formatAmount(credit),
+            // Net balance = debit - credit. Flip to (credit - debit) if you
+            // want the payable (amount owed to the vendor) shown as positive.
+            balance: formatAmount(debit - credit),
+        };
+    }, [list]);
+
     // ---- Stats ----
+    // The list API doesn't return payables / purchases / payments totals yet,
+    // so those three stay at 0.00 until the backend adds them.
 
     const statsCards = [
         {
@@ -147,7 +188,7 @@ const VendorLedger = () => {
         },
         {
             title: "Total Transactions",
-            count: totalItems,
+            count: pagination.totalItems ?? 0,
             icon: <FiFileText />,
             backgroundColor: "#FEF2F2",
             iconColor: "#EF4444",
@@ -159,7 +200,6 @@ const VendorLedger = () => {
             <ReusableHeader
                 title="Vendor Ledger"
                 breadcrumbs={["Vendor Ledger"]}
-                buttonText="+ ADD NEW VENDOR LEDGER"
             >
                 <DateRangeWrapper>
                     <DatePickerContainer>
@@ -190,8 +230,9 @@ const VendorLedger = () => {
             {/* Filters */}
             <ReusableFilter
                 search={search}
-                onSearch={handleSearch}
+                onSearch={setSearch}
                 showSearch
+                searchPlaceholder="Search Vendor / Reference / Description"
                 filters={[
                     {
                         key: "vendor",
@@ -207,18 +248,32 @@ const VendorLedger = () => {
                         options: TRANSACTION_TYPE_OPTIONS,
                         placeholder: "All Transaction Type",
                     },
+                    {
+                        key: "status",
+                        value: status,
+                        onChange: handleStatusChange,
+                        options: STATUS_OPTIONS,
+                        placeholder: "All Status",
+                    },
                 ]}
             />
 
             {/* Table */}
-            <ReusableTable columns={employeeColumns} data={paginatedData} />
+            <ReusableTable
+                autoLayout
+                columns={columns}
+                data={list}
+                loading={loading}
+                totalRow={list.length > 0 ? totalRow : undefined}
+                totalRowLabel="TOTAL"
+            />
 
             {/* Pagination */}
             <ReusablePagination
                 currentPage={currentPage}
-                totalPages={totalPages}
-                totalRecords={totalItems}
-                onPageChange={setCurrentPage}
+                totalPages={pagination.totalPages}
+                totalRecords={pagination.totalItems}
+                onPageChange={handlePageChange}
             />
         </div>
     );

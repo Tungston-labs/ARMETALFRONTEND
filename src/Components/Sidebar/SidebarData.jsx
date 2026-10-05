@@ -92,20 +92,17 @@ const getSidebarData = (user) => {
 
 
     if (modules.project) {
-      items.push({ title: "ORDERS", icon: <FiCodesandbox />, path: "/sales/orders" });
+      items.push({ title: "vendor", icon: <FiCodesandbox />, path: "/purchase/vendors" });
     }
 
     if (modules.project) {
-      items.push({ title: "Invoice", icon: <FiCodesandbox />, path: "/sales/invoices" });
+      items.push({ title: "orders", icon: <FiCodesandbox />, path: "/purchase/purchaseorder" });
     }
 
       if (modules.project) {
-      items.push({ title: "Custom-ledger", icon: <FiCodesandbox />, path: "/sales/customer-ledger" });
+      items.push({ title: "ledger", icon: <FiCodesandbox />, path: "/purchases/vendor-ledger" });
     }
 
-      if (modules.project) {
-      items.push({ title: "Recurring-billing", icon: <FiCodesandbox />, path: "/sales/recurring-billing" });
-    }
     return items;
   }
 

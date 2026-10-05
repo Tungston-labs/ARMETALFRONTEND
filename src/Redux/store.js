@@ -35,6 +35,7 @@ import customerLedgerReducer from "./finance/Sales/Customerledgerslice"
 import vendorReducer from "./finance/purchases/vendorsSlice";
 import purchaseOrderReducer from "./finance/purchases/Purchaseordersslice";
 import vendorDetailReducer from "./finance/purchases/Vendordetailslice";
+import vendorLedgerReducer from "./finance/purchases/vendorLedgerslice";
 export const store = configureStore({
   reducer: {
 
@@ -71,6 +72,7 @@ export const store = configureStore({
         vendor: vendorReducer, 
           purchaseOrder: purchaseOrderReducer,
              vendorDetail: vendorDetailReducer,
+              vendorLedger: vendorLedgerReducer,
 
   },
 });

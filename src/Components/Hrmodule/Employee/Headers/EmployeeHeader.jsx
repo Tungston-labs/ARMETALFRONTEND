@@ -11,11 +11,19 @@ import {
   ErrorText,
   SectionTitle,
 } from "./EmployeeHeader.Styles";
+import { COUNTRY_OPTIONS } from "../../../../utils/countryData"; 
 
 const EMAIL_REGEX =
   /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+$/;
 
-const EmployeeHeader = ({ formData, setFormData, setIsFormDirty, errors, setErrors }) => {
+const EmployeeHeader = ({
+  formData,
+  setFormData,
+  setIsFormDirty,
+  errors,
+  setErrors,
+  countryOptions = COUNTRY_OPTIONS, // optional override via props
+}) => {
   const MAX_SIZE = 5 * 1024 * 1024;
 
   const handleChange = (e) => {
@@ -45,6 +53,11 @@ const EmployeeHeader = ({ formData, setFormData, setIsFormDirty, errors, setErro
       if (name === "email" && errors?.email) {
         setErrors((prev) => ({ ...prev, email: "" }));
       }
+
+      // Clear the country error as soon as a country is picked
+      if (name === "country" && errors?.country) {
+        setErrors((prev) => ({ ...prev, country: "" }));
+      }
     }
 
     setIsFormDirty(true);
@@ -67,7 +80,6 @@ const EmployeeHeader = ({ formData, setFormData, setIsFormDirty, errors, setErro
     }
   };
 
-  
   return (
     <Container>
       <SectionTitle>Basic Details</SectionTitle>
@@ -160,14 +172,18 @@ const EmployeeHeader = ({ formData, setFormData, setIsFormDirty, errors, setErro
 
           <FieldGroup>
             <FieldLabel $required>Country</FieldLabel>
-            <Input
-              type="text"
+            <Select
               name="country"
-              placeholder="Enter country"
               value={formData.country}
               onChange={handleChange}
-              autoComplete="off"
-            />
+            >
+              <option value="">Select Country</option>
+              {countryOptions.map((c) => (
+                <option key={c.code} value={c.code}>
+                  {c.name}
+                </option>
+              ))}
+            </Select>
             {errors?.country && <ErrorText>{errors.country}</ErrorText>}
           </FieldGroup>
 

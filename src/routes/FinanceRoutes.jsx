@@ -120,7 +120,6 @@ const FinanceRoutes = () => {
    <Route path="purchase/vendors/:vendorId" element={<VendorLayout />}>
   <Route index element={<VendorOverview />} />
   <Route path="overview" element={<VendorOverview />} />
-
   <Route path="purchase-orders" element={<VendorPurchaseOrders />} />
   <Route path="bills" element={<VendorBills />} />
   <Route path="payments" element={<VendorPayments />} />
