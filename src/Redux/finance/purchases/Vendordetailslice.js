@@ -2,6 +2,7 @@ import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import {
     fetchVendorOverview,
     fetchVendorPurchaseOrders,
+    fetchVendorLedger,
 } from "../../../services/finance/purchases/Vendordetailservice";
 
 const errorOf = (error) => error.response?.data || error.message;
@@ -29,16 +30,35 @@ export const getVendorPurchaseOrders = createAsyncThunk(
     }
 );
 
+// Usage: dispatch(getVendorLedger({ vendorId, params: { search: "REC" } }))
+export const getVendorLedger = createAsyncThunk(
+    "vendorDetail/getVendorLedger",
+    async ({ vendorId, params = {} }, { rejectWithValue }) => {
+        try {
+            return await fetchVendorLedger(vendorId, params);
+        } catch (error) {
+            return rejectWithValue(errorOf(error));
+        }
+    }
+);
+
 const initialState = {
     vendor: null,
+
     overviewSummary: null,
+    overviewLoading: false,
+    overviewError: null,
+
     purchaseOrders: [],
     purchaseOrdersSummary: null,
-   overviewError: null,
-    purchaseOrdersError: null,
-    overviewLoading: false,
     purchaseOrdersLoading: false,
-    error: null,
+    purchaseOrdersError: null,
+
+    ledger: [],
+    ledgerCards: null,
+    ledgerFilters: null,
+    ledgerLoading: false,
+    ledgerError: null,
 };
 
 const vendorDetailSlice = createSlice({
@@ -47,7 +67,17 @@ const vendorDetailSlice = createSlice({
     reducers: {
         clearVendorDetail: () => initialState,
         clearVendorDetailError: (state) => {
-            state.error = null;
+            state.overviewError = null;
+            state.purchaseOrdersError = null;
+            state.ledgerError = null;
+        },
+        // call on unmount so the next vendor never sees stale ledger data
+        clearVendorLedger: (state) => {
+            state.ledger = [];
+            state.ledgerCards = null;
+            state.ledgerFilters = null;
+            state.ledgerError = null;
+            state.ledgerLoading = false;
         },
     },
     extraReducers: (builder) => {
@@ -55,7 +85,7 @@ const vendorDetailSlice = createSlice({
             // ---------- OVERVIEW ----------
             .addCase(getVendorOverview.pending, (state) => {
                 state.overviewLoading = true;
-                state.error = null;
+                state.overviewError = null;
             })
             .addCase(getVendorOverview.fulfilled, (state, action) => {
                 state.overviewLoading = false;
@@ -64,13 +94,13 @@ const vendorDetailSlice = createSlice({
             })
             .addCase(getVendorOverview.rejected, (state, action) => {
                 state.overviewLoading = false;
-                state.error = action.payload;
+                state.overviewError = action.payload;
             })
 
             // ---------- PURCHASE ORDERS ----------
             .addCase(getVendorPurchaseOrders.pending, (state) => {
                 state.purchaseOrdersLoading = true;
-                state.error = null;
+                state.purchaseOrdersError = null;
             })
             .addCase(getVendorPurchaseOrders.fulfilled, (state, action) => {
                 state.purchaseOrdersLoading = false;
@@ -79,12 +109,30 @@ const vendorDetailSlice = createSlice({
             })
             .addCase(getVendorPurchaseOrders.rejected, (state, action) => {
                 state.purchaseOrdersLoading = false;
-                state.error = action.payload;
+                state.purchaseOrdersError = action.payload;
+            })
+
+            // ---------- LEDGER ----------
+            .addCase(getVendorLedger.pending, (state) => {
+                state.ledgerLoading = true;
+                state.ledgerError = null;
+            })
+            .addCase(getVendorLedger.fulfilled, (state, action) => {
+                state.ledgerLoading = false;
+                state.ledger = action.payload?.data || [];
+                state.ledgerCards = action.payload?.cards || null;
+                state.ledgerFilters = action.payload?.filters || null;
+                // NOTE: no longer writes state.vendor here. The ledger response only
+                // has id / vendor_id / name, which would leave Overview half-empty.
+            })
+            .addCase(getVendorLedger.rejected, (state, action) => {
+                state.ledgerLoading = false;
+                state.ledgerError = action.payload;
             });
     },
 });
 
-export const { clearVendorDetail, clearVendorDetailError } =
+export const { clearVendorDetail, clearVendorDetailError, clearVendorLedger } =
     vendorDetailSlice.actions;
 
 export const selectVendorDetail = (state) => state.vendorDetail;

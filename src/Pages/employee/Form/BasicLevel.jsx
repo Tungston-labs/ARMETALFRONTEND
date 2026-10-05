@@ -11,10 +11,8 @@ import UnsavedChangesGuard from "../../../Components/UnsavedChangesGuard";
 import {
   Container,
 } from "./BasicLevel.Styles";
-
 import JobDetails from "../../../Components/Hrmodule/Employee/AddForm/JobDetails";
 import Loader from "../../../Components/Loader/Loader";
-// import Navbar from "../../Components/Navbar";
 import EmployeeHeader from "../../../Components/Hrmodule/Employee/Headers/EmployeeHeader";
 import { ButtonWrapper, NextButton } from "../../../Components/Hrmodule/Employee/AddForm/JobDetails.Styles";
 import ReusableHeader from "../../../Components/ReusableTable/ReusableHeader";

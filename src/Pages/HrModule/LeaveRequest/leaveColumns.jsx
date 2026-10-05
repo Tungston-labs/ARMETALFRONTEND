@@ -8,6 +8,7 @@ import { FaRegMessage } from "react-icons/fa6";
 import { FaCalendarCheck } from "react-icons/fa";
 import { MdOutlinePendingActions } from "react-icons/md";
 import { MdFreeCancellation } from "react-icons/md";
+
 export const getLeaveColumns = ({
   page,
   formatDate,
@@ -18,6 +19,7 @@ export const getLeaveColumns = ({
     header: "Sl No",
     accessor: "slNo",
     sortable: false,
+    width: "60px",
     render: (row, index) => index + 1 + (page - 1) * 20,
   },
 
@@ -45,23 +47,37 @@ export const getLeaveColumns = ({
     render: (row) => row.employee?.department || "-",
   },
 
-  {
-    header: "Start & End Date",
-    accessor: "date",
-    sortable: false,
-    render: (row) => {
-      const start = formatDate(row.from_date);
-      const end = formatDate(row.to_date);
+ {
+  header: "Applied Date",
+  accessor: "applied_date",
+  sortable: false,
+  render: (row) => formatDate(row.created_at),
+},
+ {
+  header: "Start & End Date",
+  accessor: "date",
+  sortable: false,
+  render: (row) => {
+    const start = formatDate(row.from_date);
+    const end = formatDate(row.to_date);
 
-      return start === end ? (
-        <span>{start}</span>
-      ) : (
+    // single day + half a day => show "Half Day"
+    if (start === end) {
+      return (
         <span>
-          {start} - {end}
+          {start}
+          {Number(row.leave_days) === 0.5 && " (Half Day)"}
         </span>
       );
-    },
+    }
+
+    return (
+      <span>
+        {start} - {end}
+      </span>
+    );
   },
+},
 
   {
     header: "Leave Balance",
@@ -74,7 +90,7 @@ export const getLeaveColumns = ({
     header: "No Of Days",
     accessor: "no_of_days",
     sortable: false,
-    render: (row) => row.leave_days  ?? "0",
+    render: (row) => row.leave_days ?? "0",
   },
 
   {
@@ -119,66 +135,60 @@ export const getLeaveColumns = ({
         }}
       >
         {row.status
-          ? row.status.charAt(0).toUpperCase() +
-            row.status.slice(1)
+          ? row.status.charAt(0).toUpperCase() + row.status.slice(1)
           : "Pending"}
       </span>
     ),
   },
 
   {
-  header: "",
-  accessor: "actions",
-  sortable: false,
+    header: "",
+    accessor: "actions",
+    sortable: false,
+    render: (row) => {
+      const currentStatus = row.status?.toLowerCase();
 
-  render: (row) => {
-    const currentStatus = row.status?.toLowerCase();
+      return (
+        <div onClick={(e) => e.stopPropagation()}>
+          <ActionButtons>
+            {currentStatus === "pending" && (
+              <>
+                <ApproveButton
+                  onClick={() => openApproveModal(row.id)}
+                >
+                  Approve
+                </ApproveButton>
 
-    return (
-      <div onClick={(e) => e.stopPropagation()}>
-        <ActionButtons>
+                <RejectButton
+                  onClick={() => openRejectModal(row.id)}
+                >
+                  Reject
+                </RejectButton>
+              </>
+            )}
 
-          {/* Pending → Approve or Reject */}
-          {currentStatus === "pending" && (
-            <>
-              <ApproveButton
-                onClick={() => openApproveModal(row.id)}
-              >
-                Approve
-              </ApproveButton>
-
+            {currentStatus === "approved" && (
               <RejectButton
                 onClick={() => openRejectModal(row.id)}
               >
                 Reject
               </RejectButton>
-            </>
-          )}
+            )}
 
-          {/* Approved → Can change to Rejected */}
-          {currentStatus === "approved" && (
-            <RejectButton
-              onClick={() => openRejectModal(row.id)}
-            >
-              Reject
-            </RejectButton>
-          )}
-
-          {/* Rejected → Can change to Approved */}
-          {currentStatus === "rejected" && (
-            <ApproveButton
-              onClick={() => openApproveModal(row.id)}
-            >
-              Approve
-            </ApproveButton>
-          )}
-
-        </ActionButtons>
-      </div>
-    );
+            {currentStatus === "rejected" && (
+              <ApproveButton
+                onClick={() => openApproveModal(row.id)}
+              >
+                Approve
+              </ApproveButton>
+            )}
+          </ActionButtons>
+        </div>
+      );
+    },
   },
-},
 ];
+
 export const getPayrollCards = ({
   total = 0,
   pending = 0,

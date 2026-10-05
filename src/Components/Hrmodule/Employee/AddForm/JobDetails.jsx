@@ -17,16 +17,24 @@ import {
   LeaveItem,
   LeaveLabel,
   LeaveInput,
+  Hr,
 } from "./JobDetails.Styles";
 import {
   getLegalFieldConfig,
   isIndiaCompany,
   validateLegalIdentity,
 } from "../../../../utils/employeeCountryFields";
-import { Divider } from "antd";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
 const ALLOWED_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+
+const LEAVE_TYPES = [
+  { name: "casual_leave", label: "Casual Leave" },
+  { name: "sick_leave", label: "Sick Leave" },
+  { name: "earned_leave", label: "Earned Leave" },
+  { name: "maternity_leave", label: "Maternity Leave" },
+  { name: "other_leave", label: "Other Leave" },
+];
 
 const JobDetails = forwardRef(
   ({
@@ -226,34 +234,32 @@ const JobDetails = forwardRef(
 
     const renderError = (field) => <>{errors[field] && <ErrorText>{errors[field]}</ErrorText>}</>;
 
+    const expiryField = isIndiaCompany(country) ? "contract_expiry_date" : "visa_expiry_date";
+
     return (
       <FormContainer noValidate>
-        <Divider />
+        <Hr />
         <SectionTitle>Job Details</SectionTitle>
 
+        {/* Row 1: 5 equal columns */}
         <FormRow $columns={5}>
           <FormGroup>
-  <Label $required>Designation</Label>
-
-  <div style={{ position: "relative" }}>
-    <Input
-      name="designation"
-      value={formData.designation}
-      onChange={handleChange}
-      placeholder="Select or enter Designation"
-      autoComplete="off"
-      list="designation-options"
-    />
-
-    <datalist id="designation-options">
-      {designations.map((designation, index) => (
-        <option key={index} value={designation} />
-      ))}
-    </datalist>
-  </div>
-
-  {renderError("designation")}
-</FormGroup>
+            <Label $required>Designation</Label>
+            <Input
+              name="designation"
+              value={formData.designation}
+              onChange={handleChange}
+              placeholder="Select or enter Designation"
+              autoComplete="off"
+              list="designation-options"
+            />
+            <datalist id="designation-options">
+              {designations.map((designation, index) => (
+                <option key={index} value={designation} />
+              ))}
+            </datalist>
+            {renderError("designation")}
+          </FormGroup>
 
           <FormGroup>
             <Label $required>Joining Date</Label>
@@ -293,79 +299,37 @@ const JobDetails = forwardRef(
           </FormGroup>
         </FormRow>
 
+        {/* Leave allocation: same 5 columns as the row above */}
         <FormRow $columns={5}>
           <FullWidthGroup>
             <Label $required>Leave Allocation</Label>
 
-            <TotalLeaveBox>
-              Total Leave : {formData.total_leave}
-            </TotalLeaveBox>
+            <TotalLeaveBox>Total Leave : {formData.total_leave}</TotalLeaveBox>
 
-            {errors.leave && <ErrorText>{errors.leave}</ErrorText>}
+            {errors.leave && <ErrorText style={{ marginBottom: 8 }}>{errors.leave}</ErrorText>}
 
             <LeaveGrid>
-              <LeaveItem>
-                <LeaveLabel>Casual Leave</LeaveLabel>
-                <LeaveInput
-                  type="number"
-                  name="casual_leave"
-                  value={formData.casual_leave}
-                  onChange={handleChange}
-                />
-              </LeaveItem>
-
-              <LeaveItem>
-                <LeaveLabel>Sick Leave</LeaveLabel>
-                <LeaveInput
-                  type="number"
-                  name="sick_leave"
-                  value={formData.sick_leave}
-                  onChange={handleChange}
-                />
-              </LeaveItem>
-
-              <LeaveItem>
-                <LeaveLabel>Earned Leave</LeaveLabel>
-                <LeaveInput
-                  type="number"
-                  name="earned_leave"
-                  value={formData.earned_leave}
-                  onChange={handleChange}
-                />
-              </LeaveItem>
-
-              <LeaveItem>
-                <LeaveLabel>Maternity Leave</LeaveLabel>
-                <LeaveInput
-                  type="number"
-                  name="maternity_leave"
-                  value={formData.maternity_leave}
-                  onChange={handleChange}
-                />
-              </LeaveItem>
-
-              <LeaveItem>
-                <LeaveLabel>Other Leave</LeaveLabel>
-                <LeaveInput
-                  type="number"
-                  name="other_leave"
-                  value={formData.other_leave}
-                  onChange={handleChange}
-                />
-              </LeaveItem>
+              {LEAVE_TYPES.map(({ name, label }) => (
+                <LeaveItem key={name}>
+                  <LeaveLabel>{label}</LeaveLabel>
+                  <LeaveInput
+                    type="number"
+                    name={name}
+                    value={formData[name]}
+                    onChange={handleChange}
+                    min="0"
+                  />
+                </LeaveItem>
+              ))}
             </LeaveGrid>
           </FullWidthGroup>
         </FormRow>
-        <Divider />
+
+        <Hr />
         <SectionTitle>Employee Legal & ID Information</SectionTitle>
 
+        {/* One 3-column grid so every field lines up */}
         <FormRow $columns={3}>
-          {/* <FormGroup>
-          <Label>Phone Number</Label>
-          <Input name="phno" value={formData.phno} onChange={handleChange} placeholder="Enter Phone number" autoComplete="off" />
-          {renderError("phno")}
-        </FormGroup> */}
-
           {!isIndiaCompany(country) && legalConfig.identityField !== "passport_number" && (
             <FormGroup>
               <Label>Passport Number</Label>
@@ -389,15 +353,6 @@ const JobDetails = forwardRef(
             <Input name="insurance_number" value={formData.insurance_number} onChange={handleChange} placeholder="Enter Insurance Number" autoComplete="off" />
             {renderError("insurance_number")}
           </FormGroup>
-        </FormRow>
-
-        <FormRow $columns={3}>
-          <FormGroup>
-            <Label>ID Card Photo</Label>
-            <FileInputLabel htmlFor="idcard">{formData.idcard?.name || "Upload ID Card +"}</FileInputLabel>
-            <FileInput id="idcard" name="idcard" type="file" onChange={handleChange} />
-            {errors.idcard && <ErrorText>{errors.idcard}</ErrorText>}
-          </FormGroup>
 
           <FormGroup>
             <Label $required>{legalConfig.identityLabel}</Label>
@@ -419,12 +374,19 @@ const JobDetails = forwardRef(
             <Label>{isIndiaCompany(country) ? "Contract Expiry Date" : "Visa Expiry Date"}</Label>
             <Input
               type="date"
-              name={isIndiaCompany(country) ? "contract_expiry_date" : "visa_expiry_date"}
-              value={isIndiaCompany(country) ? formData.contract_expiry_date : formData.visa_expiry_date}
+              name={expiryField}
+              value={formData[expiryField]}
               onChange={handleChange}
               autoComplete="off"
             />
-            {renderError(isIndiaCompany(country) ? "contract_expiry_date" : "visa_expiry_date")}
+            {renderError(expiryField)}
+          </FormGroup>
+
+          <FormGroup>
+            <Label>ID Card Photo</Label>
+            <FileInputLabel htmlFor="idcard">{formData.idcard?.name || "Upload ID Card +"}</FileInputLabel>
+            <FileInput id="idcard" name="idcard" type="file" onChange={handleChange} />
+            {errors.idcard && <ErrorText>{errors.idcard}</ErrorText>}
           </FormGroup>
         </FormRow>
       </FormContainer>
