@@ -28,6 +28,7 @@ const ReusableTable = ({
   loadingMessage = "Loading...",
    totalRow, // NEW: object keyed by accessor, e.g. { debit: "10,000.00", credit: "0.00", balance: "10,000.00" }
   totalRowLabel = "TOTAL",
+    autoLayout = false,
 }) => {
   const [sortKey, setSortKey] = useState("");
   const [sortDirection, setSortDirection] = useState("asc");
@@ -66,7 +67,7 @@ const ReusableTable = ({
   return (
     <Container>
       <TableScrollContainer>
-        <StyledTable>
+     <StyledTable $autoLayout={autoLayout}>
 
           <colgroup>
             {columns.map((column) => (
@@ -138,9 +139,7 @@ const ReusableTable = ({
                       data-priority={column.priority || 1}
                       style={
                         column.render
-                          ? {
-                              whiteSpace: "normal",
-                            }
+                           ? { whiteSpace: autoLayout ? "nowrap" : "normal" }
                           : undefined
                       }
                       title={

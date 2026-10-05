@@ -36,6 +36,7 @@ import debitNoteReducer from "./finance/purchases/debitNoteSlice";
 import purchasePaymentsReducer from "./finance/Purchases/paymentSlice";
 
 
+import vendorLedgerReducer from "./finance/purchases/vendorLedgerslice";
 export const store = configureStore({
   reducer: {
 
@@ -75,6 +76,7 @@ export const store = configureStore({
     vendorDetail: vendorDetailReducer,
     debitNote: debitNoteReducer,
     purchasePayments: purchasePaymentsReducer,
+    vendorLedger: vendorLedgerReducer,
 
   },
 });

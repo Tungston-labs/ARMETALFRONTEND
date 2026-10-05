@@ -1,22 +1,22 @@
-import React from "react";
-import ErrorSomething from "../Pages/error/ErrorSomething";
+// import React from "react";
+// import ErrorSomething from "../Pages/error/ErrorSomething";
 
-class ErrorBoundary extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = { hasError: false };
-  }
+// class ErrorBoundary extends React.Component {
+//   constructor(props) {
+//     super(props);
+//     this.state = { hasError: false };
+//   }
 
-  static getDerivedStateFromError() {
-    return { hasError: true };
-  }
+//   static getDerivedStateFromError() {
+//     return { hasError: true };
+//   }
 
-  render() {
-    if (this.state.hasError) {
-      return <ErrorSomething />;
-    }
-    return this.props.children;
-  }
-}
+//   render() {
+//     if (this.state.hasError) {
+//       return <ErrorSomething />;
+//     }
+//     return this.props.children;
+//   }
+// }
 
-export default ErrorBoundary;
+// export default ErrorBoundary;

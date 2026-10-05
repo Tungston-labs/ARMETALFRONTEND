@@ -1,10 +1,12 @@
 import styled from "styled-components";
 
+const CONTROL_HEIGHT = "40px";
+
 export const Container = styled.div`
   width: 100%;
-  margin: auto;
-  margin-top:15px
-  // padding: 20px;
+  margin: 0 auto;
+  margin-top: 15px;
+  margin-bottom: 20px;
 `;
 
 export const ProfileWrapper = styled.div`
@@ -19,7 +21,7 @@ export const UploadWrapper = styled.div`
   align-items: center;
 `;
 
-/* ── New standard avatar upload design ───────────────────── */
+/* ── Avatar upload ───────────────────────────────────────── */
 
 export const AvatarShell = styled.div`
   position: relative;
@@ -141,7 +143,7 @@ export const HelperText = styled.div`
   text-align: center;
 `;
 
-/* ── Form layout ──────────────────────────────────────────── */
+/* ── Form layout (matches JobDetails.Styles) ─────────────── */
 
 export const InfoWrapper = styled.div`
   display: flex;
@@ -152,11 +154,16 @@ export const InfoWrapper = styled.div`
 
 export const Row = styled.div`
   display: grid;
-  grid-template-columns: repeat(${(props) => props.$columns || 5}, 1fr);
-  gap: 16px;
+  grid-template-columns: repeat(${(props) => props.$columns || 5}, minmax(0, 1fr));
+  gap: 16px 20px;
+  align-items: start; /* an error under one field won't push the others */
 
   @media (max-width: 900px) {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  @media (max-width: 600px) {
+    grid-template-columns: minmax(0, 1fr);
   }
 `;
 
@@ -165,16 +172,15 @@ export const FieldGroup = styled.div`
   flex-direction: column;
   min-width: 0;
 `;
+
 export const FieldLabel = styled.label`
-  margin-bottom: 6px;
-  font-weight: 500;
-  color: #172554;
-  font-family: "Poppins";
+  display: block;
+  margin-bottom: 8px;
+  color: #333;
+  font-family: "Poppins", sans-serif;
   font-weight: 400;
-  font-style: Regular;
   font-size: 14px;
-  line-height: 100%;
-  letter-spacing: 0%;
+  line-height: 1.2;
 
   ${(props) =>
     props.$required &&
@@ -187,10 +193,14 @@ export const FieldLabel = styled.label`
 `;
 
 export const Input = styled.input`
-  padding: 8px;
+  box-sizing: border-box;
+  width: 100%;
+  height: ${CONTROL_HEIGHT};
+  padding: 0 10px;
   border-radius: 4px;
   border: 1px solid lightgray;
-  font-size: 0.95em;
+  font-size: 1rem;
+  background: #fff;
 
   &:focus {
     border-color: #3352ba;
@@ -200,11 +210,14 @@ export const Input = styled.input`
 `;
 
 export const TextArea = styled.textarea`
-  padding: 8px;
+  box-sizing: border-box;
+  width: 100%;
+  padding: 10px;
   border-radius: 4px;
   border: 1px solid lightgray;
-  font-size: 0.95em;
+  font-size: 1rem;
   resize: vertical;
+
   &:focus {
     border-color: #3352ba;
     outline: none;
@@ -213,11 +226,15 @@ export const TextArea = styled.textarea`
 `;
 
 export const Select = styled.select`
-  padding: 8px;
+  box-sizing: border-box;
+  width: 100%;
+  height: ${CONTROL_HEIGHT};
+  padding: 0 10px;
   border-radius: 4px;
   border: 1px solid lightgray;
-  font-size: 0.95em;
-  background: white;
+  font-size: 1rem;
+  background: #fff;
+
   &:focus {
     border-color: #3352ba;
     outline: none;
@@ -226,20 +243,18 @@ export const Select = styled.select`
 `;
 
 export const ErrorText = styled.div`
+  margin-top: 4px;
   color: red;
   font-size: 0.85em;
-  margin-top: 4px;
+  line-height: 1.3;
   text-align: left;
 `;
+
 export const SectionTitle = styled.h2`
-  font-family: "Poppins";
-font-weight: 400;
-font-style: Regular;
-font-size: 16px;
-line-height: 100%;
-letter-spacing: 0%;
-
-  // border-bottom: 2px solid #e2e8f0;
-  // padding-bottom: 8px;
+  margin: 0;
+  color: #333;
+  font-family: "Poppins", sans-serif;
+  font-weight: 400;
+  font-size: 16px;
+  line-height: 1.2;
 `;
-

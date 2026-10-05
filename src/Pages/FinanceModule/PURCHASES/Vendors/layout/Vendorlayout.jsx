@@ -15,33 +15,37 @@ import ReusableHeader from "../../../../../Components/ReusableTable/ReusableHead
 import { DUMMY_VENDORS } from "./Vendordummydata";
 
 const pageMeta = {
-  overview: { title: "Overview", showAddButton: false },
+  overview: { title: "Overview", showAddButton: false, showDateFilter: false },
 
   "purchase-orders": {
     title: "Purchase Orders",
     showAddButton: true,
     buttonText: "+ New Purchase Order",
+    showDateFilter: true,
   },
 
   invoices: {
     title: "Bills",
     showAddButton: true,
     buttonText: "+ Create bills",
+    showDateFilter: true,
   },
 
   payments: {
     title: "Payments",
     showAddButton: true,
     buttonText: "+ Record Payment",
+    showDateFilter: true,
   },
 
   ledger: {
     title: "Ledger",
     showAddButton: true,
     buttonText: "+ New Journal Entry",
+    showDateFilter: true,
   },
 
-  "debit-notes": { title: "Debit Notes", showAddButton: false },
+  "debit-notes": { title: "Debit Notes", showAddButton: false, showDateFilter: true },
 };
 
 /* =========================================================
@@ -108,7 +112,7 @@ const VendorLayout = () => {
       location.pathname.endsWith(`/${key}`)
     ) || "overview";
 
-  const { showAddButton, buttonText } = pageMeta[activeKey];
+const { showAddButton, buttonText, showDateFilter } = pageMeta[activeKey];
 
   /* ---------- HEADER BUTTON CLICK ---------- */
 
@@ -212,6 +216,7 @@ const VendorLayout = () => {
         buttonText={buttonText}
         onButtonClick={handleHeaderButtonClick}
       >
+          {showDateFilter && (
         <DateRangeWrapper>
           <DatePickerContainer>
             <DateInput
@@ -233,6 +238,7 @@ const VendorLayout = () => {
             />
           </DatePickerContainer>
         </DateRangeWrapper>
+          )}
       </ReusableHeader>
 
       <VendorHeader />
