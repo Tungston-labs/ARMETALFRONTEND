@@ -1,4 +1,4 @@
-import API from "../../api"; 
+import API from "../../api";
 const BASE_URL = "/finance/vendor-ledger/";
 
 // Remove empty filters so they are not sent as ?search=&status=...
@@ -35,8 +35,8 @@ export const listVendorLedgerService = async ({
   vendor = "",
   transaction_type = "",
   status = "",
-  from_date = "",
-  to_date = "",
+  date_from = "",
+  date_to = "",
 } = {}) => {
   const response = await API.get(BASE_URL, {
     params: cleanParams({
@@ -46,8 +46,8 @@ export const listVendorLedgerService = async ({
       vendor,
       transaction_type,
       status,
-      from_date,
-      to_date,
+        date_from,
+      date_to,
     }),
   });
   return response.data;
