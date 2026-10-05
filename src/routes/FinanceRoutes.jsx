@@ -39,7 +39,7 @@ import SalesReturnAction from "../Pages/FinanceModule/SALES/SalesReturn/action/S
 import CreditAction from "../Pages/FinanceModule/SALES/CreditNotes/action/CreditAction.jsx";
 import PurchaseOrders from "../Pages/FinanceModule/PURCHASES/PurchaseOrders/PurchaseOrders.jsx";
 import Vendors from "../Pages/FinanceModule/PURCHASES/Vendors/Vendors.jsx";
-import AddingPurchaseOrder from "../Pages/FinanceModule/PURCHASES/PurchaseOrders/modal/ Addingpurchaseorder.jsx";
+import AddingPurchaseOrder from "../Pages/FinanceModule/PURCHASES/PurchaseOrders/modal/Addingpurchaseorder.jsx";
 import VendorLedger from "../Pages/FinanceModule/PURCHASES/VendorLedger/VendorLedger.jsx";
 import VendorOverview from "../Pages/FinanceModule/PURCHASES/Vendors/Overview/VendorOverview.jsx";
 import VendorPurchaseOrders from "../Pages/FinanceModule/PURCHASES/Vendors/Orders/VendorPurchaseOrders.jsx";
