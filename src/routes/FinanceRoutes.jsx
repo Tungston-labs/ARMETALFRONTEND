@@ -75,6 +75,12 @@ import VendorBills from "../Pages/FinanceModule/PURCHASES/Vendors/Bills/VendorBi
 import Bill from "../Pages/FinanceModule/PURCHASES/Bill/Bill.jsx";
 import CreateBill from "../Pages/FinanceModule/PURCHASES/Bill/modal/CreateBill.jsx";
 
+/* =========================================================
+   PURCHASES - PAYMENT
+========================================================= */
+
+import PurchasePaymentPage from "../Pages/FinanceModule/PURCHASES/Payments/Payment.jsx";
+
 const FinanceRoutes = () => {
   return (
     <>
@@ -101,6 +107,12 @@ const FinanceRoutes = () => {
       <Route path="purchases/bill/add" element={<CreateBill />} />
 
       <Route path="purchases/bill/edit/:id" element={<CreateBill />} />
+
+      {/* =====================================================
+          PURCHASE PAYMENT
+      ===================================================== */}
+
+      <Route path="purchases/payments" element={<PurchasePaymentPage />} />
 
       {/* =====================================================
           PURCHASE DEBIT NOTES
@@ -188,7 +200,7 @@ const FinanceRoutes = () => {
       <Route path="delivery/notes/edit/:id" element={<CreditAction />} />
 
       {/* =====================================================
-          PAYMENTS
+          SALES PAYMENTS
       ===================================================== */}
 
       <Route path="sales/payments" element={<PaymentPage />} />
@@ -246,6 +258,10 @@ const FinanceRoutes = () => {
 
         <Route path="bills" element={<VendorBills />} />
 
+        {/* =================================================
+            VENDOR PAYMENT
+        ================================================= */}
+
         <Route path="payments" element={<VendorPayments />} />
 
         <Route path="ledger" element={<VendorLedgerTab />} />
@@ -255,12 +271,6 @@ const FinanceRoutes = () => {
         ================================================= */}
 
         <Route path="debit-notes" element={<VendorDebitNotes />} />
-
-        <Route path="purchases/bill" element={<Bill />} />
-
-        <Route path="purchases/bill/add" element={<CreateBill />} />
-
-        <Route path="purchases/bill/edit/:id" element={<CreateBill />} />
       </Route>
     </>
   );

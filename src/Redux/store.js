@@ -33,6 +33,7 @@ import billReducer from "./finance/purchases/BillSlice";
 import purchaseOrderReducer from "./finance/purchases/Purchaseordersslice";
 import vendorDetailReducer from "./finance/purchases/Vendordetailslice";
 import debitNoteReducer from "./finance/purchases/debitNoteSlice";
+import purchasePaymentsReducer from "./finance/Purchases/paymentSlice";
 
 
 export const store = configureStore({
@@ -73,6 +74,7 @@ export const store = configureStore({
     purchaseOrder: purchaseOrderReducer,
     vendorDetail: vendorDetailReducer,
     debitNote: debitNoteReducer,
+    purchasePayments: purchasePaymentsReducer,
 
   },
 });

@@ -221,6 +221,9 @@ const formatError = (error) => {
     return "Something went wrong.";
 };
 
+const getApiError = (error) =>
+    formatError(error?.response?.data ?? error?.message);
+
 /* =========================================================
    INITIAL STATE
 ========================================================= */

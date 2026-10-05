@@ -5,57 +5,33 @@ import ReusableFilter from "../../../../Components/ReusableTable/ReusableFilter"
 import ReusableTable from "../../../../Components/ReusableTable/ReusableTable";
 import ReusablePagination from "../../../../Components/Pagination/ReusablePagination";
 import StatsCards from "../../../../Components/StatsCards/StatsCards";
-
 import useDebitNotes from "./UseDebitNotes";
 
 const DebitNotes = () => {
   const {
     search,
-
     reason,
-
     status,
-
     startDate,
-
     endDate,
-
     currentPage,
-
     totalPages,
-
     totalItems,
-
     setCurrentPage,
-
     cards,
-
     columns,
-
     paginatedData,
-
     loading,
-
     kpiLoading,
-
     errorMessage,
-
     reasonOptions,
-
     statusOptions,
-
     handleSearch,
-
     handleReasonChange,
-
     handleStatusChange,
-
     handleStartDateChange,
-
     handleEndDateChange,
-
     handleAddDebitNote,
-
     handleExport,
   } = useDebitNotes();
 
