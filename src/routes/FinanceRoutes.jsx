@@ -44,7 +44,7 @@ import CreditAction from "../Pages/FinanceModule/SALES/CreditNotes/action/Credit
 
 import PurchaseOrders from "../Pages/FinanceModule/PURCHASES/PurchaseOrders/PurchaseOrders.jsx";
 import Vendors from "../Pages/FinanceModule/PURCHASES/Vendors/Vendors.jsx";
-import AddingPurchaseOrder from "../Pages/FinanceModule/PURCHASES/PurchaseOrders/modal/ Addingpurchaseorder.jsx";
+import AddingPurchaseOrder from "../Pages/FinanceModule/PURCHASES/PurchaseOrders/modal/Addingpurchaseorder.jsx";
 
 import VendorLedger from "../Pages/FinanceModule/PURCHASES/VendorLedger/VendorLedger.jsx";
 import VendorOverview from "../Pages/FinanceModule/PURCHASES/Vendors/Overview/VendorOverview.jsx";
@@ -260,7 +260,7 @@ const FinanceRoutes = () => {
           <Route path="bills" element={<VendorBills />} />
           <Route path="payments" element={<VendorPayments />} />
           <Route path="ledger" element={<VendorLedgerTab />} />
-          <Route path="debit-notes" element={<VendorCreditNotes />} />
+          <Route path="debit-notes" element={<VendorDebitNotes />} />
         </Route>
 
         <Route path="purchase-orders" element={<VendorPurchaseOrders />} />
