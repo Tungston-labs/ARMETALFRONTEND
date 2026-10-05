@@ -28,10 +28,6 @@ import {
 } from "react-icons/fi";
 
 const CODE_PATTERN = /^[A-Za-z0-9#-]{2,20}$/;
-
-// Maps backend serializer field names -> frontend form state keys,
-// so a 400 response like { errors: { category_name: [...] } } lands
-// on the right input instead of only showing a generic banner.
 const BACKEND_FIELD_MAP = {
     code: "code",
     category_name: "categoryName",
@@ -67,31 +63,17 @@ const CategoryModal = ({
     const [parentSearch, setParentSearch] =
         useState("");
 
-    const [showParentDropdown, setShowParentDropdown] =
-        useState(false);
-
+    const [showParentDropdown, setShowParentDropdown] = useState(false);
     const [saving, setSaving] = useState(false);
-
-    // Surfaces a rejected onSave (e.g. network/server error) to the user
-    // instead of letting it fail silently as an unhandled promise rejection.
     const [submitError, setSubmitError] = useState(null);
-
     const comboBoxRef = useRef(null);
 
-    /*
-     * Reset / prefill form whenever modal opens.
-     * Edit mode: seed from initialData.
-     * Add mode: blank slate (unchanged from before).
-     */
     useEffect(() => {
         if (isOpen) {
             if (isEdit) {
                 setFormData({
                     code: initialData.code ?? "",
                     categoryName: initialData.category_name ?? "",
-                    // parent_category may come back as an id, or nested
-                    // under parent_category / parent_category_id depending
-                    // on the serializer — this covers the common shapes.
                     parentCategory:
                         initialData.parent_category ??
                         initialData.parent_category_id ??
@@ -113,10 +95,6 @@ const CategoryModal = ({
             setSubmitError(null);
         }
     }, [isOpen, isEdit, initialData]);
-
-    /*
-     * Close dropdown when clicking outside
-     */
     useEffect(() => {
         const handleClickOutside = (event) => {
             if (
@@ -141,10 +119,6 @@ const CategoryModal = ({
             );
         };
     }, []);
-
-    /*
-     * Clear a single field's error as the user edits it
-     */
     const clearError = (field) => {
         setErrors((prev) => {
             if (!prev[field]) return prev;
@@ -153,10 +127,6 @@ const CategoryModal = ({
             return next;
         });
     };
-
-    /*
-     * Normal input change
-     */
     const handleChange = (e) => {
         const { name, value } = e.target;
 
@@ -167,18 +137,10 @@ const CategoryModal = ({
 
         clearError(name);
     };
-
-    /*
-     * Parent category search
-     */
     const handleParentSearch = (e) => {
         const value = e.target.value;
 
         setParentSearch(value);
-
-        /*
-         * While typing, clear selected parent ID
-         */
         setFormData((prev) => ({
             ...prev,
             parentCategory: "",
@@ -187,10 +149,6 @@ const CategoryModal = ({
         clearError("parentCategory");
         setShowParentDropdown(true);
     };
-
-    /*
-     * Select existing parent
-     */
     const handleSelectParent = (category) => {
         setParentSearch(
             category.category_name
@@ -198,20 +156,12 @@ const CategoryModal = ({
 
         setFormData((prev) => ({
             ...prev,
-
-            /*
-             * Send category ID
-             */
             parentCategory: category.id,
         }));
 
         clearError("parentCategory");
         setShowParentDropdown(false);
     };
-
-    /*
-     * Filter categories
-     */
     const filteredCategories = parentCategories.filter(
         (category) =>
             category.category_name
@@ -220,10 +170,6 @@ const CategoryModal = ({
                     parentSearch.toLowerCase()
                 )
     );
-
-    /*
-     * Check exact match
-     */
     const exactMatch = parentCategories.some(
         (category) =>
             category.category_name
@@ -232,22 +178,6 @@ const CategoryModal = ({
                 .trim()
                 .toLowerCase()
     );
-
-    /*
-     * VALIDATION
-     * Note: the code/name "already in use" checks below only look at
-     * `categories`, which is whatever page is currently loaded in the
-     * table — not the full company-wide dataset. This is a soft,
-     * best-effort UX hint only. The backend's unique constraint on
-     * (company, code) is the actual source of truth, and a real
-     * duplicate will still come back as a field error from the server
-     * (handled in handleSubmit's catch block below) even if this
-     * client-side check misses it.
-     *
-     * In edit mode, the category being edited is excluded from these
-     * checks — otherwise saving without changing code/name would
-     * false-positive against itself.
-     */
     const validate = () => {
         const nextErrors = {};
 
@@ -257,8 +187,6 @@ const CategoryModal = ({
         const otherCategories = isEdit
             ? categories.filter((c) => c.id !== initialData.id)
             : categories;
-
-        // --- CODE ---
         if (!code) {
             nextErrors.code = "Category code is required";
         } else if (!CODE_PATTERN.test(code)) {
@@ -288,10 +216,6 @@ const CategoryModal = ({
             nextErrors.categoryName =
                 "A category with this name already exists";
         }
-
-        // --- PARENT CATEGORY ---
-        // If the user typed something but never picked a real option,
-        // don't silently submit with no parent.
         if (parentSearch.trim() && !formData.parentCategory) {
             nextErrors.parentCategory = exactMatch
                 ? "Please select the matching category from the list"
@@ -312,34 +236,17 @@ const CategoryModal = ({
 
         return Object.keys(nextErrors).length === 0;
     };
-
-    /*
-     * Submit
-     */
     const handleSubmit = async (e) => {
         e.preventDefault();
 
         if (!validate()) {
             return;
         }
-
-        /*
-         * Convert frontend field names
-         * to backend API field names.
-         */
         const categoryData = {
             code: formData.code.trim(),
 
             category_name:
                 formData.categoryName.trim(),
-
-            /*
-             * Send selected category ID, or null when no parent
-             * is selected. The backend field is a nullable FK
-             * (PrimaryKeyRelatedField(allow_null=True)) — sending
-             * an empty string instead of null fails validation,
-             * since "" is not a valid primary key.
-             */
             parent_category:
                 formData.parentCategory || null,
 
@@ -359,10 +266,6 @@ const CategoryModal = ({
             }
 
         } catch (err) {
-            // Rejected thunk payload shape (from rejectWithValue) mirrors
-            // the backend's error response: { message, errors: {...} }.
-            // Map any field-level errors onto the matching input so the
-            // user sees exactly what's wrong, not just a generic banner.
             const backendFieldErrors = err?.errors;
 
             if (
@@ -400,11 +303,8 @@ const CategoryModal = ({
 
     return (
         <ModalOverlay>
-
             <ModalContainer>
-
                 <ModalHeader>
-
                     <ModalTitle>
                         {isEdit ? "Edit Category" : "Add New Category"}
                     </ModalTitle>
@@ -414,18 +314,13 @@ const CategoryModal = ({
                             ? "Update this product or service category"
                             : "Create a new product or services category"}
                     </ModalSubtitle>
-
                 </ModalHeader>
 
                 <form onSubmit={handleSubmit} noValidate>
 
                     <FormRow>
-
-                        {/* CODE */}
-
                         <FormGroup>
-
-                            <Label>
+                          <Label>
                                 CODE
                             </Label>
 
@@ -445,9 +340,6 @@ const CategoryModal = ({
                             )}
 
                         </FormGroup>
-
-                        {/* CATEGORY NAME */}
-
                         <FormGroup>
 
                             <Label>
@@ -470,9 +362,6 @@ const CategoryModal = ({
                             )}
 
                         </FormGroup>
-
-                        {/* PARENT CATEGORY */}
-
                         <FormGroup ref={comboBoxRef}>
 
                             <Label>
@@ -547,9 +436,6 @@ const CategoryModal = ({
                             )}
 
                         </FormGroup>
-
-                        {/* CATEGORY TYPE */}
-
                         <FormGroup>
 
                             <Label>
