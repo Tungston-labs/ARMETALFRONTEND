@@ -39,7 +39,7 @@ export const DateRangeWrapper = styled.div`
   display: flex;
   align-items: center;
   gap: 8px;
-
+ margin-right: 16px;
   padding: 8px 12px;
 
   border: 1px solid #d9d9d9;

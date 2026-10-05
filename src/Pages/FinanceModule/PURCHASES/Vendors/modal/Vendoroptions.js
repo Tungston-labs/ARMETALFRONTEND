@@ -1,12 +1,7 @@
-// Dropdown options shared by the filters and the Add Vendor modal.
-// Only the values seen in your API examples are certain
-// (equipment, telecom, 30_days, AED, active/inactive) — add the rest
-// to match what your backend accepts.
 
-// Filter dropdown (plain strings; lower-cased before sending to the API)
 export const STATUS_OPTIONS = ["Active", "Inactive"];
 
-// Modal dropdown ({ label, value })
+
 export const CLIENT_STATUS_OPTIONS = [
     { label: "Active", value: "active" },
     { label: "Inactive", value: "inactive" },
@@ -15,9 +10,15 @@ export const CLIENT_STATUS_OPTIONS = [
 export const VENDOR_TYPE_OPTIONS = [
     { label: "Equipment", value: "equipment" },
     { label: "Telecom", value: "telecom" },
+        { label: "Networking", value: "networking" },
+            { label: "Software", value: "software" },
+                { label: "Services", value: "services" },
+                      { label: "Other", value: "other" },
+
 ];
 
 export const PAYMENT_TERM_OPTIONS = [
+    { label: "7 Days", value: "7_days" },
     { label: "15 Days", value: "15_days" },
     { label: "30 Days", value: "30_days" },
     { label: "45 Days", value: "45_days" },

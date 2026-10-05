@@ -4,7 +4,8 @@ import { useDispatch, useSelector } from "react-redux";
 
 import ReusableHeader from "../../../../../Components/ReusableTable/ReusableHeader";
 import CompanyHeader from "../../../../../Components/Finance/sales/customer/CompanyHeader";
-
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 import {
   LayoutWrapper,
   ContentSection,
@@ -17,93 +18,24 @@ import {
 import { getCustomerById } from "../../../../../Redux/finance/Sales/CustomerSlice";
 
 /* =========================================================
-   PAGE META
+   PAGE META  (set showDateFilter per page)
 ========================================================= */
 
 const pageMeta = {
-  overview: {
-    title: "Overview",
-    showAddButton: false,
-  },
-
-  quotations: {
-    title: "Quotations",
-    showAddButton: false,
-  },
-
-  orders: {
-    title: "Orders",
-    showAddButton: false,
-  },
-
-  invoices: {
-    title: "Invoices",
-    showAddButton: true,
-    buttonText: "+ Generate Invoice",
-  },
-
-  payments: {
-    title: "Payments",
-    showAddButton: true,
-    buttonText: "+ Record Payment",
-  },
-
-  ledger: {
-    title: "Ledger",
-    showAddButton: true,
-    buttonText: "+ New Journal Entry",
-  },
-
-  "credit-notes": {
-    title: "Credit Notes",
-    showAddButton: false,
-  },
+  overview:      { title: "Overview",     showAddButton: false, showDateFilter: false },
+  quotations:    { title: "Quotations",   showAddButton: false, showDateFilter: true },
+  orders:        { title: "Orders",       showAddButton: false, showDateFilter: true },
+  invoices:      { title: "Invoices",     showAddButton: true,  buttonText: "+ Generate Invoice",    showDateFilter: true },
+  payments:      { title: "Payments",     showAddButton: true,  buttonText: "+ Record Payment",      showDateFilter: true },
+  ledger:        { title: "Ledger",       showAddButton: true,  buttonText: "+ New Journal Entry",   showDateFilter: true },
+  "credit-notes":{ title: "Credit Notes", showAddButton: false, showDateFilter: false },
 };
-
-/* =========================================================
-   GET CURRENT MONTH RANGE
-========================================================= */
-
-const getCurrentMonthRange = () => {
-  const today = new Date();
-
-  const year = today.getFullYear();
-  const month = today.getMonth();
-
-  const firstDay = new Date(year, month, 1);
-  const lastDay = new Date(year, month + 1, 0);
-
-  const formatDate = (date) => {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const day = String(date.getDate()).padStart(2, "0");
-
-    return `${year}-${month}-${day}`;
-  };
-
-  return {
-    start: formatDate(firstDay),
-    end: formatDate(lastDay),
-  };
-};
-
-/* =========================================================
-   FORMAT DATE FOR DISPLAY
-========================================================= */
 
 const formatDisplayDate = (dateString) => {
-  if (!dateString) {
-    return "";
-  }
-
+  if (!dateString) return "";
   const [year, month, day] = dateString.split("-");
-
   return `${day}/${month}/${year}`;
 };
-
-/* =========================================================
-   COMPANY LAYOUT
-========================================================= */
 
 const CompanyLayout = () => {
   const { customerId } = useParams();
@@ -112,182 +44,110 @@ const CompanyLayout = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  /* =========================================================
-     CUSTOMER
-  ========================================================= */
+  const { selectedCustomer } = useSelector((state) => state.customer);
 
-  const { selectedCustomer } = useSelector(
-    (state) => state.customer
-  );
+  /* ---------- DATE STATES (empty by default) ---------- */
 
-  /* =========================================================
-     CURRENT MONTH
-  ========================================================= */
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+const toStr = (d) =>
+  d
+    ? `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`
+    : "";
 
-  const currentMonth = getCurrentMonthRange();
-
-  /* =========================================================
-     DATE STATES
-  ========================================================= */
-
-  const [startDate, setStartDate] = useState(
-    currentMonth.start
-  );
-
-  const [endDate, setEndDate] = useState(
-    currentMonth.end
-  );
-
-  /* =========================================================
-     GET CUSTOMER BY ID
-  ========================================================= */
-
+const toDate = (s) => (s ? new Date(`${s}T00:00:00`) : null);
   useEffect(() => {
-    if (!customerId) {
-      return;
-    }
-
+    if (!customerId) return;
     dispatch(getCustomerById(customerId));
   }, [dispatch, customerId]);
 
-  /* =========================================================
-     ACTIVE PAGE
-  ========================================================= */
+  /* ---------- ACTIVE PAGE ---------- */
 
   const activeKey =
     Object.keys(pageMeta).find((key) =>
       location.pathname.endsWith(`/${key}`)
     ) || "overview";
 
-  const {
-    title,
-    showAddButton,
-    buttonText,
-  } = pageMeta[activeKey];
+  const { showAddButton, buttonText, showDateFilter } = pageMeta[activeKey];
 
-  /* =========================================================
-     HEADER BUTTON CLICK
-  ========================================================= */
+  // clear the range when moving to a tab that has no date filter
+  useEffect(() => {
+    if (!showDateFilter) {
+      setStartDate("");
+      setEndDate("");
+    }
+  }, [showDateFilter, activeKey]);
+
+  /* ---------- HEADER BUTTON CLICK ---------- */
 
   const handleHeaderButtonClick = () => {
-    if (!customerId) {
-      return;
-    }
-
-    /* -----------------------------------------
-       INVOICE
-       Navigate to invoice creation page
-    ----------------------------------------- */
+    if (!customerId) return;
 
     if (activeKey === "invoices") {
-      navigate(
-        `/sales/invoices/add`
-      );
-
+      navigate(`/sales/invoices/add`);
       return;
     }
-
-    /* -----------------------------------------
-       PAYMENTS
-       Open payment modal
-    ----------------------------------------- */
 
     if (activeKey === "payments") {
-      // Call your modal state/function here
-      // Example:
       // setShowPaymentModal(true);
-
       return;
     }
 
-    /* -----------------------------------------
-       LEDGER
-       Navigate to journal entry page
-    ----------------------------------------- */
-
     if (activeKey === "ledger") {
-      navigate(
-        `/finance/ledger/create?customer_id=${customerId}`
-      );
-
+      navigate(`/finance/ledger/create?customer_id=${customerId}`);
       return;
     }
   };
 
-  /* =========================================================
-     START DATE CHANGE
-  ========================================================= */
+  /* ---------- DATE CHANGE ---------- */
 
   const handleStartDateChange = (e) => {
     const value = e.target.value;
-
     if (!value) {
       setStartDate("");
       return;
     }
-
     setStartDate(value);
-
-    if (endDate && value > endDate) {
-      setEndDate(value);
-    }
+    if (endDate && value > endDate) setEndDate(value);
   };
-
-  /* =========================================================
-     END DATE CHANGE
-  ========================================================= */
 
   const handleEndDateChange = (e) => {
     const value = e.target.value;
-
     if (!value) {
       setEndDate("");
       return;
     }
-
-    if (startDate && value < startDate) {
-      return;
-    }
-
+    if (startDate && value < startDate) return;
     setEndDate(value);
   };
 
-  /* =========================================================
-     OUTLET CONTEXT
-  ========================================================= */
+  /* ---------- OUTLET CONTEXT ---------- */
+
+  // pages without the filter always get an empty range
+  const activeStart = showDateFilter ? startDate : "";
+  const activeEnd = showDateFilter ? endDate : "";
 
   const outletContext = {
     customerId,
 
-    startDate,
-    endDate,
+    startDate: activeStart,
+    endDate: activeEnd,
 
-    formattedStartDate: formatDisplayDate(startDate),
-    formattedEndDate: formatDisplayDate(endDate),
+    formattedStartDate: formatDisplayDate(activeStart),
+    formattedEndDate: formatDisplayDate(activeEnd),
 
     dateRange: {
-      start_date: startDate,
-      end_date: endDate,
+      start_date: activeStart,
+      end_date: activeEnd,
     },
   };
 
-  /* =========================================================
-     RETURN
-  ========================================================= */
+  /* ---------- RETURN ---------- */
 
   return (
     <LayoutWrapper>
-
-      {/* =====================================================
-          CUSTOMER PAGE HEADER
-      ===================================================== */}
-
       <ReusableHeader
-        title={
-          selectedCustomer?.customer_name ||
-          "Loading..."
-        }
-
+        title={selectedCustomer?.customer_name || "Loading..."}
         subtitle={
           selectedCustomer
             ? `${selectedCustomer.customer_id || ""}${
@@ -297,73 +157,43 @@ const CompanyLayout = () => {
               }`
             : ""
         }
-
-        badge={
-          selectedCustomer?.status || "Active"
-        }
-
+        badge={selectedCustomer?.status || "Active"}
         showBack
         onBack={() => navigate("/sales/customers")}
-
         showButton={showAddButton}
-
         buttonText={buttonText}
-
         onButtonClick={handleHeaderButtonClick}
       >
+        {showDateFilter && (
+          <DateRangeWrapper>
+            <DatePickerContainer>
+              <DateInput
+                type="date"
+                value={startDate}
+                onChange={handleStartDateChange}
+                max={endDate || undefined}
+                aria-label="Start date"
+              />
 
-        {/* ===================================================
-            DATE RANGE
-        =================================================== */}
+              <DateSeparator>-</DateSeparator>
 
-        <DateRangeWrapper>
-
-          <DatePickerContainer>
-
-            <DateInput
-              type="date"
-              value={startDate}
-              onChange={handleStartDateChange}
-              max={endDate || undefined}
-              aria-label="Start date"
-            />
-
-            <DateSeparator>
-              -
-            </DateSeparator>
-
-            <DateInput
-              type="date"
-              value={endDate}
-              onChange={handleEndDateChange}
-              min={startDate || undefined}
-              aria-label="End date"
-            />
-
-          </DatePickerContainer>
-
-        </DateRangeWrapper>
-
+              <DateInput
+                type="date"
+                value={endDate}
+                onChange={handleEndDateChange}
+                min={startDate || undefined}
+                aria-label="End date"
+              />
+            </DatePickerContainer>
+          </DateRangeWrapper>
+        )}
       </ReusableHeader>
-
-      {/* =====================================================
-          CUSTOMER HEADER
-      ===================================================== */}
 
       <CompanyHeader />
 
-      {/* =====================================================
-          PAGE CONTENT
-      ===================================================== */}
-
       <ContentSection>
-
-        <Outlet
-          context={outletContext}
-        />
-
+        <Outlet context={outletContext} />
       </ContentSection>
-
     </LayoutWrapper>
   );
 };

@@ -88,8 +88,8 @@ const VendorLedger = () => {
                 vendor,
                 transaction_type: transactionType,
                 status,
-                from_date: startDate,
-                to_date: endDate,
+                date_from: startDate,
+                date_to: endDate,
             })
         );
     }, [

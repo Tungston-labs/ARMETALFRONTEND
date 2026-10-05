@@ -39,7 +39,7 @@ import SalesReturnAction from "../Pages/FinanceModule/SALES/SalesReturn/action/S
 import CreditAction from "../Pages/FinanceModule/SALES/CreditNotes/action/CreditAction.jsx";
 import PurchaseOrders from "../Pages/FinanceModule/PURCHASES/PurchaseOrders/PurchaseOrders.jsx";
 import Vendors from "../Pages/FinanceModule/PURCHASES/Vendors/Vendors.jsx";
-import AddingPurchaseOrder from "../Pages/FinanceModule/PURCHASES/PurchaseOrders/modal/ Addingpurchaseorder.jsx";
+import AddingPurchaseOrder from "../Pages/FinanceModule/PURCHASES/PurchaseOrders/modal/Addingpurchaseorder.jsx";
 import VendorLedger from "../Pages/FinanceModule/PURCHASES/VendorLedger/VendorLedger.jsx";
 import VendorOverview from "../Pages/FinanceModule/PURCHASES/Vendors/Overview/VendorOverview.jsx";
 import VendorPurchaseOrders from "../Pages/FinanceModule/PURCHASES/Vendors/Orders/VendorPurchaseOrders.jsx";
@@ -48,6 +48,7 @@ import VendorLedgerTab from "../Pages/FinanceModule/PURCHASES/Vendors/Ledger/Ven
 import VendorLayout from "../Pages/FinanceModule/PURCHASES/Vendors/layout/Vendorlayout.jsx";
 import VendorCreditNotes from "../Pages/FinanceModule/PURCHASES/DebitNotes/VendorCreditNotes.jsx";
 import VendorBills from "../Pages/FinanceModule/PURCHASES/Vendors/Bills/VendorBills.jsx";
+import ChartOfAccounts from "../Pages/FinanceModule/ACCOUNTS/Chart of Accounts/ChartOfAccounts.jsx";
 
 const FinanceRoutes = () => {
   return (
@@ -117,17 +118,19 @@ const FinanceRoutes = () => {
       <Route path="purchases/vendor-ledger" element={<VendorLedger />} />
 
 
-   <Route path="purchase/vendors/:vendorId" element={<VendorLayout />}>
-  <Route index element={<VendorOverview />} />
-  <Route path="overview" element={<VendorOverview />} />
-  <Route path="purchase-orders" element={<VendorPurchaseOrders />} />
-  <Route path="bills" element={<VendorBills />} />
-  <Route path="payments" element={<VendorPayments />} />
-  <Route path="ledger" element={<VendorLedgerTab />} />
-  <Route path="debit-notes" element={<VendorCreditNotes />} />
-</Route>
+      <Route path="purchase/vendors/:vendorId" element={<VendorLayout />}>
+        <Route index element={<VendorOverview />} />
+        <Route path="overview" element={<VendorOverview />} />
+        <Route path="purchase-orders" element={<VendorPurchaseOrders />} />
+        <Route path="bills" element={<VendorBills />} />
+        <Route path="payments" element={<VendorPayments />} />
+        <Route path="ledger" element={<VendorLedgerTab />} />
+        <Route path="debit-notes" element={<VendorCreditNotes />} />
+      </Route>
 
 
+      {/* Accounts Section */}
+      <Route path="accounts-chartofaccounts" element={<ChartOfAccounts />} />
 
     </>
   );
