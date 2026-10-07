@@ -92,17 +92,23 @@ const getSidebarData = (user) => {
 
 
     if (modules.project) {
-      items.push({ title: "vendor", icon: <FiCodesandbox />, path: "/purchase/vendors" });
+      items.push({ title: "Chart of accounts", icon: <FiCodesandbox />, path: "/accounts/chartofaccounts" });
     }
 
     if (modules.project) {
-      items.push({ title: "orders", icon: <FiCodesandbox />, path: "/purchase/purchaseorder" });
+      items.push({ title: "General ledger ", icon: <FiCodesandbox />, path: "/accounts/generalledger" });
     }
 
       if (modules.project) {
-      items.push({ title: "ledger", icon: <FiCodesandbox />, path: "/purchases/vendor-ledger" });
+      items.push({ title: "Account recievable ", icon: <FiCodesandbox />, path: "/accounts/recievables" });
+    }
+   if (modules.project) {
+      items.push({ title: "  Account payable", icon: <FiCodesandbox />, path: "/accounts/payables" });
     }
 
+    if (modules.project) {
+      items.push({ title: "Expenses", icon: <FiCodesandbox />, path: "/accounts/expenses " });
+    }
     return items;
   }
 
