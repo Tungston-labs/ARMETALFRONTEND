@@ -56,9 +56,17 @@ import PurchaseDebitNotes from "../Pages/FinanceModule/PURCHASES/DebitNotes/Debi
 import CreateDebitNote from "../Pages/FinanceModule/PURCHASES/DebitNotes/modal/CreateDebitNote.jsx";
 import VendorDebitNotes from "../Pages/FinanceModule/PURCHASES/Vendors/DebitNotes/Debitnotes.jsx";
 import VendorBills from "../Pages/FinanceModule/PURCHASES/Vendors/Bills/VendorBills.jsx";
+<<<<<<< HEAD
 import Bill from "../Pages/FinanceModule/PURCHASES/Bill/Bill.jsx";
 import CreateBill from "../Pages/FinanceModule/PURCHASES/Bill/modal/CreateBill.jsx";
 import PurchasePaymentPage from "../Pages/FinanceModule/PURCHASES/Payments/Payment.jsx";
+=======
+import ChartOfAccounts from "../Pages/FinanceModule/ACCOUNTS/Chart of Accounts/ChartOfAccounts.jsx";
+import GeneralLedger from "../Pages/FinanceModule/ACCOUNTS/General Ledger/GeneralLedger.jsx";
+import Expenses from "../Pages/FinanceModule/ACCOUNTS/Expenses/Expenses.jsx";
+import Payables from "../Pages/FinanceModule/ACCOUNTS/Payables/Payables.jsx";
+import Recievables from "../Pages/FinanceModule/ACCOUNTS/Recievables/Recievables.jsx";
+>>>>>>> 25e6085c7767e797af8db95489f5c9274271beb7
 
 const FinanceRoutes = () => {
   return (
@@ -182,6 +190,18 @@ const FinanceRoutes = () => {
         <Route path="ledger" element={<VendorLedgerTab />} />
         <Route path="debit-notes" element={<VendorDebitNotes />} />
       </Route>
+<<<<<<< HEAD
+=======
+
+
+      {/* Accounts Section */}
+      <Route path="accounts/chartofaccounts" element={<ChartOfAccounts />} />
+      <Route path="accounts/generalledger" element={<GeneralLedger />} />
+         <Route path="accounts/generalledger" element={<GeneralLedger />} />
+            <Route path="accounts/expenses" element={<Expenses />} />
+               <Route path="accounts/payables" element={<Payables />} />
+                  <Route path="accounts/recievables" element={<Recievables />} />
+>>>>>>> 25e6085c7767e797af8db95489f5c9274271beb7
     </>
   );
 };
