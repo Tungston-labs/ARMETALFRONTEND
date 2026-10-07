@@ -27,11 +27,22 @@ import {
   ActionWrapper,
   EditButton,
   DeleteButton,
+  ExportButton,
 } from "./ChartOfAccounts.styles";
 import ReusableHeader from "../../../../Components/ReusableTable/ReusableHeader";
 import StatsCards from "../../../../Components/StatsCards/StatsCards";
+import { CiSearch } from "react-icons/ci";
+import { GoVerified } from "react-icons/go";
+import { MdAccountBalance } from "react-icons/md";
+import { FiCalendar, FiDownload } from "react-icons/fi";
+import { CiEdit } from "react-icons/ci";
+import { RxCross2 } from "react-icons/rx";
+import AddAccountModal from "./modal/AddAccountModal";
+const ACCOUNT_TYPES = ["Assets", "Liabilities", "Equity", "Income", "Expenses"];
+
 
 const accounts = [
+  // Assets
   {
     code: "1000",
     name: "Cash in Hand",
@@ -69,7 +80,7 @@ const accounts = [
     status: "Active",
   },
   {
-    code: "2000",
+    code: "1400",
     name: "VAT Receivable (Input VAT)",
     parent: "Current Asset",
     category: "Current Asset",
@@ -78,7 +89,7 @@ const accounts = [
     status: "Active",
   },
   {
-    code: "2100",
+    code: "1500",
     name: "Fixed Assets – Equipment",
     parent: "Fixed Asset",
     category: "Fixed Asset",
@@ -86,6 +97,8 @@ const accounts = [
     type: "Assets",
     status: "Active",
   },
+
+  // Liabilities
   {
     code: "2000",
     name: "Accounts Payable",
@@ -104,6 +117,8 @@ const accounts = [
     type: "Liabilities",
     status: "Active",
   },
+
+  // Equity
   {
     code: "3000",
     name: "Share Capital",
@@ -122,6 +137,64 @@ const accounts = [
     type: "Equity",
     status: "Active",
   },
+
+  // Income
+  {
+    code: "4000",
+    name: "Sales Revenue",
+    parent: "Operating Income",
+    category: "Operating Income",
+    balance: 845000,
+    type: "Income",
+    status: "Active",
+  },
+  {
+    code: "4100",
+    name: "Service Income",
+    parent: "Operating Income",
+    category: "Operating Income",
+    balance: 126500,
+    type: "Income",
+    status: "Active",
+  },
+  {
+    code: "4200",
+    name: "Other Income",
+    parent: "Other Income",
+    category: "Other Income",
+    balance: 18200,
+    type: "Income",
+    status: "Active",
+  },
+
+  // Expenses
+  {
+    code: "5000",
+    name: "Cost of Goods Sold",
+    parent: "Direct Expense",
+    category: "Direct Expense",
+    balance: 412000,
+    type: "Expenses",
+    status: "Active",
+  },
+  {
+    code: "5100",
+    name: "Salaries & Wages",
+    parent: "Operating Expense",
+    category: "Operating Expense",
+    balance: 198000,
+    type: "Expenses",
+    status: "Active",
+  },
+  {
+    code: "5200",
+    name: "Rent Expense",
+    parent: "Operating Expense",
+    category: "Operating Expense",
+    balance: 72000,
+    type: "Expenses",
+    status: "Active",
+  },
 ];
 
 const formatAmount = (amount) =>
@@ -134,11 +207,11 @@ const ChartOfAccounts = () => {
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("All");
   const [statusFilter, setStatusFilter] = useState("All");
-
+  const [isAddAccountOpen, setIsAddAccountOpen] = useState(false);
   const filteredAccounts = useMemo(() => {
-    return accounts.filter((account) => {
-      const searchValue = search.toLowerCase();
+    const searchValue = search.toLowerCase();
 
+    return accounts.filter((account) => {
       const matchesSearch =
         account.name.toLowerCase().includes(searchValue) ||
         account.code.toLowerCase().includes(searchValue);
@@ -153,19 +226,17 @@ const ChartOfAccounts = () => {
     });
   }, [search, typeFilter, statusFilter]);
 
-  const groupedAccounts = {
-    Assets: filteredAccounts.filter(
-      (account) => account.type === "Assets"
-    ),
+  const groupedAccounts = ACCOUNT_TYPES.reduce((groups, type) => {
+    groups[type] = filteredAccounts.filter(
+      (account) => account.type === type
+    );
+    return groups;
+  }, {});
 
-    Liabilities: filteredAccounts.filter(
-      (account) => account.type === "Liabilities"
-    ),
+  const countByType = (type) =>
+    accounts.filter((account) => account.type === type).length;
 
-    Equity: filteredAccounts.filter(
-      (account) => account.type === "Equity"
-    ),
-  };
+  const padCount = (value) => String(value).padStart(2, "0");
 
   const totalAccounts = accounts.length;
 
@@ -173,82 +244,123 @@ const ChartOfAccounts = () => {
     (account) => account.status === "Active"
   ).length;
 
-  const assetAccounts = accounts.filter(
-    (account) => account.type === "Assets"
-  ).length;
-
-  const liabilityAccounts = accounts.filter(
-    (account) => account.type === "Liabilities"
-  ).length;
-
-  const equityAccounts = accounts.filter(
-    (account) => account.type === "Equity"
-  ).length;
-
   const sectionTotal = (items) =>
     items.reduce((total, account) => total + account.balance, 0);
+const handleExport = () => {
+  const headers = [
+    "Code",
+    "Account Name",
+    "Parent Account",
+    "Category",
+    "Type",
+    "Balance (SAR)",
+    "Status",
+  ];
 
+  const escapeCell = (value) =>
+    `"${String(value).replace(/"/g, '""')}"`;
 
+  const rows = filteredAccounts.map((account) => [
+    account.code,
+    account.name,
+    account.parent,
+    account.category,
+    account.type,
+    account.balance.toFixed(2),
+    account.status,
+  ]);
+
+  const csv = [headers, ...rows]
+    .map((row) => row.map(escapeCell).join(","))
+    .join("\n");
+
+  // "\uFEFF" makes Excel read the file as UTF-8 (needed for the "–" in names)
+  const blob = new Blob(["\uFEFF" + csv], {
+    type: "text/csv;charset=utf-8;",
+  });
+
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "chart-of-accounts.csv";
+  link.click();
+  URL.revokeObjectURL(url);
+};
   const statsCards = [
-  {
-    title: "Total Accounts",
-    count: totalAccounts,
-    icon: "▤",
-    backgroundColor: "#E8F5E9",
-    iconColor: "#2E7D32",
-    onClick: () => {
-      setTypeFilter("All");
-      setStatusFilter("All");
+    {
+      title: "Total Accounts",
+      count: totalAccounts,
+      icon: <MdAccountBalance />,
+      backgroundColor: "#E8F5E9",
+      iconColor: "#2E7D32",
+      onClick: () => {
+        setTypeFilter("All");
+        setStatusFilter("All");
+      },
     },
-  },
-  {
-    title: "Active Accounts",
-    count: activeAccounts,
-    icon: "▤",
-    backgroundColor: "#EDE7F6",
-    iconColor: "#6A1B9A",
-    onClick: () => setStatusFilter("Active"),
-  },
-  {
-    title: "Asset Accounts",
-    count: String(assetAccounts).padStart(2, "0"),
-    icon: "✧",
-    backgroundColor: "#E0F7EF",
-    iconColor: "#00A86B",
-    onClick: () => setTypeFilter("Assets"),
-  },
-  {
-    title: "Liability Accounts",
-    count: String(liabilityAccounts).padStart(2, "0"),
-    icon: "▤",
-    backgroundColor: "#FFF3E0",
-    iconColor: "#EF6C00",
-    onClick: () => setTypeFilter("Liabilities"),
-  },
-  {
-    title: "Equity Accounts",
-    count: String(equityAccounts).padStart(2, "0"),
-    icon: "▤",
-    backgroundColor: "#FDECEA",
-    iconColor: "#D32F2F",
-    onClick: () => setTypeFilter("Equity"),
-  },
-];
-  return (
-    <Page> 
- <ReusableHeader
-                title="Chart Of Accounting"
-                breadcrumbs={["Accounting","Chart Of Accounting"]}
-                buttonText="+ ADD NEW Account"
-                onButtonClick={() => console.log("Add Employee")}
-            />   
+    {
+      title: "Active Accounts",
+      count: activeAccounts,
+      icon: <FiCalendar />,
+      backgroundColor: "#EDE7F6",
+      iconColor: "#6A1B9A",
+      onClick: () => setStatusFilter("Active"),
+    },
+    {
+      title: "Asset Accounts",
+      count: padCount(countByType("Assets")),
+      icon: <GoVerified />,
+      backgroundColor: "#E0F7EF",
+      iconColor: "#00A86B",
+      onClick: () => setTypeFilter("Assets"),
+    },
+    {
+      title: "Liability Accounts",
+      count: padCount(countByType("Liabilities")),
+      icon: <FiCalendar />,
+      backgroundColor: "#FFF3E0",
+      iconColor: "#EF6C00",
+      onClick: () => setTypeFilter("Liabilities"),
+    },
+    {
+      title: "Equity Accounts",
+      count: padCount(countByType("Equity")),
+      icon: <FiCalendar />,
+      backgroundColor: "#FDECEA",
+      iconColor: "#D32F2F",
+      onClick: () => setTypeFilter("Equity"),
+    },
 
-  <StatsCards cards={statsCards} />
+  ];
+  const SECTION_COLORS = {
+    Assets: "#15B03E",
+    Liabilities: "#E03131",
+    Equity: "#7048E8",
+    Income: "#1C7ED6",
+    Expenses: "#F76707",
+  };
+  return (
+    <Page>
+      <ReusableHeader
+        title="Chart Of Accounting"
+        breadcrumbs={["Accounting", "Chart Of Accounting"]}
+        buttonText="+ ADD NEW Account"
+        onButtonClick={() => setIsAddAccountOpen(true)}
+      >
+        <ExportButton type="button" onClick={handleExport}>
+          <FiDownload /> Export Accounts
+        </ExportButton>
+      </ReusableHeader>
+
+      <StatsCards cards={statsCards} />
+
       <ContentCard>
         {/* Filters */}
         <FilterSection>
           <SearchBox>
-            <SearchIcon>⌕</SearchIcon>
+            <SearchIcon>
+              <CiSearch />
+            </SearchIcon>
 
             <SearchInput
               type="text"
@@ -267,6 +379,8 @@ const ChartOfAccounts = () => {
               <option value="Assets">Assets</option>
               <option value="Liabilities">Liabilities</option>
               <option value="Equity">Equity</option>
+              <option value="Income">Income</option>
+              <option value="Expenses">Expenses</option>
             </Select>
 
             <SelectArrow>⌄</SelectArrow>
@@ -294,20 +408,13 @@ const ChartOfAccounts = () => {
             <AccountSection key={type}>
               <SectionHeader className={type.toLowerCase()}>
                 <SectionTitleWrapper>
-                  <SectionIcon>
-                    {type === "Assets"
-                      ? "▥"
-                      : type === "Liabilities"
-                      ? "▥"
-                      : "◆"}
+                  <SectionIcon $color={SECTION_COLORS[type]}>
+                    <MdAccountBalance />
                   </SectionIcon>
-
                   <div>
-                   <SectionTitle>{type.toUpperCase()}</SectionTitle>
+                    <SectionTitle>{type.toUpperCase()}</SectionTitle>
 
-                    <SectionCount>
-                      {items.length} Accounts
-                    </SectionCount>
+                    <SectionCount>{items.length} Accounts</SectionCount>
                   </div>
                 </SectionTitleWrapper>
 
@@ -331,8 +438,8 @@ const ChartOfAccounts = () => {
                   </TableHead>
 
                   <TableBody>
-                    {items.map((account, index) => (
-                      <TableRow key={`${account.code}-${index}`}>
+                    {items.map((account) => (
+                      <TableRow key={`${account.type}-${account.code}`}>
                         <TableCell>{account.code}</TableCell>
 
                         <TableCell>{account.name}</TableCell>
@@ -341,27 +448,19 @@ const ChartOfAccounts = () => {
 
                         <TableCell>{account.category}</TableCell>
 
-                        <TableCell>
-                          {formatAmount(account.balance)}
-                        </TableCell>
+                        <TableCell>{formatAmount(account.balance)}</TableCell>
 
                         <TableCell>
-                          <Status
-                            className={account.status.toLowerCase()}
-                          >
+                          <Status className={account.status.toLowerCase()}>
                             {account.status}
                           </Status>
                         </TableCell>
 
                         <TableCell>
                           <ActionWrapper>
-                            <EditButton title="Edit">
-                              ♢
-                            </EditButton>
+                            <EditButton title="Edit"><CiEdit /></EditButton>
 
-                            <DeleteButton title="Delete">
-                              ×
-                            </DeleteButton>
+                            <DeleteButton title="Delete"><RxCross2 /></DeleteButton>
                           </ActionWrapper>
                         </TableCell>
                       </TableRow>
@@ -373,7 +472,12 @@ const ChartOfAccounts = () => {
           );
         })}
       </ContentCard>
+      <AddAccountModal
+        isOpen={isAddAccountOpen}
+        onClose={() => setIsAddAccountOpen(false)}
+      />
     </Page>
+
   );
 };
 

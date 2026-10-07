@@ -49,6 +49,10 @@ import VendorLayout from "../Pages/FinanceModule/PURCHASES/Vendors/layout/Vendor
 import VendorCreditNotes from "../Pages/FinanceModule/PURCHASES/DebitNotes/VendorCreditNotes.jsx";
 import VendorBills from "../Pages/FinanceModule/PURCHASES/Vendors/Bills/VendorBills.jsx";
 import ChartOfAccounts from "../Pages/FinanceModule/ACCOUNTS/Chart of Accounts/ChartOfAccounts.jsx";
+import GeneralLedger from "../Pages/FinanceModule/ACCOUNTS/General Ledger/GeneralLedger.jsx";
+import Expenses from "../Pages/FinanceModule/ACCOUNTS/Expenses/Expenses.jsx";
+import Payables from "../Pages/FinanceModule/ACCOUNTS/Payables/Payables.jsx";
+import Recievables from "../Pages/FinanceModule/ACCOUNTS/Recievables/Recievables.jsx";
 
 const FinanceRoutes = () => {
   return (
@@ -130,8 +134,12 @@ const FinanceRoutes = () => {
 
 
       {/* Accounts Section */}
-      <Route path="accounts-chartofaccounts" element={<ChartOfAccounts />} />
-
+      <Route path="accounts/chartofaccounts" element={<ChartOfAccounts />} />
+      <Route path="accounts/generalledger" element={<GeneralLedger />} />
+         <Route path="accounts/generalledger" element={<GeneralLedger />} />
+            <Route path="accounts/expenses" element={<Expenses />} />
+               <Route path="accounts/payables" element={<Payables />} />
+                  <Route path="accounts/recievables" element={<Recievables />} />
     </>
   );
 };

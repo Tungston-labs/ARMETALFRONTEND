@@ -68,18 +68,18 @@ export const HeaderActions = styled.div`
 
 export const ExportButton = styled.button`
   height: 38px;
-
   padding: 0 15px;
-
   border: 1px solid #dfe3ea;
   border-radius: 5px;
-
   background: #fff;
-
   font-family: "Poppins", sans-serif;
-  font-size: 11px;
-  font-weight: 500;
-
+font-weight: 500;
+font-style: Medium;
+font-size: 13px;
+line-height: 18px;
+letter-spacing: 0px;
+text-align: center;
+text-transform: uppercase;
   cursor: pointer;
 `;
 
@@ -283,26 +283,27 @@ export const SearchIcon = styled.span`
 
   transform: translateY(-50%);
 
+  display: flex;
+  align-items: center;
+
   font-size: 18px;
 `;
 
 export const SearchInput = styled.input`
   width: 100%;
   height: 36px;
-
   box-sizing: border-box;
-
   padding: 0 12px 0 38px;
-
   border: 1px solid #dce1e9;
   border-radius: 4px;
-
   outline: none;
-
   background: #f8faff;
 
   font-family: "Poppins", sans-serif;
-  font-size: 12px;
+  font-size: 13px;
+  font-weight: 300;
+  line-height: 22px;
+  letter-spacing: 0;
 
   &:focus {
     border-color: #3455bc;
@@ -322,20 +323,18 @@ export const SelectWrapper = styled.div`
 export const Select = styled.select`
   width: 100%;
   height: 36px;
-
   appearance: none;
-
   padding: 0 32px 0 13px;
-
   border: 1px solid #dce1e9;
   border-radius: 4px;
-
   outline: none;
-
   background: #f8faff;
 
   font-family: "Poppins", sans-serif;
-  font-size: 11px;
+  font-size: 12px;
+  font-weight: 300;
+  line-height: 22px;
+  letter-spacing: 0;
 `;
 
 export const SelectArrow = styled.span`
@@ -365,7 +364,7 @@ export const SectionHeader = styled.div`
   box-sizing: border-box;
 
   &.assets {
-    background: #15B03E1A;
+    background: #15b03e1a;
   }
 
   &.liabilities {
@@ -374,6 +373,14 @@ export const SectionHeader = styled.div`
 
   &.equity {
     background: #eee9ff;
+  }
+
+  &.income {
+    background: #e3f2fd;
+  }
+
+  &.expenses {
+    background: #fff0df;
   }
 `;
 
@@ -394,32 +401,33 @@ export const SectionIcon = styled.div`
   border-radius: 50%;
 
   background: rgba(255, 255, 255, 0.6);
+
+  font-size: 18px;
+  color: ${({ $color }) => $color || "#3455bc"};
 `;
 
 export const SectionTitle = styled.div`
   font-family: "Poppins", sans-serif;
-font-weight: 600;
-font-style: SemiBold;
-font-size: 15px;
-line-height: 18px;
-letter-spacing: 0px;
-
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 18px;
+  letter-spacing: 0;
 `;
 
 export const SectionCount = styled.div`
   font-family: "Poppins", sans-serif;
   font-size: 12px;
-font-weight: 300;
-font-style: Light;
-line-height: 18px;
-letter-spacing: 0px;
-
+  font-weight: 300;
+  line-height: 18px;
+  letter-spacing: 0;
 `;
 
 export const SectionTotal = styled.div`
   font-family: "Poppins", sans-serif;
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 600;
+  line-height: 18px;
+  letter-spacing: 0;
 `;
 
 export const TableWrapper = styled.div`
@@ -436,19 +444,19 @@ export const Table = styled.table`
 `;
 
 export const TableHead = styled.thead`
-  background: #f7f9fd;
+  background: #f4f8ff;
 `;
 
 export const TableHeader = styled.th`
   height: 44px;
-
   padding: 0 12px;
-
   text-align: left;
 
   font-family: "Poppins", sans-serif;
-  font-size: 12px;
-  font-weight: 500;
+  font-size: 15px;
+  font-weight: 400;
+  line-height: 18px;
+  letter-spacing: 0;
 
   white-space: nowrap;
 
@@ -473,11 +481,13 @@ export const TableRow = styled.tr`
 
 export const TableCell = styled.td`
   height: 53px;
-
   padding: 0 12px;
 
   font-family: "Poppins", sans-serif;
-  font-size: 11px;
+  font-size: 14px;
+  font-weight: 300;
+  line-height: 18px;
+  letter-spacing: 0;
 
   white-space: nowrap;
 
@@ -492,7 +502,10 @@ export const TableCell = styled.td`
 
 export const Status = styled.span`
   font-family: "Poppins", sans-serif;
-  font-size: 11px;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 18px;
+  letter-spacing: 0;
 
   &.active {
     color: #009a20;
@@ -536,3 +549,4 @@ export const DeleteButton = styled.button`
 
   cursor: pointer;
 `;
+
