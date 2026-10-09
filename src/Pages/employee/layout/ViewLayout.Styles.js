@@ -9,7 +9,7 @@ export const Container = styled.div`
 export const TopSection = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  /* gap: 10px; */
    /* margin-bottom:20px; */
   
 `;
@@ -17,7 +17,7 @@ export const TopSection = styled.div`
 export const FormSection = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 10px;
 `;
 
 export const TabsRowContainer = styled.div`

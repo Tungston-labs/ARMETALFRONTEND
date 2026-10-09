@@ -1,36 +1,5 @@
 import styled from "styled-components";
 
-export const BalanceBanner = styled.div`
-    background-color: #ddf4ea;
-    min-height: 46px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 28px;
-    margin-bottom: 10px;
-`;
-
-export const BalanceStatus = styled.span`
-    color: #018611;
-    font-family: "Poppins", sans-serif;
-font-weight: 700;
-font-style: Bold;
-font-size: 14px;
-line-height: 100%;
-letter-spacing: 0%;
-
-`;
-
-export const BalanceAmount = styled.span`
-    color: #222;
-    font-family: "Poppins", sans-serif;
-font-weight: 500;
-font-style: Medium;
-font-size: 14px;
-line-height: 100%;
-letter-spacing: 0%;
-
-`;
 export const ExportButton = styled.button`
     height: 36px;
     padding: 0 14px;

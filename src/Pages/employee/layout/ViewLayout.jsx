@@ -21,7 +21,7 @@ const ViewBasicLayout = ({
   formData,
   handleChange,
   handleImageChange,
-  isIndianCompany, 
+  isIndianCompany,
 }) => {
   const location = useLocation();
   const rowRef = useRef(null);
@@ -36,39 +36,24 @@ const ViewBasicLayout = ({
     <Container>
       <TopSection>
 
-<ReusableHeader
-  title="Employees"
-  breadcrumbs={[ "Employees","View Employee"]}
-  buttonText="SAVE"
-  onButtonClick={handleSubmit}
-  showBack
-    onBack={() => navigate("/employee")}
-/>
+        <ReusableHeader
+          title="Employees"
+          breadcrumbs={["Employees", "View Employee"]}
+          buttonText="SAVE"
+          onButtonClick={handleSubmit}
+          showBack
+          onBack={() => navigate("/employee")}
+        />
         <Header
           employee={formData}
           editable={true}
           onChange={handleChange}
           onImageChange={handleImageChange}
-        
+
         />
-        {/* <TabsRowContainer>
-          <TabsRow ref={rowRef}>
-            {tabs.map((tab) => (
-              <NavLink
-                key={tab.path}
-                to={tab.path}
-                style={{ textDecoration: "none" }}
-              >
-                <TabButton active={location.pathname === tab.path}>
-                  {tab.label}
-                </TabButton>
-              </NavLink>
-            ))}
-          </TabsRow>
-        </TabsRowContainer> */}
       </TopSection>
 
-    <FormSection>{children}</FormSection>
+      <FormSection>{children}</FormSection>
 
     </Container>
   );

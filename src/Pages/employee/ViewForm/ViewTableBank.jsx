@@ -5,6 +5,7 @@ import {
   CardHeader,
   CardBody,
   Grid2,
+  Field,
   Input,
   Label,
   ErrorText,
@@ -13,18 +14,20 @@ import {
   Table,
   Th,
   Td,
+  TableFooter,
   AddButton,
   Select,
-  SaveBtn
+  SaveBtn,
+  Hr,
+  SectionTitle,
+  FormRow,
 } from "./ViewTableBank.Styles";
 
 import {
   fetchSalaryIncrements,
   addSalaryIncrement,
 } from "../../../Redux/salaryIncrementSlice";
-import {
-  getBankFieldConfig,
-} from "../../../utils/employeeCountryFields";
+import { getBankFieldConfig } from "../../../utils/employeeCountryFields";
 
 const ViewTableBank = ({
   employeeId,
@@ -45,33 +48,32 @@ const ViewTableBank = ({
   setTaxRegime,
   tdsAmount,
   setTdsAmount,
-  declaration80C,
-  setDeclaration80C,
   basicSalary,
   setBasicSalary,
-  salaryIncrement,
-  setSalaryIncrement,
-  housingAllowance,
-  setHousingAllowance,
-  transportation,
-  setTransportation,
+  declaration80C,        
+  setDeclaration80C,  
   errors = {},
 }) => {
   const dispatch = useDispatch();
-  const bankConfig = getBankFieldConfig(country);
-  const bankCodeValue = bankConfig.bankCodeField === "ifscCode" ? ifscCode : swiftCode;
-  const setBankCodeValue = bankConfig.bankCodeField === "ifscCode" ? setIfscCode : setSwiftCode;
 
-  const { increments = [] } = useSelector(
-    (state) => state.salaryIncrement
-  );
+  const bankConfig = getBankFieldConfig(country);
+  const isIfsc = bankConfig.bankCodeField === "ifscCode";
+  const bankCodeValue = isIfsc ? ifscCode : swiftCode;
+  const setBankCodeValue = isIfsc ? setIfscCode : setSwiftCode;
+  const { increments = [] } = useSelector((state) => state.salaryIncrement);
 
   const [showNewRow, setShowNewRow] = useState(false);
-
   const [newIncrement, setNewIncrement] = useState({
     date: "",
     increment_amount: "",
   });
+
+  useEffect(() => {
+    if (employeeId) {
+      dispatch(fetchSalaryIncrements(employeeId));
+    }
+  }, [dispatch, employeeId]);
+
   const saveIncrement = async () => {
     if (!newIncrement.date || !newIncrement.increment_amount) {
       alert("Please enter date and increment amount");
@@ -85,18 +87,12 @@ const ViewTableBank = ({
           data: {
             employee: employeeId,
             date: newIncrement.date,
-            increment_amount: Number(
-              newIncrement.increment_amount
-            ),
+            increment_amount: Number(newIncrement.increment_amount),
           },
         })
       ).unwrap();
 
-      setNewIncrement({
-        date: "",
-        increment_amount: "",
-      });
-
+      setNewIncrement({ date: "", increment_amount: "" });
       setShowNewRow(false);
 
       dispatch(fetchSalaryIncrements(employeeId));
@@ -105,230 +101,193 @@ const ViewTableBank = ({
       alert("Failed to add increment");
     }
   };
-  useEffect(() => {
-    if (employeeId) {
-      dispatch(fetchSalaryIncrements(employeeId));
-    }
-  }, [dispatch, employeeId]);
-
-  const addIncrement = async () => {
-    const today = new Date().toISOString().split("T")[0];
-
-    try {
-      await dispatch(
-        addSalaryIncrement({
-          employeeId,
-          data: {
-            employee: employeeId,
-            date: today,
-            increment_amount: 0,
-          },
-        })
-      ).unwrap();
-
-      dispatch(fetchSalaryIncrements(employeeId));
-    } catch (err) {
-      console.log(err);
-    }
-  };
 
   return (
-    <Container>
-      <Card>
-        <CardHeader>Bank & Payment Details</CardHeader>
 
-        <CardBody>
-          <Grid2>
-            <div>
-              <Label>Bank Name</Label>
-              <Input
-                value={bankName}
-                onChange={(e) => setBankName(e.target.value)}
-              />
-              <ErrorText>{errors.bankName}</ErrorText>
-            </div>
+  <Container>
+    <Hr />
+    <SectionTitle>Bank Details</SectionTitle>
 
-            <div>
-              <Label>{bankConfig.bankCodeLabel}</Label>
+    <FormRow $columns={3}>
+      <Field>
+        <Label $required >Bank Name</Label>
+        <Input
+          placeholder="Enter Bank Name"
+          value={bankName ?? ""}
+          onChange={(e) => setBankName(e.target.value)}
+        />
+        <ErrorText>{errors.bankName}</ErrorText>
+      </Field>
 
-              <Input
-                value={bankCodeValue}
-                onChange={(e) => setBankCodeValue(e.target.value.toUpperCase())}
-                maxLength={bankConfig.bankCodeField === "ifscCode" ? 11 : 20}
-              />
+      <Field>
+        <Label $required>{bankConfig.accountLabel}</Label>
+        <Input
+          placeholder={bankConfig.accountPlaceholder}
+          value={accountNumber ?? ""}
+          onChange={(e) => setAccountNumber(e.target.value)}
+        />
+        <ErrorText>{errors.accountNumber}</ErrorText>
+      </Field>
 
-              <ErrorText>
-                {bankConfig.bankCodeField === "ifscCode" ? errors.ifscCode : errors.swiftCode}
-              </ErrorText>
-            </div>
+      {bankConfig.showUan && (
+        <Field>
+          <Label $required>UAN / EPF Number</Label>
+          <Input
+            placeholder="Enter UAN / EPF Account Number"
+            value={uanNumber ?? ""}
+            onChange={(e) => setUanNumber(e.target.value)}
+          />
+          <ErrorText>{errors.uanNumber}</ErrorText>
+        </Field>
+      )}
 
-            <div>
-              <Label>Basic Salary</Label>
-              <Input
-                value={basicSalary}
-                onChange={(e) =>
-                  setBasicSalary(e.target.value)
-                }
-              />
-              <ErrorText>{errors.basicSalary}</ErrorText>
-            </div>
-          </Grid2>
+      <Field>
+        <Label $required>{bankConfig.bankCodeLabel}</Label>
+        <Input
+          placeholder={bankConfig.bankCodePlaceholder}
+          value={bankCodeValue ?? ""}
+          onChange={(e) => setBankCodeValue(e.target.value.toUpperCase())}
+          maxLength={isIfsc ? 11 : 20}
+        />
+        <ErrorText>{isIfsc ? errors.ifscCode : errors.swiftCode}</ErrorText>
+      </Field>
 
-          <Grid2>
-            <div>
-              <Label>{bankConfig.accountLabel}</Label>
-              <Input
-                value={accountNumber}
-                onChange={(e) =>
-                  setAccountNumber(e.target.value)
-                }
-              />
-              <ErrorText>
-                {errors.accountNumber}
-              </ErrorText>
-            </div>
+      <Field>
+        <Label $required>Basic Salary</Label>
+        <Input
+          type="number"
+          placeholder="Enter Basic Salary"
+          value={basicSalary ?? ""}
+          onChange={(e) => setBasicSalary(e.target.value)}
+        />
+        <ErrorText>{errors.basicSalary}</ErrorText>
+      </Field>
+    </FormRow>
 
-            {bankConfig.showUan && (
-              <div>
-                <Label>UAN / EPF Number</Label>
+    {bankConfig.showIndianTax && (
+      <>
+        <Hr />
+        <SectionTitle>Tax and Compliance</SectionTitle>
+
+        <FormRow $columns={4}>
+          <Field>
+            <Label $required >PAN Number</Label>
+            <Input
+              placeholder="Enter PAN Number"
+              value={panNumber ?? ""}
+              onChange={(e) => setPanNumber(e.target.value)}
+            />
+            <ErrorText>{errors.panNumber}</ErrorText>
+          </Field>
+
+          <Field>
+            <Label $required>Tax Regime</Label>
+            <Select
+              value={taxRegime ?? ""}
+              onChange={(e) => setTaxRegime(e.target.value)}
+            >
+              <option value="">Select Regime</option>
+              <option value="old">Old Regime</option>
+              <option value="new">New Regime</option>
+            </Select>
+            <ErrorText>{errors.taxRegime}</ErrorText>
+          </Field>
+
+          <Field>
+            <Label $required>TDS Deduction Amount</Label>
+            <Select
+              value={tdsAmount ?? ""}
+              onChange={(e) => setTdsAmount(e.target.value)}
+            >
+              <option value="">Select TDS %</option>
+              {[0, 10, 20, 30].map((i) => (
+                <option key={i} value={i}>{i}%</option>
+              ))}
+            </Select>
+            <ErrorText>{errors.tdsAmount}</ErrorText>
+          </Field>
+
+          <Field>
+            <Label $required>Declaration under 80C</Label>
+            <Select
+              value={String(declaration80C ?? "")}
+              onChange={(e) => setDeclaration80C(e.target.value)}
+            >
+              <option value="">Declaration under 80C?</option>
+              <option value="true">Yes</option>
+              <option value="false">No</option>
+            </Select>
+            <ErrorText>{errors.declaration80C}</ErrorText>
+          </Field>
+        </FormRow>
+      </>
+    )}
+
+    <Hr />
+    <SectionTitle>Salary Increment History</SectionTitle>
+
+    <TableWrapper>
+      <Table>
+        <thead>
+          <tr>
+            <Th>Date</Th>
+            <Th $align="right">Increment Amount</Th>
+            <Th $align="right">Total Salary</Th>
+          </tr>
+        </thead>
+        <tbody>
+          {increments.length > 0
+            ? increments.map((item) => (
+                <tr key={item.id}>
+                  <Td>{item.date}</Td>
+                  <Td $align="right">{item.increment_amount}</Td>
+                  <Td $align="right">{item.total_salary}</Td>
+                </tr>
+              ))
+            : !showNewRow && (
+                <tr>
+                  <Td colSpan={3} $align="center">No increments added</Td>
+                </tr>
+              )}
+
+          {showNewRow && (
+            <tr>
+              <Td>
                 <Input
-                  value={uanNumber}
-                  onChange={(e) => setUanNumber(e.target.value)}
+                  type="date"
+                  value={newIncrement.date}
+                  onChange={(e) =>
+                    setNewIncrement({ ...newIncrement, date: e.target.value })
+                  }
                 />
-                <ErrorText>{errors.uanNumber}</ErrorText>
-              </div>
-            )}
+              </Td>
+              <Td $align="right">
+                <Input
+                  type="number"
+                  placeholder="Increment Amount"
+                  value={newIncrement.increment_amount}
+                  onChange={(e) =>
+                    setNewIncrement({ ...newIncrement, increment_amount: e.target.value })
+                  }
+                />
+              </Td>
+              <Td $align="right">
+                <SaveBtn type="button" onClick={saveIncrement}>Save</SaveBtn>
+              </Td>
+            </tr>
+          )}
+        </tbody>
+      </Table>
+    </TableWrapper>
 
-            {bankConfig.showIndianTax && (
-            <div>
-              <Label>PAN Number</Label>
-              <Input
-                value={panNumber}
-                onChange={(e) =>
-                  setPanNumber(e.target.value)
-                }
-              />
-              <ErrorText>{errors.panNumber}</ErrorText>
-            </div>
-            )}
-            {bankConfig.showIndianTax && (
-            <div>
-  <Label>Tax Regime</Label>
-  <Select
-    value={taxRegime}
-    onChange={(e) => setTaxRegime(e.target.value)}
-  >
-    <option value="">Select Tax Regime</option>
-    <option value="old">Old Regime</option>
-    <option value="new">New Regime</option>
-  </Select>
-  <ErrorText>{errors.taxRegime}</ErrorText>
-</div>
-            )}
+    <TableFooter>
+      <AddButton type="button" onClick={() => setShowNewRow(true)}>
+        + Add Increment
+      </AddButton>
+    </TableFooter>
+  </Container>
+);
 
-{bankConfig.showIndianTax && (
-<div>
-  <Label>TDS Amount</Label>
-  <Input
-    type="number"
-    value={tdsAmount}
-    onChange={(e) => setTdsAmount(e.target.value)}
-  />
-</div>
-)}
-          </Grid2>
-        </CardBody>
-      </Card>
-
-      <Card>
-        <CardHeader>Salary Increment History</CardHeader>
-
-        <TableWrapper>
-          <Table>
-            <thead>
-              <tr>
-                <Th>Date</Th>
-                <Th>Increment Amount</Th>
-                <Th>Total Salary</Th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {increments.length > 0 ? (
-                increments.map((item) => (
-                  <tr key={item.id}>
-                    <Td>{item.date}</Td>
-                    <Td>{item.increment_amount}</Td>
-                    <Td>{item.total_salary}</Td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <Td
-                    colSpan={3}
-                    style={{
-                      textAlign: "center",
-                      padding: "10px",
-                    }}
-                  >
-                    No increments added
-                  </Td>
-                </tr>
-              )}
-
-              {showNewRow && (
-                <tr>
-                  <Td>
-                    <Input
-                      type="date"
-                      value={newIncrement.date}
-                      onChange={(e) =>
-                        setNewIncrement({
-                          ...newIncrement,
-                          date: e.target.value,
-                        })
-                      }
-                    />
-                  </Td>
-
-                  <Td>
-                    <Input
-                      type="number"
-                      placeholder="Increment Amount"
-                      value={newIncrement.increment_amount}
-                      onChange={(e) =>
-                        setNewIncrement({
-                          ...newIncrement,
-                          increment_amount:
-                            e.target.value,
-                        })
-                      }
-                    />
-                  </Td>
-
-                 <Td>
-  <SaveBtn
-    type="button"
-    onClick={saveIncrement}
-  >
-    Save
-  </SaveBtn>
-</Td>
-                </tr>
-              )}
-            </tbody>
-          </Table>
-
-          <AddButton
-            type="button"
-            onClick={() => setShowNewRow(true)}
-          >
-            + Add Increment
-          </AddButton>
-        </TableWrapper>
-      </Card>
-    </Container>
-  );
 };
 
 export default ViewTableBank;
