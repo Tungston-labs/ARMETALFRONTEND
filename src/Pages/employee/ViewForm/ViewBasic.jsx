@@ -4,25 +4,27 @@ import { getEmployeeById, submitEmployee } from "../../../Redux/employeeSlice";
 import { getDepartments } from "../../../Redux/departmentSlice";
 import { useParams, useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
-import Loader from "../../../Components/Loader/Loader";
 
 import ViewBasicLayout from "../../employee/layout/ViewLayout";
 import {
-  Section,
-  Card,
-  CardHeader,
-  CardContent,
+
   Input,
   Select,
   Rowes,
-  Column,
-  FullPageLoaderWrapper,
   FieldGroup,
   Label,
   PreviewBox,
   PreviewImage,
-  UploadButton,
   HiddenInput,
+  Hr,
+  SectionTitle,
+  FullWidthGroup,
+  TotalLeaveBox,
+  LeaveGrid,
+  LeaveItem,
+  LeaveLabel,
+  LeaveInput,
+  FileInputLabel,
 } from "./ViewBasic.Style";
 import {
   getLegalFieldConfig,
@@ -37,7 +39,13 @@ const LEAVE_FIELDS = [
   "maternity_leave",
   "other_leave",
 ];
-
+const LEAVE_TYPES = [
+  { name: "casual_leave", label: "Casual Leave" },
+  { name: "sick_leave", label: "Sick Leave" },
+  { name: "earned_leave", label: "Earned Leave" },
+  { name: "maternity_leave", label: "Maternity Leave" },
+  { name: "other_leave", label: "Other Leave" },
+];
 const ViewBasic = () => {
   const dispatch = useDispatch();
   const { id } = useParams();
@@ -64,6 +72,9 @@ const ViewBasic = () => {
 
   const country = formData?.company?.country || user?.company?.country || "IN";
   const legalConfig = getLegalFieldConfig(country);
+  const expiryField = isIndiaCompany(country)
+    ? "contract_expiry_date"
+    : "visa_expiry_date";
 
   useEffect(() => {
     if (departmentList.length === 0) {
@@ -196,8 +207,8 @@ const ViewBasic = () => {
           ? err
           : err
             ? Object.entries(err)
-                .map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join(", ") : v}`)
-                .join("\n")
+              .map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join(", ") : v}`)
+              .join("\n")
             : "Update failed.";
       return Swal.fire({
         icon: "error",
@@ -236,14 +247,6 @@ const ViewBasic = () => {
     }
   };
 
-  if (loading || !formData || Object.keys(formData).length === 0) {
-    return (
-      <FullPageLoaderWrapper>
-        <Loader size="large" tip="Loading..." />
-      </FullPageLoaderWrapper>
-    );
-  }
-
   return (
     <ViewBasicLayout
       id={id}
@@ -254,220 +257,187 @@ const ViewBasic = () => {
       handleChange={handleChange}
       handleImageChange={handleImageChange}
     >
-      <Section>
-        <Card>
-          <CardHeader>Job Details</CardHeader>
-          <CardContent>
-            <Rowes>
-              <FieldGroup>
-                <Label> Username</Label>
-                <Input
-                  name="employee_id"
-                  value={formData.employee_id || ""}
+      <Hr />
+      <SectionTitle>Job Details</SectionTitle>
+
+      <Rowes $columns={5}>
+        <FieldGroup>
+          <Label $required>Designation</Label>
+          <Input
+            name="designation"
+            value={formData.designation || ""}
+            onChange={handleChange}
+            autoComplete="off"
+          />
+        </FieldGroup>
+
+        <FieldGroup>
+          <Label $required>Joining Date</Label>
+          <Input
+            type="date"
+            name="joining_date"
+            value={formData.joining_date ? formData.joining_date.split("T")[0] : ""}
+            onChange={handleChange}
+          />
+        </FieldGroup>
+
+        <FieldGroup>
+          <Label $required>Department</Label>
+          <Select name="department" value={formData.department || ""} onChange={handleChange}>
+            <option value="">Select Department</option>
+            {departmentList.map((dept) => (
+              <option key={dept.id} value={dept.id}>{dept.name}</option>
+            ))}
+          </Select>
+        </FieldGroup>
+
+        <FieldGroup>
+          <Label $required>Employment Type</Label>
+          <Select name="employment_type" value={formData.employment_type || ""} onChange={handleChange}>
+            <option value="">Select Type</option>
+            <option value="Full-time">Full-time</option>
+            <option value="Part-time">Part-time</option>
+            <option value="Contract">Contract</option>
+          </Select>
+        </FieldGroup>
+
+        <FieldGroup>
+          <Label $required>Roles</Label>
+          <Select name="role" value={formData.role || ""} onChange={handleChange}>
+            <option value="">Select Role</option>
+            <option value="employee">Employee</option>
+            <option value="hr">HR</option>
+            <option value="manager">Manager</option>
+          </Select>
+        </FieldGroup>
+      </Rowes>
+
+      <Rowes $columns={5}>
+        <FullWidthGroup>
+          <Label $required>Leave Allocation</Label>
+          <TotalLeaveBox>Total Leave : {calculatedTotal}</TotalLeaveBox>
+          <LeaveGrid>
+            {LEAVE_TYPES.map(({ name, label }) => (
+              <LeaveItem key={name}>
+                <LeaveLabel>{label}</LeaveLabel>
+                <LeaveInput
+                  type="number"
+                  name={name}
+                  value={formData[name] ?? ""}
                   onChange={handleChange}
-                  placeholder="Enter employee username"
-                  autoComplete="off"
+                  min="0"
                 />
-              </FieldGroup>
+              </LeaveItem>
+            ))}
+          </LeaveGrid>
+        </FullWidthGroup>
+      </Rowes>
 
-              <FieldGroup>
-                <Label>Designation</Label>
-                <Input
-                  name="designation"
-                  value={formData.designation || ""}
-                  onChange={handleChange}
-                  autoComplete="off"
-                />
-              </FieldGroup>
+      <Hr />
+      <SectionTitle>Employee Legal & ID Information</SectionTitle>
 
-              <FieldGroup>
-                <Label>Joining Date</Label>
-                <Input
-                  type="date"
-                  name="joining_date"
-                  value={
-                    formData.joining_date
-                      ? formData.joining_date.split("T")[0]
-                      : ""
-                  }
-                  onChange={handleChange}
-                />
-              </FieldGroup>
+      <Rowes $columns={3}>
+        
 
-              <FieldGroup>
-                <Label>Employment Type</Label>
-                <Select
-                  name="employment_type"
-                  value={formData.employment_type || ""}
-                  onChange={handleChange}
-                >
-                  <option value="">Select Type</option>
-                  <option value="Full-time">Full-time</option>
-                  <option value="Part-time">Part-time</option>
-                  <option value="Contract">Contract</option>
-                </Select>
-              </FieldGroup>
+        {!isIndiaCompany(country) && legalConfig.identityField !== "passport_number" && (
+          <FieldGroup>
+            <Label>Passport Number</Label>
+            <Input
+              name="passport_number"
+              value={formData.passport_number || ""}
+              onChange={handleChange}
+              placeholder="Enter Passport Number"
+              autoComplete="off"
+            />
+          </FieldGroup>
+        )}
 
-              <FieldGroup>
-                <Label>Department</Label>
-                <Select
-                  name="department"
-                  value={formData.department || ""}
-                  onChange={handleChange}
-                >
-                  <option value="">Select Department</option>
-                  {departmentList.map((dept) => (
-                    <option key={dept.id} value={dept.id}>
-                      {dept.name}
-                    </option>
-                  ))}
-                </Select>
-              </FieldGroup>
-            </Rowes>
+        <FieldGroup>
+          <Label>Employee Contract</Label>
+          <Input
+            name="employeeContract"
+            value={formData.employeeContract || ""}
+            onChange={handleChange}
+            placeholder="Enter Contract Name"
+            autoComplete="off"
+          />
+        </FieldGroup>
 
-            <FieldGroup>
-              <Label>Total Leave</Label>
-              <Input type="number" value={calculatedTotal} readOnly />
-            </FieldGroup>
+        <FieldGroup>
+          <Label>Work Permit</Label>
+          <Input
+            name="workPermit"
+            value={formData.workPermit || ""}
+            onChange={handleChange}
+            placeholder="Enter Work Permit"
+            autoComplete="off"
+          />
+        </FieldGroup>
 
-            <Rowes>
-              {[
-                ["casual_leave", "Casual Leave"],
-                ["sick_leave", "Sick Leave"],
-                ["earned_leave", "Earned Leave"],
-                ["maternity_leave", "Maternity Leave"],
-                ["other_leave", "Other Leave"],
-              ].map(([name, label]) => (
-                <FieldGroup key={name}>
-                  <Label>{label}</Label>
-                  <Input
-                    type="number"
-                    name={name}
-                    value={formData[name] ?? ""}
-                    onChange={handleChange}
-                    min="0"
-                  />
-                </FieldGroup>
-              ))}
-            </Rowes>
-          </CardContent>
-        </Card>
+        <FieldGroup>
+          <Label>Insurance Number</Label>
+          <Input
+            name="insurance_number"
+            value={formData.insurance_number || ""}
+            onChange={handleChange}
+            placeholder="Enter Insurance Number"
+            autoComplete="off"
+          />
+        </FieldGroup>
 
-        <Card>
-          <CardHeader>Employee Legal & ID Information</CardHeader>
-          <CardContent>
-            <Column>
-              <Rowes>
-                {!isIndiaCompany(country) &&
-                  legalConfig.identityField !== "passport_number" && (
-                    <FieldGroup>
-                      <Label>Passport Number</Label>
-                      <Input
-                        name="passport_number"
-                        value={formData.passport_number || ""}
-                        onChange={handleChange}
-                      />
-                    </FieldGroup>
-                  )}
-                <FieldGroup>
-                  <Label>Role</Label>
-                  <Select
-                    name="role"
-                    value={formData.role || ""}
-                    onChange={handleChange}
-                  >
-                    <option value="">Select Role</option>
-                    <option value="employee">Employee</option>
-                    <option value="hr">HR</option>
-                    <option value="manager">Manager</option>
-                  </Select>
-                </FieldGroup>
-              </Rowes>
+        <FieldGroup>
+          <Label $required>{legalConfig.identityLabel}</Label>
+          <Input
+            name={legalConfig.identityField}
+            value={formData[legalConfig.identityField] || ""}
+            onChange={handleChange}
+            placeholder={legalConfig.identityPlaceholder}
+            maxLength={legalConfig.identityMaxLength}
+            autoComplete="off"
+            onKeyPress={(e) => {
+              if (isIndiaCompany(country) && !/[0-9]/.test(e.key)) e.preventDefault();
+            }}
+          />
+        </FieldGroup>
 
-              <Rowes>
-                {isIndiaCompany(country) ? (
-                  <>
-                    <FieldGroup>
-                      <Label>Contract Expiry Date</Label>
-                      <Input
-                        type="date"
-                        name="contract_expiry_date"
-                        value={formData.contract_expiry_date || ""}
-                        onChange={handleChange}
-                      />
-                    </FieldGroup>
-                    <FieldGroup>
-                      <Label>{legalConfig.identityLabel}</Label>
-                      <Input
-                        name={legalConfig.identityField}
-                        value={formData[legalConfig.identityField] || ""}
-                        onChange={handleChange}
-                      />
-                    </FieldGroup>
-                  </>
-                ) : (
-                  <>
-                    <FieldGroup>
-                      <Label>Visa Expiry Date</Label>
-                      <Input
-                        type="date"
-                        name="visa_expiry_date"
-                        value={formData.visa_expiry_date || ""}
-                        onChange={handleChange}
-                      />
-                    </FieldGroup>
-                    <FieldGroup>
-                      <Label>{legalConfig.identityLabel}</Label>
-                      <Input
-                        name={legalConfig.identityField}
-                        value={formData[legalConfig.identityField] || ""}
-                        onChange={handleChange}
-                      />
-                    </FieldGroup>
-                    <FieldGroup>
-                      <Label>Insurance Number</Label>
-                      <Input
-                        name="insurance_number"
-                        value={formData.insurance_number || ""}
-                        onChange={handleChange}
-                      />
-                    </FieldGroup>
-                  </>
-                )}
-              </Rowes>
+        <FieldGroup>
+          <Label>{isIndiaCompany(country) ? "Contract Expiry Date" : "Visa Expiry Date"}</Label>
+          <Input
+            type="date"
+            name={expiryField}
+            value={formData[expiryField] || ""}
+            onChange={handleChange}
+            autoComplete="off"
+          />
+        </FieldGroup>
 
-              <FieldGroup>
-                <Label>ID Card</Label>
-                {formData.idcard && (
-                  <PreviewBox>
-                    <PreviewImage
-                      src={
-                        formData.idcard instanceof File
-                          ? URL.createObjectURL(formData.idcard)
-                          : formData.idcard
-                      }
-                      alt="ID Card"
-                    />
-                  </PreviewBox>
-                )}
-
-                <UploadButton>
-                  Upload ID Card
-                  <HiddenInput
-                    type="file"
-                    accept="image/*"
-                    name="idcard"
-                    onChange={(e) => {
-                      setFormData({ ...formData, idcard: e.target.files[0] });
-                      setIsEdited(true);
-                    }}
-                  />
-                </UploadButton>
-              </FieldGroup>
-            </Column>
-          </CardContent>
-        </Card>
-      </Section>
+        <FieldGroup>
+          <Label>ID Card Photo</Label>
+          {formData.idcard && (
+            <PreviewBox style={{ marginBottom: 8 }}>
+              <PreviewImage
+                src={formData.idcard instanceof File ? URL.createObjectURL(formData.idcard) : formData.idcard}
+                alt="ID Card"
+              />
+            </PreviewBox>
+          )}
+          <FileInputLabel htmlFor="idcard">
+            {formData.idcard instanceof File ? formData.idcard.name : "Upload ID Card +"}
+          </FileInputLabel>
+          <HiddenInput
+            id="idcard"
+            name="idcard"
+            type="file"
+            accept="image/*"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (!file) return;
+              setFormData((prev) => ({ ...prev, idcard: file }));
+              setIsEdited(true);
+            }}
+          />
+        </FieldGroup>
+      </Rowes>
     </ViewBasicLayout>
   );
 };

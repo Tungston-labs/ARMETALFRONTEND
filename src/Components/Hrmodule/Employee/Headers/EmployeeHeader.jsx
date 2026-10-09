@@ -206,6 +206,17 @@ const EmployeeHeader = ({
             </Select>
             {errors?.blood_group && <ErrorText>{errors.blood_group}</ErrorText>}
           </FieldGroup>
+            <FieldGroup>
+  <FieldLabel $required>Username</FieldLabel>
+  <Input
+    type="text"
+    name="username"
+    placeholder="Username will match email"
+    value={formData.email || ""}
+    readOnly
+    autoComplete="off"
+  />
+</FieldGroup>
         </Row>
       </InfoWrapper>
     </Container>

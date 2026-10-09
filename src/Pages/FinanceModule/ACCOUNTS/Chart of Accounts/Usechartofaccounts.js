@@ -115,7 +115,7 @@ const useChartOfAccounts = () => {
   const [statusFilter, setStatusFilter] = useState("All");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingAccount, setEditingAccount] = useState(null);
-  const [deleteTarget, setDeleteTarget] = useState(null); // account waiting for delete confirmation
+  const [deleteTarget, setDeleteTarget] = useState(null); 
 
   useEffect(() => {
     dispatch(getAccounts());
