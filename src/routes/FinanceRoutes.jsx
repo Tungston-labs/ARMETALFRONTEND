@@ -53,6 +53,7 @@ import GeneralLedger from "../Pages/FinanceModule/ACCOUNTS/General Ledger/Genera
 import Expenses from "../Pages/FinanceModule/ACCOUNTS/Expenses/Expenses.jsx";
 import Payables from "../Pages/FinanceModule/ACCOUNTS/Payables/Payables.jsx";
 import Recievables from "../Pages/FinanceModule/ACCOUNTS/Recievables/Recievables.jsx";
+import SalesReports from "../Pages/FinanceModule/REPORTS/Sales-Reports/SalesReports.jsx";
 
 const FinanceRoutes = () => {
   return (
@@ -136,10 +137,13 @@ const FinanceRoutes = () => {
       {/* Accounts Section */}
       <Route path="accounts/chartofaccounts" element={<ChartOfAccounts />} />
       <Route path="accounts/generalledger" element={<GeneralLedger />} />
-         <Route path="accounts/generalledger" element={<GeneralLedger />} />
-            <Route path="accounts/expenses" element={<Expenses />} />
-               <Route path="accounts/payables" element={<Payables />} />
-                  <Route path="accounts/recievables" element={<Recievables />} />
+      <Route path="accounts/generalledger" element={<GeneralLedger />} />
+      <Route path="accounts/expenses" element={<Expenses />} />
+      <Route path="accounts/payables" element={<Payables />} />
+      <Route path="accounts/recievables" element={<Recievables />} />
+
+      {/* Report Section */}
+     <Route path="reports/sales-report" element={<SalesReports />} />
     </>
   );
 };
