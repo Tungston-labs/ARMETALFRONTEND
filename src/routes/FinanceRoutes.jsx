@@ -54,6 +54,7 @@ import Expenses from "../Pages/FinanceModule/ACCOUNTS/Expenses/Expenses.jsx";
 import Payables from "../Pages/FinanceModule/ACCOUNTS/Payables/Payables.jsx";
 import Recievables from "../Pages/FinanceModule/ACCOUNTS/Recievables/Recievables.jsx";
 import SalesReports from "../Pages/FinanceModule/REPORTS/Sales-Reports/SalesReports.jsx";
+import CustomerReport from "../Pages/FinanceModule/REPORTS/Customer-Reports/CustomerReport.jsx";
 
 const FinanceRoutes = () => {
   return (
@@ -144,6 +145,7 @@ const FinanceRoutes = () => {
 
       {/* Report Section */}
      <Route path="reports/sales-report" element={<SalesReports />} />
+          <Route path="reports/customer-report" element={<CustomerReport />} />
     </>
   );
 };
