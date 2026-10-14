@@ -87,7 +87,15 @@ const ErrorText = ({ children }) =>
   ) : null;
 
 // Label + native <select> with the chevron used across the app
-const SelectField = ({ label, name, value, onChange, options, placeholder, error }) => (
+const SelectField = ({
+  label,
+  name,
+  value,
+  onChange,
+  options,
+  placeholder,
+  error,
+}) => (
   <FormGroup>
     <Label>{label}</Label>
     <SelectWrapper>
@@ -300,7 +308,9 @@ const AddingPurchaseOrder = () => {
                       <td>
                         <select
                           value={row.product}
-                          onChange={(e) => selectProduct(row.id, e.target.value)}
+                          onChange={(e) =>
+                            selectProduct(row.id, e.target.value)
+                          }
                           style={{
                             ...cellSelectStyle,
                             ...(rowErrors.product ? errorStyle : {}),
@@ -329,7 +339,9 @@ const AddingPurchaseOrder = () => {
                           type="number"
                           min="0"
                           value={row.qty}
-                          onChange={(e) => updateItem(row.id, "qty", e.target.value)}
+                          onChange={(e) =>
+                            updateItem(row.id, "qty", e.target.value)
+                          }
                           style={rowErrors.qty ? errorStyle : undefined}
                         />
                         <ErrorText>{rowErrors.qty}</ErrorText>
@@ -338,7 +350,9 @@ const AddingPurchaseOrder = () => {
                         <input
                           placeholder="HS code"
                           value={row.hsCode}
-                          onChange={(e) => updateItem(row.id, "hsCode", e.target.value)}
+                          onChange={(e) =>
+                            updateItem(row.id, "hsCode", e.target.value)
+                          }
                         />
                       </td>
                       <td>
@@ -347,7 +361,9 @@ const AddingPurchaseOrder = () => {
                           min="0"
                           step="0.01"
                           value={row.rate}
-                          onChange={(e) => updateItem(row.id, "rate", e.target.value)}
+                          onChange={(e) =>
+                            updateItem(row.id, "rate", e.target.value)
+                          }
                           style={rowErrors.rate ? errorStyle : undefined}
                         />
                         <ErrorText>{rowErrors.rate}</ErrorText>
@@ -357,7 +373,9 @@ const AddingPurchaseOrder = () => {
                           type="number"
                           min="0"
                           value={row.vat}
-                          onChange={(e) => updateItem(row.id, "vat", e.target.value)}
+                          onChange={(e) =>
+                            updateItem(row.id, "vat", e.target.value)
+                          }
                         />
                       </td>
                       {/* Calculated, so read-only */}
@@ -396,7 +414,7 @@ const AddingPurchaseOrder = () => {
               </SummaryRow>
               <SummaryRow>
                 <span>Discount</span>
-                 <strong className="discount">{summary.discount}</strong>
+                <strong className="discount">{summary.discount}</strong>
                 {/* <SummaryInput
                   type="number"
                   min="0"
@@ -428,7 +446,11 @@ const AddingPurchaseOrder = () => {
             <CancelButton type="button" onClick={handleCancel}>
               CANCEL
             </CancelButton>
-            <PreviewButton type="button" onClick={handleSave} disabled={isSaving}>
+            <PreviewButton
+              type="button"
+              onClick={handleSave}
+              disabled={isSaving}
+            >
               {isSaving ? "SAVING..." : isEdit ? "UPDATE" : "SAVE"}
             </PreviewButton>
           </ButtonWrapper>
