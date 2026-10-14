@@ -25,7 +25,7 @@ import {
   validateLegalIdentity,
 } from "../../../../utils/employeeCountryFields";
 
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
+const MAX_FILE_SIZE = 5 * 1024 * 1024;
 const ALLOWED_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
 
 const LEAVE_TYPES = [
@@ -224,16 +224,20 @@ const JobDetails = forwardRef(
       if (formData.visa_expiry_date && formData.visa_expiry_date <= now) newErrors.visa_expiry_date = "Visa expiry date must be a future date.";
 
       setErrors(newErrors);
-      return Object.keys(newErrors).length === 0;
+      // return Object.keys(newErrors).length === 0;
+      return newErrors; 
     };
 
-    useImperativeHandle(ref, () => ({
-      validate: () => validateForm(),
-      getData: () => formData,
-    }));
+   useImperativeHandle(ref, () => ({
+  validate: () => Object.keys(validateForm()).length === 0,
+  validateWithErrors: () => validateForm(),
+  getData: () => formData,
+}));
 
-    const renderError = (field) => <>{errors[field] && <ErrorText>{errors[field]}</ErrorText>}</>;
-
+const renderError = (field) => {
+  const msg = errors[field] || parentErrors?.[field];
+  return msg ? <ErrorText>{msg}</ErrorText> : null;
+};
     const expiryField = isIndiaCompany(country) ? "contract_expiry_date" : "visa_expiry_date";
 
     return (

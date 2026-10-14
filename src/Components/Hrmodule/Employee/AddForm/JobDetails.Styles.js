@@ -101,10 +101,21 @@ export const Select = styled.select`
   font-size: 1rem;
   background: #fff;
 
+  /* Gray placeholder when no option is selected */
+  color: ${(props) => (props.value ? "#333333" : "#9ca3af")};
+
   &:focus {
     border-color: #3352ba;
     outline: none;
     box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+  }
+
+  option {
+    color: #333333;
+  }
+
+  option[value=""] {
+    color: #9ca3af;
   }
 `;
 

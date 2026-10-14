@@ -176,24 +176,17 @@ export default function AddEmployeeForm() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleNext = async () => {
+const handleNext = async () => {
+  const isBasicValid = validateForm();
+  const jobErrors = jobref.current?.validateWithErrors?.() || {};
+  const isJobValid = Object.keys(jobErrors).length === 0;
 
+  setErrors((prev) => ({ ...prev, ...jobErrors }));
 
-    const isBasicValid = validateForm(); // this triggers setErrors
-
-
-    const jobComp = jobref.current;
-
-
-    const isJobValid = jobComp?.validate?.();
-
-    setErrors((prev) => ({ ...prev }));
-
-    if (!isBasicValid || !isJobValid) {
-
-      return;
-    }
-
+  if (!isBasicValid || !isJobValid) {
+    console.log("VALIDATION FAILED", { jobErrors });
+    return;
+  }
     setLoading(true);
     try {
       const jobData = jobref.current?.getData?.();

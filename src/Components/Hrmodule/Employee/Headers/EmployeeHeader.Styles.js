@@ -234,14 +234,22 @@ export const Select = styled.select`
   border: 1px solid lightgray;
   font-size: 1rem;
   background: #fff;
+  color: ${(props) => (props.value ? "#333" : "#9ca3af")};
 
   &:focus {
     border-color: #3352ba;
     outline: none;
     box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
   }
-`;
 
+  option {
+    color: #333;
+  }
+
+  option[value=""] {
+    color: #9ca3af;
+  }
+`;
 export const ErrorText = styled.div`
   margin-top: 4px;
   color: red;

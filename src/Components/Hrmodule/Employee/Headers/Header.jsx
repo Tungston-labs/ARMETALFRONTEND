@@ -13,7 +13,7 @@ import {
   SectionTitle,
 } from "./EmployeeHeader.Styles";
 import Stepper from "./Stepper";
-
+import { COUNTRY_OPTIONS } from "../../../../utils/countryData";
 const EmployeeHeader = ({
   employee = {},
   editable,
@@ -40,7 +40,7 @@ const EmployeeHeader = ({
         {/* ROW 1 */}
         <Row>
           <FieldGroup>
-            <FieldLabel>Name</FieldLabel>
+            <FieldLabel $required>Name</FieldLabel>
             <Input
               type="text"
               name="name"
@@ -54,7 +54,7 @@ const EmployeeHeader = ({
           </FieldGroup>
 
           <FieldGroup>
-            <FieldLabel>Email</FieldLabel>
+            <FieldLabel $required>Email</FieldLabel>
             <Input
               type="email"
               name="email"
@@ -63,13 +63,13 @@ const EmployeeHeader = ({
               onChange={onChange}
               autoComplete="off"
               $error={Boolean(errors?.email)}
-             readOnly
+            
             />
             {errors?.email && <ErrorText>{errors.email}</ErrorText>}
           </FieldGroup>
 
           <FieldGroup>
-            <FieldLabel>Date of Birth</FieldLabel>
+            <FieldLabel $required>Date of Birth</FieldLabel>
             <Input
               type="date"
               name="dob"
@@ -81,7 +81,7 @@ const EmployeeHeader = ({
           </FieldGroup>
 
           <FieldGroup>
-            <FieldLabel>Employee ID</FieldLabel>
+            <FieldLabel $required>Employee ID</FieldLabel>
             <Input
               type="text"
               name="employee_code"
@@ -98,7 +98,7 @@ const EmployeeHeader = ({
           </FieldGroup>
 
           <FieldGroup>
-            <FieldLabel>Gender</FieldLabel>
+            <FieldLabel $required>Gender</FieldLabel>
             <Select
               name="gender"
               value={employee.gender || ""}
@@ -117,9 +117,9 @@ const EmployeeHeader = ({
         {/* ROW 2 */}
         <Row>
           <FieldGroup>
-            <FieldLabel>Contact Number</FieldLabel>
+            <FieldLabel $required>Contact Number</FieldLabel>
             <Input
-              type="tel"
+              type="number"
               name="phno"
               placeholder="Enter contact number"
               value={employee.phno || ""}
@@ -131,7 +131,7 @@ const EmployeeHeader = ({
           </FieldGroup>
 
           <FieldGroup>
-            <FieldLabel>Address</FieldLabel>
+            <FieldLabel $required>Address</FieldLabel>
             <Input
               type="text"
               name="address"
@@ -144,22 +144,31 @@ const EmployeeHeader = ({
             {errors?.address && <ErrorText>{errors.address}</ErrorText>}
           </FieldGroup>
 
-          <FieldGroup>
-            <FieldLabel>Country</FieldLabel>
-            <Input
-              type="text"
-              name="country"
-              placeholder="Enter country"
-              value={employee.country || ""}
-              onChange={onChange}
-              autoComplete="off"
-              $error={Boolean(errors?.country)}
-            />
-            {errors?.country && <ErrorText>{errors.country}</ErrorText>}
-          </FieldGroup>
+       <FieldGroup>
+  <FieldLabel $required>Country</FieldLabel>
+
+  <Select
+    name="country"
+    value={employee.country || ""}
+    onChange={onChange}
+    $error={Boolean(errors?.country)}
+  >
+    <option value="">Select Country</option>
+
+    {COUNTRY_OPTIONS.map((country) => (
+      <option key={country.code} value={country.name}>
+        {country.name}
+      </option>
+    ))}
+  </Select>
+
+  {errors?.country && (
+    <ErrorText>{errors.country}</ErrorText>
+  )}
+</FieldGroup>
 
           <FieldGroup>
-            <FieldLabel>Blood Group</FieldLabel>
+            <FieldLabel $required>Blood Group</FieldLabel>
             <Select
               name="blood_group"
               value={employee.blood_group || ""}
@@ -180,7 +189,17 @@ const EmployeeHeader = ({
               <ErrorText>{errors.blood_group}</ErrorText>
             )}
           </FieldGroup>
-          
+          <FieldGroup>
+            <FieldLabel $required>Username</FieldLabel>
+            <Input
+              type="text"
+              name="username"
+              placeholder="Username matches email"
+              value={employee.email || ""}
+              readOnly
+              autoComplete="off"
+            />
+          </FieldGroup>
         </Row>
       </InfoWrapper>
     </Container>

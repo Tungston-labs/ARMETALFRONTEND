@@ -1,4 +1,5 @@
 import styled from "styled-components";
+const CONTROL_HEIGHT = "40px";
 
 export const Container = styled.div`
   padding: 20px;
@@ -8,33 +9,48 @@ export const Container = styled.div`
 `;
 
 export const Section = styled.div`
-  margin-top: 15px;
+  /* margin-top: 15px; */
 `;
 
 export const Label = styled.label`
-  color: #333;
-  margin-bottom: 5px;
   display: block;
-    font-family: "Poppins";
-font-weight: 400;
-font-style: Regular;
-font-size: 14px;
-line-height: 100%;
-letter-spacing: 0%;
+  margin-bottom: 8px;
+  font-family: "Poppins", sans-serif;
+  font-weight: 400;
+  font-size: 14px;
+  line-height: 1.2;
+  color: #333;
 
+  ${(props) =>
+    props.$required &&
+    `
+      &::after {
+        content: " *";
+        color: #ef4444;
+      }
+    `}
 `;
 
-
 export const Hr = styled.hr`
+  width: 100%;
   margin: 10px 0;
-  border: 0.5px solid #ccc;
+  border: none;
+  border-top: 1px solid #eaecf0;
 `;
 
 export const Rowes = styled.div`
-  display: flex;
-  gap: 20px;
-  flex-wrap: wrap;
-  /* margin-bottom: 10px; */
+  display: grid;
+  grid-template-columns: repeat(${(props) => props.$columns || 5}, minmax(0, 1fr));
+  gap: 16px 20px;
+  align-items: start; /* keeps inputs aligned even when one field shows an error */
+
+  @media (max-width: 900px) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  @media (max-width: 600px) {
+    grid-template-columns: minmax(0, 1fr);
+  }
 `;
 
 export const Column = styled.div`
@@ -46,20 +62,41 @@ export const Column = styled.div`
 export const FieldGroup = styled.div`
   display: flex;
   flex-direction: column;
-  flex: 1;
+  min-width: 0;
 `;
 
 export const Input = styled.input`
-  padding: 8px 12px;
-  border-radius: 5px;
-  border: 1px solid #ccc;
+ box-sizing: border-box;
+  width: 100%;
+  height: ${CONTROL_HEIGHT};
+  padding: 0 10px;
+  border-radius: 4px;
+  border: 1px solid lightgray;
+  font-size: 1rem;
+  background: #fff;
+
+  &:focus {
+    border-color: #3352ba;
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+  }
 `;
 
 export const Select = styled.select`
-  padding: 6px 12px;
-  border-radius: 5px;
-  border: 1px solid #ccc;
-  background-color: white;
+ box-sizing: border-box;
+  width: 100%;
+  height: ${CONTROL_HEIGHT};
+  padding: 0 10px;
+  border-radius: 4px;
+  border: 1px solid lightgray;
+  font-size: 1rem;
+  background: #fff;
+
+  &:focus {
+    border-color: #3352ba;
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+  }
 `;
 
 export const FullPageLoaderWrapper = styled.div`
@@ -83,13 +120,12 @@ export const Card = styled.div`
 `;
 
 export const CardHeader = styled.div`
- font-family: "Poppins";
-font-weight: 400;
-font-style: Regular;
-font-size: 16px;
-line-height: 100%;
-letter-spacing: 0%;
-margin-bottom: 15px;
+  margin: 0;
+  color: #333;
+  font-family: "Poppins", sans-serif;
+  font-weight: 400;
+  font-size: 16px;
+  line-height: 1.2;
 `;
 
 export const CardContent = styled.div`
@@ -157,4 +193,91 @@ export const UploadButton = styled.label`
 
 export const HiddenInput = styled.input`
   display: none;
+`;
+
+export const SectionTitle = styled.h2`
+  margin: 0;
+  color: #333;
+  font-family: "Poppins", sans-serif;
+  font-weight: 400;
+  font-size: 16px;
+  line-height: 1.2;
+  margin-bottom: 8px;
+`;
+
+export const FullWidthGroup = styled.div`
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+`;
+
+export const TotalLeaveBox = styled.div`
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  height: ${CONTROL_HEIGHT};
+  padding: 0 10px;
+  margin-bottom: 12px;
+  border: 1px solid lightgray;
+  border-radius: 4px;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #172554;
+  background-color: white;
+`;
+
+export const LeaveGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 16px 20px;
+  align-items: start;
+
+  @media (max-width: 900px) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  @media (max-width: 600px) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+`;
+
+export const LeaveItem = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+`;
+
+export const LeaveLabel = styled.span`
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.2;
+  color: #172554;
+`;
+
+export const LeaveInput = styled(Input)`
+  width: 100%;
+`;
+
+export const FileInputLabel = styled.label`
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: ${CONTROL_HEIGHT};
+  padding: 0 10px;
+  border: 1px dashed #cbd5e1;
+  border-radius: 4px;
+  text-align: center;
+  cursor: pointer;
+  color: #6b7280;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  transition: all 0.2s ease;
+
+  &:hover {
+    border-color: #6366f1;
+    color: #4f46e5;
+  }
 `;
