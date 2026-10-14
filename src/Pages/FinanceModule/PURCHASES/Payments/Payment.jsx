@@ -45,7 +45,7 @@ import {
   selectPurchasePaymentLoading,
   selectPurchasePaymentCreateLoading,
   selectPurchasePaymentError,
-} from "../../../../Redux/finance/Purchases/paymentSlice";
+} from "../../../../Redux/finance/purchases/paymentSlice";
 
 import {
   getVendors,
@@ -53,7 +53,7 @@ import {
 
 import {
   getBills,
-} from "../../../../Redux/finance/Purchases/BillSlice";
+} from "../../../../Redux/finance/purchases/BillSlice";
 
 import {
   normalizePurchasePaymentPayload,
