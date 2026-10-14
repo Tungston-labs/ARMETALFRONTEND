@@ -55,6 +55,8 @@ import Payables from "../Pages/FinanceModule/ACCOUNTS/Payables/Payables.jsx";
 import Recievables from "../Pages/FinanceModule/ACCOUNTS/Recievables/Recievables.jsx";
 import SalesReports from "../Pages/FinanceModule/REPORTS/Sales-Reports/SalesReports.jsx";
 import CustomerReport from "../Pages/FinanceModule/REPORTS/Customer-Reports/CustomerReport.jsx";
+import ExpenseReport from "../Pages/FinanceModule/REPORTS/Expense-Report/ExpenseReport.jsx";
+import VendorReport from "../Pages/FinanceModule/REPORTS/Vendor-Report/VendorReport.jsx";
 
 const FinanceRoutes = () => {
   return (
@@ -144,8 +146,10 @@ const FinanceRoutes = () => {
       <Route path="accounts/recievables" element={<Recievables />} />
 
       {/* Report Section */}
-     <Route path="reports/sales-report" element={<SalesReports />} />
-          <Route path="reports/customer-report" element={<CustomerReport />} />
+      <Route path="reports/sales-report" element={<SalesReports />} />
+      <Route path="reports/customer-report" element={<CustomerReport />} />
+         <Route path="reports/expense-report" element={<ExpenseReport />} />
+      <Route path="reports/vendor-report" element={<VendorReport />} />
     </>
   );
 };

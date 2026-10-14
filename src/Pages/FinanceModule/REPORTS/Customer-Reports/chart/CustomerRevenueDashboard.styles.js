@@ -14,7 +14,7 @@ export const DashboardContainer = styled.div`
 
 export const ChartSection = styled.section`
   width: 100%;
-  padding: 24px 28px 26px;
+  padding: 20px;
   box-sizing: border-box;
 
   & + & {
