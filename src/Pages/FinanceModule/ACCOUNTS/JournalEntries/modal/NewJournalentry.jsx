@@ -1,22 +1,10 @@
 import React, { useMemo, useState } from "react";
-
 import { FiCalendar, FiChevronDown, FiPlus, FiX } from "react-icons/fi";
-
 import { useNavigate } from "react-router-dom";
 
 import {
   PageContainer,
   Header,
-  HeaderLeft,
-  PageTitle,
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbSeparator,
-  UserSection,
-  UserAvatar,
-  UserDetails,
-  UserName,
-  UserRole,
   FormContainer,
   FormGrid,
   FormGroup,
@@ -46,16 +34,13 @@ import {
   SaveDraftButton,
   PostButton,
 } from "./NewJournalentry.style";
+import ReusableHeader from "../../../../../Components/ReusableTable/ReusableHeader";
 
 const NewJournalentry = () => {
   const navigate = useNavigate();
-
   const [entryNumber] = useState("JE-1843");
-
   const [date, setDate] = useState("2026-04-30");
-
   const [reference, setReference] = useState("");
-
   const [description, setDescription] = useState("");
 
   const [lines, setLines] = useState([
@@ -194,30 +179,12 @@ const NewJournalentry = () => {
       ================================================= */}
 
       <Header>
-        <HeaderLeft>
-          <PageTitle>New Journal Entry</PageTitle>
-
-          <Breadcrumb>
-            <BreadcrumbItem>Dashboard</BreadcrumbItem>
-
-            <BreadcrumbSeparator>›</BreadcrumbSeparator>
-
-            <BreadcrumbItem>Accounting</BreadcrumbItem>
-
-            <BreadcrumbSeparator>›</BreadcrumbSeparator>
-
-            <BreadcrumbItem active>Journal Entries</BreadcrumbItem>
-          </Breadcrumb>
-        </HeaderLeft>
-
-        <UserSection>
-          <UserAvatar src="https://i.pravatar.cc/80?img=12" alt="User" />
-
-          <UserDetails>
-            <UserName>ARUN S</UserName>
-            <UserRole>ADMIN</UserRole>
-          </UserDetails>
-        </UserSection>
+        <ReusableHeader
+          title="New Journal Entries"
+          breadcrumbs={["Accounting", "Journal Entries"]}
+          buttonText="NEW JOURNAL ENTRY"
+          // onButtonClick={handleNewJournalEntry}
+        ></ReusableHeader>
       </Header>
 
       {/* =================================================
@@ -307,7 +274,7 @@ const NewJournalentry = () => {
                 <tr key={line.id}>
                   {/* ACCOUNT */}
 
-                  <td>
+                  <td data-label="Account">
                     <AccountSelectWrapper>
                       <AccountSelect
                         value={line.account}
@@ -337,7 +304,7 @@ const NewJournalentry = () => {
 
                   {/* DESCRIPTION */}
 
-                  <td>
+                  <td data-label="Description">
                     <LineInput
                       value={line.description}
                       onChange={(event) =>
@@ -353,7 +320,7 @@ const NewJournalentry = () => {
 
                   {/* DEBIT */}
 
-                  <td>
+                  <td data-label="Debit (SAR)">
                     <AmountInput
                       type="number"
                       min="0"
@@ -367,7 +334,7 @@ const NewJournalentry = () => {
 
                   {/* CREDIT */}
 
-                  <td>
+                  <td data-label="Credit (SAR)">
                     <AmountInput
                       type="number"
                       min="0"
@@ -384,6 +351,7 @@ const NewJournalentry = () => {
                   <td>
                     <DeleteButton
                       type="button"
+                      aria-label="Remove line"
                       onClick={() => removeLine(line.id)}
                     >
                       <FiX />
