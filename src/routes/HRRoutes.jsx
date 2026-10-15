@@ -38,6 +38,7 @@ import FinancePage from "../Pages/HrModule/finance/FinancePage.jsx";
 import PayrollList from "../Pages/HrModule/payroll/NewPayroll/PayrollList.jsx";
 
 import ViewLayout from "../Pages/employee/layout/ViewLayout.jsx";
+import PaySlip from "../Pages/HrModule/payroll/NewPayroll/PaySlip/PaySlip.jsx";
 
 const HRRoutes = () => {
   return (
@@ -98,7 +99,7 @@ const HRRoutes = () => {
 
       {/* Payroll */}
       <Route path="PayrollList"  element={<PayrollList />} />
-
+     <Route path="/payrolldetails/:id" element={<PaySlip />} />
       <Route path="layout"element={<ViewLayout />}
       />
     </>
