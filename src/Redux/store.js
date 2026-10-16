@@ -40,6 +40,8 @@ import vendorLedgerReducer from "./finance/purchases/vendorLedgerslice";
 import accountingReducer from "./finance/accounts/Accountingslice";
 import ledgerReducer from "./finance/accounts/Ledgerslice";
 import receivableReducer from "./finance/accounts/Receivableslice";
+import payableReducer from "./finance/accounts/payableSlice";
+
 export const store = configureStore({
   reducer: {
 
@@ -81,8 +83,10 @@ export const store = configureStore({
     vendorLedger: vendorLedgerReducer,
     vendorDetail: vendorDetailReducer,
     accounting: accountingReducer,
-        ledger: ledgerReducer,
-            receivable: receivableReducer,
+    ledger: ledgerReducer,
+    receivable: receivableReducer,
+       payable: payableReducer,
+    
 
   },
 });
