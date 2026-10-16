@@ -38,7 +38,6 @@ import FinancePage from "../Pages/HrModule/finance/FinancePage.jsx";
 import PayrollList from "../Pages/HrModule/payroll/NewPayroll/PayrollList.jsx";
 
 import ViewLayout from "../Pages/employee/layout/ViewLayout.jsx";
-import PayrollDetails from "../Pages/HrModule/payroll/PayrollDetailsContainer.jsx";
 import PaySlip from "../Pages/HrModule/payroll/NewPayroll/PaySlip/PaySlip.jsx";
 
 const HRRoutes = () => {
