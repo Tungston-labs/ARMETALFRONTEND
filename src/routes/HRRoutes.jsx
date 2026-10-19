@@ -67,22 +67,22 @@ const HRRoutes = () => {
       <Route path="employee-leaveRequestList" element={<LeaveRequestList />} />
 
       {/* Attendance */}
-      <Route path="employee-attendance" element={<AttendanceList />}/>
+      <Route path="employee-attendance" element={<AttendanceList />} />
 
-      <Route path="employee-attendance-tracking/:id"element={<TrackingList />}/>
+      <Route path="employee-attendance-tracking/:id" element={<TrackingList />} />
 
-      <Route path="employee-attendance-report" element={<AttendanceReport />}/>
+      <Route path="employee-attendance-report" element={<AttendanceReport />} />
 
-      <Route path="employee-attendance-summary" element={<AttendanceSummary />}/>
+      <Route path="employee-attendance-summary" element={<AttendanceSummary />} />
 
       {/* Visa */}
       <Route path="employee-ContractAndVisaExpiry" element={<ContractAndVisaExpiry />} />
 
       {/* Archived Staff */}
-      <Route path="employee-archived-staff" element={<ArchivedStaff />}/>
+      <Route path="employee-archived-staff" element={<ArchivedStaff />} />
 
       {/* Daily Task */}
-      <Route path="daily-task" element={<Daily />}/>
+      <Route path="daily-task" element={<Daily />} />
 
       {/* Projects */}
       <Route path="projects" element={<Projects />} />
@@ -92,10 +92,10 @@ const HRRoutes = () => {
       {/* Reimbursement */}
       <Route path="ReimbursementCards" element={<ReimbursementCards />} />
 
-      <Route path="reimbursements/:id" element={<ReimbursementDetails />}/>
+      <Route path="reimbursements/:id" element={<ReimbursementDetails />} />
 
       {/* Finance - currently part of HR */}
-      <Route path="finance" element={<FinancePage />}/>
+      <Route path="finance" element={<FinancePage />} />
 
       {/* Payroll */}
       <Route path="PayrollList"  element={<PayrollList />} />

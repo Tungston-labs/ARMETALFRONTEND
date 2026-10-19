@@ -43,6 +43,7 @@ import receivableReducer from "./finance/accounts/Receivableslice";
 import payableReducer from "./finance/accounts/payableSlice";
 import trialBalanceReducer from "./finance/accounts/TrialBalanceslice";
 import journalEntryReducer from "./finance/accounts/Journalslice";
+import salesReportReducer from "./finance/reports/Salesreportslice";
 export const store = configureStore({
   reducer: {
 
@@ -89,6 +90,7 @@ export const store = configureStore({
        payable: payableReducer,
       trialBalance: trialBalanceReducer, 
           journalEntry: journalEntryReducer,
+ salesReport: salesReportReducer,    
 
   },
 });

@@ -584,6 +584,7 @@ const customerSlice = createSlice({
             })
             .addCase(getCustomerPayments.fulfilled, (state, action) => {
                 state.customerPaymentsLoading = false;
+                
 
                 const data = action.payload || {};
 
@@ -604,6 +605,14 @@ const customerSlice = createSlice({
                 state.customerPaymentsKpis =
                     data.kpi_cards || null;
             })
+            .addCase(getCustomerPayments.pending, (state) => {
+    state.customerPaymentsLoading = true;
+    state.error = null;
+})
+.addCase(getCustomerPayments.rejected, (state, action) => {
+    state.customerPaymentsLoading = false;
+    state.error = action.payload;
+})
               // ==========================================
             // GET CUSTOMER CREDIT NOTES
             // ==========================================
