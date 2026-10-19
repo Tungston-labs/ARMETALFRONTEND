@@ -1,78 +1,196 @@
 import React, { useMemo, useState } from "react";
+
 import {
     employeeColumns,
     employeeData,
 } from "../../../../Components/ReusableTable/dummydata";
 
-import { ExportButton, MainReportLayout, TableSide } from "./CustomerReport.styles";
+import {
+    ExportButton,
+    MainReportLayout,
+    TableSide,
+} from "./CustomerReport.styles";
+
 import ReusableHeader from "../../../../Components/ReusableTable/ReusableHeader";
 import ReusableFilter from "../../../../Components/ReusableTable/ReusableFilter";
 import ReusableTable from "../../../../Components/ReusableTable/ReusableTable";
 import ReusablePagination from "../../../../Components/Pagination/ReusablePagination";
+import StatsCards from "../../../../Components/StatsCards/StatsCards";
+
 import SalesTrendChart from "./chart/CustomerRevenueDashboard";
-import { FiDownload } from "react-icons/fi";
+
+import {
+    FiDownload,
+    FiUsers,
+    FiDollarSign,
+    FiCreditCard,
+    FiShoppingCart,
+} from "react-icons/fi";
 
 const CustomerReport = () => {
     const [search, setSearch] = useState("");
     const [status, setStatus] = useState("");
     const [customer, setCustomer] = useState("all");
     const [category, setCategory] = useState("all");
-    const rowsPerPage = 15;
-
     const [currentPage, setCurrentPage] = useState(1);
 
-    const totalPages = Math.ceil(
-        employeeData.length / rowsPerPage
-    );
+    const rowsPerPage = 15;
 
-    const paginatedData = useMemo(() => {
+    // Customer report statistics
+    const customerStats = [
+        {
+            title: "Total Customers",
+            count: "248",
+            icon: <FiUsers />,
+            backgroundColor: "#E8F0FF",
+            iconColor: "#3B82F6",
+        },
+        {
+            title: "Total Revenue",
+            count: "SAR 485,600",
+            icon: <FiDollarSign />,
+            backgroundColor: "#E6F8EF",
+            iconColor: "#16A34A",
+        },
+         {
+            title: "Payments Received",
+            count: "SAR 68,450",
+            icon: <FiCreditCard />,
+            backgroundColor: "#FFF3E0",
+            iconColor: "#F59E0B",
+        },
+        {
+            title: "Outstanding Receivables",
+            count: "SAR 68,450",
+            icon: <FiCreditCard />,
+            backgroundColor: "#FFF3E0",
+            iconColor: "#F59E0B",
+        },
+        {
+            title: "Total Invoice",
+            count: "1,284",
+            icon: <FiShoppingCart />,
+            backgroundColor: "#F3E8FF",
+            iconColor: "#9333EA",
+        },
+    ];
 
-        const start =
-            (currentPage - 1) * rowsPerPage;
-
-        return employeeData.slice(
-            start,
-            start + rowsPerPage
-        );
-
-    }, [currentPage]);
-const handleCustomerChange = (value) => {
+    // Handle customer filter
+    const handleCustomerChange = (value) => {
         setCustomer(value);
         setCurrentPage(1);
     };
 
+    // Handle category filter
     const handleCategoryChange = (value) => {
         setCategory(value);
         setCurrentPage(1);
     };
-    return (
 
+    // Handle search
+    const handleSearch = (value) => {
+        setSearch(value);
+        setCurrentPage(1);
+    };
+
+    // Handle status filter
+    const handleStatusChange = (value) => {
+        setStatus(value);
+        setCurrentPage(1);
+    };
+
+    // Filter customer report data
+    const filteredData = useMemo(() => {
+        return employeeData.filter((item) => {
+            const searchValue = search.trim().toLowerCase();
+
+            const matchesSearch =
+                !searchValue ||
+                Object.values(item).some((value) =>
+                    String(value ?? "")
+                        .toLowerCase()
+                        .includes(searchValue)
+                );
+
+            const matchesStatus =
+                !status ||
+                String(item.status ?? "").toLowerCase() ===
+                    status.toLowerCase();
+
+            const customerName = String(
+                item.customer ?? item.customerName ?? ""
+            )
+                .toLowerCase()
+                .replace(/\s+/g, "_");
+
+            const matchesCustomer =
+                customer === "all" || customerName === customer;
+
+            const itemCategory = String(item.category ?? "")
+                .toLowerCase()
+                .replace(/\s+/g, "_");
+
+            const matchesCategory =
+                category === "all" || itemCategory === category;
+
+            return (
+                matchesSearch &&
+                matchesStatus &&
+                matchesCustomer &&
+                matchesCategory
+            );
+        });
+    }, [search, status, customer, category]);
+
+    // Calculate pagination
+    const totalPages = Math.max(
+        1,
+        Math.ceil(filteredData.length / rowsPerPage)
+    );
+
+    // Get current page data
+    const paginatedData = useMemo(() => {
+        const startIndex = (currentPage - 1) * rowsPerPage;
+
+        return filteredData.slice(
+            startIndex,
+            startIndex + rowsPerPage
+        );
+    }, [filteredData, currentPage]);
+
+    return (
         <div style={{ padding: 20 }}>
+            {/* Page Header */}
             <ReusableHeader
-        title="Sales Reports"
-        breadcrumbs={["Reports", "Sales Reports"]}
-      >
-        <ExportButton type="button"
-        //  onClick={handleExport}
-         >
-          <FiDownload /> Export Accounts
-        </ExportButton>
-      </ReusableHeader>
-                  <ReusableFilter
+                title="Customer Reports"
+                breadcrumbs={["Reports", "Customer Reports"]}
+            >
+                <ExportButton type="button">
+                    <FiDownload />
+                    Export Accounts
+                </ExportButton>
+            </ReusableHeader>
+
+            {/* Customer Statistics Cards */}
+            <StatsCards
+                cards={customerStats}
+                loading={false}
+            />
+
+            {/* Search and Filters */}
+            <ReusableFilter
                 search={search}
-                onSearch={setSearch}
+                onSearch={handleSearch}
                 status={status}
                 statuses={[
-                    "Present",
-                    "Absent",
-                    "On Leave",
+                    "Active",
+                    "Inactive",
+                    "Overdue",
                 ]}
-                onStatus={setStatus}
+                onStatus={handleStatusChange}
                 showSearch
                 showStatus
-             
-           
-             filters={[
+                filters={[
                     {
                         key: "customer",
                         value: customer,
@@ -101,7 +219,6 @@ const handleCustomerChange = (value) => {
                         ],
                         placeholder: "All Customers",
                     },
-
                     {
                         key: "category",
                         value: category,
@@ -130,33 +247,28 @@ const handleCustomerChange = (value) => {
                         ],
                         placeholder: "All Categories",
                     },
-                ]}/>
+                ]}
+            />
 
+            {/* Report Table and Revenue Chart */}
             <MainReportLayout>
+                <TableSide>
+                    <ReusableTable
+                        autoLayout
+                        columns={employeeColumns}
+                        data={paginatedData}
+                    />
 
-    <TableSide>
+                    <ReusablePagination
+                        currentPage={currentPage}
+                        totalPages={totalPages}
+                        onPageChange={setCurrentPage}
+                    />
+                </TableSide>
 
-        <ReusableTable
-                autoLayout
-            columns={employeeColumns}
-            data={paginatedData}
-        />
-
-        <ReusablePagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={setCurrentPage}
-        />
-
-    </TableSide>
-
-
-    <SalesTrendChart />
-
-</MainReportLayout>
-
+                <SalesTrendChart />
+            </MainReportLayout>
         </div>
-
     );
 };
 
