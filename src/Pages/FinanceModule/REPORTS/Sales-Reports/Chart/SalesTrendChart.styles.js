@@ -4,7 +4,7 @@ export const ChartContainer = styled.div`
     width: 100%;
     height: 100%;
 
-    min-height: 584px;
+     min-height: 584px;
 
     padding: 14px 16px;
 
@@ -59,17 +59,15 @@ export const YearSelect = styled.select`
 
 export const ChartBody = styled.div`
     width: 100%;
-    height: 510px;
+    /* height: 510px; */
 
     display: flex;
 `;
 
 export const YAxis = styled.div`
     width: 35px;
-    height: calc(100% - 30px);
-
+    height: calc(100% - 20px);
     flex-shrink: 0;
-
     display: flex;
     flex-direction: column;
     justify-content: space-between;
@@ -107,7 +105,7 @@ export const GridLines = styled.div`
     top: 7px;
     right: 0;
     left: 36px;
-    bottom: 30px;
+    bottom: 10px;
 
     display: flex;
 

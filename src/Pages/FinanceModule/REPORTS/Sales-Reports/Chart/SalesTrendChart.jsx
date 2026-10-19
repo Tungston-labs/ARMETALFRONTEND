@@ -1,12 +1,10 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
     ChartContainer,
     ChartHeader,
     ChartTitle,
     YearSelect,
     ChartBody,
-    YAxis,
-    YAxisValue,
     ChartContent,
     GridLines,
     GridLine,
@@ -21,147 +19,117 @@ import {
     XAxisValue,
 } from "./SalesTrendChart.styles";
 
-const salesData = [
-    {
-        month: "DEC",
-        value: 5,
-        amount: "SAR 5,120",
-    },
-    {
-        month: "NOV",
-        value: 11,
-        amount: "SAR 11,240",
-    },
-    {
-        month: "OCT",
-        value: 17,
-        amount: "SAR 17,420",
-    },
-    {
-        month: "SEP",
-        value: 11,
-        amount: "SAR 11,120",
-    },
-    {
-        month: "AUG",
-        value: 19,
-        amount: "SAR 19,240",
-    },
-    {
-        month: "JULY",
-        value: 13,
-        amount: "SAR 13,420",
-    },
-    {
-        month: "JUN",
-        value: 19,
-        amount: "SAR 19,620",
-    },
-    {
-        month: "MAY",
-        value: 24,
-        amount: "SAR 24,120",
-    },
-    {
-        month: "APR",
-        value: 21,
-        amount: "SAR 21,320",
-    },
-    {
-        month: "MAR",
-        value: 31,
-        amount: "SAR 14,835",
-        active: true,
-    },
-    {
-        month: "FEB",
-        value: 18,
-        amount: "SAR 18,120",
-    },
-    {
-        month: "JAN",
-        value: 13,
-        amount: "SAR 13,420",
-    },
-];
+import { formatNumber } from "../Salesreportconfig";
 
-const SalesTrendChart = () => {
-    const [year, setYear] = useState("2026");
+const GRID_STEPS = 6; 
+
+
+const niceStep = (raw) => {
+    if (raw <= 0) return 1;
+    const power = Math.pow(10, Math.floor(Math.log10(raw)));
+    const fraction = raw / power;
+    const nice = [1, 2, 2.5, 5, 10].find((n) => fraction <= n);
+    return nice * power;
+};
+
+const formatAxis = (value) => {
+    if (value >= 1_000_000) return `${+(value / 1_000_000).toFixed(2)} M`;
+    if (value >= 1_000) return `${+(value / 1_000).toFixed(1)} K`;
+    return String(value);
+};
+
+const currentYear = new Date().getFullYear();
+const currentMonth = new Date().getMonth() + 1; // 1-12
+const YEAR_OPTIONS = [currentYear, currentYear - 1, currentYear - 2];
+
+
+const SalesTrendChart = ({
+    data = [],
+    year = currentYear,
+    onYearChange,
+    loading = false,
+}) => {
     const [hoveredMonth, setHoveredMonth] = useState(null);
 
-    const maxValue = 31;
+    
+    const rows = useMemo(() => {
+        const lastMonth =
+            Number(year) === currentYear ? currentMonth : 12;
+
+        return data.filter((m) => m.month <= lastMonth).reverse();
+    }, [data, year]);
+
+    const { axisMax, ticks, topMonth } = useMemo(() => {
+        const max = Math.max(0, ...data.map((m) => Number(m.revenue) || 0));
+        const step = niceStep(max / GRID_STEPS);
+        const axisMax = step * GRID_STEPS;
+
+        const top = data.find((m) => Number(m.revenue) === max && max > 0);
+
+        return {
+            axisMax,
+            ticks: Array.from({ length: GRID_STEPS + 1 }, (_, i) => i * step),
+            topMonth: top ? top.month : null,
+        };
+    }, [data]);
 
     return (
         <ChartContainer>
             {/* Header */}
             <ChartHeader>
-                <ChartTitle>
-                    Sales Trend (Monthly)
-                </ChartTitle>
+                <ChartTitle>Sales Trend (Monthly)</ChartTitle>
 
                 <YearSelect
-                    value={year}
-                    onChange={(event) =>
-                        setYear(event.target.value)
-                    }
+                    value={String(year)}
+                    onChange={(event) => onYearChange?.(event.target.value)}
                 >
-                    <option value="2026">2026</option>
-                    <option value="2025">2025</option>
-                    <option value="2024">2024</option>
+                    {YEAR_OPTIONS.map((y) => (
+                        <option key={y} value={y}>
+                            {y}
+                        </option>
+                    ))}
                 </YearSelect>
             </ChartHeader>
 
             {/* Chart */}
-            <ChartBody>
-
+            <ChartBody style={{ opacity: loading ? 0.5 : 1 }}>
                 <ChartContent>
-
                     {/* Vertical grid lines */}
                     <GridLines>
-                        <GridLine />
-                        <GridLine />
-                        <GridLine />
-                        <GridLine />
-                        <GridLine />
-                        <GridLine />
+                        {Array.from({ length: GRID_STEPS }).map((_, i) => (
+                            <GridLine key={i} />
+                        ))}
                     </GridLines>
 
                     {/* Bars */}
-                    {salesData.map((item) => {
-                        const width =
-                            (item.value / maxValue) * 100;
+                    {rows.map((item) => {
+                        const revenue = Number(item.revenue) || 0;
+                        const width = axisMax ? (revenue / axisMax) * 100 : 0;
 
                         return (
                             <ChartRow
                                 key={item.month}
-                                onMouseEnter={() =>
-                                    setHoveredMonth(item.month)
-                                }
-                                onMouseLeave={() =>
-                                    setHoveredMonth(null)
-                                }
+                                onMouseEnter={() => setHoveredMonth(item.month)}
+                                onMouseLeave={() => setHoveredMonth(null)}
                             >
                                 <MonthLabel>
-                                    {item.month}
+                                    {String(item.label).toUpperCase()}
                                 </MonthLabel>
 
                                 <BarArea>
                                     <Bar
-                                        style={{
-                                            width: `${width}%`,
-                                        }}
-                                        active={item.active}
+                                        style={{ width: `${width}%` }}
+                                        active={item.month === topMonth}
                                     />
 
-                                    {hoveredMonth ===
-                                        item.month && (
+                                    {hoveredMonth === item.month && (
                                         <Tooltip>
                                             <TooltipTitle>
                                                 Sales Revenue
                                             </TooltipTitle>
 
                                             <TooltipValue>
-                                                {item.amount}
+                                                {formatNumber(revenue)}
                                             </TooltipValue>
                                         </Tooltip>
                                     )}
@@ -172,15 +140,10 @@ const SalesTrendChart = () => {
 
                     {/* X Axis */}
                     <XAxis>
-                        <XAxisValue>0</XAxisValue>
-                        <XAxisValue>5 M</XAxisValue>
-                        <XAxisValue>10 M</XAxisValue>
-                        <XAxisValue>15 M</XAxisValue>
-                        <XAxisValue>20 M</XAxisValue>
-                        <XAxisValue>25 M</XAxisValue>
-                        <XAxisValue>25 M</XAxisValue>
+                        {ticks.map((tick, i) => (
+                            <XAxisValue key={i}>{formatAxis(tick)}</XAxisValue>
+                        ))}
                     </XAxis>
-
                 </ChartContent>
             </ChartBody>
         </ChartContainer>
