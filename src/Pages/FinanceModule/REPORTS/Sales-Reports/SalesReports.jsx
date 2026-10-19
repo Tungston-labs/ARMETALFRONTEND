@@ -1,163 +1,124 @@
-import React, { useMemo, useState } from "react";
-import {
-    employeeColumns,
-    employeeData,
-} from "../../../../Components/ReusableTable/dummydata";
+import React, { useMemo } from "react";
 
-import { ExportButton, MainReportLayout, TableSide } from "./SalesReports.styles";
+import {
+    ExportButton,
+    MainReportLayout,
+    TableSide,
+} from "./SalesReports.styles";
 import ReusableHeader from "../../../../Components/ReusableTable/ReusableHeader";
 import ReusableFilter from "../../../../Components/ReusableTable/ReusableFilter";
 import ReusableTable from "../../../../Components/ReusableTable/ReusableTable";
 import ReusablePagination from "../../../../Components/Pagination/ReusablePagination";
 import SalesTrendChart from "./Chart/SalesTrendChart";
+import StatsCards from "../../../../Components/StatsCards/StatsCards";
+
 import { FiDownload } from "react-icons/fi";
 
-const Employee = () => {
-    const [search, setSearch] = useState("");
-    const [status, setStatus] = useState("");
-    const [customer, setCustomer] = useState("all");
-    const [category, setCategory] = useState("all");
-    const rowsPerPage = 15;
+import useSalesReport from "./Usesalesreport";
+import {
+    buildStatsCards,
+    salesColumns,
+    statusOptions,
+} from "./Salesreportconfig";
 
-    const [currentPage, setCurrentPage] = useState(1);
+const getErrorMessage = (error) =>
+    typeof error === "string"
+        ? error
+        : error?.detail || error?.message || "Something went wrong";
 
-    const totalPages = Math.ceil(
-        employeeData.length / rowsPerPage
-    );
+const SalesReports = () => {
+    const {
+        search,
+        status,
+        customer,
+        year,
+        rows,
+        customerOptions,
+        summary,
+        chart,
+        currentPage,
+        totalPages,
+        setCurrentPage,
+        loading,
+        error,
+        exporting,
+        exportError,
+        handleSearch,
+        handleStatus,
+        handleCustomerChange,
+        handleYearChange,
+        handleExport,
+    } = useSalesReport();
 
-    const paginatedData = useMemo(() => {
+    const statsCards = useMemo(() => buildStatsCards(summary), [summary]);
 
-        const start =
-            (currentPage - 1) * rowsPerPage;
-
-        return employeeData.slice(
-            start,
-            start + rowsPerPage
-        );
-
-    }, [currentPage]);
-const handleCustomerChange = (value) => {
-        setCustomer(value);
-        setCurrentPage(1);
-    };
-
-    const handleCategoryChange = (value) => {
-        setCategory(value);
-        setCurrentPage(1);
-    };
     return (
-
         <div style={{ padding: 20 }}>
             <ReusableHeader
-        title="Sales Reports"
-        breadcrumbs={["Reports", "Sales Reports"]}
-      >
-        <ExportButton type="button"
-        //  onClick={handleExport}
-         >
-          <FiDownload /> Export Accounts
-        </ExportButton>
-      </ReusableHeader>
-                  <ReusableFilter
+                title="Sales Reports"
+                breadcrumbs={["Reports", "Sales Reports"]}
+            >
+                <ExportButton
+                    type="button"
+                    onClick={handleExport}
+                    disabled={exporting}
+                >
+                    <FiDownload /> {exporting ? "Exporting..." : "Export Report"}
+                </ExportButton>
+            </ReusableHeader>
+
+            {(error || exportError) && (
+                <p style={{ color: "#DC2626", margin: "8px 0" }}>
+                    {getErrorMessage(error || exportError)}
+                </p>
+            )}
+
+            <StatsCards cards={statsCards} loading={loading} />
+
+            <ReusableFilter
                 search={search}
-                onSearch={setSearch}
+                onSearch={handleSearch}
                 status={status}
-                statuses={[
-                    "Present",
-                    "Absent",
-                    "On Leave",
-                ]}
-                onStatus={setStatus}
+                statuses={statusOptions}
+                onStatus={handleStatus}
                 showSearch
                 showStatus
-             
-           
-             filters={[
+                filters={[
                     {
                         key: "customer",
                         value: customer,
                         onChange: handleCustomerChange,
-                        options: [
-                            {
-                                label: "All Customers",
-                                value: "all",
-                            },
-                            {
-                                label: "ABC Trading LLC",
-                                value: "abc_trading",
-                            },
-                            {
-                                label: "Al Noor Trading",
-                                value: "al_noor",
-                            },
-                            {
-                                label: "Gulf Supplies",
-                                value: "gulf_supplies",
-                            },
-                            {
-                                label: "Saudi Industrial Co.",
-                                value: "saudi_industrial",
-                            },
-                        ],
+                        options: customerOptions,
                         placeholder: "All Customers",
                     },
-
-                    {
-                        key: "category",
-                        value: category,
-                        onChange: handleCategoryChange,
-                        options: [
-                            {
-                                label: "All Categories",
-                                value: "all",
-                            },
-                            {
-                                label: "Products",
-                                value: "products",
-                            },
-                            {
-                                label: "Services",
-                                value: "services",
-                            },
-                            {
-                                label: "Subscriptions",
-                                value: "subscriptions",
-                            },
-                            {
-                                label: "Other",
-                                value: "other",
-                            },
-                        ],
-                        placeholder: "All Categories",
-                    },
-                ]}/>
+                ]}
+            />
 
             <MainReportLayout>
+                <TableSide>
+                    <ReusableTable
+                        autoLayout
+                        columns={salesColumns}
+                        data={rows}
+                        loading={loading}
+                    />
 
-    <TableSide>
+                    <ReusablePagination
+                        currentPage={currentPage}
+                        totalPages={totalPages}
+                        onPageChange={setCurrentPage}
+                    />
+                </TableSide>
 
-        <ReusableTable
-                autoLayout
-            columns={employeeColumns}
-            data={paginatedData}
-        />
-
-        <ReusablePagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={setCurrentPage}
-        />
-
-    </TableSide>
-
-
-    <SalesTrendChart />
-
-</MainReportLayout>
-
+                <SalesTrendChart
+                    data={chart.months}
+                    year={year}
+                    onYearChange={handleYearChange}
+                    loading={loading}
+                />
+            </MainReportLayout>
         </div>
-
     );
 };
 
-export default Employee;
+export default SalesReports;
