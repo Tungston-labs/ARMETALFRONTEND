@@ -148,6 +148,7 @@ import SalesReports from "../Pages/FinanceModule/REPORTS/Sales-Reports/SalesRepo
 
 import JournalEntries from "../Pages/FinanceModule/ACCOUNTS/JournalEntries/JournalEntries.jsx";
 import NewJournalentry from "../Pages/FinanceModule/ACCOUNTS/JournalEntries/modal/NewJournalentry.jsx";
+import TrialBalance from "../Pages/FinanceModule/ACCOUNTS/TrialBalance/TrialBalance.jsx";
 
 const FinanceRoutes = () => {
   return (
@@ -372,7 +373,7 @@ const FinanceRoutes = () => {
       <Route path="accounts/expenses" element={<Expenses />} />
       <Route path="accounts/payables" element={<Payables />} />
       <Route path="accounts/recievables" element={<Recievables />} />
-
+    <Route path="accounts/trialbalance" element={<TrialBalance />} />
       {/* Report Section */}
       <Route path="reports/sales-report" element={<SalesReports />} />
     </>

@@ -41,7 +41,7 @@ import accountingReducer from "./finance/accounts/Accountingslice";
 import ledgerReducer from "./finance/accounts/Ledgerslice";
 import receivableReducer from "./finance/accounts/Receivableslice";
 import payableReducer from "./finance/accounts/payableSlice";
-
+import trialBalanceReducer from "./finance/accounts/TrialBalanceslice";
 export const store = configureStore({
   reducer: {
 
@@ -86,7 +86,7 @@ export const store = configureStore({
     ledger: ledgerReducer,
     receivable: receivableReducer,
        payable: payableReducer,
-    
+      trialBalance: trialBalanceReducer, 
 
   },
 });
