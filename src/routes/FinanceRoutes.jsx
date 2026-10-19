@@ -151,6 +151,7 @@ import VendorReport from "../Pages/FinanceModule/REPORTS/Vendor-Report/VendorRep
 
 import JournalEntries from "../Pages/FinanceModule/ACCOUNTS/JournalEntries/JournalEntries.jsx";
 import NewJournalentry from "../Pages/FinanceModule/ACCOUNTS/JournalEntries/modal/NewJournalentry.jsx";
+import TrialBalance from "../Pages/FinanceModule/ACCOUNTS/TrialBalance/TrialBalance.jsx";
 import ProfitLoss from "../Pages/FinanceModule/REPORTS/ProfitLoss/ProfitLoss.jsx";
 
 const FinanceRoutes = () => {
@@ -361,21 +362,26 @@ const FinanceRoutes = () => {
           ACCOUNTS - JOURNAL ENTRIES
       ===================================================== */}
 
-            <Route path="accounts/journal-entries" element={<JournalEntries />} />
+      <Route path="accounts/journal-entries" element={<JournalEntries />} />
 
-            <Route
-                path="accounts/journal-entries/add"
-                element={<NewJournalentry />}
-            />
+      <Route
+        path="accounts/journal-entries/add"
+        element={<NewJournalentry />}
+      />
 
-            <Route
-                path="accounts/journal-entries/edit/:id"
-                element={<NewJournalentry />}
-            />
-            <Route path="accounts/generalledger" element={<GeneralLedger />} />
-            <Route path="accounts/expenses" element={<Expenses />} />
-            <Route path="accounts/payables" element={<Payables />} />
-            <Route path="accounts/recievables" element={<Recievables />} />
+      <Route
+        path="accounts/journal-entries/edit/:id"
+        element={<NewJournalentry />}
+      />
+      <Route path="accounts/generalledger" element={<GeneralLedger />} />
+      <Route path="accounts/expenses" element={<Expenses />} />
+      <Route path="accounts/payables" element={<Payables />} />
+      <Route path="accounts/recievables" element={<Recievables />} />
+    <Route path="accounts/trialbalance" element={<TrialBalance />} />
+      
+    </>
+  );
+          
 
             {/* Report Section */}
             <Route path="reports/sales-report" element={<SalesReports />} />
