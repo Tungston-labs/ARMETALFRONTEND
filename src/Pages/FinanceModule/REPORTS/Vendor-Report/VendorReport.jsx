@@ -1,144 +1,137 @@
-import React, { useMemo, useState } from "react";
+import React from "react";
 import {
-    employeeColumns,
-    employeeData,
-} from "../../../../Components/ReusableTable/dummydata";
-import { ExportButton, MainReportLayout, TableSide } from "./VendorReport.styles";
+    ExportButton,
+    MainReportLayout,
+    TableSide,
+} from "./VendorReport.styles";
 import ReusableHeader from "../../../../Components/ReusableTable/ReusableHeader";
 import ReusableFilter from "../../../../Components/ReusableTable/ReusableFilter";
 import ReusableTable from "../../../../Components/ReusableTable/ReusableTable";
 import ReusablePagination from "../../../../Components/Pagination/ReusablePagination";
-import ExpenseReimbursementTrends from "./chart/VendorPurchaseDashboard";
-import { FiDownload } from "react-icons/fi";
+import StatsCards from "../../../../Components/StatsCards/StatsCards";
+import VendorPurchaseDashboard from "./chart/VendorPurchaseDashboard";
+import useVendorReport, { STATUS_OPTIONS, formatSAR } from "./Usevendorreport";
+import vendorColumns from "./Vendorreportcolumns";
+import {
+    FiDownload,
+    FiUsers,
+    FiCreditCard,
+    FiClock,
+    FiFileText,
+} from "react-icons/fi";
 
 const VendorReport = () => {
-    const [search, setSearch] = useState("");
-    const [status, setStatus] = useState("");
-    const [customer, setCustomer] = useState("all");
-    const [category, setCategory] = useState("all");
-    const rowsPerPage = 15;
+    const {
+        summary,
+        tableData,
+        vendorOptions,
+        paymentTermOptions,
+        loading,
+        error,
+        currentPage,
+        totalPages,
+        setCurrentPage,
+        selectedYear,
+        selectedMonth,
+        handleYearChange,
+        handleMonthChange,
+        search,
+        status,
+        vendor,
+        paymentTerm,
+        setSearch,
+        handleStatusChange,
+        handleVendorChange,
+        handlePaymentTermChange,
+    } = useVendorReport();
 
-    const [currentPage, setCurrentPage] = useState(1);
+    // Vendor report statistics
+    const vendorStats = [
+        {
+            title: "Total Vendors",
+            count: String(summary.totalVendors),
+            icon: <FiUsers />,
+            backgroundColor: "#E8F0FF",
+            iconColor: "#3B82F6",
+        },
+        {
+            title: "Total Bills",
+            count: String(summary.totalBills),
+            icon: <FiFileText />,
+            backgroundColor: "#F3E8FF",
+            iconColor: "#9333EA",
+        },
+        {
+            title: "Payments Made",
+            count: formatSAR(summary.totalPayments),
+            icon: <FiCreditCard />,
+            backgroundColor: "#FFF3E0",
+            iconColor: "#F59E0B",
+        },
+        {
+            title: "Outstanding Payables",
+            count: formatSAR(summary.outstandingPayables),
+            icon: <FiClock />,
+            backgroundColor: "#FDE8E8",
+            iconColor: "#E63D32",
+        },
+    ];
 
-    const totalPages = Math.ceil(
-        employeeData.length / rowsPerPage
-    );
-
-    const paginatedData = useMemo(() => {
-
-        const start =
-            (currentPage - 1) * rowsPerPage;
-
-        return employeeData.slice(
-            start,
-            start + rowsPerPage
-        );
-
-    }, [currentPage]);
-    const handleCustomerChange = (value) => {
-        setCustomer(value);
-        setCurrentPage(1);
-    };
-
-    const handleCategoryChange = (value) => {
-        setCategory(value);
-        setCurrentPage(1);
-    };
     return (
-
         <div style={{ padding: 20 }}>
             <ReusableHeader
-                title="Sales Reports"
-                breadcrumbs={["Reports", "Sales Reports"]}
+                title="Vendor Reports"
+                breadcrumbs={["Reports", "Vendor Reports"]}
             >
-                <ExportButton type="button"
-                //  onClick={handleExport}
-                >
-                    <FiDownload /> Export Accounts
+                <ExportButton type="button">
+                    <FiDownload />
+                    Export Accounts
                 </ExportButton>
             </ReusableHeader>
+
+            <StatsCards cards={vendorStats} loading={loading} />
+
             <ReusableFilter
                 search={search}
                 onSearch={setSearch}
                 status={status}
-                statuses={[
-                    "Present",
-                    "Absent",
-                    "On Leave",
-                ]}
-                onStatus={setStatus}
+                statuses={STATUS_OPTIONS}
+                onStatus={handleStatusChange}
                 showSearch
                 showStatus
-
-
                 filters={[
                     {
-                        key: "customer",
-                        value: customer,
-                        onChange: handleCustomerChange,
-                        options: [
-                            {
-                                label: "All Customers",
-                                value: "all",
-                            },
-                            {
-                                label: "ABC Trading LLC",
-                                value: "abc_trading",
-                            },
-                            {
-                                label: "Al Noor Trading",
-                                value: "al_noor",
-                            },
-                            {
-                                label: "Gulf Supplies",
-                                value: "gulf_supplies",
-                            },
-                            {
-                                label: "Saudi Industrial Co.",
-                                value: "saudi_industrial",
-                            },
-                        ],
-                        placeholder: "All Customers",
+                        key: "vendor",
+                        value: vendor,
+                        onChange: handleVendorChange,
+                        options: vendorOptions,
+                        placeholder: "Select Vendor",
                     },
-
                     {
-                        key: "category",
-                        value: category,
-                        onChange: handleCategoryChange,
-                        options: [
-                            {
-                                label: "All Categories",
-                                value: "all",
-                            },
-                            {
-                                label: "Products",
-                                value: "products",
-                            },
-                            {
-                                label: "Services",
-                                value: "services",
-                            },
-                            {
-                                label: "Subscriptions",
-                                value: "subscriptions",
-                            },
-                            {
-                                label: "Other",
-                                value: "other",
-                            },
-                        ],
-                        placeholder: "All Categories",
+                        key: "paymentTerm",
+                        value: paymentTerm,
+                        onChange: handlePaymentTermChange,
+                        options: paymentTermOptions,
+                        placeholder: "Payment Term",
                     },
-                ]} />
+                ]}
+            />
+
+            {error && (
+                <div style={{ color: "#E63D32", margin: "12px 0" }}>
+                    {typeof error === "string"
+                        ? error
+                        : error.detail || "Failed to load vendor report"}
+                </div>
+            )}
 
             <MainReportLayout>
-
                 <TableSide>
-
                     <ReusableTable
                         autoLayout
-                        columns={employeeColumns}
-                        data={paginatedData}
+                        columns={vendorColumns}
+                        data={tableData}
+                        loading={loading}
                     />
 
                     <ReusablePagination
@@ -146,16 +139,16 @@ const VendorReport = () => {
                         totalPages={totalPages}
                         onPageChange={setCurrentPage}
                     />
-
                 </TableSide>
 
-
-                <ExpenseReimbursementTrends />
-
+                <VendorPurchaseDashboard
+                    selectedYear={selectedYear}
+                    selectedMonth={selectedMonth}
+                    onYearChange={handleYearChange}
+                    onMonthChange={handleMonthChange}
+                />
             </MainReportLayout>
-
         </div>
-
     );
 };
 

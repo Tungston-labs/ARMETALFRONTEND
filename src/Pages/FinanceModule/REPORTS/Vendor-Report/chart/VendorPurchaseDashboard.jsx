@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useMemo } from "react";
+import { useSelector } from "react-redux";
 import {
   ResponsiveContainer,
   BarChart,
@@ -7,9 +8,9 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  Cell,
   PieChart,
   Pie,
+  Cell,
 } from "recharts";
 
 import {
@@ -35,57 +36,6 @@ import {
   TooltipValue,
 } from "./VendorPurchaseDashboard.styles";
 
-const purchaseDataByYear = {
-  2026: [
-    { name: "Current", amount: 1200, color: "#0789F9" },
-    { name: "1-15", amount: 300, color: "#F04438" },
-    { name: "15-31", amount: 220, color: "#D946EF" },
-    { name: "31-45", amount: 180, color: "#374151" },
-    { name: "45-60", amount: 90, color: "#EABF32" },
-    { name: "60-90", amount: 50, color: "#17C7C7" },
-    { name: "90+", amount: 45, color: "#35B52A" },
-  ],
-  2025: [
-    { name: "Current", amount: 1000, color: "#0789F9" },
-    { name: "1-15", amount: 350, color: "#F04438" },
-    { name: "15-31", amount: 250, color: "#D946EF" },
-    { name: "31-45", amount: 150, color: "#374151" },
-    { name: "45-60", amount: 120, color: "#EABF32" },
-    { name: "60-90", amount: 75, color: "#17C7C7" },
-    { name: "90+", amount: 60, color: "#35B52A" },
-  ],
-  2024: [
-    { name: "Current", amount: 900, color: "#0789F9" },
-    { name: "1-15", amount: 280, color: "#F04438" },
-    { name: "15-31", amount: 200, color: "#D946EF" },
-    { name: "31-45", amount: 160, color: "#374151" },
-    { name: "45-60", amount: 100, color: "#EABF32" },
-    { name: "60-90", amount: 65, color: "#17C7C7" },
-    { name: "90+", amount: 40, color: "#35B52A" },
-  ],
-};
-
-const paymentDataByMonth = {
-  JAN: [
-    { name: "Paid", value: 30.4, color: "#43A85D" },
-    { name: "Partially Paid", value: 8.1, color: "#3454B9" },
-    { name: "Unpaid", value: 4.3, color: "#FF800B" },
-    { name: "Overdue", value: 1.8, color: "#E63D32" },
-  ],
-  FEB: [
-    { name: "Paid", value: 28.4, color: "#43A85D" },
-    { name: "Partially Paid", value: 7.1, color: "#3454B9" },
-    { name: "Unpaid", value: 5.3, color: "#FF800B" },
-    { name: "Overdue", value: 2.8, color: "#E63D32" },
-  ],
-  MAR: [
-    { name: "Paid", value: 32.4, color: "#43A85D" },
-    { name: "Partially Paid", value: 6.1, color: "#3454B9" },
-    { name: "Unpaid", value: 3.3, color: "#FF800B" },
-    { name: "Overdue", value: 1.8, color: "#E63D32" },
-  ],
-};
-
 const years = ["2026", "2025", "2024"];
 
 const months = [
@@ -93,10 +43,17 @@ const months = [
   "JUL", "AUG", "SEP", "OCT", "NOV", "DEC",
 ];
 
-const formatPurchaseAxis = (value) => {
-  if (value === 0) return "0";
-  if (value >= 1000) return `${value / 1000} M`;
-  return `${value}K`;
+const formatSAR = (value) =>
+  `SAR ${Number(value || 0).toLocaleString(undefined, {
+    maximumFractionDigits: 2,
+  })}`;
+
+// 8395 -> "8.4 K", 2500000 -> "2.5 M"
+const formatCompact = (value) => {
+  const n = Number(value || 0);
+  if (n >= 1_000_000) return `${+(n / 1_000_000).toFixed(1)} M`;
+  if (n >= 1_000) return `${+(n / 1_000).toFixed(1)} K`;
+  return String(n);
 };
 
 const PurchaseTooltip = ({ active, payload }) => {
@@ -108,11 +65,7 @@ const PurchaseTooltip = ({ active, payload }) => {
     <CustomTooltipContainer>
       <TooltipMonth>{item.name}</TooltipMonth>
       <TooltipLabel>Total Purchase</TooltipLabel>
-      <TooltipValue>
-        {item.amount >= 1000
-          ? `SAR ${(item.amount / 1000).toFixed(1)} M`
-          : `SAR ${item.amount}K`}
-      </TooltipValue>
+      <TooltipValue>{formatSAR(item.amount)}</TooltipValue>
     </CustomTooltipContainer>
   );
 };
@@ -126,20 +79,53 @@ const PaymentTooltip = ({ active, payload }) => {
     <CustomTooltipContainer>
       <TooltipMonth>{item.name}</TooltipMonth>
       <TooltipLabel>Vendor Payment</TooltipLabel>
-      <TooltipValue>{item.value.toFixed(1)}M SAR</TooltipValue>
+      <TooltipValue>{formatSAR(item.value)}</TooltipValue>
     </CustomTooltipContainer>
   );
 };
 
-export default function VendorPurchaseDashboard() {
-  const [selectedYear, setSelectedYear] = useState("2026");
-  const [selectedMonth, setSelectedMonth] = useState("JAN");
+export default function VendorPurchaseDashboard({
+  selectedYear,
+  selectedMonth, // number 1-12
+  onYearChange,
+  onMonthChange,
+}) {
+  const { monthlyPurchaseTrend, vendorPaymentStatus } = useSelector(
+    (state) => state.vendorReport.graphs
+  );
 
-  const purchaseData = purchaseDataByYear[selectedYear];
-  const paymentData =
-    paymentDataByMonth[selectedMonth] || paymentDataByMonth.JAN;
+  // { January: 0, ... } -> [{ name: "JAN", amount: 0 }, ...]
+  const purchaseData = useMemo(
+    () =>
+      Object.entries(monthlyPurchaseTrend.data || {}).map(
+        ([month, amount]) => ({
+          name: month.slice(0, 3).toUpperCase(),
+          amount,
+        })
+      ),
+    [monthlyPurchaseTrend]
+  );
 
-  const outstandingAmount = 5.2;
+  const paymentData = useMemo(
+    () => [
+      { name: "Paid", value: vendorPaymentStatus?.paidAmount || 0, color: "#43A85D" },
+      {
+        name: "Partially Paid",
+        value: vendorPaymentStatus?.partiallyPaidAmount || 0,
+        color: "#3454B9",
+      },
+      { name: "Unpaid", value: vendorPaymentStatus?.unpaidAmount || 0, color: "#FF800B" },
+      { name: "Overdue", value: vendorPaymentStatus?.overdueAmount || 0, color: "#E63D32" },
+    ],
+    [vendorPaymentStatus]
+  );
+
+  const hasPaymentData = paymentData.some((item) => item.value > 0);
+
+  // Grey ring when there is nothing to show
+  const pieData = hasPaymentData
+    ? paymentData
+    : [{ name: "No data", value: 1, color: "#E5E7EB" }];
 
   return (
     <DashboardContainer>
@@ -150,7 +136,7 @@ export default function VendorPurchaseDashboard() {
 
           <Dropdown
             value={selectedYear}
-            onChange={(event) => setSelectedYear(event.target.value)}
+            onChange={(event) => onYearChange(event.target.value)}
             aria-label="Select purchase year"
           >
             {years.map((year) => (
@@ -179,38 +165,29 @@ export default function VendorPurchaseDashboard() {
               />
 
               <YAxis
-                domain={[0, 2500]}
-                ticks={[0, 500, 1000, 1500, 2000, 2500]}
+                domain={[0, "auto"]}
+                allowDecimals={false}
                 axisLine={false}
                 tickLine={false}
-                tickFormatter={formatPurchaseAxis}
+                tickFormatter={formatCompact}
                 tick={{ fill: "#555", fontSize: 11 }}
                 width={48}
               />
 
-              <Tooltip
-                content={<PurchaseTooltip />}
-                cursor={false}
-              />
+              <Tooltip content={<PurchaseTooltip />} cursor={false} />
 
               <Bar
                 dataKey="amount"
+                fill="#0789F9"
                 radius={[12, 12, 12, 12]}
                 maxBarSize={25}
                 label={{
                   position: "top",
-                  formatter: (value) =>
-                    value >= 1000
-                      ? `${(value / 1000).toFixed(1)}M`
-                      : `${value}K`,
+                  formatter: (value) => (value > 0 ? formatCompact(value) : ""),
                   fill: "#444",
                   fontSize: 10,
                 }}
-              >
-                {purchaseData.map((item) => (
-                  <Cell key={item.name} fill={item.color} />
-                ))}
-              </Bar>
+              />
             </BarChart>
           </ResponsiveContainer>
         </PurchaseChartWrapper>
@@ -223,11 +200,11 @@ export default function VendorPurchaseDashboard() {
 
           <Dropdown
             value={selectedMonth}
-            onChange={(event) => setSelectedMonth(event.target.value)}
+            onChange={(event) => onMonthChange(event.target.value)}
             aria-label="Select payment month"
           >
-            {months.map((month) => (
-              <option key={month} value={month}>
+            {months.map((month, index) => (
+              <option key={month} value={index + 1}>
                 {month}
               </option>
             ))}
@@ -239,29 +216,31 @@ export default function VendorPurchaseDashboard() {
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
-                  data={paymentData}
+                  data={pieData}
                   dataKey="value"
                   nameKey="name"
                   cx="50%"
                   cy="50%"
                   innerRadius="56%"
                   outerRadius="94%"
-                  paddingAngle={5}
+                  paddingAngle={hasPaymentData ? 5 : 0}
                   cornerRadius={6}
                   stroke="none"
                 >
-                  {paymentData.map((item) => (
+                  {pieData.map((item) => (
                     <Cell key={item.name} fill={item.color} />
                   ))}
                 </Pie>
 
-                <Tooltip content={<PaymentTooltip />} />
+                {hasPaymentData && <Tooltip content={<PaymentTooltip />} />}
               </PieChart>
             </ResponsiveContainer>
 
             <DoughnutCenter>
               <span>Outstanding</span>
-              <strong>SAR {outstandingAmount.toFixed(1)} M</strong>
+              <strong>
+                {formatSAR(vendorPaymentStatus?.totalOutstandingAmount)}
+              </strong>
             </DoughnutCenter>
           </DoughnutWrapper>
 
@@ -274,14 +253,10 @@ export default function VendorPurchaseDashboard() {
                     <LegendLabel>{item.name}</LegendLabel>
                   </LegendLeft>
 
-                  <LegendAmount>
-                    {item.value.toFixed(1)}M SAR
-                  </LegendAmount>
+                  <LegendAmount>{formatSAR(item.value)}</LegendAmount>
                 </LegendRow>
 
-                {index < paymentData.length - 1 && (
-                  <LegendDivider />
-                )}
+                {index < paymentData.length - 1 && <LegendDivider />}
               </React.Fragment>
             ))}
           </PaymentLegend>
