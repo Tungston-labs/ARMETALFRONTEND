@@ -379,9 +379,7 @@ const FinanceRoutes = () => {
       <Route path="accounts/recievables" element={<Recievables />} />
     <Route path="accounts/trialbalance" element={<TrialBalance />} />
       
-    </>
-  );
-          
+
 
             {/* Report Section */}
             <Route path="reports/sales-report" element={<SalesReports />} />
@@ -389,8 +387,11 @@ const FinanceRoutes = () => {
             <Route path="reports/expense-report" element={<ExpenseReport />} />
             <Route path="reports/vendor-report" element={<VendorReport />} />
               <Route path="reports/profit-loss" element={<ProfitLoss />} />
-        </>
-    );
+    </>
+  );
+          
+
+     
 };
 
 export default FinanceRoutes;
