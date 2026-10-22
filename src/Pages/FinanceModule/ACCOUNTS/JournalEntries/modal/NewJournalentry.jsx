@@ -1,6 +1,7 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { FiCalendar, FiChevronDown, FiPlus, FiX } from "react-icons/fi";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
 
 import {
   PageContainer,
@@ -36,51 +37,146 @@ import {
 } from "./NewJournalentry.style";
 import ReusableHeader from "../../../../../Components/ReusableTable/ReusableHeader";
 
+import {
+  addJournalEntry,
+  editJournalEntry,
+  postJournalEntry,
+  getJournalEntryById,
+  clearSelectedJournalEntry,
+} from "../../../../../Redux/finance/accounts/Journalslice";
+
+// Chart of accounts slice (state.accounting). Adjust the file name if yours differs.
+import { getAccounts } from "../../../../../Redux/finance/accounts/Accountingslice";
+
+const LIST_PATH = "/accounts/journal-entries";
+
+// Local date (not UTC), so early-morning entries don't get yesterday's date
+const today = () => {
+  const d = new Date();
+  d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+  return d.toISOString().slice(0, 10);
+};
+
+const newLine = () => ({
+  id: Date.now() + Math.random(),
+  accountId: "",
+  description: "",
+  debit: "",
+  credit: "",
+});
+
+// Turns a string / DRF error object (incl. nested line errors) into one string
+const getErrorText = (error) => {
+  if (!error) return "";
+  if (typeof error === "string") return error;
+  if (error.detail) return error.detail;
+
+  return Object.entries(error)
+    .map(
+      ([field, message]) =>
+        `${field}: ${typeof message === "string" ? message : JSON.stringify(message)}`
+    )
+    .join(" | ");
+};
+
 const NewJournalentry = () => {
   const navigate = useNavigate();
-  const [entryNumber] = useState("JE-1843");
-  const [date, setDate] = useState("2026-04-30");
+  const dispatch = useDispatch();
+
+  // /journal-entries/edit/:id  -> edit mode (drafts only)
+  const { id } = useParams();
+  const isEdit = Boolean(id);
+
+  const { saving, selectedEntry, detailLoading } = useSelector(
+    (state) => state.journalEntry
+  );
+
+  const [date, setDate] = useState(today());
   const [reference, setReference] = useState("");
   const [description, setDescription] = useState("");
+  const [lines, setLines] = useState([newLine(), newLine()]);
+  const [formError, setFormError] = useState("");
 
-  const [lines, setLines] = useState([
-    {
-      id: 1,
-      account: "",
-      description: "Monthly depreciation",
-      debit: "5500.00",
-      credit: "0.00",
-    },
-    {
-      id: 2,
-      account: "Fixed Assets - Equipment",
-      description: "Accumulated depreciation",
-      debit: "0.00",
-      credit: "5500.00",
-    },
-  ]);
+  // Account dropdown options come from the chart of accounts slice.
+  // state.accounting.sections = { asset: [...], liability: [...], equity, revenue, expense }
+  const { sections, error: accountingError } = useSelector(
+    (state) => state.accounting
+  );
 
-  const accounts = [
-    "Select Account",
-    "Cash",
-    "Petty Cash",
-    "Accounts Receivable",
-    "Accounts Payable",
-    "Fixed Assets - Equipment",
-    "Accumulated Depreciation",
-    "Depreciation Expense",
-    "Office Equipment",
-    "Sales Revenue",
-    "Purchase Expense",
-    "Utility Expense",
-  ];
+  const accountsError = getErrorText(accountingError);
+
+  useEffect(() => {
+    // No params = all accounts (the API returns them grouped, not paginated)
+    dispatch(getAccounts());
+  }, [dispatch]);
+
+  // Load the draft when editing
+  useEffect(() => {
+    if (!isEdit) return;
+
+    dispatch(clearSelectedJournalEntry());
+    dispatch(getJournalEntryById(id));
+
+    return () => {
+      dispatch(clearSelectedJournalEntry());
+    };
+  }, [dispatch, id, isEdit]);
+
+  // Fill the form once the entry arrives
+  useEffect(() => {
+    if (!isEdit || !selectedEntry || String(selectedEntry.id) !== String(id)) {
+      return;
+    }
+
+    if (String(selectedEntry.status).toLowerCase() !== "draft") {
+      setFormError("Only draft entries can be edited.");
+      return;
+    }
+
+    setDate(selectedEntry.entry_date || today());
+    setReference(selectedEntry.reference_number || "");
+    setDescription(selectedEntry.description || "");
+    setLines(
+      (selectedEntry.lines || []).map((line) => ({
+        id: line.id ?? Date.now() + Math.random(),
+        accountId: String(line.account),
+        description: line.description || "",
+        debit: Number(line.debit_amount || 0) > 0 ? String(line.debit_amount) : "",
+        credit: Number(line.credit_amount || 0) > 0 ? String(line.credit_amount) : "",
+      }))
+    );
+  }, [selectedEntry, id, isEdit]);
+
+  const isLocked =
+    isEdit &&
+    selectedEntry &&
+    String(selectedEntry.status).toLowerCase() !== "draft";
+
+  // Flatten the groups, skip inactive accounts, sort by code
+  const accounts = useMemo(
+    () =>
+      Object.values(sections || {})
+        .flat()
+        .filter(
+          (account) =>
+            account.is_active !== false &&
+            String(account.status ?? "active").toLowerCase() !== "inactive"
+        )
+        .map((account) => ({
+          id: account.id,
+          code: account.account_code ?? "",
+          name: account.account_name ?? account.name ?? "",
+        }))
+        .sort((a, b) => String(a.code).localeCompare(String(b.code))),
+    [sections]
+  );
 
   const totals = useMemo(() => {
     const debit = lines.reduce((sum, line) => sum + Number(line.debit || 0), 0);
 
     const credit = lines.reduce(
       (sum, line) => sum + Number(line.credit || 0),
-      0,
+      0
     );
 
     return {
@@ -97,10 +193,10 @@ const NewJournalentry = () => {
     });
   };
 
-  const handleLineChange = (id, field, value) => {
+  const handleLineChange = (lineId, field, value) => {
     setLines((previous) =>
       previous.map((line) => {
-        if (line.id !== id) {
+        if (line.id !== lineId) {
           return line;
         }
 
@@ -109,68 +205,123 @@ const NewJournalentry = () => {
           [field]: value,
         };
 
-        if (field === "debit" && value) {
-          updated.credit = "0.00";
+        // A line is either a debit or a credit, never both
+        if (field === "debit" && Number(value) > 0) {
+          updated.credit = "";
         }
 
-        if (field === "credit" && value) {
-          updated.debit = "0.00";
+        if (field === "credit" && Number(value) > 0) {
+          updated.debit = "";
         }
 
         return updated;
-      }),
+      })
     );
   };
 
   const addLine = () => {
-    setLines((previous) => [
-      ...previous,
-      {
-        id: Date.now(),
-        account: "",
-        description: "",
-        debit: "0.00",
-        credit: "0.00",
-      },
-    ]);
+    setLines((previous) => [...previous, newLine()]);
   };
 
-  const removeLine = (id) => {
+  const removeLine = (lineId) => {
     if (lines.length <= 2) {
       return;
     }
 
-    setLines((previous) => previous.filter((line) => line.id !== id));
+    setLines((previous) => previous.filter((line) => line.id !== lineId));
   };
 
   const handleCancel = () => {
-    navigate("/accounts/journal-entries");
+    navigate(LIST_PATH);
   };
 
-  const handleSaveDraft = () => {
-    console.log("Save Journal Entry as Draft", {
-      entryNumber,
-      date,
-      reference,
-      description,
-      lines,
-    });
+  // Returns an error message, or "" when the form is valid
+  const validate = (forPosting) => {
+    if (!date) return "Please select a date.";
+
+    if (lines.length < 2) return "A journal entry needs at least two lines.";
+
+    if (lines.some((line) => !line.accountId)) {
+      return "Please select an account on every line.";
+    }
+
+    if (
+      lines.some(
+        (line) => Number(line.debit || 0) <= 0 && Number(line.credit || 0) <= 0
+      )
+    ) {
+      return "Every line needs a debit or a credit amount.";
+    }
+
+    if (forPosting && !totals.balanced) {
+      return "Debit and Credit must be equal.";
+    }
+
+    return "";
   };
 
-  const handlePostEntry = () => {
-    if (!totals.balanced) {
-      alert("Debit and Credit must be equal.");
+  const buildPayload = () => ({
+    entry_date: date,
+    reference_number: reference,
+    description,
+    lines: lines.map((line) => ({
+      account: Number(line.accountId), // the API expects "account" (the account id)
+      description: line.description,
+      debit_amount: Number(line.debit || 0).toFixed(2),
+      credit_amount: Number(line.credit || 0).toFixed(2),
+    })),
+  });
+
+  // Creates (or updates) the draft, then optionally posts it
+  const submit = async (shouldPost) => {
+    const message = validate(shouldPost);
+
+    if (message) {
+      setFormError(message);
       return;
     }
 
-    console.log("Post Journal Entry", {
-      entryNumber,
-      date,
-      reference,
-      description,
-      lines,
-    });
+    setFormError("");
+
+    let saved;
+
+    try {
+      saved = isEdit
+        ? await dispatch(
+            editJournalEntry({ id, data: buildPayload() })
+          ).unwrap()
+        : await dispatch(addJournalEntry(buildPayload())).unwrap();
+    } catch (error) {
+      setFormError(getErrorText(error));
+      return;
+    }
+
+    if (shouldPost) {
+      const entryId = saved?.id ?? id;
+
+      if (!entryId) {
+        alert(
+          "Entry was saved as a draft, but the API did not return its id, so it could not be posted. Post it from the list."
+        );
+        navigate(LIST_PATH);
+        return;
+      }
+
+      try {
+        await dispatch(postJournalEntry(entryId)).unwrap();
+      } catch (error) {
+        alert(
+          `Entry was saved as a draft, but posting failed: ${getErrorText(error)}`
+        );
+      }
+    }
+
+    navigate(LIST_PATH);
   };
+
+  const handleSaveDraft = () => submit(false);
+
+  const handlePostEntry = () => submit(true);
 
   return (
     <PageContainer>
@@ -180,10 +331,8 @@ const NewJournalentry = () => {
 
       <Header>
         <ReusableHeader
-          title="New Journal Entries"
+          title={isEdit ? "Edit Journal Entry" : "New Journal Entry"}
           breadcrumbs={["Accounting", "Journal Entries"]}
-          buttonText="NEW JOURNAL ENTRY"
-          // onButtonClick={handleNewJournalEntry}
         ></ReusableHeader>
       </Header>
 
@@ -193,12 +342,15 @@ const NewJournalentry = () => {
 
       <FormContainer>
         <FormGrid>
-          {/* ENTRY NUMBER */}
+          {/* ENTRY NUMBER (generated by the backend) */}
 
           <FormGroup>
             <Label>ENTRY NO.</Label>
 
-            <Input value={entryNumber} disabled />
+            <Input
+              value={selectedEntry?.entry_number || "Auto-generated"}
+              disabled
+            />
           </FormGroup>
 
           {/* DATE */}
@@ -227,7 +379,7 @@ const NewJournalentry = () => {
             <Input
               value={reference}
               onChange={(event) => setReference(event.target.value)}
-              placeholder="SAR 4,200.00"
+              placeholder="REF-001"
             />
           </FormGroup>
 
@@ -257,6 +409,12 @@ const NewJournalentry = () => {
           </AddLineButton>
         </AccountLinesHeader>
 
+        {accountsError && (
+          <div style={{ color: "#e01b1b", fontSize: 13, padding: "8px 0" }}>
+            Could not load accounts: {accountsError}
+          </div>
+        )}
+
         <TableWrapper>
           <JournalLinesTable>
             <thead>
@@ -277,21 +435,20 @@ const NewJournalentry = () => {
                   <td data-label="Account">
                     <AccountSelectWrapper>
                       <AccountSelect
-                        value={line.account}
+                        value={line.accountId}
                         onChange={(event) =>
                           handleLineChange(
                             line.id,
-                            "account",
-                            event.target.value,
+                            "accountId",
+                            event.target.value
                           )
                         }
                       >
+                        <option value="">Select Account</option>
+
                         {accounts.map((account) => (
-                          <option
-                            key={account}
-                            value={account === "Select Account" ? "" : account}
-                          >
-                            {account}
+                          <option key={account.id} value={account.id}>
+                            {account.code} - {account.name}
                           </option>
                         ))}
                       </AccountSelect>
@@ -311,7 +468,7 @@ const NewJournalentry = () => {
                         handleLineChange(
                           line.id,
                           "description",
-                          event.target.value,
+                          event.target.value
                         )
                       }
                       placeholder="Description"
@@ -325,6 +482,7 @@ const NewJournalentry = () => {
                       type="number"
                       min="0"
                       step="0.01"
+                      placeholder="0.00"
                       value={line.debit}
                       onChange={(event) =>
                         handleLineChange(line.id, "debit", event.target.value)
@@ -339,6 +497,7 @@ const NewJournalentry = () => {
                       type="number"
                       min="0"
                       step="0.01"
+                      placeholder="0.00"
                       value={line.credit}
                       onChange={(event) =>
                         handleLineChange(line.id, "credit", event.target.value)
@@ -370,7 +529,7 @@ const NewJournalentry = () => {
         <TotalsBar>
           <TotalItem>
             <TotalLabel>
-              Total Debit: SAR {formatAmount(totals.debit)}
+              Total Debit:{formatAmount(totals.debit)}
             </TotalLabel>
           </TotalItem>
 
@@ -378,7 +537,7 @@ const NewJournalentry = () => {
 
           <TotalItem>
             <TotalLabel>
-              Total Credit: SAR {formatAmount(totals.credit)}
+              Total Credit: {formatAmount(totals.credit)}
             </TotalLabel>
           </TotalItem>
 
@@ -388,20 +547,37 @@ const NewJournalentry = () => {
         </TotalsBar>
 
         {/* =================================================
-            BUTTONS
+            ERROR + BUTTONS
         ================================================= */}
 
+        {formError && (
+          <div style={{ color: "#e01b1b", fontSize: 13, padding: "10px 0" }}>
+            {formError}
+          </div>
+        )}
+
         <FooterButtons>
-          <CancelButton type="button" onClick={handleCancel}>
+          <CancelButton type="button" onClick={handleCancel} disabled={saving}>
             CANCEL
           </CancelButton>
 
-          <SaveDraftButton type="button" onClick={handleSaveDraft}>
-            SAVE DRAFT
-          </SaveDraftButton>
+          {/* Save Draft is hidden when editing an existing draft */}
+          {!isEdit && (
+            <SaveDraftButton
+              type="button"
+              onClick={handleSaveDraft}
+              disabled={saving}
+            >
+              {saving ? "SAVING..." : "SAVE DRAFT"}
+            </SaveDraftButton>
+          )}
 
-          <PostButton type="button" onClick={handlePostEntry}>
-            POST ENTRY
+          <PostButton
+            type="button"
+            onClick={handlePostEntry}
+            disabled={saving || detailLoading || isLocked}
+          >
+            {saving ? "POSTING..." : "POST ENTRY"}
           </PostButton>
         </FooterButtons>
       </FormContainer>

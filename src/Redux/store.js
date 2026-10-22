@@ -42,6 +42,11 @@ import receivableReducer from "./finance/accounts/Receivableslice";
 import payableReducer from "./finance/accounts/payableSlice";
 import bankingReducer from "./finance/accounts/BankingSlice";
 
+import trialBalanceReducer from "./finance/accounts/TrialBalanceslice";
+import journalEntryReducer from "./finance/accounts/Journalslice";
+import salesReportReducer from "./finance/reports/Salesreportslice";
+import customerReportReducer from "./finance/reports/Customerreportslice";
+import vendorReportReducer from "./finance/reports/Vendorreportslice";
 export const store = configureStore({
   reducer: {
     auth: authReducer,
@@ -84,8 +89,12 @@ export const store = configureStore({
     accounting: accountingReducer,
     ledger: ledgerReducer,
     receivable: receivableReducer,
+    banking: bankingReducer,
     payable: payableReducer,
-    banking: bankingReducer
-
+    trialBalance: trialBalanceReducer,
+    journalEntry: journalEntryReducer,
+    salesReport: salesReportReducer,
+    customerReport: customerReportReducer,
+    vendorReport: vendorReportReducer,
   },
 });

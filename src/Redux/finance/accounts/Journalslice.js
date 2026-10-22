@@ -1,97 +1,143 @@
-import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+import {
+  createSlice,
+  createAsyncThunk,
+  isAnyOf,
+} from "@reduxjs/toolkit";
 
 import {
   fetchJournalEntries,
   fetchJournalEntryById,
-  createJournalEntryApi,
-  updateJournalEntryApi,
-  postJournalEntryApi,
-  voidJournalEntryApi,
-  deleteJournalEntryApi,
-} from "../../../services/finance/accounts/Journalservices";
+  createJournalEntry,
+  updateJournalEntry,
+  postJournalEntryById,
+  voidJournalEntryById,
+  deleteJournalEntryById,
+} from "../../../services/finance/accounts/Journalservice";
+
+const getError = (error) => error.response?.data || error.message;
+
+// ASSUMPTION: confirm the exact status value your backend uses for voided entries
+const VOIDED_STATUS = "voided";
+
+const getCount = (data) =>
+  data?.pagination?.count ??
+  data?.count ??
+  (Array.isArray(data) ? data.length : data?.results?.length) ??
+  0;
 
 
-/* ------------------------------ Thunks ------------------------------ */
+// ---------- Thunks ----------
 
+// params: { search, status, source, date_from, date_to, ordering, page, company }
 export const getJournalEntries = createAsyncThunk(
-  "journal/getJournalEntries",
+  "journalEntry/getJournalEntries",
   async (params = {}, thunkAPI) => {
     try {
       return await fetchJournalEntries(params);
     } catch (error) {
-      return thunkAPI.rejectWithValue(error.response?.data || error.message);
+      return thunkAPI.rejectWithValue(getError(error));
     }
   }
 );
 
-export const getJournalEntry = createAsyncThunk(
-  "journal/getJournalEntry",
+// Stats cards: there is no summary endpoint, so this uses the "count" of
+// 5 filtered list requests. params: { date_from, date_to }
+export const getJournalEntryCounts = createAsyncThunk(
+  "journalEntry/getJournalEntryCounts",
+  async (params = {}, thunkAPI) => {
+    try {
+      const [total, auto, manual, draft, voided] = await Promise.all([
+        fetchJournalEntries({ ...params }),
+        fetchJournalEntries({ ...params, source: "auto" }),
+        fetchJournalEntries({ ...params, source: "manual" }),
+        fetchJournalEntries({ ...params, status: "draft" }),
+        fetchJournalEntries({ ...params, status: VOIDED_STATUS }),
+      ]);
+
+      return {
+        total: getCount(total),
+        auto: getCount(auto),
+        manual: getCount(manual),
+        draft: getCount(draft),
+        voided: getCount(voided),
+      };
+    } catch (error) {
+      return thunkAPI.rejectWithValue(getError(error));
+    }
+  }
+);
+
+export const getJournalEntryById = createAsyncThunk(
+  "journalEntry/getJournalEntryById",
   async (id, thunkAPI) => {
     try {
       return await fetchJournalEntryById(id);
     } catch (error) {
-      return thunkAPI.rejectWithValue(error.response?.data || error.message);
+      return thunkAPI.rejectWithValue(getError(error));
     }
   }
 );
 
-export const createJournalEntry = createAsyncThunk(
-  "journal/createJournalEntry",
-  async (payload, thunkAPI) => {
+// data: { entry_date, reference_number, description, lines: [...] }
+export const addJournalEntry = createAsyncThunk(
+  "journalEntry/addJournalEntry",
+  async (data, thunkAPI) => {
     try {
-      return await createJournalEntryApi(payload);
+      return await createJournalEntry(data);
     } catch (error) {
-      return thunkAPI.rejectWithValue(error.response?.data || error.message);
+      return thunkAPI.rejectWithValue(getError(error));
     }
   }
 );
 
-export const updateJournalEntry = createAsyncThunk(
-  "journal/updateJournalEntry",
+// arg: { id, data }
+export const editJournalEntry = createAsyncThunk(
+  "journalEntry/editJournalEntry",
   async ({ id, data }, thunkAPI) => {
     try {
-      return await updateJournalEntryApi(id, data);
+      return await updateJournalEntry(id, data);
     } catch (error) {
-      return thunkAPI.rejectWithValue(error.response?.data || error.message);
+      return thunkAPI.rejectWithValue(getError(error));
     }
   }
 );
 
 export const postJournalEntry = createAsyncThunk(
-  "journal/postJournalEntry",
+  "journalEntry/postJournalEntry",
   async (id, thunkAPI) => {
     try {
-      return await postJournalEntryApi(id);
+      return await postJournalEntryById(id);
     } catch (error) {
-      return thunkAPI.rejectWithValue(error.response?.data || error.message);
+      return thunkAPI.rejectWithValue(getError(error));
     }
   }
 );
 
 export const voidJournalEntry = createAsyncThunk(
-  "journal/voidJournalEntry",
+  "journalEntry/voidJournalEntry",
   async (id, thunkAPI) => {
     try {
-      return await voidJournalEntryApi(id);
+      return await voidJournalEntryById(id);
     } catch (error) {
-      return thunkAPI.rejectWithValue(error.response?.data || error.message);
+      return thunkAPI.rejectWithValue(getError(error));
     }
   }
 );
 
-export const deleteJournalEntry = createAsyncThunk(
-  "journal/deleteJournalEntry",
+export const removeJournalEntry = createAsyncThunk(
+  "journalEntry/removeJournalEntry",
   async (id, thunkAPI) => {
     try {
-      return await deleteJournalEntryApi(id);
+      await deleteJournalEntryById(id);
+      return id; // the API returns no body, so pass the id on to the reducer
     } catch (error) {
-      return thunkAPI.rejectWithValue(error.response?.data || error.message);
+      return thunkAPI.rejectWithValue(getError(error));
     }
   }
 );
 
 
-/* ------------------------------ State ------------------------------- */
+// ---------- State ----------
 
 const emptyPagination = {
   count: 0,
@@ -106,55 +152,43 @@ const initialState = {
   // Journal entry rows
   entries: [],
 
-  // Single entry (detail / edit screen)
+  // Single entry (view / edit screen)
   selectedEntry: null,
 
   // API pagination
   pagination: { ...emptyPagination },
 
-  // List loading
-  loading: false,
+  // Stats cards { total, auto, manual, draft, voided }
+  counts: null,
+  countsLoading: false,
 
-  // Create / update / post / void / delete in progress
-  submitting: false,
+  loading: false,        // list
+  detailLoading: false,  // single entry
+  saving: false,         // create / update / post / void / delete
 
   error: null,
 };
 
-// Merge a returned entry into the list + selectedEntry
-const mergeEntry = (state, updated) => {
-  if (!updated || !updated.id) return;
+// Replace an entry in the list (and the selected one) with the fresh copy
+const replaceEntry = (state, entry) => {
+  if (!entry?.id) return;
 
-  const index = state.entries.findIndex((e) => e.id === updated.id);
-  if (index !== -1) {
-    state.entries[index] = { ...state.entries[index], ...updated };
-  }
+  const index = state.entries.findIndex((item) => item.id === entry.id);
+  if (index !== -1) state.entries[index] = entry;
 
-  if (state.selectedEntry && state.selectedEntry.id === updated.id) {
-    state.selectedEntry = { ...state.selectedEntry, ...updated };
-  }
-};
-
-// Shared handlers for the mutation thunks
-const onSubmitPending = (state) => {
-  state.submitting = true;
-  state.error = null;
-};
-
-const onSubmitRejected = (state, action) => {
-  state.submitting = false;
-  state.error = action.payload || "Journal entry request failed";
+  if (state.selectedEntry?.id === entry.id) state.selectedEntry = entry;
 };
 
 
-/* ------------------------------ Slice ------------------------------- */
+// ---------- Slice ----------
 
-const journalSlice = createSlice({
-  name: "journal",
+const journalEntrySlice = createSlice({
+  name: "journalEntry",
 
   initialState,
 
   reducers: {
+
     clearJournalEntries(state) {
       state.entries = [];
       state.pagination = { ...emptyPagination };
@@ -167,121 +201,205 @@ const journalSlice = createSlice({
     clearJournalError(state) {
       state.error = null;
     },
+
   },
 
   extraReducers: (builder) => {
+
     builder
 
-      /* ---------- List ---------- */
+      // ---------- List ----------
+
       .addCase(getJournalEntries.pending, (state) => {
+
         state.loading = true;
         state.error = null;
+
       })
 
+
       .addCase(getJournalEntries.fulfilled, (state, action) => {
+
         state.loading = false;
 
         const data = action.payload || {};
 
-        // Supports a plain array, DRF {count,next,previous,results},
-        // or your custom {results, pagination:{...}} response shape
-        if (Array.isArray(data)) {
-          state.entries = data;
-          state.pagination = { ...emptyPagination, count: data.length };
-          return;
-        }
-
+        // Supports a plain array, DRF { count, next, previous, results },
+        // or { results, pagination: {...} } like your receivable API
+        const results = Array.isArray(data) ? data : data.results || [];
         const pagination = data.pagination || {};
 
-        state.entries = data.results || [];
+        const count = pagination.count ?? data.count ?? results.length;
+        const pageSize = pagination.page_size || state.pagination.pageSize || 10;
+
+        state.entries = results;
 
         state.pagination = {
-          count: pagination.count ?? data.count ?? 0,
-          totalPages: pagination.total_pages || 1,
-          currentPage: pagination.current_page || 1,
-          pageSize: pagination.page_size || 10,
+          count,
+          totalPages:
+            pagination.total_pages || Math.max(1, Math.ceil(count / pageSize)),
+          currentPage:
+            pagination.current_page || Number(action.meta.arg?.page) || 1,
+          pageSize,
           next: pagination.next_page ?? data.next ?? null,
           previous: pagination.previous_page ?? data.previous ?? null,
         };
+
       })
+
 
       .addCase(getJournalEntries.rejected, (state, action) => {
+
         state.loading = false;
-        state.error = action.payload || "Failed to load journal entries";
+
+        state.error =
+          action.payload || "Failed to load journal entries";
+
       })
 
-      /* ---------- Detail ---------- */
-      .addCase(getJournalEntry.pending, (state) => {
-        state.loading = true;
+
+      // ---------- Counts (stats cards) ----------
+
+      .addCase(getJournalEntryCounts.pending, (state) => {
+
+        state.countsLoading = true;
+
+      })
+
+
+      .addCase(getJournalEntryCounts.fulfilled, (state, action) => {
+
+        state.countsLoading = false;
+        state.counts = action.payload;
+
+      })
+
+
+      .addCase(getJournalEntryCounts.rejected, (state) => {
+
+        state.countsLoading = false;
+
+      })
+
+
+      // ---------- Single entry ----------
+
+      .addCase(getJournalEntryById.pending, (state) => {
+
+        state.detailLoading = true;
         state.error = null;
+
       })
 
-      .addCase(getJournalEntry.fulfilled, (state, action) => {
-        state.loading = false;
-        state.selectedEntry = action.payload;
+
+      .addCase(getJournalEntryById.fulfilled, (state, action) => {
+
+        state.detailLoading = false;
+        state.selectedEntry = action.payload || null;
+
       })
 
-      .addCase(getJournalEntry.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload || "Failed to load journal entry";
+
+      .addCase(getJournalEntryById.rejected, (state, action) => {
+
+        state.detailLoading = false;
+
+        state.error =
+          action.payload || "Failed to load journal entry";
+
       })
 
-      /* ---------- Create ---------- */
-      .addCase(createJournalEntry.pending, onSubmitPending)
 
-      .addCase(createJournalEntry.fulfilled, (state, action) => {
-        state.submitting = false;
-        state.entries.unshift(action.payload);
-        state.pagination.count += 1;
-        state.selectedEntry = action.payload;
+      // ---------- Create ----------
+
+      .addCase(addJournalEntry.fulfilled, (state, action) => {
+
+        state.saving = false;
+
+        if (action.payload?.id) {
+          state.entries.unshift(action.payload);
+          state.pagination.count += 1;
+        }
+
       })
 
-      .addCase(createJournalEntry.rejected, onSubmitRejected)
 
-      /* ---------- Update ---------- */
-      .addCase(updateJournalEntry.pending, onSubmitPending)
+      // ---------- Delete ----------
 
-      .addCase(updateJournalEntry.fulfilled, (state, action) => {
-        state.submitting = false;
-        mergeEntry(state, action.payload);
-      })
+      .addCase(removeJournalEntry.fulfilled, (state, action) => {
 
-      .addCase(updateJournalEntry.rejected, onSubmitRejected)
+        state.saving = false;
 
-      /* ---------- Post ---------- */
-      .addCase(postJournalEntry.pending, onSubmitPending)
+        state.entries = state.entries.filter(
+          (entry) => entry.id !== action.payload
+        );
 
-      .addCase(postJournalEntry.fulfilled, (state, action) => {
-        state.submitting = false;
-        mergeEntry(state, action.payload);
-      })
-
-      .addCase(postJournalEntry.rejected, onSubmitRejected)
-
-      /* ---------- Void ---------- */
-      .addCase(voidJournalEntry.pending, onSubmitPending)
-
-      .addCase(voidJournalEntry.fulfilled, (state, action) => {
-        state.submitting = false;
-        mergeEntry(state, action.payload);
-      })
-
-      .addCase(voidJournalEntry.rejected, onSubmitRejected)
-
-      /* ---------- Delete ---------- */
-      .addCase(deleteJournalEntry.pending, onSubmitPending)
-
-      .addCase(deleteJournalEntry.fulfilled, (state, action) => {
-        state.submitting = false;
-        state.entries = state.entries.filter((e) => e.id !== action.payload);
         state.pagination.count = Math.max(0, state.pagination.count - 1);
 
-        if (state.selectedEntry && state.selectedEntry.id === action.payload) {
+        if (state.selectedEntry?.id === action.payload) {
           state.selectedEntry = null;
         }
+
       })
 
-      .addCase(deleteJournalEntry.rejected, onSubmitRejected);
+
+      // ---------- Update / Post / Void ----------
+
+      .addMatcher(
+        isAnyOf(
+          editJournalEntry.fulfilled,
+          postJournalEntry.fulfilled,
+          voidJournalEntry.fulfilled
+        ),
+        (state, action) => {
+
+          state.saving = false;
+
+          // If the API returns the updated entry, swap it in.
+          // If not, refetch the list/detail after the thunk resolves.
+          replaceEntry(state, action.payload);
+
+        }
+      )
+
+
+      // ---------- Shared saving flag + errors for write actions ----------
+
+      .addMatcher(
+        isAnyOf(
+          addJournalEntry.pending,
+          editJournalEntry.pending,
+          postJournalEntry.pending,
+          voidJournalEntry.pending,
+          removeJournalEntry.pending
+        ),
+        (state) => {
+
+          state.saving = true;
+          state.error = null;
+
+        }
+      )
+
+
+      .addMatcher(
+        isAnyOf(
+          addJournalEntry.rejected,
+          editJournalEntry.rejected,
+          postJournalEntry.rejected,
+          voidJournalEntry.rejected,
+          removeJournalEntry.rejected
+        ),
+        (state, action) => {
+
+          state.saving = false;
+
+          state.error =
+            action.payload || "Journal entry action failed";
+
+        }
+      );
+
   },
 });
 
@@ -290,7 +408,7 @@ export const {
   clearJournalEntries,
   clearSelectedJournalEntry,
   clearJournalError,
-} = journalSlice.actions;
+} = journalEntrySlice.actions;
 
 
-export default journalSlice.reducer;
+export default journalEntrySlice.reducer;

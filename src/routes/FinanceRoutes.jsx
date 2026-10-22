@@ -141,6 +141,9 @@ import Expenses from "../Pages/FinanceModule/ACCOUNTS/Expenses/Expenses.jsx";
 import Payables from "../Pages/FinanceModule/ACCOUNTS/Payables/Payables.jsx";
 import Recievables from "../Pages/FinanceModule/ACCOUNTS/Recievables/Recievables.jsx";
 import SalesReports from "../Pages/FinanceModule/REPORTS/Sales-Reports/SalesReports.jsx";
+import CustomerReport from "../Pages/FinanceModule/REPORTS/Customer-Reports/CustomerReport.jsx";
+import ExpenseReport from "../Pages/FinanceModule/REPORTS/Expense-Report/ExpenseReport.jsx";
+import VendorReport from "../Pages/FinanceModule/REPORTS/Vendor-Report/VendorReport.jsx";
 
 /* =========================================================
    ACCOUNTS - JOURNAL ENTRIES
@@ -153,6 +156,9 @@ import PaymentReports from "../Pages/FinanceModule/REPORTS/PaymentReports/Paymen
 import InventoryReports from "../Pages/FinanceModule/REPORTS/InventoryReports/InventoryReports.jsx";
 import TaxReport from "../Pages/FinanceModule/REPORTS/TaxReport/TaxReport.jsx";
 import Banking from "../Pages/FinanceModule/ACCOUNTS/Bank/Banking.jsx";
+import TrialBalance from "../Pages/FinanceModule/ACCOUNTS/TrialBalance/TrialBalance.jsx";
+import ProfitLoss from "../Pages/FinanceModule/REPORTS/ProfitLoss/ProfitLoss.jsx";
+import CashFlow from "../Pages/FinanceModule/REPORTS/CashFlow/CashFlow.jsx";
 
 const FinanceRoutes = () => {
   return (

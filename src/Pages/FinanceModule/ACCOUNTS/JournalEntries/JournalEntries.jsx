@@ -1,9 +1,6 @@
-import React, { useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import {
-    employeeColumns,
-    employeeData,
-} from "../../../../Components/ReusableTable/dummydata";
+// UI PAGE: markup only. All logic comes from useJournalEntries.js.
+
+import React from "react";
 import ReusableHeader from "../../../../Components/ReusableTable/ReusableHeader";
 import ReusableFilter from "../../../../Components/ReusableTable/ReusableFilter";
 import ReusableTable from "../../../../Components/ReusableTable/ReusableTable";
@@ -32,61 +29,128 @@ import {
     MdOutlineAccountBalance,
 } from "react-icons/md";
 
+import JournalEntryAction from "./Action/JournalEntryAction";
+import useJournalEntries from "./Usejournalentries";
+
+// API filter values (?source=manual|auto)
 const sourceOptions = [
-    { label: "Invoice", value: "invoice" },
-    { label: "Purchase", value: "purchase" },
-    { label: "Payment", value: "payment" },
-    { label: "Journal", value: "journal" },
     { label: "Manual", value: "manual" },
+    { label: "Auto", value: "auto" },
 ];
 
+// Dropdown label -> sent to the API in lowercase (?status=draft|posted|...)
+const statusOptions = ["Draft", "Posted", "Voided"];
+
+const capitalize = (value = "") =>
+    value ? value.charAt(0).toUpperCase() + value.slice(1) : "";
+
+const padCount = (value) => String(value).padStart(2, "0");
+
+const messageStyle = {
+    padding: "16px 4px",
+    fontFamily: "'Poppins', sans-serif",
+    fontSize: 14,
+};
+
 const JournalEntries = () => {
-    const navigate = useNavigate();
+    const {
+        // data
+        entries,
+        pagination,
+        counts,
+        loading,
+        countsLoading,
+        saving,
+        errorText,
 
-    const [search, setSearch] = useState("");
-    const [department, setDepartment] = useState("");
-    const [status, setStatus] = useState("");
-    const [source, setSource] = useState("all");
-    const [month, setMonth] = useState("");
-    const [startDate, setStartDate] = useState("");
-    const [endDate, setEndDate] = useState("");
-    const rowsPerPage = 10;
+        // filter values
+        search,
+        status,
+        source,
+        startDate,
+        endDate,
 
-    const [currentPage, setCurrentPage] = useState(1);
+        // handlers
+        setSearch,
+        setCurrentPage,
+        handleStatusChange,
+        handleSourceChange,
+        handleStartDateChange,
+        handleEndDateChange,
+        handlePost,
+        handleVoid,
+        handleDelete,
+        handleNewJournalEntry,
+        handleImportJournal,
+    } = useJournalEntries();
 
-    // Dummy values - replace with API data (e.g. from redux) later.
-    // Pass loading={true} to StatsCards while the API is loading to show the skeleton.
+    // ReusableTable column format: { header, accessor, render?, sortable?, width? }
+    const journalColumns = [
+        { header: "Entry No.", accessor: "entry_number", render: (row) => row.entry_number ?? row.id },
+        { header: "Date", accessor: "entry_date" },
+        { header: "Reference", accessor: "reference_number", render: (row) => row.reference_number || "-" },
+        { header: "Description", accessor: "description", render: (row) => row.description || "-" },
+        { header: "Source", accessor: "source", render: (row) => capitalize(row.source) },
+        { header: "Status", accessor: "status", render: (row) => capitalize(row.status) },
+        {
+            header: "Actions",
+            accessor: "actions",
+            sortable: false,
+            render: (row) => {
+                // const rowStatus = String(row.status || "").toLowerCase();
+
+                return (
+                    <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                        {/* Info icon: drafts open the edit form */}
+                        <JournalEntryAction row={row} />
+
+                        {/* To bring back Post / Delete / Void buttons, uncomment this and the rowStatus line above:
+                        {rowStatus === "draft" && (
+                            <>
+                                <button type="button" disabled={saving} onClick={() => handlePost(row)}>Post</button>
+                                <button type="button" disabled={saving} onClick={() => handleDelete(row)}>Delete</button>
+                            </>
+                        )}
+                        {rowStatus === "posted" && (
+                            <button type="button" disabled={saving} onClick={() => handleVoid(row)}>Void</button>
+                        )} */}
+                    </div>
+                );
+            },
+        },
+    ];
+
     const statsCards = [
         {
-            count: "248",
+            count: padCount(counts?.total ?? 0),
             title: "Total Entries",
             icon: <TbFileInvoice />,
             backgroundColor: "#E7F8EC",
             iconColor: "#00A63C",
         },
         {
-            count: "210",
+            count: padCount(counts?.auto ?? 0),
             title: "Auto-Posted",
             icon: <MdOutlineAccountBalance />,
             backgroundColor: "#F1E8FF",
             iconColor: "#923CFF",
         },
         {
-            count: "38",
+            count: padCount(counts?.manual ?? 0),
             title: "Manual Entries",
             icon: <MdOutlineInventory2 />,
             backgroundColor: "#FFF1E5",
             iconColor: "#FF7200",
         },
         {
-            count: "03",
+            count: padCount(counts?.draft ?? 0),
             title: "Draft(Unposted)",
             icon: <TbArrowUp />,
             backgroundColor: "#FFE8E8",
             iconColor: "#FF3131",
         },
         {
-            count: "12",
+            count: padCount(counts?.voided ?? 0),
             title: "Voided",
             icon: <TbArrowUp />,
             backgroundColor: "#FFE8E8",
@@ -94,46 +158,8 @@ const JournalEntries = () => {
         },
     ];
 
-    const totalPages = Math.ceil(
-        employeeData.length / rowsPerPage
-    );
-
-    const paginatedData = useMemo(() => {
-        const start = (currentPage - 1) * rowsPerPage;
-
-        return employeeData.slice(
-            start,
-            start + rowsPerPage
-        );
-    }, [currentPage]);
-
-    const handleSourceChange = (value) => {
-        setSource(value || "all");
-        setCurrentPage(1);
-    };
-
-    const handleStartDateChange = (e) => {
-        setStartDate(e.target.value);
-        setCurrentPage(1);
-    };
-
-    const handleEndDateChange = (e) => {
-        setEndDate(e.target.value);
-        setCurrentPage(1);
-    };
-
-    const handleNewJournalEntry = () => {
-        navigate("/accounts/journal-entries/add");
-    };
-
-    const handleImportJournal = () => {
-        console.log("Import Journal Entries");
-    };
-
     return (
         <div style={{ padding: 20 }}>
-            {/* NOTE: "onButtonClick" is the assumed prop name for the header button.
-                Check ReusableHeader for the real name. */}
             <ReusableHeader
                 title="Journal Entries"
                 breadcrumbs={["Accounting", "Journal Entries"]}
@@ -168,60 +194,59 @@ const JournalEntries = () => {
                 </ExportButton>
             </ReusableHeader>
 
-            <StatsCards cards={statsCards} />
-<JournalSummaryContainer>
-    <JournalSummaryItem>
-        <JournalSummaryIcon $background="#E5F7EC" $color="#008A2E">
-            <TbFileInvoice />
-        </JournalSummaryIcon>
+            <StatsCards cards={statsCards} loading={countsLoading && !counts} />
 
-        <JournalSummaryContent>
-            <JournalSummaryLabel>
-                Total Debit (This Month)
-            </JournalSummaryLabel>
+            {/* TODO: still dummy. No API returns debit/credit totals for the month yet. */}
+            <JournalSummaryContainer>
+                <JournalSummaryItem>
+                    <JournalSummaryIcon $background="#E5F7EC" $color="#008A2E">
+                        <TbFileInvoice />
+                    </JournalSummaryIcon>
 
-            <JournalSummaryAmount>
-                SAR 26,816.37
-            </JournalSummaryAmount>
-        </JournalSummaryContent>
-    </JournalSummaryItem>
+                    <JournalSummaryContent>
+                        <JournalSummaryLabel>
+                            Total Debit (This Month)
+                        </JournalSummaryLabel>
 
-    <JournalSummaryItem>
-        <JournalSummaryIcon $background="#FFF3E0" $color="#FF6D00">
-            <TbFileInvoice />
-        </JournalSummaryIcon>
+                        <JournalSummaryAmount>
+                            SAR 26,816.37
+                        </JournalSummaryAmount>
+                    </JournalSummaryContent>
+                </JournalSummaryItem>
 
-        <JournalSummaryContent>
-            <JournalSummaryLabel>
-                Total Credit (This Month)
-            </JournalSummaryLabel>
+                <JournalSummaryItem>
+                    <JournalSummaryIcon $background="#FFF3E0" $color="#FF6D00">
+                        <TbFileInvoice />
+                    </JournalSummaryIcon>
 
-            <JournalSummaryAmount>
-                SAR 26,816.37
-            </JournalSummaryAmount>
-        </JournalSummaryContent>
-    </JournalSummaryItem>
+                    <JournalSummaryContent>
+                        <JournalSummaryLabel>
+                            Total Credit (This Month)
+                        </JournalSummaryLabel>
 
-    <JournalStatusContainer>
-        <JournalStatusLabel>
-            Journal Status
-        </JournalStatusLabel>
+                        <JournalSummaryAmount>
+                            SAR 26,816.37
+                        </JournalSummaryAmount>
+                    </JournalSummaryContent>
+                </JournalSummaryItem>
 
-        <JournalStatusValue>
-            Balanced
-        </JournalStatusValue>
-    </JournalStatusContainer>
-</JournalSummaryContainer>
+                <JournalStatusContainer>
+                    <JournalStatusLabel>
+                        Journal Status
+                    </JournalStatusLabel>
+
+                    <JournalStatusValue>
+                        Balanced
+                    </JournalStatusValue>
+                </JournalStatusContainer>
+            </JournalSummaryContainer>
+
             <ReusableFilter
                 search={search}
                 onSearch={setSearch}
                 status={status}
-                statuses={[
-                    "Present",
-                    "Absent",
-                    "On Leave",
-                ]}
-                onStatus={setStatus}
+                statuses={statusOptions}
+                onStatus={handleStatusChange}
                 showSearch
                 showStatus
                 filters={[
@@ -235,14 +260,23 @@ const JournalEntries = () => {
                 ]}
             />
 
+            {errorText && (
+                <div style={{ ...messageStyle, color: "#e01b1b" }}>
+                    {errorText}
+                </div>
+            )}
+
             <ReusableTable
-                columns={employeeColumns}
-                data={paginatedData}
+                columns={journalColumns}
+                data={entries}
+                loading={loading}
+                loadingMessage="Loading journal entries..."
+                emptyMessage="No journal entries found."
             />
 
             <ReusablePagination
-                currentPage={currentPage}
-                totalPages={totalPages}
+                currentPage={pagination.currentPage}
+                totalPages={pagination.totalPages}
                 onPageChange={setCurrentPage}
             />
         </div>
