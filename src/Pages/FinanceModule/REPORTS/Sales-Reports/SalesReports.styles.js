@@ -13,7 +13,7 @@ export const MainReportLayout = styled.div`
     align-items: stretch;
 
     /* Tablet and below: stack table and side panel */
-    @media (max-width: 1100px) {
+    @media (max-width: 1350px) {
         grid-template-columns: minmax(0, 1fr);
     }
 

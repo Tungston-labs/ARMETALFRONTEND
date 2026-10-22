@@ -29,8 +29,7 @@ const Sidebar = () => {
 
   return (
     <>
-      <MobileButton onClick={() => setMobileOpen(true)}>
-        <FaBars />
+<MobileButton $open={mobileOpen} onClick={() => setMobileOpen(true)}>        <FaBars />
       </MobileButton>
 
       <MobileOverlay $open={mobileOpen} onClick={() => setMobileOpen(false)} />
