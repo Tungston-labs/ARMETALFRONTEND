@@ -1,7 +1,9 @@
-// services/finance/reports/SalesReportService.js
+// services/finance/reports/Salesreportservice.js
 import API from "../../api";
 
-const ENDPOINT = "/finance/sales-report/";
+// Full URL is {baseUrl}/api/finance/reports/sales/ . The "/api" part is assumed to
+// come from your API instance's baseURL (same as the old "/finance/sales-report/").
+const ENDPOINT = "/finance/reports/sales/";
 
 // Remove empty values so they never reach the query string
 const cleanParams = (params = {}) =>
@@ -18,20 +20,21 @@ const getFilename = (headers) => {
   return match ? decodeURIComponent(match[1]) : "sales-report.csv";
 };
 
-// params: { date_from, date_to, customer, category, status, year, page }
+// params: { date_from, date_to, customer, category, status, year, page, page_size }
+// No params = current year (backend default)
 export const fetchSalesReport = async (params = {}) => {
   const response = await API.get(ENDPOINT, { params: cleanParams(params) });
 
   return response.data;
 };
 
-// Same filters as the table, without page / year
+// Same filters as the table, without page / page_size / year
 export const exportSalesReportCsv = async (params = {}) => {
   // eslint-disable-next-line no-unused-vars
-  const { page, year, ...filters } = params;
+  const { page, page_size, year, ...filters } = params;
 
   const response = await API.get(ENDPOINT, {
-    params: { ...cleanParams(filters), export: "excel" },
+    params: { ...cleanParams(filters), export: "csv" },
     responseType: "blob",
   });
 
