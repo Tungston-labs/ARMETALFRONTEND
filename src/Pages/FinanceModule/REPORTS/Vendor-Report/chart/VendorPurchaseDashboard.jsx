@@ -160,8 +160,8 @@ export default function VendorPurchaseDashboard({
                 dataKey="name"
                 axisLine={false}
                 tickLine={false}
-                tick={{ fill: "#555", fontSize: 11 }}
-                dy={7}
+                tick={{ fill: "#222", fontSize: 12 }}
+                dy={8}
               />
 
               <YAxis
@@ -170,8 +170,8 @@ export default function VendorPurchaseDashboard({
                 axisLine={false}
                 tickLine={false}
                 tickFormatter={formatCompact}
-                tick={{ fill: "#555", fontSize: 11 }}
-                width={48}
+                tick={{ fill: "#222", fontSize: 12 }}
+                width={28}
               />
 
               <Tooltip content={<PurchaseTooltip />} cursor={false} />

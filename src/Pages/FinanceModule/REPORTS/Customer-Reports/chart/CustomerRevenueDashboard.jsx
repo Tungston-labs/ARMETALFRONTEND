@@ -143,7 +143,7 @@ export default function CustomerRevenueDashboard({
                 dataKey="month"
                 axisLine={{ stroke: "#e5e5e5" }}
                 tickLine={false}
-                tick={{ fill: "#222", fontSize: 14 }}
+                tick={{ fill: "#222", fontSize: 12 }}
                 dy={8}
               />
 
@@ -153,8 +153,8 @@ export default function CustomerRevenueDashboard({
                 axisLine={false}
                 tickLine={false}
                 tickFormatter={formatCompact}
-                tick={{ fill: "#222", fontSize: 14 }}
-                width={58}
+                tick={{ fill: "#222", fontSize: 12 }}
+                width={38}
               />
 
               <Tooltip content={<RevenueTooltip />} cursor={false} />

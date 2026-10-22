@@ -24,7 +24,13 @@ export const SectionHeader = styled.div`
   justify-content: space-between;
   align-items: center;
   gap: 12px;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
+  min-height: 36px;
+
+  @media (max-width: 420px) {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
 `;
 
 export const SectionTitle = styled.h3`
@@ -149,24 +155,33 @@ export const PaymentLegend = styled.div`
 `;
 
 export const LegendRow = styled.div`
-  display: flex;
+   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 6px;
-  min-height: 34px;
+  gap: 10px;
+  min-height: 40px;
+  border-bottom: 1px solid #e5e5e5;
+  padding: 8px 0;
+  box-sizing: border-box;
+
+ 
+   &:first-child {
+    border-top: none;
+  }
 `;
 
 export const LegendLeft = styled.div`
   display: flex;
   align-items: center;
-  gap: 9px;
+  gap: 10px;
   min-width: 0;
 `;
 
 export const LegendDot = styled.span`
-  flex-shrink: 0;
-  width: 8px;
-  height: 8px;
+   display: inline-block;
+  width: 11px;
+  height: 11px;
+  min-width: 11px;
   border-radius: 50%;
   background: ${({ $color }) => $color};
 `;

@@ -10,28 +10,28 @@ export const DashboardContainer = styled.div`
   overflow: hidden;
   font-family: "Urbanist", sans-serif;
   color: #111111;
+    padding: 0 17px;
 `;
 
 export const ChartSection = styled.section`
   width: 100%;
-  padding: 20px;
+  padding: 18px 0 22px;
   box-sizing: border-box;
 
-  & + & {
-    border-top: 1px solid #e5e5e5;
-  }
-
+border-bottom: ${({ $last }) =>
+    $last ? "none" : "1px solid #e8e8e8"};
+    
   @media (max-width: 600px) {
     padding: 18px 14px 22px;
   }
-`;
+`; 
 
 export const SectionHeader = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 12px;
-  margin-bottom: 18px;
+  margin-bottom: 10px;
   min-height: 36px;
 
   @media (max-width: 420px) {
@@ -41,11 +41,11 @@ export const SectionHeader = styled.div`
 `;
 
 export const SectionTitle = styled.h3`
-  font-size: 18px;
+    margin: 0;
+  color: #111111;
+  font-size: 16px;
   font-weight: 600;
   line-height: 1.4;
-  margin: 0;
-  color: #111111;
 
   @media (max-width: 600px) {
     font-size: 16px;
@@ -149,7 +149,7 @@ export const LegendRow = styled.div`
   justify-content: space-between;
   align-items: center;
   gap: 10px;
-  min-height: 51px;
+  min-height: 40px;
   border-bottom: 1px solid #e5e5e5;
   padding: 8px 0;
   box-sizing: border-box;
@@ -166,7 +166,7 @@ export const LegendRow = styled.div`
 export const LegendLeft = styled.div`
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 10px;
   min-width: 0;
 
   @media (max-width: 360px) {
@@ -184,10 +184,9 @@ export const LegendDot = styled.span`
 `;
 
 export const LegendLabel = styled.span`
-  font-size: 16px;
-  font-weight: 400;
+  font-size: 12px;
   white-space: nowrap;
-  color: #222222;
+   color: #333333;
 
   @media (max-width: 900px) {
     font-size: 14px;
@@ -199,10 +198,10 @@ export const LegendLabel = styled.span`
 `;
 
 export const LegendAmount = styled.span`
-  font-size: 16px;
+    color: #111111;
+  font-size: 12px;
   font-weight: 600;
   white-space: nowrap;
-  color: #111111;
   text-align: right;
 
   @media (max-width: 900px) {
