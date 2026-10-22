@@ -107,6 +107,9 @@ const getSidebarData = (user) => {
       if (modules.project) {
       items.push({ title: "Profit or Loss", icon: <FiCodesandbox />, path: "/reports/profit-loss" });
     }
+       if (modules.project) {
+      items.push({ title: "Cash Flow", icon: <FiCodesandbox />, path: "/reports/cash-flow" });
+    }
     return items;
   }
 
