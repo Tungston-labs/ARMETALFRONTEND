@@ -1,232 +1,252 @@
 import styled from "styled-components";
 
+const chevron = `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23222' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>")`;
+
 export const Overlay = styled.div`
   position: fixed;
   inset: 0;
-
-  background: rgba(0, 0, 0, 0.25);
-
+  z-index: 9999;
   display: flex;
   align-items: center;
   justify-content: center;
-
-  z-index: 9999;
+  background: rgba(0, 0, 0, 0.25);
+  padding: 20px;
 `;
 
 export const ModalContainer = styled.div`
-  width: 96%;
-  max-width: 1150px;
-
-  background: #ffffff;
-
+  width: 100%;
+  max-width: 1100px;
+  background: #fff;
   border-radius: 4px;
+  padding: 28px 32px 24px;
+  box-sizing: border-box;
+  box-shadow: 0 10px 35px rgba(0, 0, 0, 0.12);
+  max-height: 95vh;
+  overflow-y: auto;
 
-  overflow: hidden;
-
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+  @media (max-width: 1100px) { max-width: 95%; }
+  @media (max-width: 900px)  { padding: 24px; }
+  @media (max-width: 600px)  { padding: 20px; }
 `;
 
 export const ModalHeader = styled.div`
-  height: 48px;
-
-  background: #3857bc;
-
   display: flex;
-  align-items: center;
-
-  padding: 0 52px;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 23px;
 `;
 
 export const ModalTitle = styled.h2`
   margin: 0;
-
-  color: #ffffff;
-
-  font-size: 15px;
+  font-family: "Poppins", sans-serif;
+  font-size: 20px;
   font-weight: 500;
+  line-height: 1.3;
+  color: #3250bc;
 `;
 
+export const ModalSubtitle = styled.p`
+  margin: 0;
+  font-family: "Poppins", sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.4;
+  color: #666;
+
+  @media (max-width: 480px) { font-size: 12px; }
+`;
+
+/* container already has padding, so the body adds none */
 export const ModalBody = styled.div`
-  padding: 36px 50px 48px;
+  width: 100%;
 `;
 
 export const FormGrid = styled.div`
   display: grid;
-
-  grid-template-columns: repeat(4, 1fr);
-
-  column-gap: 16px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  column-gap: 25px;
   row-gap: 20px;
-
-  align-items: end;
-
   width: 100%;
 
-  @media (max-width: 1000px) {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  @media (max-width: 600px) {
-    grid-template-columns: 1fr;
-  }
+  @media (max-width: 1000px) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  @media (max-width: 600px)  { grid-template-columns: 1fr; }
 `;
+
 export const FormGroup = styled.div`
   width: 100%;
-
-  ${(props) =>
-    props.$fullWidth &&
-    `
-      grid-column: span 3;
-    `}
+  min-width: 0;
+  ${({ $fullWidth }) => $fullWidth && `grid-column: 1 / -1;`}
 `;
 
 export const Label = styled.label`
   display: block;
-
-  margin-bottom: 7px;
-
-  color: #202020;
-
-  font-size: 14px;
-  font-weight: 500;
+  margin-bottom: 10px;
+  font-family: "Poppins", sans-serif;
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.2;
+  color: #222;
+  text-transform: uppercase;
 `;
 
 export const Required = styled.span`
-  color: #f04444;
-
+  color: #e53935;
   margin-left: 2px;
 `;
 
 export const Input = styled.input`
   width: 100%;
-  height: 35px;
-
-  padding: 0 11px;
-
+  height: 41px;
+  padding: 0 12px;
   box-sizing: border-box;
-
   border: 1px solid #e1e1e1;
   border-radius: 4px;
-
-  background: #ffffff;
-
-  color: #333333;
-
-  font-size: 12px;
-
   outline: none;
+  background: #fff;
+  font-family: "Poppins", sans-serif;
+  font-size: 13px;
+  color: #333;
+  transition: 0.2s ease;
 
-  &::placeholder {
-    color: #999999;
-  }
-
-  &:focus {
-    border-color: #3857bc;
-  }
+  &::placeholder { color: #999; }
+  &:focus { border-color: #3654b5; }
 `;
 
 export const SelectWrapper = styled.div`
   position: relative;
-
   width: 100%;
 `;
 
 export const Select = styled.select`
   width: 100%;
-  height: 35px;
-
-  padding: 0 34px 0 11px;
-
+  height: 41px;
+  padding: 0 38px 0 12px;
   box-sizing: border-box;
-
   border: 1px solid #e1e1e1;
   border-radius: 4px;
-
-  background: #ffffff;
-
-  color: #777777;
-
-  font-size: 12px;
-
   outline: none;
+  background-color: #fff;
+  font-family: "Poppins", sans-serif;
+  font-size: 13px;
+  color: #333;
+  cursor: pointer;
+  transition: 0.2s ease;
 
   appearance: none;
+  -webkit-appearance: none;
+  background-image: ${chevron};
+  background-repeat: no-repeat;
+  background-position: right 14px center;
 
-  cursor: pointer;
-
-  &:focus {
-    border-color: #3857bc;
-  }
+  &:focus { border-color: #3654b5; }
 `;
 
-export const SelectArrow = styled.span`
-  position: absolute;
+/* ---------- Project employees table ---------- */
 
-  right: 11px;
-  top: 50%;
-
-  transform: translateY(-55%);
-
-  color: #444444;
-
-  font-size: 16px;
-
-  pointer-events: none;
+export const EmployeeSection = styled.div`
+  width: 100%;
+  margin-top: 25px;
 `;
+
+export const EmployeeTable = styled.div`
+  border: 1px solid #e1e1e1;
+  border-radius: 4px;
+  overflow: hidden;
+`;
+
+export const EmployeeHead = styled.div`
+  display: grid;
+  grid-template-columns: 1fr 140px;
+  padding: 12px 16px;
+  background: #f8f9fa;
+  border-bottom: 1px solid #e1e1e1;
+  font-family: "Poppins", sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: uppercase;
+  color: #222;
+`;
+
+export const EmployeeRow = styled.div`
+  display: grid;
+  grid-template-columns: 1fr 140px;
+  align-items: center;
+  padding: 12px 16px;
+  border-bottom: 1px solid #f0f0f0;
+  font-family: "Poppins", sans-serif;
+  font-size: 13px;
+  color: #333;
+
+  &:last-child { border-bottom: none; }
+`;
+
+export const CheckLabel = styled.label`
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: ${({ $disabled }) => ($disabled ? "not-allowed" : "pointer")};
+  color: ${({ $disabled }) => ($disabled ? "#999" : "inherit")};
+
+  input { accent-color: #3855bd; }
+`;
+
+/* ---------- Buttons ---------- */
 
 export const ButtonRow = styled.div`
   display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 13px;
+  margin-top: 24px;
 
-  gap: 10px;
-
-  margin-top: 16px;
+  @media (max-width: 480px) {
+    flex-direction: column-reverse;
+    align-items: stretch;
+  }
 `;
 
 export const CancelButton = styled.button`
-  height: 32px;
-
-  padding: 0 17px;
-
-  border: none;
+  height: 40px;
+  padding: 0 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  border: 1px solid #111;
   border-radius: 4px;
-
-  background: #3857bc;
-
-  color: #ffffff;
-
-  font-size: 10px;
-  font-weight: 600;
-
+  background: #fff;
+  color: #111;
+  font-family: "Poppins", sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  text-transform: uppercase;
   cursor: pointer;
 
-  transition: 0.2s ease;
-
-  &:hover {
-    background: #2f4da9;
-  }
+  &:hover { background: #f5f5f5; }
 `;
 
 export const SubmitButton = styled.button`
-  height: 32px;
-
-  padding: 0 17px;
-
+  min-width: 160px;
+  height: 40px;
+  padding: 0 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-sizing: border-box;
   border: none;
   border-radius: 4px;
-
-  background: #e98227;
-
-  color: #ffffff;
-
-  font-size: 10px;
+  background: #3855bd;
+  color: #fff;
+  font-family: "Poppins", sans-serif;
+  font-size: 13px;
   font-weight: 600;
-
+  text-transform: uppercase;
   cursor: pointer;
+  transition: background 0.2s ease;
 
-  transition: 0.2s ease;
+  svg { width: 14px; height: 14px; flex-shrink: 0; }
 
-  &:hover {
-    background: #d9711c;
-  }
+  &:hover:not(:disabled) { background: #3049a5; }
+  &:disabled { background: #c8cdd6; cursor: not-allowed; }
 `;
-

@@ -1,11 +1,10 @@
-// src/Components/CompanyTable.styles.js
 import styled from "styled-components";
 import { FiSearch } from "react-icons/fi";
 
 export const Container = styled.div`
   padding:20px;
   font-family: "Segoe UI", sans-serif;
-  min-height: 100vh;
+  /* min-height: 100vh; */
   margin: 0 auto;
 `;
 

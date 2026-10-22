@@ -21,7 +21,9 @@ import {
   CancelButton,
   SubmitButton,
   ErrorMessage,
+  ModalSubtitle,
 } from "./DepartmentModal.styles";
+import { FiSave } from "react-icons/fi";
 
 const emptyForm = {
   departmentName: "",
@@ -426,13 +428,16 @@ const DepartmentModal = ({
           e.stopPropagation()
         }
       >
-        <ModalHeader>
-          <ModalTitle>
-            {isEdit
-              ? "Edit Department"
-              : "Add Department"}
-          </ModalTitle>
-        </ModalHeader>
+<ModalHeader>
+  <ModalTitle>
+    {isEdit ? "Edit Department" : "Add Department"}
+  </ModalTitle>
+  <ModalSubtitle>
+    {isEdit
+      ? "Update the department details and head of department."
+      : "Create a new department to organize your employees."}
+  </ModalSubtitle>
+</ModalHeader>
 
         <Form onSubmit={handleSubmit}>
 
@@ -575,15 +580,10 @@ const DepartmentModal = ({
     CANCEL
   </CancelButton>
 
-  <SubmitButton
-    type="submit"
-    disabled={Boolean(
-      errors.departmentName ||
-        errors.departmentCode
-    )}
-  >
-    {isEdit ? "UPDATE" : "CREATE"}
-  </SubmitButton>
+  <SubmitButton type="submit" disabled={Boolean(errors.departmentName || errors.departmentCode)}>
+  <FiSave />
+  {isEdit ? "UPDATE" : "CREATE"}
+</SubmitButton>
 </ButtonRow>
 
         </Form>

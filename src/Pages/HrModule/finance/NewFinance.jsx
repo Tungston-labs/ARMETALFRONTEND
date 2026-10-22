@@ -13,12 +13,14 @@ import {
   Label,
   HeaderLeft,
   Select,
+    ModalSubtitle,
 } from "./NewFinance.Styles";
 import { useDispatch } from "react-redux";
 import {
   createFinanceCategory,
   fetchFinanceCategoryList,
 } from "../../../Redux/financeThunks";
+import { FiSave } from "react-icons/fi";
 
 const getTodayDate = () => new Date().toISOString().split("T")[0];
 
@@ -153,10 +155,13 @@ const FinanceModal = ({ isOpen, onClose, onSave }) => {
     <ModalOverlay>
       <ModalContainer>
         <ModalHeader>
-             <HeaderLeft>
-          <ModalTitle>New Finance Entry</ModalTitle>
-      </HeaderLeft>
-        </ModalHeader>
+  <HeaderLeft>
+    <ModalTitle>New Finance Entry</ModalTitle>
+    <ModalSubtitle>
+      Record an income or expense entry with its category and amount.
+    </ModalSubtitle>
+  </HeaderLeft>
+</ModalHeader>
 
         <Form onSubmit={handleSubmit}>
           <FormRow>
@@ -238,14 +243,15 @@ const FinanceModal = ({ isOpen, onClose, onSave }) => {
               onChange={handleChange}
             />
           </div>
-          <ButtonGroup>
-            <Button type="button" variant="cancel" onClick={handleClose}>
-              Cancel
-            </Button>
-            <Button type="submit" variant="submit">
-              Submit
-            </Button>
-          </ButtonGroup>
+         <ButtonGroup>
+  <Button type="button" $variant="cancel" onClick={handleClose}>
+    Cancel
+  </Button>
+  <Button type="submit" $variant="submit">
+    <FiSave />
+    Submit
+  </Button>
+</ButtonGroup>
         </Form>
       </ModalContainer>
     </ModalOverlay>

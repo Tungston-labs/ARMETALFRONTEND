@@ -14,11 +14,14 @@ import {
   Input,
   SelectWrapper,
   Select,
-  SelectArrow,
+  // SelectArrow,
   ButtonRow,
   CancelButton,
   SubmitButton,
+  ModalSubtitle,
+  EmployeeRow,
 } from "./ProjectModal.Styles";
+import { FiSave } from "react-icons/fi";
 
 const initialFormData = {
   projectName: "",
@@ -220,14 +223,14 @@ const ProjectModal = ({
     <Overlay>
       <ModalContainer>
         {/* Header */}
-        <ModalHeader>
-          <ModalTitle>
-            {isEditMode
-              ? "Edit Project"
-              : "Add New Project"}
-          </ModalTitle>
-        </ModalHeader>
-
+      <ModalHeader>
+  <ModalTitle>{isEditMode ? "Edit Project" : "Add New Project"}</ModalTitle>
+  <ModalSubtitle>
+    {isEditMode
+      ? "Update the project details and manage assigned employees."
+      : "Create a new project and set its type, priority and start date."}
+  </ModalSubtitle>
+</ModalHeader>
         {/* Body */}
         <ModalBody>
           <form onSubmit={handleSubmit}>
@@ -275,7 +278,7 @@ const ProjectModal = ({
                     </option>
                   </Select>
 
-                  <SelectArrow>⌄</SelectArrow>
+                  {/* <SelectArrow>⌄</SelectArrow> */}
                 </SelectWrapper>
               </FormGroup>
 
@@ -337,7 +340,7 @@ const ProjectModal = ({
                     </option>
                   </Select>
 
-                  <SelectArrow>⌄</SelectArrow>
+                  {/* <SelectArrow>⌄</SelectArrow> */}
                 </SelectWrapper>
               </FormGroup>
 
@@ -386,7 +389,7 @@ const ProjectModal = ({
                     </option>
                   </Select>
 
-                  <SelectArrow>⌄</SelectArrow>
+                  {/* <SelectArrow>⌄</SelectArrow> */}
                 </SelectWrapper>
               </FormGroup>
 
@@ -396,151 +399,55 @@ const ProjectModal = ({
             {/* PROJECT EMPLOYEES */}
             {/* ================================================= */}
 
-            {isEditMode && projectEmployees.length > 0 && (
-              <div
-                style={{
-                  marginTop: "25px",
-                  width: "100%",
-                }}
-              >
-                <Label
-                  style={{
-                    display: "block",
-                    marginBottom: "12px",
-                  }}
-                >
-                  Project Employees
-                </Label>
+          {isEditMode && projectEmployees.length > 0 && (
+  <EmployeeSection>
+    <Label>Project Employees</Label>
 
-                <div
-                  style={{
-                    border: "1px solid #E5E7EB",
-                    borderRadius: "8px",
-                    overflow: "hidden",
-                  }}
-                >
-                  {/* Header */}
-                  <div
-                    style={{
-                      display: "grid",
-                      gridTemplateColumns: "1fr 120px",
-                      padding: "12px 15px",
-                      background: "#F8F9FA",
-                      borderBottom:
-                        "1px solid #E5E7EB",
-                      fontWeight: 600,
-                    }}
-                  >
-                    <span>Employee</span>
-                    <span>Team Lead</span>
-                  </div>
+    <EmployeeTable>
+      <EmployeeHead>
+        <span>Employee</span>
+        <span>Team Lead</span>
+      </EmployeeHead>
 
-                  {/* Employees */}
-                  {projectEmployees.map(
-                    (employee) => {
-                      const employeeId =
-                        typeof employee === "object"
-                          ? employee.id
-                          : employee;
+      {projectEmployees.map((employee) => {
+        const isObj = typeof employee === "object" && employee !== null;
+        const employeeId = isObj ? employee.id : employee;
+        const employeeName = isObj
+          ? employee.name ||
+            employee.employee_name ||
+            employee.full_name ||
+            `Employee ${employee.id}`
+          : `Employee ${employee}`;
 
-                      const employeeName =
-                        typeof employee === "object"
-                          ? employee.name ||
-                            employee.employee_name ||
-                            employee.full_name ||
-                            `Employee ${employee.id}`
-                          : `Employee ${employee}`;
+        const isSelected = selectedEmployeeIds.includes(employeeId);
+        const isLead = teamLeadIds.includes(employeeId);
 
-                      const isSelected =
-                        selectedEmployeeIds.includes(
-                          employeeId
-                        );
+        return (
+          <EmployeeRow key={employeeId}>
+            <CheckLabel>
+              <input
+                type="checkbox"
+                checked={isSelected}
+                onChange={() => handleEmployeeToggle(employeeId)}
+              />
+              <span>{employeeName}</span>
+            </CheckLabel>
 
-                      const isLead =
-                        teamLeadIds.includes(
-                          employeeId
-                        );
-
-                      return (
-                        <div
-                          key={employeeId}
-                          style={{
-                            display: "grid",
-                            gridTemplateColumns:
-                              "1fr 120px",
-                            alignItems: "center",
-                            padding:
-                              "12px 15px",
-                            borderBottom:
-                              "1px solid #F0F0F0",
-                          }}
-                        >
-                          {/* Employee */}
-                          <label
-                            style={{
-                              display: "flex",
-                              alignItems:
-                                "center",
-                              gap: "10px",
-                              cursor:
-                                "pointer",
-                            }}
-                          >
-                            <input
-                              type="checkbox"
-                              checked={
-                                isSelected
-                              }
-                              onChange={() =>
-                                handleEmployeeToggle(
-                                  employeeId
-                                )
-                              }
-                            />
-
-                            <span>
-                              {employeeName}
-                            </span>
-                          </label>
-
-                          {/* Team Lead */}
-                          <label
-                            style={{
-                              display: "flex",
-                              alignItems:
-                                "center",
-                              gap: "8px",
-                              cursor: isSelected
-                                ? "pointer"
-                                : "not-allowed",
-                              color: isSelected
-                                ? "#1976D2"
-                                : "#999",
-                            }}
-                          >
-                            <input
-                              type="checkbox"
-                              checked={isLead}
-                              disabled={!isSelected}
-                              onChange={() =>
-                                handleTeamLeadToggle(
-                                  employeeId
-                                )
-                              }
-                            />
-
-                            <span>
-                              Team Lead
-                            </span>
-                          </label>
-                        </div>
-                      );
-                    }
-                  )}
-                </div>
-              </div>
-            )}
-
+            <CheckLabel $disabled={!isSelected}>
+              <input
+                type="checkbox"
+                checked={isLead}
+                disabled={!isSelected}
+                onChange={() => handleTeamLeadToggle(employeeId)}
+              />
+              <span>Team Lead</span>
+            </CheckLabel>
+          </EmployeeRow>
+        );
+      })}
+    </EmployeeTable>
+  </EmployeeSection>
+)}
             {/* Buttons */}
             <ButtonRow>
               <CancelButton
@@ -551,10 +458,9 @@ const ProjectModal = ({
               </CancelButton>
 
               <SubmitButton type="submit">
-                {isEditMode
-                  ? "UPDATE PROJECT"
-                  : "CREATE PROJECT"}
-              </SubmitButton>
+  <FiSave />
+  {isEditMode ? "UPDATE PROJECT" : "CREATE PROJECT"}
+</SubmitButton>
             </ButtonRow>
           </form>
         </ModalBody>

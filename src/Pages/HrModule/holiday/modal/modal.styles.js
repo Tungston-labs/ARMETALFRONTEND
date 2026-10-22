@@ -1,163 +1,204 @@
 import styled, { keyframes } from "styled-components";
 
+const chevron = `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23222' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>")`;
+
 const fadeIn = keyframes`
   from { opacity: 0; }
-  to { opacity: 1; }
-`;
-
-const slideUp = keyframes`
-  from {
-    opacity: 0;
-    transform: translateY(16px) scale(0.98);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
+  to   { opacity: 1; }
 `;
 
 export const Overlay = styled.div`
   position: fixed;
   inset: 0;
-  background-color: rgba(15, 23, 42, 0.55);
-  backdrop-filter: blur(2px);
+  z-index: 9999;
   display: flex;
-  justify-content: center;
   align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.25);
   padding: 20px;
-  z-index: 1000;
   animation: ${fadeIn} 0.15s ease-out;
 `;
 
-export const Panel = styled.div`
-  background: #fff;
-  // border-radius: 14px;
-  max-width: ${(props) => props.$maxWidth || "520px"};
+export const Modal = styled.div`
   width: 100%;
-  max-height: 90vh;
+  max-width: 720px;
+  background: #fff;
+  border-radius: 4px;
+  padding: 28px 32px 24px;
+  box-sizing: border-box;
+  box-shadow: 0 10px 35px rgba(0, 0, 0, 0.12);
+  max-height: 95vh;
+  overflow-y: auto;
+
+  @media (max-width: 1100px) { max-width: 95%; }
+  @media (max-width: 900px)  { padding: 24px; }
+  @media (max-width: 600px)  { padding: 20px; }
+`;
+
+export const ModalHeader = styled.div`
   display: flex;
   flex-direction: column;
-  overflow: hidden;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
-  text-align: ${(props) => (props.$centered ? "center" : "left")};
-  animation: ${slideUp} 0.18s ease-out;
+  gap: 8px;
+  margin-bottom: 23px;
 `;
 
-export const Header = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 20px 24px;
-  border-bottom: 1px solid #eef0f3;
-  flex-shrink: 0;
-  background-color: #3352BA;
-`;
-
-export const ModalTitle = styled.h3`
+export const ModalTitle = styled.h2`
   margin: 0;
-  font-family: Satoshi, sans-serif;
-  font-size: 1.15rem;
-  font-weight: 600;
-  color: #fff;
+  font-family: "Poppins", sans-serif;
+  font-size: 20px;
+  font-weight: 500;
+  line-height: 1.3;
+  color: #3250bc;
 `;
 
 export const ModalSubtitle = styled.p`
-  margin: 2px 0 0;
-  font-size: 0.85rem;
-  color: #fff;
-`;
-
-export const CloseButton = styled.button`
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
-  background: none;
-  border: none;
-  font-size: 1.35rem;
-  line-height: 1;
-   color: #fff;
-  cursor: pointer;
-  transition: background 0.15s ease, color 0.15s ease;
-
-  &:hover {
-    background: #f2f4f7;
-    color: #1a1f2b;
-  }
-`;
-
-export const Body = styled.div`
-  padding: 24px;
-  overflow-y: auto;
-`;
-
-export const ModalText = styled.p`
-  color: #555;
   margin: 0;
+  font-family: "Poppins", sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.4;
+  color: #666;
+
+  @media (max-width: 480px) { font-size: 12px; }
 `;
 
-export const Footer = styled.div`
+export const FormGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 25px;
+  row-gap: 20px;
+
+  @media (max-width: 520px) { grid-template-columns: 1fr; }
+`;
+
+export const FormGroup = styled.div`
+  min-width: 0;
   display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  gap: 12px;
-  padding: 16px 24px;
-  border-top: 1px solid #eef0f3;
-  flex-shrink: 0;
+  flex-direction: column;
+  grid-column: ${({ $full }) => ($full ? "1 / -1" : "auto")};
 `;
 
-export const ButtonRow = styled(Footer)`
-  border-top: none;
-  padding: 0 24px 24px;
-  justify-content: center;
+export const Label = styled.label`
+  display: block;
+  margin-bottom: 10px;
+  font-family: "Poppins", sans-serif;
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.2;
+  color: #222;
+  text-transform: uppercase;
 `;
 
-export const PrimaryButton = styled.button`
-  background-color: #3352ba;
-  color: #fff;
-  border: none;
-  border-radius: 8px;
-  padding: 10px 22px;
-  font-size: 0.9rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background 0.15s ease;
-
-  &:hover {
-    background-color: #26408b;
-  }
-
-  &:disabled {
-    background-color: #b7c0dd;
-    cursor: not-allowed;
-  }
+export const Required = styled.span`
+  color: #e53935;
+  margin-left: 2px;
 `;
 
-export const DeleteButton = styled(PrimaryButton)`
-  background-color: #e11d1d;
-
-  &:hover {
-    background-color: #b91414;
-  }
-`;
-
-export const SecondaryButton = styled.button`
+export const Input = styled.input`
+  width: 100%;
+  height: 41px;
+  padding: 0 12px;
+  box-sizing: border-box;
+  border: 1px solid #e1e1e1;
+  border-radius: 4px;
+  outline: none;
   background: #fff;
-  color: #444a58;
-  border: 1px solid #d8dce3;
-  border-radius: 8px;
-  padding: 10px 22px;
-  font-size: 0.9rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background 0.15s ease, border-color 0.15s ease;
+  font-family: "Poppins", sans-serif;
+  font-size: 13px;
+  color: #333;
+  transition: 0.2s ease;
 
-  &:hover {
-    background: #f7f8fa;
-    border-color: #c3c9d3;
+  &::placeholder { color: #999; }
+  &:focus { border-color: #3654b5; }
+`;
+
+export const Select = styled.select`
+  width: 100%;
+  height: 41px;
+  padding: 0 38px 0 12px;
+  box-sizing: border-box;
+  border: 1px solid #e1e1e1;
+  border-radius: 4px;
+  outline: none;
+  background-color: #fff;
+  font-family: "Poppins", sans-serif;
+  font-size: 13px;
+  color: #333;
+  cursor: pointer;
+  transition: 0.2s ease;
+
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: ${chevron};
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+
+  &:focus { border-color: #3654b5; }
+`;
+
+export const ErrorMessage = styled.p`
+  margin: 14px 0 0;
+  color: #dc2626;
+  font-family: "Poppins", sans-serif;
+  font-size: 11px;
+  line-height: 15px;
+`;
+
+export const ButtonRow = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 13px;
+  margin-top: 24px;
+
+  @media (max-width: 480px) {
+    flex-direction: column-reverse;
+    align-items: stretch;
   }
 `;
 
-export const CancelButton = SecondaryButton;
+export const CancelButton = styled.button`
+  height: 40px;
+  padding: 0 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  border: 1px solid #111;
+  border-radius: 4px;
+  background: #fff;
+  color: #111;
+  font-family: "Poppins", sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  text-transform: uppercase;
+  cursor: pointer;
+
+  &:hover { background: #f5f5f5; }
+`;
+
+export const SubmitButton = styled.button`
+  min-width: 140px;
+  height: 40px;
+  padding: 0 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-sizing: border-box;
+  border: none;
+  border-radius: 4px;
+  background: #3855bd;
+  color: #fff;
+  font-family: "Poppins", sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.2s ease;
+
+  svg { width: 14px; height: 14px; flex-shrink: 0; }
+
+  &:hover:not(:disabled) { background: #3049a5; }
+  &:disabled { background: #c8cdd6; cursor: not-allowed; }
+`;

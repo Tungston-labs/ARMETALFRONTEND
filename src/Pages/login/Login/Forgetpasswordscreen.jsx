@@ -124,7 +124,7 @@ const ForgotPasswordScreen = () => {
                             </>
                         )}
 
-                        <BackToLoginLink to="/log" style={{ textAlign: "center", marginTop: "1rem" }}>
+                        <BackToLoginLink to="/login" style={{ textAlign: "center", marginTop: "1rem" }}>
                             Back to log in
                         </BackToLoginLink>
                     </FormCard>
