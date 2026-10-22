@@ -12,8 +12,6 @@ import { buildCustomerOptions } from "./Salesreportconfig";
 
 const useSalesReport = () => {
     const dispatch = useDispatch();
-
-    // ---------- Customers dropdown (from API) ----------
     const customerList = useSelector(selectCustomers);
 
     const customerOptions = useMemo(
@@ -24,8 +22,6 @@ const useSalesReport = () => {
     useEffect(() => {
         dispatch(getCustomers({ page: 1, page_size: 1000 }));
     }, [dispatch]);
-
-    // ---------- Sales report data ----------
     const {
         invoices,
         summary,
@@ -36,8 +32,6 @@ const useSalesReport = () => {
         exporting,
         exportError,
     } = useSelector((state) => state.salesReport);
-
-    // Filter state
     const [search, setSearch] = useState("");
     const [status, setStatus] = useState("");
     const [customer, setCustomer] = useState("all");
@@ -53,10 +47,10 @@ const useSalesReport = () => {
             customer,
             category,
             year,
-              date_from: dateFrom,
-        date_to: dateTo,
+            date_from: dateFrom,
+            date_to: dateTo,
         }),
-    [status, customer, category, year, dateFrom, dateTo]    );
+        [status, customer, category, year, dateFrom, dateTo]);
 
     useEffect(() => {
         dispatch(getSalesReport({ ...filters, page: currentPage }));
@@ -107,14 +101,14 @@ const useSalesReport = () => {
     };
 
     const handleDateFromChange = (event) => {
-    setDateFrom(event.target.value);
-    setCurrentPage(1);
-};
+        setDateFrom(event.target.value);
+        setCurrentPage(1);
+    };
 
-const handleDateToChange = (event) => {
-    setDateTo(event.target.value);
-    setCurrentPage(1);
-};
+    const handleDateToChange = (event) => {
+        setDateTo(event.target.value);
+        setCurrentPage(1);
+    };
     // Year only changes the chart, so the table page is kept
     const handleYearChange = (value) => setYear(Number(value));
 
@@ -127,6 +121,8 @@ const handleDateToChange = (event) => {
         customer,
         category,
         year,
+        dateFrom,
+        dateTo,
 
         // data
         rows,
@@ -152,6 +148,8 @@ const handleDateToChange = (event) => {
         handleCategoryChange,
         handleYearChange,
         handleExport,
+        handleDateFromChange,
+        handleDateToChange,
     };
 };
 
