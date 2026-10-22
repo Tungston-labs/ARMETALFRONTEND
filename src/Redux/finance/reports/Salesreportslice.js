@@ -7,7 +7,8 @@ import {
   downloadBlob,
 } from "../../../services/finance/reports/Salesreportservice";
 
-const PAGE_SIZE = 10;
+// Used when the request does not send page_size
+const DEFAULT_PAGE_SIZE = 10;
 
 const MONTH_LABELS = [
   "Jan", "Feb", "Mar", "Apr", "May", "Jun",
@@ -35,12 +36,13 @@ const emptyPagination = {
   count: 0,
   totalPages: 1,
   currentPage: 1,
-  pageSize: PAGE_SIZE,
+  pageSize: DEFAULT_PAGE_SIZE,
   next: null,
   previous: null,
 };
 
 
+// params: { date_from, date_to, customer, category, status, year, page, page_size }
 export const getSalesReport = createAsyncThunk(
   "salesReport/getSalesReport",
   async (params = {}, thunkAPI) => {
@@ -55,6 +57,7 @@ export const getSalesReport = createAsyncThunk(
 );
 
 
+// params: same filters as the table (page / page_size / year are ignored)
 export const exportSalesReport = createAsyncThunk(
   "salesReport/exportSalesReport",
   async (params = {}, thunkAPI) => {
@@ -141,18 +144,22 @@ const salesReportSlice = createSlice({
         state.loading = false;
 
         const data = action.payload || {};
-        const requestedPage = Number(action.meta.arg?.page) || 1;
+        const arg = action.meta.arg || {};
+
+        const requestedPage = Number(arg.page) || 1;
+        const pageSize =
+          Number(arg.page_size) || state.pagination.pageSize || DEFAULT_PAGE_SIZE;
         const count = data.count || 0;
 
         state.invoices = data.results || [];
         state.summary = data.summary || { ...emptySummary };
-        state.chart = data.chart || emptyChart(action.meta.arg?.year);
+        state.chart = data.chart || emptyChart(arg.year);
 
         state.pagination = {
           count,
-          totalPages: Math.max(1, Math.ceil(count / PAGE_SIZE)),
+          totalPages: Math.max(1, Math.ceil(count / pageSize)),
           currentPage: requestedPage,
-          pageSize: PAGE_SIZE,
+          pageSize,
           next: data.next || null,
           previous: data.previous || null,
         };

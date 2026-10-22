@@ -69,3 +69,54 @@ export const ExportButton = styled.button`
         width: 100%;
     }
 `;
+
+
+
+export const DateRangeWrapper = styled.div`
+    display: flex;
+    align-items: center;
+    gap: 10px;
+`;
+
+export const DatePickerContainer = styled.div`
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    width: 280px;
+    height: 38px;
+    padding: 0 10px;
+
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    background: #ffffff;
+
+    box-sizing: border-box;
+`;
+
+export const DateInput = styled.input`
+    flex: 1;
+    min-width: 0;
+    width: 100%;
+    height: 100%;
+
+    border: none;
+    outline: none;
+    background: transparent;
+
+    color: #374151;
+    font-size: 13px;
+    cursor: pointer;
+
+    &::-webkit-calendar-picker-indicator {
+        cursor: pointer;
+    }
+`;
+
+export const DateSeparator = styled.span`
+    flex-shrink: 0;
+
+    color: #6b7280;
+    font-size: 13px;
+    font-weight: 500;
+`;

@@ -43,7 +43,8 @@ const useSalesReport = () => {
     const [customer, setCustomer] = useState("all");
     const [category, setCategory] = useState("all");
     const [year, setYear] = useState(new Date().getFullYear());
-
+    const [dateFrom, setDateFrom] = useState("");
+    const [dateTo, setDateTo] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
 
     const filters = useMemo(
@@ -52,9 +53,10 @@ const useSalesReport = () => {
             customer,
             category,
             year,
+              date_from: dateFrom,
+        date_to: dateTo,
         }),
-        [status, customer, category, year]
-    );
+    [status, customer, category, year, dateFrom, dateTo]    );
 
     useEffect(() => {
         dispatch(getSalesReport({ ...filters, page: currentPage }));
@@ -104,6 +106,15 @@ const useSalesReport = () => {
         setCurrentPage(1);
     };
 
+    const handleDateFromChange = (event) => {
+    setDateFrom(event.target.value);
+    setCurrentPage(1);
+};
+
+const handleDateToChange = (event) => {
+    setDateTo(event.target.value);
+    setCurrentPage(1);
+};
     // Year only changes the chart, so the table page is kept
     const handleYearChange = (value) => setYear(Number(value));
 

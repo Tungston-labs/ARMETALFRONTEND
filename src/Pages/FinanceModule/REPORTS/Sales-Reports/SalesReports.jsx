@@ -1,6 +1,10 @@
 import React, { useMemo } from "react";
 
 import {
+    DateInput,
+    DatePickerContainer,
+    DateRangeWrapper,
+    DateSeparator,
     ExportButton,
     MainReportLayout,
     TableSide,
@@ -43,6 +47,11 @@ const SalesReports = () => {
         error,
         exporting,
         exportError,
+        dateFrom,
+        dateTo,
+        handleDateFromChange,
+        handleDateToChange,
+
         handleSearch,
         handleStatus,
         handleCustomerChange,
@@ -58,6 +67,28 @@ const SalesReports = () => {
                 title="Sales Reports"
                 breadcrumbs={["Reports", "Sales Reports"]}
             >
+                <DateRangeWrapper>
+                    <DatePickerContainer>
+                        <DateInput
+                            type="date"
+                            aria-label="Start date"
+                            value={dateFrom}
+                            max={dateTo || undefined}
+                            onChange={handleDateFromChange}
+                        />
+
+                        <DateSeparator>-</DateSeparator>
+
+                        <DateInput
+                            type="date"
+                            aria-label="End date"
+                            value={dateTo}
+                            min={dateFrom || undefined}
+                            onChange={handleDateToChange}
+                        />
+                    </DatePickerContainer>
+                </DateRangeWrapper>
+
                 <ExportButton
                     type="button"
                     onClick={handleExport}
