@@ -27,7 +27,7 @@ import recurringReducer from "../Redux/finance/Sales/recurringSlice";
 import paymentReducer from "../Redux/finance/Sales/paymentSlice";
 import creditNotesReducer from "../Redux/finance/Sales/creditNoteSlice";
 import salesReturnsReducer from "./finance/Sales/Salesreturnslice";
-import customerLedgerReducer from "./finance/Sales/Customerledgerslice"
+import customerLedgerReducer from "./finance/Sales/Customerledgerslice";
 import vendorReducer from "./finance/purchases/vendorsSlice";
 import billReducer from "./finance/purchases/BillSlice";
 import purchaseOrderReducer from "./finance/purchases/Purchaseordersslice";
@@ -35,16 +35,15 @@ import vendorDetailReducer from "./finance/purchases/Vendordetailslice";
 import debitNoteReducer from "./finance/purchases/debitNoteSlice";
 import purchasePaymentsReducer from "./finance/purchases/paymentSlice";
 
-
 import vendorLedgerReducer from "./finance/purchases/vendorLedgerslice";
 import accountingReducer from "./finance/accounts/Accountingslice";
 import ledgerReducer from "./finance/accounts/Ledgerslice";
 import receivableReducer from "./finance/accounts/Receivableslice";
 import payableReducer from "./finance/accounts/payableSlice";
+import bankingReducer from "./finance/accounts/BankingSlice";
 
 export const store = configureStore({
   reducer: {
-
     auth: authReducer,
     departments: departmentReducer,
     holidays: holidayReducer,
@@ -85,8 +84,8 @@ export const store = configureStore({
     accounting: accountingReducer,
     ledger: ledgerReducer,
     receivable: receivableReducer,
-       payable: payableReducer,
-    
+    payable: payableReducer,
+    banking: bankingReducer
 
   },
 });

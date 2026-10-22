@@ -148,6 +148,11 @@ import SalesReports from "../Pages/FinanceModule/REPORTS/Sales-Reports/SalesRepo
 
 import JournalEntries from "../Pages/FinanceModule/ACCOUNTS/JournalEntries/JournalEntries.jsx";
 import NewJournalentry from "../Pages/FinanceModule/ACCOUNTS/JournalEntries/modal/NewJournalentry.jsx";
+import PurchaseReports from "../Pages/FinanceModule/REPORTS/PurchaseReports/PurchaseReports.jsx";
+import PaymentReports from "../Pages/FinanceModule/REPORTS/PaymentReports/PaymentReports.jsx";
+import InventoryReports from "../Pages/FinanceModule/REPORTS/InventoryReports/InventoryReports.jsx";
+import TaxReport from "../Pages/FinanceModule/REPORTS/TaxReport/TaxReport.jsx";
+import Banking from "../Pages/FinanceModule/ACCOUNTS/Bank/Banking.jsx";
 
 const FinanceRoutes = () => {
   return (
@@ -372,9 +377,14 @@ const FinanceRoutes = () => {
       <Route path="accounts/expenses" element={<Expenses />} />
       <Route path="accounts/payables" element={<Payables />} />
       <Route path="accounts/recievables" element={<Recievables />} />
+      <Route path="accounts/banking" element={<Banking />} />
 
       {/* Report Section */}
       <Route path="reports/sales-report" element={<SalesReports />} />
+      <Route path="reports/purchase-report" element={<PurchaseReports />} />
+      <Route path="reports/payment-report" element={<PaymentReports />} />
+      <Route path="reports/inventory-report" element={<InventoryReports />} />
+      <Route path="reports/tax-report" element={<TaxReport />} />
     </>
   );
 };
