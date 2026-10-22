@@ -1,46 +1,52 @@
 import API from "../../api";
 
-const BASE_URL = "/finance/journal/";
+const BASE = "/finance/journal/";
 
-// params: date_from, date_to, source, status, search, ordering, page, company
+// GET /finance/journal/?search=&status=&source=&date_from=&date_to=&ordering=&page=&company=
 export const fetchJournalEntries = async (params = {}) => {
-  const response = await API.get(BASE_URL, { params });
+  const response = await API.get(BASE, { params });
 
   return response.data;
 };
 
+// GET /finance/journal/:id/
 export const fetchJournalEntryById = async (id) => {
-  const response = await API.get(`${BASE_URL}${id}/`);
+  const response = await API.get(`${BASE}${id}/`);
 
   return response.data;
 };
 
-export const createJournalEntryApi = async (payload) => {
-  const response = await API.post(BASE_URL, payload);
+// POST /finance/journal/   (creates a draft)
+export const createJournalEntry = async (data) => {
+  const response = await API.post(BASE, data);
 
   return response.data;
 };
 
-export const updateJournalEntryApi = async (id, payload) => {
-  const response = await API.patch(`${BASE_URL}${id}/`, payload);
+// PATCH /finance/journal/:id/   (draft entries only)
+export const updateJournalEntry = async (id, data) => {
+  const response = await API.patch(`${BASE}${id}/`, data);
 
   return response.data;
 };
 
-export const postJournalEntryApi = async (id) => {
-  const response = await API.post(`${BASE_URL}${id}/post/`);
+// POST /finance/journal/:id/post/
+export const postJournalEntryById = async (id) => {
+  const response = await API.post(`${BASE}${id}/post/`);
 
   return response.data;
 };
 
-export const voidJournalEntryApi = async (id) => {
-  const response = await API.post(`${BASE_URL}${id}/void/`);
+// POST /finance/journal/:id/void/   (posted entries only)
+export const voidJournalEntryById = async (id) => {
+  const response = await API.post(`${BASE}${id}/void/`);
 
   return response.data;
 };
 
-export const deleteJournalEntryApi = async (id) => {
-  await API.delete(`${BASE_URL}${id}/`);
+// DELETE /finance/journal/:id/   (draft entries only)
+export const deleteJournalEntryById = async (id) => {
+  const response = await API.delete(`${BASE}${id}/`);
 
-  return id;
+  return response.data;
 };

@@ -151,6 +151,7 @@ import VendorReport from "../Pages/FinanceModule/REPORTS/Vendor-Report/VendorRep
 
 import JournalEntries from "../Pages/FinanceModule/ACCOUNTS/JournalEntries/JournalEntries.jsx";
 import NewJournalentry from "../Pages/FinanceModule/ACCOUNTS/JournalEntries/modal/NewJournalentry.jsx";
+import TrialBalance from "../Pages/FinanceModule/ACCOUNTS/TrialBalance/TrialBalance.jsx";
 import ProfitLoss from "../Pages/FinanceModule/REPORTS/ProfitLoss/ProfitLoss.jsx";
 import CashFlow from "../Pages/FinanceModule/REPORTS/CashFlow/CashFlow.jsx";
 
