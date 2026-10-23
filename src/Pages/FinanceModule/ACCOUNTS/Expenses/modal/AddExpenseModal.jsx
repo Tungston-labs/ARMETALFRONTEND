@@ -21,8 +21,8 @@ import {
   SaveButton,
 } from "./AddExpenseModal.styles";
 
-// NOTE: adjust this path to where your slice lives (same file the page imports)
-import { getActiveBankAccounts } from "../../../../../Redux/finance/accounts/Expenseslice";
+// NOTE: adjust this path to where your banking slice lives
+import { accountActions } from "../../../../../Redux/finance/accounts/BankingSlice";
 
 // Values match Expense.CATEGORY_CHOICES / PAYMENT_METHOD_CHOICES in the backend
 export const EXPENSE_CATEGORIES = [
@@ -95,9 +95,11 @@ const getErrorText = (err) => {
 const AddExpenseModal = ({ isOpen, onClose, onSubmit, nextExpenseId }) => {
   const dispatch = useDispatch();
 
-  const bankAccounts = useSelector((state) => state.expense?.bankAccounts) || [];
+  // Bank accounts come from the banking slice (store key: "banking")
+  const bankAccounts =
+    useSelector((state) => state.banking?.accounts?.list) || [];
   const bankAccountsLoading = useSelector(
-    (state) => state.expense?.bankAccountsLoading
+    (state) => state.banking?.accounts?.loading
   );
 
   const [formData, setFormData] = useState(initialForm);
@@ -111,7 +113,7 @@ const AddExpenseModal = ({ isOpen, onClose, onSubmit, nextExpenseId }) => {
     setFormData(initialForm);
     setFormError("");
     setSubmitting(false);
-    dispatch(getActiveBankAccounts());
+    dispatch(accountActions.fetch({ status: "active", page_size: 100 }));
   }, [isOpen, dispatch]);
 
   if (!isOpen) return null;
