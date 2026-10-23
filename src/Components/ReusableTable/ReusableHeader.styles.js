@@ -20,8 +20,6 @@ export const HeaderContainer = styled.div`
 
   gap: 20px;
   margin-bottom: 25px;
-
-  /* Prevent children from causing horizontal overflow */
   min-width: 0;
 
   @media (max-width: ${breakpoints.laptop}) {
@@ -33,6 +31,9 @@ export const HeaderContainer = styled.div`
     align-items: stretch;
     gap: 14px;
     margin-bottom: 20px;
+
+    /* Room for the fixed hamburger button (10px top + 40px button + 10px gap) */
+    padding-top: 50px;
   }
 
   @media (max-width: ${breakpoints.mobile}) {
