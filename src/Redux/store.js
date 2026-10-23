@@ -27,7 +27,7 @@ import recurringReducer from "../Redux/finance/Sales/recurringSlice";
 import paymentReducer from "../Redux/finance/Sales/paymentSlice";
 import creditNotesReducer from "../Redux/finance/Sales/creditNoteSlice";
 import salesReturnsReducer from "./finance/Sales/Salesreturnslice";
-import customerLedgerReducer from "./finance/Sales/Customerledgerslice"
+import customerLedgerReducer from "./finance/Sales/Customerledgerslice";
 import vendorReducer from "./finance/purchases/vendorsSlice";
 import billReducer from "./finance/purchases/BillSlice";
 import purchaseOrderReducer from "./finance/purchases/Purchaseordersslice";
@@ -35,22 +35,29 @@ import vendorDetailReducer from "./finance/purchases/Vendordetailslice";
 import debitNoteReducer from "./finance/purchases/debitNoteSlice";
 import purchasePaymentsReducer from "./finance/purchases/paymentSlice";
 
-
 import vendorLedgerReducer from "./finance/purchases/vendorLedgerslice";
 import accountingReducer from "./finance/accounts/Accountingslice";
 import ledgerReducer from "./finance/accounts/Ledgerslice";
 import receivableReducer from "./finance/accounts/Receivableslice";
 import payableReducer from "./finance/accounts/payableSlice";
+import bankingReducer from "./finance/accounts/BankingSlice";
+
 import trialBalanceReducer from "./finance/accounts/TrialBalanceslice";
 import journalEntryReducer from "./finance/accounts/Journalslice";
+import expensesReducer from "./finance/accounts/Expenseslice";
 import salesReportReducer from "./finance/reports/Salesreportslice";
 import customerReportReducer from "./finance/reports/Customerreportslice";
 import vendorReportReducer from "./finance/reports/Vendorreportslice";
 import profitLossReportReducer from "./finance/reports/Profitlossreportslice";
 import cashFlowReportReducer from "./finance/reports/Cashflowreportslice";
+import taxReportReducer from "./finance/reports/Taxreportslice";
+import purchaseReportReducer from "./finance/reports/PurchaseReportSlice";
+import paymentReportReducer from "./finance/reports/paymentReportSlice";
+
+
+
 export const store = configureStore({
   reducer: {
-
     auth: authReducer,
     departments: departmentReducer,
     holidays: holidayReducer,
@@ -94,10 +101,15 @@ export const store = configureStore({
     payable: payableReducer,
     trialBalance: trialBalanceReducer,
     journalEntry: journalEntryReducer,
+       expense: expensesReducer,   
+      banking: bankingReducer,
+    profitLossReport: profitLossReportReducer,
+      cashFlowReport: cashFlowReportReducer,
     salesReport: salesReportReducer,
     customerReport: customerReportReducer,
     vendorReport: vendorReportReducer,
-    profitLossReport: profitLossReportReducer,
-      cashFlowReport: cashFlowReportReducer,
+       taxReport: taxReportReducer, 
+    purchaseReport: purchaseReportReducer,
+    paymentReport: paymentReportReducer,
   },
 });

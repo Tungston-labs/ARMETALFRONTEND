@@ -73,10 +73,10 @@ const initialState = {
   // Expense rows
   expenses: [],
 
-  // KPI cards
+  // KPI cards: { total_expense, this_month_expense, already_paid, still_pay, biggest_cost }
   dashboard: null,
 
-  // API pagination
+  // API pagination (computed from DRF count / next / previous)
   pagination: { ...emptyPagination },
 
   // Single expense (details / edit modal)
@@ -140,18 +140,24 @@ const expenseSlice = createSlice({
         state.loading = false;
 
         const data = action.payload || {};
-        const pagination = data.pagination || {};
+        const arg = action.meta.arg || {};
+
+        // The API uses standard DRF pagination (count / next / previous),
+        // so total pages are computed from count and the page params sent.
+        const pageSize = Number(arg.page_size) || 10;
+        const currentPage = Number(arg.page) || 1;
+        const count = data.count || 0;
 
         state.expenses = data.results || [];
         state.dashboard = data.dashboard || null;
 
         state.pagination = {
-          count: pagination.count || 0,
-          totalPages: pagination.total_pages || 1,
-          currentPage: pagination.current_page || 1,
-          pageSize: pagination.page_size || 10,
-          next: pagination.next_page || null,
-          previous: pagination.previous_page || null,
+          count,
+          totalPages: Math.max(1, Math.ceil(count / pageSize)),
+          currentPage,
+          pageSize,
+          next: data.next || null,
+          previous: data.previous || null,
         };
       })
 
