@@ -46,6 +46,7 @@ import journalEntryReducer from "./finance/accounts/Journalslice";
 import salesReportReducer from "./finance/reports/Salesreportslice";
 import customerReportReducer from "./finance/reports/Customerreportslice";
 import vendorReportReducer from "./finance/reports/Vendorreportslice";
+import profitLossReportReducer from "./finance/reports/Profitlossreportslice";
 export const store = configureStore({
   reducer: {
 
@@ -95,5 +96,6 @@ export const store = configureStore({
  salesReport: salesReportReducer,    
      customerReport: customerReportReducer, 
  vendorReport: vendorReportReducer,
+    profitLossReport: profitLossReportReducer,
   },
 });
