@@ -1,0 +1,445 @@
+import React, { useEffect, useMemo, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { getEmployeeById, submitEmployee } from "../../../Redux/employeeSlice";
+import { getDepartments } from "../../../Redux/departmentSlice";
+import { useParams, useNavigate } from "react-router-dom";
+import Swal from "sweetalert2";
+
+import ViewBasicLayout from "../../employee/layout/ViewLayout";
+import {
+
+  Input,
+  Select,
+  Rowes,
+  FieldGroup,
+  Label,
+  PreviewBox,
+  PreviewImage,
+  HiddenInput,
+  Hr,
+  SectionTitle,
+  FullWidthGroup,
+  TotalLeaveBox,
+  LeaveGrid,
+  LeaveItem,
+  LeaveLabel,
+  LeaveInput,
+  FileInputLabel,
+} from "./ViewBasic.Style";
+import {
+  getLegalFieldConfig,
+  isIndiaCompany,
+  validateLegalIdentity,
+} from "../../../utils/employeeCountryFields";
+
+const LEAVE_FIELDS = [
+  "casual_leave",
+  "sick_leave",
+  "earned_leave",
+  "maternity_leave",
+  "other_leave",
+];
+const LEAVE_TYPES = [
+  { name: "casual_leave", label: "Casual Leave" },
+  { name: "sick_leave", label: "Sick Leave" },
+  { name: "earned_leave", label: "Earned Leave" },
+  { name: "maternity_leave", label: "Maternity Leave" },
+  { name: "other_leave", label: "Other Leave" },
+];
+const ViewBasic = () => {
+  const dispatch = useDispatch();
+  const { id } = useParams();
+  const navigate = useNavigate();
+
+  const { employeeDetail, loading } = useSelector((state) => state.employees);
+  const departmentList = useSelector((state) => state.departments.list);
+
+  const [formData, setFormData] = useState({});
+  const [isEdited, setIsEdited] = useState(false);
+
+  // Memoized so it is not a new object on every render
+  const user = useMemo(
+    () =>
+      JSON.parse(localStorage.getItem("user")) ||
+      JSON.parse(sessionStorage.getItem("user")),
+    [],
+  );
+
+  const calculatedTotal = LEAVE_FIELDS.reduce(
+    (sum, field) => sum + Number(formData[field] || 0),
+    0,
+  );
+
+  const country = formData?.company?.country || user?.company?.country || "IN";
+  const legalConfig = getLegalFieldConfig(country);
+  const expiryField = isIndiaCompany(country)
+    ? "contract_expiry_date"
+    : "visa_expiry_date";
+
+  useEffect(() => {
+    if (departmentList.length === 0) {
+      dispatch(getDepartments({ page: 1, search: "" }));
+    }
+  }, [dispatch, departmentList.length]);
+
+  useEffect(() => {
+    if (id) {
+      setFormData({});
+      dispatch(getEmployeeById(id));
+    }
+  }, [dispatch, id]);
+
+  useEffect(() => {
+    if (!employeeDetail || Object.keys(employeeDetail).length === 0) return;
+
+    let deptId = "";
+    if (typeof employeeDetail.department === "string") {
+      const match = departmentList.find(
+        (d) => d.name === employeeDetail.department,
+      );
+      deptId = match ? match.id : "";
+    } else if (typeof employeeDetail.department === "number") {
+      deptId = employeeDetail.department;
+    }
+
+    const company =
+      employeeDetail.company && typeof employeeDetail.company === "object"
+        ? employeeDetail.company
+        : user?.company || { country: "" };
+
+    const updatedFormData = {
+      ...employeeDetail,
+      employee_id: employeeDetail.employee_id || "",
+      department: deptId,
+      total_leave: employeeDetail.total_leave ?? "",
+      paid_leave: employeeDetail.paid_leave || "",
+      contract_expiry_date: employeeDetail.contract_expiry_date || "",
+      role: employeeDetail.role || "",
+      idcard: employeeDetail.idcard || "",
+      company,
+      aadar_number:
+        employeeDetail.aadar_number || employeeDetail.aadhaar_number || "",
+    };
+
+    if (!formData.id || formData.id !== employeeDetail.id) {
+      setFormData(updatedFormData);
+      setIsEdited(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [employeeDetail, departmentList, user]);
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    setIsEdited(true);
+  };
+
+  const handleImageChange = (file) => {
+    setFormData((prev) => ({ ...prev, profile_pic: file }));
+    setIsEdited(true);
+  };
+
+  const handleSubmit = async () => {
+    let payload = { ...formData };
+
+    // Remove empty values
+    Object.keys(payload).forEach((key) => {
+      if (
+        payload[key] === "" ||
+        payload[key] === null ||
+        payload[key] === undefined
+      )
+        delete payload[key];
+    });
+    delete payload.company;
+
+    // ✅ Always send leave fields (blank => 0) and the recalculated total.
+    // Must come AFTER the cleanup loop so they are not deleted.
+    LEAVE_FIELDS.forEach((field) => {
+      payload[field] = Number(formData[field] || 0);
+    });
+    payload.total_leave = calculatedTotal;
+
+    const legalErrors = validateLegalIdentity(country, payload);
+
+    if (isIndiaCompany(country)) {
+      delete payload.iqama_number;
+      delete payload.insurance_number;
+      delete payload.visa_expiry_date;
+
+      if (!payload.aadar_number?.trim())
+        return alert("Aadhaar number is required for India");
+      if (legalErrors.aadar_number) return alert(legalErrors.aadar_number);
+    } else {
+      delete payload.aadar_number;
+      if (!payload[legalConfig.identityField]?.trim())
+        return alert(`${legalConfig.identityLabel} is required`);
+      if (legalErrors[legalConfig.identityField])
+        return alert(legalErrors[legalConfig.identityField]);
+      if (!payload.visa_expiry_date)
+        return alert("Visa expiry date is required");
+      if (!payload.insurance_number?.trim())
+        return alert("Insurance number is required");
+    }
+
+    const oldDept = employeeDetail.department;
+    const newDept = payload.department;
+    if (employeeDetail.is_head && oldDept !== newDept) {
+      const confirmResult = await Swal.fire({
+        title: "Warning",
+        text: "This employee is the head of their department. Changing their department will remove them as head from the previous department. Do you want to continue?",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonText: "Yes, continue",
+        cancelButtonText: "Cancel",
+        confirmButtonColor: "#d33",
+        cancelButtonColor: "#3085d6",
+      });
+      if (!confirmResult.isConfirmed) return;
+    }
+
+    // ✅ Check the result so failures are not reported as success
+    const result = await dispatch(submitEmployee(payload));
+    if (submitEmployee.rejected.match(result)) {
+      const err = result.payload;
+      const message =
+        typeof err === "string"
+          ? err
+          : err
+            ? Object.entries(err)
+              .map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join(", ") : v}`)
+              .join("\n")
+            : "Update failed.";
+      return Swal.fire({
+        icon: "error",
+        title: "Update failed",
+        text: message,
+      });
+    }
+
+    await dispatch(getEmployeeById(id));
+
+    Swal.fire({
+      icon: "success",
+      title: "Updated!",
+      text: "Employee details updated successfully.",
+      confirmButtonColor: "#304EB0",
+    });
+    setIsEdited(false);
+  };
+
+  const handleTabNavigation = (path) => {
+    if (isEdited) {
+      Swal.fire({
+        title: "Unsaved Changes",
+        text: "You have unsaved changes. Do you want to leave without saving?",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonText: "Leave",
+        cancelButtonText: "Stay",
+        confirmButtonColor: "#d33",
+        cancelButtonColor: "#3085d6",
+      }).then((result) => {
+        if (result.isConfirmed) navigate(path);
+      });
+    } else {
+      navigate(path);
+    }
+  };
+
+  return (
+    <ViewBasicLayout
+      id={id}
+      handleTabNavigation={handleTabNavigation}
+      departmentList={departmentList}
+      handleSubmit={handleSubmit}
+      formData={formData}
+      handleChange={handleChange}
+      handleImageChange={handleImageChange}
+    >
+      <Hr />
+      <SectionTitle>Job Details</SectionTitle>
+
+      <Rowes $columns={5}>
+        <FieldGroup>
+          <Label $required>Designation</Label>
+          <Input
+            name="designation"
+            value={formData.designation || ""}
+            onChange={handleChange}
+            autoComplete="off"
+          />
+        </FieldGroup>
+
+        <FieldGroup>
+          <Label $required>Joining Date</Label>
+          <Input
+            type="date"
+            name="joining_date"
+            value={formData.joining_date ? formData.joining_date.split("T")[0] : ""}
+            onChange={handleChange}
+          />
+        </FieldGroup>
+
+        <FieldGroup>
+          <Label $required>Department</Label>
+          <Select name="department" value={formData.department || ""} onChange={handleChange}>
+            <option value="">Select Department</option>
+            {departmentList.map((dept) => (
+              <option key={dept.id} value={dept.id}>{dept.name}</option>
+            ))}
+          </Select>
+        </FieldGroup>
+
+        <FieldGroup>
+          <Label $required>Employment Type</Label>
+          <Select name="employment_type" value={formData.employment_type || ""} onChange={handleChange}>
+            <option value="">Select Type</option>
+            <option value="Full-time">Full-time</option>
+            <option value="Part-time">Part-time</option>
+            <option value="Contract">Contract</option>
+          </Select>
+        </FieldGroup>
+
+        <FieldGroup>
+          <Label $required>Roles</Label>
+          <Select name="role" value={formData.role || ""} onChange={handleChange}>
+            <option value="">Select Role</option>
+            <option value="employee">Employee</option>
+            <option value="hr">HR</option>
+            <option value="manager">Manager</option>
+          </Select>
+        </FieldGroup>
+      </Rowes>
+
+      <Rowes $columns={5}>
+        <FullWidthGroup>
+          <Label $required>Leave Allocation</Label>
+          <TotalLeaveBox>Total Leave : {calculatedTotal}</TotalLeaveBox>
+          <LeaveGrid>
+            {LEAVE_TYPES.map(({ name, label }) => (
+              <LeaveItem key={name}>
+                <LeaveLabel>{label}</LeaveLabel>
+                <LeaveInput
+                  type="number"
+                  name={name}
+                  value={formData[name] ?? ""}
+                  onChange={handleChange}
+                  min="0"
+                />
+              </LeaveItem>
+            ))}
+          </LeaveGrid>
+        </FullWidthGroup>
+      </Rowes>
+
+      <Hr />
+      <SectionTitle>Employee Legal & ID Information</SectionTitle>
+
+      <Rowes $columns={3}>
+        
+
+        {!isIndiaCompany(country) && legalConfig.identityField !== "passport_number" && (
+          <FieldGroup>
+            <Label>Passport Number</Label>
+            <Input
+              name="passport_number"
+              value={formData.passport_number || ""}
+              onChange={handleChange}
+              placeholder="Enter Passport Number"
+              autoComplete="off"
+            />
+          </FieldGroup>
+        )}
+
+        <FieldGroup>
+          <Label>Employee Contract</Label>
+          <Input
+            name="employeeContract"
+            value={formData.employeeContract || ""}
+            onChange={handleChange}
+            placeholder="Enter Contract Name"
+            autoComplete="off"
+          />
+        </FieldGroup>
+
+        <FieldGroup>
+          <Label>Work Permit</Label>
+          <Input
+            name="workPermit"
+            value={formData.workPermit || ""}
+            onChange={handleChange}
+            placeholder="Enter Work Permit"
+            autoComplete="off"
+          />
+        </FieldGroup>
+
+        <FieldGroup>
+          <Label>Insurance Number</Label>
+          <Input
+            name="insurance_number"
+            value={formData.insurance_number || ""}
+            onChange={handleChange}
+            placeholder="Enter Insurance Number"
+            autoComplete="off"
+          />
+        </FieldGroup>
+
+        <FieldGroup>
+          <Label $required>{legalConfig.identityLabel}</Label>
+          <Input
+            name={legalConfig.identityField}
+            value={formData[legalConfig.identityField] || ""}
+            onChange={handleChange}
+            placeholder={legalConfig.identityPlaceholder}
+            maxLength={legalConfig.identityMaxLength}
+            autoComplete="off"
+            onKeyPress={(e) => {
+              if (isIndiaCompany(country) && !/[0-9]/.test(e.key)) e.preventDefault();
+            }}
+          />
+        </FieldGroup>
+
+        <FieldGroup>
+          <Label>{isIndiaCompany(country) ? "Contract Expiry Date" : "Visa Expiry Date"}</Label>
+          <Input
+            type="date"
+            name={expiryField}
+            value={formData[expiryField] || ""}
+            onChange={handleChange}
+            autoComplete="off"
+          />
+        </FieldGroup>
+
+        <FieldGroup>
+          <Label>ID Card Photo</Label>
+          {formData.idcard && (
+            <PreviewBox style={{ marginBottom: 8 }}>
+              <PreviewImage
+                src={formData.idcard instanceof File ? URL.createObjectURL(formData.idcard) : formData.idcard}
+                alt="ID Card"
+              />
+            </PreviewBox>
+          )}
+          <FileInputLabel htmlFor="idcard">
+            {formData.idcard instanceof File ? formData.idcard.name : "Upload ID Card +"}
+          </FileInputLabel>
+          <HiddenInput
+            id="idcard"
+            name="idcard"
+            type="file"
+            accept="image/*"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (!file) return;
+              setFormData((prev) => ({ ...prev, idcard: file }));
+              setIsEdited(true);
+            }}
+          />
+        </FieldGroup>
+      </Rowes>
+    </ViewBasicLayout>
+  );
+};
+
+export default ViewBasic;
