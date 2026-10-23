@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { FiSave, FiX } from "react-icons/fi";
 
 import {
@@ -23,10 +23,10 @@ import {
 const INITIAL_FORM = {
   bank_name: "",
   account_holder_name: "",
-  account_type: "",
+  account_type: "current",
   account_number: "",
   iban: "",
-  bank_type: "",
+  bank_type: "bank",
   branch: "",
   opening_balance: "0.00",
   note: "",
@@ -41,6 +41,12 @@ export default function AddBankModal({
 }) {
   const [form, setForm] = useState(INITIAL_FORM);
 
+  useEffect(() => {
+    if (!isOpen) {
+      setForm(INITIAL_FORM);
+    }
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   const updateField = (event) => {
@@ -54,8 +60,6 @@ export default function AddBankModal({
 
   const handleClose = () => {
     if (loading) return;
-
-    setForm(INITIAL_FORM);
     onClose();
   };
 
@@ -64,10 +68,20 @@ export default function AddBankModal({
 
     const payload = {
       ...form,
-      opening_balance: Number(form.opening_balance || 0),
+      bank_name: form.bank_name.trim(),
+      account_holder_name: form.account_holder_name.trim(),
+      account_number: form.account_number.trim(),
+      iban: form.iban.trim(),
+      branch: form.branch.trim(),
+      opening_balance: String(form.opening_balance || "0.00"),
+      note: form.note.trim(),
     };
 
-    await onSubmit(payload);
+    try {
+      await onSubmit(payload);
+    } catch {
+      // The parent handles and displays API errors.
+    }
   };
 
   return (
@@ -78,12 +92,10 @@ export default function AddBankModal({
         aria-labelledby="add-bank-title"
         onMouseDown={(event) => event.stopPropagation()}
       >
-        <ModalTitle id="add-bank-title">
-          Add New Bank Account
-        </ModalTitle>
+        <ModalTitle id="add-bank-title">Add New Bank Account</ModalTitle>
 
         <ModalSubtitle>
-          Log a New financial movement into the primary ledger.
+          Add a financial account to your banking ledger.
         </ModalSubtitle>
 
         <BankForm onSubmit={handleSubmit}>
@@ -98,6 +110,7 @@ export default function AddBankModal({
                 required
               >
                 <option value="">SELECT BANK</option>
+                <option value="HDFC Bank">HDFC Bank</option>
                 <option value="Al Rajhi Bank">Al Rajhi Bank</option>
                 <option value="Riyad Bank">Riyad Bank</option>
                 <option value="Bank AlBilad">Bank AlBilad</option>
@@ -106,9 +119,7 @@ export default function AddBankModal({
             </FormField>
 
             <FormField>
-              <label htmlFor="account_holder_name">
-                ACCOUNT HOLDER NAME *
-              </label>
+              <label htmlFor="account_holder_name">ACCOUNT HOLDER NAME *</label>
               <FormInput
                 id="account_holder_name"
                 name="account_holder_name"
@@ -128,9 +139,8 @@ export default function AddBankModal({
                 onChange={updateField}
                 required
               >
-                <option value="">CURRENT / SAVINGS</option>
-                <option value="Current Account">Current Account</option>
-                <option value="Savings Account">Savings Account</option>
+                <option value="current">Current Account</option>
+                <option value="savings">Savings Account</option>
               </FormSelect>
             </FormField>
 
@@ -139,7 +149,7 @@ export default function AddBankModal({
               <FormInput
                 id="account_number"
                 name="account_number"
-                placeholder="e.g. 1235847935855"
+                placeholder="Enter account number"
                 value={form.account_number}
                 onChange={updateField}
                 required
@@ -151,24 +161,22 @@ export default function AddBankModal({
               <FormInput
                 id="iban"
                 name="iban"
-                placeholder="ENTER NUMBER"
+                placeholder="Enter IBAN"
                 value={form.iban}
                 onChange={updateField}
               />
             </FormField>
 
             <FormField>
-              <label htmlFor="bank_type">BANK TYPE</label>
+              <label htmlFor="bank_type">BANK TYPE *</label>
               <FormSelect
                 id="bank_type"
                 name="bank_type"
                 value={form.bank_type}
                 onChange={updateField}
+                required
               >
-                <option value="">CASH A/C OR PETTY CASH</option>
-                <option value="Cash Account">Cash Account</option>
-                <option value="Petty Cash">Petty Cash</option>
-                <option value="Loan Account">Loan Account</option>
+                <option value="bank">Bank</option>
               </FormSelect>
             </FormField>
 
@@ -177,7 +185,7 @@ export default function AddBankModal({
               <FormInput
                 id="branch"
                 name="branch"
-                placeholder="NAME OF THE BRANCH"
+                placeholder="Name of the branch"
                 value={form.branch}
                 onChange={updateField}
               />
@@ -206,15 +214,21 @@ export default function AddBankModal({
               <FormTextarea
                 id="note"
                 name="note"
-                placeholder="ADD ANY NOTE...."
+                placeholder="Add any note..."
                 value={form.note}
                 onChange={updateField}
-                rows={1}
+                rows={2}
               />
             </FormField>
           </FormGrid>
 
-          {error && <ErrorMessage role="alert">{error}</ErrorMessage>}
+          {error && (
+            <ErrorMessage role="alert">
+              {typeof error === "string"
+                ? error
+                : error?.detail || JSON.stringify(error)}
+            </ErrorMessage>
+          )}
 
           <ModalActions>
             <CancelButton

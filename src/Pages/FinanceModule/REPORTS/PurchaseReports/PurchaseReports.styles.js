@@ -1,4 +1,3 @@
-
 import styled from "styled-components";
 
 export const ReportPage = styled.div`
@@ -9,6 +8,10 @@ export const ReportPage = styled.div`
   background: #fff;
   font-family: "Poppins", sans-serif;
   color: #111;
+
+  @media (max-width: 650px) {
+    padding: 12px;
+  }
 `;
 
 export const KPIGrid = styled.div`
@@ -55,8 +58,8 @@ export const KPIIcon = styled.div`
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  background: ${(props) => props.$background};
-  color: ${(props) => props.$color};
+  background: ${(props) => props.$background || "#E8EFFF"};
+  color: ${(props) => props.$color || "#3154B5"};
   font-size: 20px;
 
   @media (max-width: 650px) {
@@ -134,18 +137,22 @@ export const DateFilter = styled.div`
 `;
 
 export const DateInput = styled.input`
-  width: 100px;
+  width: 130px;
   min-width: 0;
-  padding: 0;
-  border: 0;
-  outline: 0;
-  background: transparent;
+  height: 32px;
+  padding: 0 5px;
+  border: 1px solid #e5e5e5;
+  border-radius: 5px;
+  outline: none;
+  background: #fff;
   color: #222;
-  font: inherit;
-  font-size: 11px;
+  font-family: inherit;
+  font-size: 12px;
+  box-sizing: border-box;
 
-  &::-webkit-calendar-picker-indicator {
-    display: none;
+  &:focus {
+    border-color: #3151b7;
+    box-shadow: 0 0 0 2px rgba(49, 81, 183, 0.12);
   }
 
   @media (max-width: 650px) {
@@ -175,6 +182,41 @@ export const FilterSelect = styled.select`
   }
 `;
 
+export const DatePickerContainer = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+
+  @media (max-width: 650px) {
+    width: 100%;
+    gap: 6px;
+  }
+`;
+
+/* Added: wrapper used by PurchaseReports.jsx */
+export const DateRangeWrapper = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  flex-wrap: wrap;
+
+  @media (max-width: 650px) {
+    width: 100%;
+  }
+`;
+
+/* Added: separator between the two date inputs */
+export const DateSeparator = styled.span`
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #777;
+  font-size: 13px;
+  flex-shrink: 0;
+`;
+
 export const ExportButton = styled.button`
   height: 32px;
   min-width: 140px;
@@ -191,9 +233,15 @@ export const ExportButton = styled.button`
   font-size: 12px;
   font-weight: 500;
   cursor: pointer;
+  box-sizing: border-box;
 
-  &:hover {
+  &:hover:not(:disabled) {
     background: #26449f;
+  }
+
+  &:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
   }
 
   svg {
@@ -221,6 +269,7 @@ export const TableSide = styled.div`
 
 export const TableWrapper = styled.div`
   width: 100%;
+  min-width: 0;
   overflow-x: auto;
   border: 1px solid #e7e7e7;
   border-radius: 5px 5px 0 0;
@@ -233,14 +282,30 @@ export const PurchaseTable = styled.table`
   table-layout: fixed;
   font-family: inherit;
 
-  th:nth-child(1) { width: 10%; }
-  th:nth-child(2) { width: 13%; }
-  th:nth-child(3) { width: 18%; }
-  th:nth-child(4) { width: 8%; }
-  th:nth-child(5) { width: 13%; }
-  th:nth-child(6) { width: 15%; }
-  th:nth-child(7) { width: 11%; }
-  th:nth-child(8) { width: 12%; }
+  th:nth-child(1) {
+    width: 10%;
+  }
+  th:nth-child(2) {
+    width: 13%;
+  }
+  th:nth-child(3) {
+    width: 18%;
+  }
+  th:nth-child(4) {
+    width: 8%;
+  }
+  th:nth-child(5) {
+    width: 13%;
+  }
+  th:nth-child(6) {
+    width: 15%;
+  }
+  th:nth-child(7) {
+    width: 11%;
+  }
+  th:nth-child(8) {
+    width: 12%;
+  }
 
   th,
   td {
@@ -292,12 +357,35 @@ export const StatusText = styled.span`
   color: ${(props) => {
     const status = props.$status?.toLowerCase();
 
-    if (status === "paid" || status === "delivered") return "#008f16";
-    if (status === "unpaid" || status === "pending") return "#ff2929";
-    if (status === "partial" || status === "partially") return "#ff7900";
+    if (
+      status === "paid" ||
+      status === "delivered" ||
+      status === "received" ||
+      status === "completed"
+    ) {
+      return "#008f16";
+    }
+
+    if (
+      status === "unpaid" ||
+      status === "pending" ||
+      status === "overdue" ||
+      status === "rejected"
+    ) {
+      return "#ff2929";
+    }
+
+    if (
+      status === "partial" ||
+      status === "partially" ||
+      status === "partially paid"
+    ) {
+      return "#ff7900";
+    }
 
     return "#222";
   }};
+
   font-size: 10px;
   font-weight: 500;
   white-space: nowrap;
