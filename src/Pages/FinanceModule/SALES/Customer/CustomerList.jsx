@@ -55,10 +55,6 @@ totalRecords,
         handleEndDateChange,
     } = useCustomerList();
 
-    // ============================================================
-    // TABLE COLUMNS — definitions now live in CustomerList.columns.jsx.
-    // Pass in whatever handlers/state the columns need to render.
-    // ============================================================
     const customerColumns = getCustomerColumns({
         openMenuId,
         toggleActionsMenu,
@@ -121,6 +117,7 @@ totalRecords,
                 columns={customerColumns}
                 data={customers}
                 loading={loading}
+                autoLayout
             />
 
             <ReusablePagination

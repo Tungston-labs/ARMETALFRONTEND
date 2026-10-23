@@ -13,6 +13,10 @@ import {
   EmptyState,
   LoadingState,
   LoadingContent,
+  TotalRow,
+  TotalDebit,
+  TotalCredit,
+  TotalBalance,
 } from "./ReusableTable.styles";
 
 const ReusableTable = ({
@@ -22,6 +26,9 @@ const ReusableTable = ({
   onRowClick,
   emptyMessage = "No Records Found",
   loadingMessage = "Loading...",
+   totalRow, // NEW: object keyed by accessor, e.g. { debit: "10,000.00", credit: "0.00", balance: "10,000.00" }
+  totalRowLabel = "TOTAL",
+    autoLayout = false,
 }) => {
   const [sortKey, setSortKey] = useState("");
   const [sortDirection, setSortDirection] = useState("asc");
@@ -60,10 +67,8 @@ const ReusableTable = ({
   return (
     <Container>
       <TableScrollContainer>
-        <StyledTable>
-          {/* data-priority on <col> keeps the column's width rule in
-              sync with its header/body cells being hidden at the same
-              breakpoint (see ReusableTable.styles.js responsive rules). */}
+     <StyledTable $autoLayout={autoLayout}>
+
           <colgroup>
             {columns.map((column) => (
               <col
@@ -134,9 +139,7 @@ const ReusableTable = ({
                       data-priority={column.priority || 1}
                       style={
                         column.render
-                          ? {
-                              whiteSpace: "normal",
-                            }
+                           ? { whiteSpace: autoLayout ? "nowrap" : "normal" }
                           : undefined
                       }
                       title={
@@ -153,6 +156,23 @@ const ReusableTable = ({
                 </Tr>
               ))}
           </Tbody>
+
+        {totalRow && !loading && (
+  <tfoot>
+    <TotalRow>
+      {columns.map((column, i) => {
+        const value = i === 0 ? totalRowLabel : (totalRow[column.accessor] ?? "");
+
+        let content = value;
+        if (column.accessor === "debit") content = <TotalDebit>{value}</TotalDebit>;
+        if (column.accessor === "credit") content = <TotalCredit>{value}</TotalCredit>;
+        if (column.accessor === "balance") content = <TotalBalance>{value}</TotalBalance>;
+
+        return <Td key={column.accessor}>{content}</Td>;
+      })}
+    </TotalRow>
+  </tfoot>
+)}
         </StyledTable>
       </TableScrollContainer>
     </Container>

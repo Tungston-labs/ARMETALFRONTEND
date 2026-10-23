@@ -18,18 +18,6 @@ import {
     CircleIconButton,
 } from "./CustomerList.styles";
 
-// ============================================================
-// Column definitions for the Customer List table.
-// A function (not a plain array) because columns need handlers
-// and state (openMenuId) that only exist inside the component —
-// call this from the component and pass what it needs.
-//
-// Every column also gets a "priority" (1 = always show, higher =
-// first to hide on small screens) used by ReusableTable / CSS
-// to progressively hide less-important columns instead of letting
-// them squeeze/overlap each other. See responsive note in
-// ReusableTable.styles.js.
-// ============================================================
 export const getCustomerColumns = ({
     openMenuId,
     toggleActionsMenu,
@@ -42,14 +30,12 @@ export const getCustomerColumns = ({
     {
         accessor: "customer_id",
         header: "Code",
-        width: "9%",
         priority: 2,
     },
     {
         accessor: "customer_name",
         header: "Customer Name",
-        width: "13%",
-        priority: 1, // always visible — primary identifier
+        priority: 1,
         render: (row) => (
             <LinkName type="button" onClick={() => handleViewOverview(row)}>
                 {row.customer_name}
@@ -59,105 +45,82 @@ export const getCustomerColumns = ({
     {
         accessor: "credit_limit",
         header: "Credit Limit",
-        width: "10%",
         priority: 4,
     },
     {
-        accessor: "total_invoices",
+        accessor: "total_invoice",
         header: "Total Invoices",
-        width: "10%",
         priority: 4,
     },
     {
-        accessor: "payments_received",
+        accessor: "total_payments_received",
         header: "Payments Received",
-        width: "10%",
         priority: 5,
     },
     {
-        accessor: "balance",
+        accessor: "balance_amount",
         header: "Balance",
-        width: "10%",
         priority: 2,
         render: (row) => (
-            <BalanceAmount $negative={Number(row.balance) > 0}>
-                {row.balance}
+            <BalanceAmount $negative={Number(row.balance_amount) > 0}>
+                {row.balance_amount}
             </BalanceAmount>
         ),
     },
     {
         accessor: "outstanding_days",
         header: "Outstanding Days",
-        width: "10%",
         priority: 5,
     },
     {
-        accessor: "last_payment_date",
+        accessor: "last_payment",
         header: "Last Payment",
-        width: "9%",
         priority: 3,
     },
-    {
-        accessor: "actions",
-        header: "Actions",
-        width: "300px",
-        priority: 1, // always visible — row actions
-        render: (row) => {
-            const rowId = row.id ?? row.customer_id;
-            const isMenuOpen = openMenuId === rowId;
+   {
+    accessor: "actions",
+    header: "Actions",
+    priority: 1,
+    render: (row) => {
+        const rowId = row.id ?? row.customer_id;
+        const isMenuOpen = openMenuId === rowId;
 
-            return (
-                <ActionsCell>
-                    <ActionButton
+        return (
+            <ActionsCell>
+                <MenuWrapper data-menu-root>
+                    <KebabButton
                         type="button"
-                        onClick={() => handleCreateInvoice(row)}
+                        onClick={() => toggleActionsMenu(rowId)}
+                        aria-label="More actions"
+                        aria-expanded={isMenuOpen}
                     >
-                        <FiPlus size={13} />
-                        Invoice
-                    </ActionButton>
+                        <FiMoreVertical size={15} />
+                    </KebabButton>
 
-                    <ActionButton
-                        type="button"
-                        onClick={() => handleViewLedger(row)}
-                    >
-                        <FiFileText size={13} />
-                        Ledger
-                    </ActionButton>
+                    {isMenuOpen && (
+                        <>
+                            <CircleIconButton
+                                type="button"
+                                $variant="edit"
+                                onClick={() => handleEditCustomer(row)}
+                                aria-label="Edit customer"
+                            >
+                                <FiEdit2 size={13} />
+                            </CircleIconButton>
 
-                    <MenuWrapper data-menu-root>
-                        <KebabButton
-                            type="button"
-                            onClick={() => toggleActionsMenu(rowId)}
-                            aria-label="More actions"
-                            aria-expanded={isMenuOpen}
-                        >
-                            <FiMoreVertical size={15} />
-                        </KebabButton>
-
-                        {isMenuOpen && (
-                            <>
-                                <CircleIconButton
-                                    type="button"
-                                    $variant="edit"
-                                    onClick={() => handleEditCustomer(row)}
-                                    aria-label="Edit customer"
-                                >
-                                    <FiEdit2 size={13} />
-                                </CircleIconButton>
-
-                                <CircleIconButton
-                                    type="button"
-                                    $variant="delete"
-                                    onClick={() => handleDeleteCustomer(row)}
-                                    aria-label="Delete customer"
-                                >
-                                    <FiTrash2 size={13} />
-                                </CircleIconButton>
-                            </>
-                        )}
-                    </MenuWrapper>
-                </ActionsCell>
-            );
-        },
+                            <CircleIconButton
+                                type="button"
+                                $variant="delete"
+                                onClick={() => handleDeleteCustomer(row)}
+                                aria-label="Delete customer"
+                            >
+                                <FiTrash2 size={13} />
+                            </CircleIconButton>
+                        </>
+                    )}
+                </MenuWrapper>
+            </ActionsCell>
+        );
     },
+},
 ];

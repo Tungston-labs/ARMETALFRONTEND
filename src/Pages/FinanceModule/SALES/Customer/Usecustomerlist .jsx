@@ -18,10 +18,6 @@ import {
     removeCustomer,
 } from "../../../../Redux/finance/CustomerSlice";
 
-// ============================================================
-// All state, effects, and handlers for the Customer List page.
-// The component only renders — it doesn't own any logic.
-// ============================================================
 export const useCustomerList = () => {
     const dispatch = useDispatch();
     const navigate = useNavigate();
@@ -237,13 +233,6 @@ export const useCustomerList = () => {
         if (!customer?.id) return;
         navigate(`${customer.id}/overview`);
     };
-
-    // ============================================================
-    // EXPORT / DATE RANGE
-    // NOTE: previously called setCurrentPage, which doesn't exist
-    // on this page — fixed to setPage(1), matching the rest of the
-    // filters (search/status resets also go back to page 1).
-    // ============================================================
     const handleExport = () => {
         console.log("Export Customer List", {
             startDate,
@@ -272,7 +261,6 @@ export const useCustomerList = () => {
         selectedCustomer,
         cards,
 
-        // row action handlers (used by the UI file to build columns)
         openMenuId,
         toggleActionsMenu,
         handleCreateInvoice,

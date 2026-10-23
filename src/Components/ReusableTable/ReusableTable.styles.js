@@ -64,8 +64,8 @@ export const StyledTable = styled.table`
   width: 100%;
   border-collapse: separate;
   border-spacing: 0;
-  table-layout: fixed;
-  min-width: 1200px;
+  table-layout: ${({ $autoLayout }) => ($autoLayout ? "auto" : "fixed")};
+  min-width: ${({ $autoLayout }) => ($autoLayout ? "100%" : "1200px")};
 `;
 
 /* =========================================================
@@ -292,4 +292,32 @@ export const LoadingContent = styled.div`
 
   font-size: 14px;
   font-weight: 500;
+`;
+export const TotalRow = styled.tr`
+  background: #f8e5d1;
+
+  td {
+    padding: 10px 8px;
+    font-size: 13px;
+    font-weight: 700;
+    color: ${colors.text};
+    border-bottom: none;
+    border-top: 1px solid #e5c9a3;
+  }
+
+  &:hover {
+    background: #f8e5d1;
+  }
+`;
+
+export const TotalDebit = styled.span`
+  color: ${colors.danger};
+`;
+
+export const TotalCredit = styled.span`
+  color: ${colors.success};
+`;
+
+export const TotalBalance = styled.span`
+  color: ${colors.warning};
 `;
