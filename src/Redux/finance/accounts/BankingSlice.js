@@ -6,8 +6,6 @@ import {
   transactionService,
 } from "../../../services/finance/accounts/bankingService";
 
-// Supports common DRF response formats:
-// [ ... ], { results: [...] }, or { data: [...] }.
 export const extractList = (response) => {
   const body = response?.data;
 
@@ -18,6 +16,9 @@ export const extractList = (response) => {
 
   return [];
 };
+
+const getError = (error, fallback) =>
+  error.response?.data ?? error.message ?? fallback;
 
 const makeThunks = (name, service) => ({
   fetch: createAsyncThunk(
@@ -31,9 +32,7 @@ const makeThunks = (name, service) => ({
           response: response.data,
         };
       } catch (error) {
-        return rejectWithValue(
-          error.response?.data || error.message || "Unable to fetch records",
-        );
+        return rejectWithValue(getError(error, "Unable to fetch records"));
       }
     },
   ),
@@ -45,9 +44,7 @@ const makeThunks = (name, service) => ({
         const response = await service.getById(id);
         return response.data;
       } catch (error) {
-        return rejectWithValue(
-          error.response?.data || error.message || "Unable to fetch record",
-        );
+        return rejectWithValue(getError(error, "Unable to fetch record"));
       }
     },
   ),
@@ -59,9 +56,7 @@ const makeThunks = (name, service) => ({
         const response = await service.create(payload);
         return response.data;
       } catch (error) {
-        return rejectWithValue(
-          error.response?.data || error.message || "Unable to create record",
-        );
+        return rejectWithValue(getError(error, "Unable to create record"));
       }
     },
   ),
@@ -73,9 +68,7 @@ const makeThunks = (name, service) => ({
         const response = await service.update(id, data);
         return response.data;
       } catch (error) {
-        return rejectWithValue(
-          error.response?.data || error.message || "Unable to update record",
-        );
+        return rejectWithValue(getError(error, "Unable to update record"));
       }
     },
   ),
@@ -87,9 +80,7 @@ const makeThunks = (name, service) => ({
         const response = await service.patch(id, data);
         return response.data;
       } catch (error) {
-        return rejectWithValue(
-          error.response?.data || error.message || "Unable to update record",
-        );
+        return rejectWithValue(getError(error, "Unable to update record"));
       }
     },
   ),
@@ -101,18 +92,14 @@ const makeThunks = (name, service) => ({
         await service.remove(id);
         return id;
       } catch (error) {
-        return rejectWithValue(
-          error.response?.data || error.message || "Unable to delete record",
-        );
+        return rejectWithValue(getError(error, "Unable to delete record"));
       }
     },
   ),
 });
 
 export const accountActions = makeThunks("accounts", bankAccountService);
-
 export const loanActions = makeThunks("loans", loanService);
-
 export const transactionActions = makeThunks(
   "transactions",
   transactionService,
@@ -126,6 +113,7 @@ const initialResourceState = {
     next: null,
     previous: null,
   },
+  dashboard: null,
   loading: false,
   saving: false,
   deleting: false,
@@ -133,9 +121,18 @@ const initialResourceState = {
 };
 
 const initialState = {
-  accounts: { ...initialResourceState },
-  loans: { ...initialResourceState },
-  transactions: { ...initialResourceState },
+  accounts: {
+    ...initialResourceState,
+    pagination: { ...initialResourceState.pagination },
+  },
+  loans: {
+    ...initialResourceState,
+    pagination: { ...initialResourceState.pagination },
+  },
+  transactions: {
+    ...initialResourceState,
+    pagination: { ...initialResourceState.pagination },
+  },
 };
 
 const resources = [
@@ -150,25 +147,18 @@ const bankingSlice = createSlice({
   reducers: {
     clearBankingError(state, action) {
       const resource = action.payload;
-
-      if (state[resource]) {
-        state[resource].error = null;
-      }
+      if (state[resource]) state[resource].error = null;
     },
 
     clearSelectedRecord(state, action) {
       const resource = action.payload;
-
-      if (state[resource]) {
-        state[resource].selected = null;
-      }
+      if (state[resource]) state[resource].selected = null;
     },
   },
 
   extraReducers: (builder) => {
     resources.forEach(({ key, actions }) => {
       builder
-        // Fetch all
         .addCase(actions.fetch.pending, (state) => {
           state[key].loading = true;
           state[key].error = null;
@@ -184,13 +174,14 @@ const bankingSlice = createSlice({
             next: body?.next ?? null,
             previous: body?.previous ?? null,
           };
+
+          state[key].dashboard = body?.dashboard ?? null;
         })
         .addCase(actions.fetch.rejected, (state, action) => {
           state[key].loading = false;
-          state[key].error = action.payload || action.error.message;
+          state[key].error = action.payload ?? action.error.message;
         })
 
-        // Fetch one
         .addCase(actions.fetchOne.pending, (state) => {
           state[key].loading = true;
           state[key].error = null;
@@ -201,61 +192,56 @@ const bankingSlice = createSlice({
         })
         .addCase(actions.fetchOne.rejected, (state, action) => {
           state[key].loading = false;
-          state[key].error = action.payload || action.error.message;
+          state[key].error = action.payload ?? action.error.message;
         })
 
-        // Create
         .addCase(actions.create.pending, (state) => {
           state[key].saving = true;
           state[key].error = null;
         })
         .addCase(actions.create.fulfilled, (state, action) => {
           state[key].saving = false;
-
           const record = action.payload;
+
           if (record?.id != null) {
-            state[key].list.unshift(record);
+            state[key].list = [
+              record,
+              ...state[key].list.filter((item) => item.id !== record.id),
+            ];
           }
         })
         .addCase(actions.create.rejected, (state, action) => {
           state[key].saving = false;
-          state[key].error = action.payload || action.error.message;
+          state[key].error = action.payload ?? action.error.message;
         })
 
-        // Full update
         .addCase(actions.update.pending, (state) => {
           state[key].saving = true;
           state[key].error = null;
         })
         .addCase(actions.update.fulfilled, (state, action) => {
           state[key].saving = false;
-
           const record = action.payload;
           const index = state[key].list.findIndex(
             (item) => item.id === record?.id,
           );
 
-          if (index !== -1) {
-            state[key].list[index] = record;
-          }
-
+          if (index !== -1) state[key].list[index] = record;
           if (state[key].selected?.id === record?.id) {
             state[key].selected = record;
           }
         })
         .addCase(actions.update.rejected, (state, action) => {
           state[key].saving = false;
-          state[key].error = action.payload || action.error.message;
+          state[key].error = action.payload ?? action.error.message;
         })
 
-        // Partial update
         .addCase(actions.patch.pending, (state) => {
           state[key].saving = true;
           state[key].error = null;
         })
         .addCase(actions.patch.fulfilled, (state, action) => {
           state[key].saving = false;
-
           const record = action.payload;
           const index = state[key].list.findIndex(
             (item) => item.id === record?.id,
@@ -277,10 +263,9 @@ const bankingSlice = createSlice({
         })
         .addCase(actions.patch.rejected, (state, action) => {
           state[key].saving = false;
-          state[key].error = action.payload || action.error.message;
+          state[key].error = action.payload ?? action.error.message;
         })
 
-        // Delete
         .addCase(actions.remove.pending, (state) => {
           state[key].deleting = true;
           state[key].error = null;
@@ -297,7 +282,7 @@ const bankingSlice = createSlice({
         })
         .addCase(actions.remove.rejected, (state, action) => {
           state[key].deleting = false;
-          state[key].error = action.payload || action.error.message;
+          state[key].error = action.payload ?? action.error.message;
         });
     });
   },

@@ -1,69 +1,80 @@
-
 import styled from "styled-components";
 
 export const ChartsPanel = styled.div`
   width: 100%;
   min-width: 0;
-  border: 1px solid #e7e7e7;
+  min-height: 584px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  border: 1px solid #e4e4e4;
   border-radius: 5px;
-  background: #fff;
-  overflow: hidden;
+  background: #ffffff;
   box-sizing: border-box;
+
+  @media (max-width: 600px) {
+    min-height: 0;
+    padding: 12px;
+  }
 `;
 
 export const TrendSection = styled.section`
+  width: 100%;
   min-width: 0;
-  padding: 10px 10px 4px;
+  flex: 0 0 auto;
   box-sizing: border-box;
 `;
 
 export const ChartHeader = styled.div`
+  width: 100%;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 6px;
-  min-height: 30px;
-  margin-bottom: 3px;
+  gap: 10px;
+  margin-bottom: 12px;
 `;
 
 export const ChartTitle = styled.h3`
   margin: 0;
-  color: #111;
+  color: #111111;
   font-family: "Poppins", sans-serif;
-  font-size: 12px;
-  font-weight: 500;
-  line-height: 17px;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 20px;
 `;
 
 export const Select = styled.select`
-  width: 59px;
-  height: 28px;
-  flex-shrink: 0;
-  padding: 0 5px;
-  border: 1px solid #e5e5e5;
-  border-radius: 5px;
-  outline: none;
-  background: #fff;
-  color: #222;
+  width: auto;
+  min-width: 58px;
+  max-width: 100px;
+  height: 31px;
+  padding: 0 8px;
+  border: 1px solid #dedede;
+  border-radius: 4px;
+  background: #ffffff;
+  color: #222222;
   font-family: inherit;
   font-size: 11px;
+  outline: none;
   cursor: pointer;
+  box-sizing: border-box;
 `;
 
-export const LineChartSvg = styled.svg`
+const chartBase = `
   display: block;
   width: 100%;
   height: auto;
   overflow: visible;
-  font-family: "Poppins", sans-serif;
 
   .grid-line {
-    stroke: #e9e9e9;
+    stroke: #eeeeee;
     stroke-width: 1;
   }
 
   .axis-label {
-    fill: #555;
+    fill: #666666;
+    font-family: "Poppins", sans-serif;
     font-size: 10px;
     font-weight: 400;
   }
@@ -73,92 +84,44 @@ export const LineChartSvg = styled.svg`
   }
 
   .tooltip-title {
-    fill: #17144f;
-    font-size: 11px;
+    fill: #171717;
+    font-family: "Poppins", sans-serif;
+    font-size: 10px;
     font-weight: 500;
   }
 
   .tooltip-text {
-    fill: #17144f;
+    fill: #202020;
+    font-family: "Poppins", sans-serif;
     font-size: 10px;
     font-weight: 400;
-  }
-
-  @media (max-width: 400px) {
-    .axis-label {
-      font-size: 9px;
-    }
-
-    .month-label {
-      font-size: 8px;
-    }
-  }
-`;
-
-export const ChartDivider = styled.div`
-  height: 1px;
-  width: 100%;
-  background: #e7e7e7;
-`;
-
-export const BarChartSvg = styled.svg`
-  display: block;
-  width: 100%;
-  height: auto;
-  overflow: visible;
-  font-family: "Poppins", sans-serif;
-
-  .grid-line {
-    stroke: #e2e5ec;
-    stroke-width: 1;
-  }
-
-  .axis-label {
-    fill: #555;
-    font-size: 10px;
-    font-weight: 400;
-  }
-
-  .month-label {
-    font-size: 9px;
   }
 
   .bar-value {
-    fill: #333;
+    fill: #333333;
+    font-family: "Poppins", sans-serif;
     font-size: 9px;
     font-weight: 400;
-  }
-
-  .tooltip-title {
-    fill: #17144f;
-    font-size: 10px;
-    font-weight: 500;
-  }
-
-  .tooltip-text {
-    fill: #17144f;
-    font-size: 9px;
-    font-weight: 400;
-  }
-
-  @media (max-width: 400px) {
-    .axis-label {
-      font-size: 9px;
-    }
-
-    .month-label {
-      font-size: 8px;
-    }
   }
 `;
 
-export const ChartTooltip = styled.div`
-  position: absolute;
-  z-index: 10;
-  padding: 8px 10px;
-  border: 1px solid #eee;
-  border-radius: 6px;
-  background: #fff;
-  box-shadow: 0 5px 18px rgba(0, 0, 0, 0.12);
-  pointer-events: none;
+export const LineChartSvg = styled.svg`
+  ${chartBase}
+`;
+
+export const BarChartSvg = styled.svg`
+  ${chartBase}
+`;
+
+export const ChartDivider = styled.div`
+  width: calc(100% + 32px);
+  height: 1px;
+  flex-shrink: 0;
+  margin: 12px -16px;
+  background: #e4e4e4;
+
+  @media (max-width: 600px) {
+    width: calc(100% + 24px);
+    margin: 12px -12px;
+  }
 `;
