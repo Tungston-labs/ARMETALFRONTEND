@@ -1,125 +1,133 @@
 
 import styled from "styled-components";
 
-export const ChartsPanel = styled.div`
+export const DashboardContainer = styled.div`
   width: 100%;
   min-width: 0;
-  border: 1px solid #e7e7e7;
+  background: #ffffff;
+  border: 1px solid #e5e5e5;
   border-radius: 5px;
-  background: #fff;
-  overflow: hidden;
+  padding: 0 17px;
   box-sizing: border-box;
+  font-family: "Urbanist", sans-serif;
 `;
 
 export const ChartSection = styled.section`
-  min-width: 0;
-  padding: 10px 10px 8px;
-  box-sizing: border-box;
-`;
-
-export const ChartHeader = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  margin-bottom: 3px;
-`;
-
-export const ChartTitle = styled.h3`
-  margin: 0;
-  color: #111;
-  font-family: "Poppins", sans-serif;
-  font-size: 12px;
-  font-weight: 500;
-  line-height: 18px;
-`;
-
-export const ChartSelect = styled.select`
-  width: 59px;
-  height: 28px;
-  flex-shrink: 0;
-  padding: 0 5px;
-  border: 1px solid #e5e5e5;
-  border-radius: 5px;
-  outline: none;
-  background: #fff;
-  color: #222;
-  font-family: inherit;
-  font-size: 11px;
-  cursor: pointer;
-`;
-
-export const ChartSvg = styled.svg`
-  display: block;
   width: 100%;
-  height: auto;
-  overflow: visible;
-  font-family: "Poppins", sans-serif;
+  min-width: 0;
+  padding: 18px 0 22px;
+  box-sizing: border-box;
+  border-bottom: ${({ $last }) =>
+    $last ? "none" : "1px solid #e8e8e8"};
+`;
 
-  .grid-line {
-    stroke: #e9e9e9;
+export const SectionHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+`;
+
+export const SectionTitle = styled.h3`
+  margin: 0;
+  color: #111111;
+  font-family: "Urbanist", sans-serif;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.4;
+`;
+
+export const Dropdown = styled.select`
+  min-width: 74px;
+  height: 36px;
+  padding: 0 10px;
+  flex-shrink: 0;
+  background: #ffffff;
+  border: 1px solid #e3e3e3;
+  border-radius: 6px;
+  color: #111111;
+  font-family: inherit;
+  font-size: 14px;
+  outline: none;
+  cursor: pointer;
+
+  &:focus {
+    border-color: #a5a5a5;
+  }
+`;
+
+export const ChartWrapper = styled.div`
+  width: 100%;
+  height: 242px;
+  min-width: 0;
+
+  .recharts-wrapper {
+    font-family: "Urbanist", sans-serif;
+  }
+
+  .recharts-cartesian-grid-horizontal line,
+  .recharts-cartesian-grid-vertical line {
+    stroke: #e8e8e8;
     stroke-width: 1;
   }
 
-  .axis-label {
-    fill: #555;
-    font-size: 10px;
-    font-weight: 400;
+  .recharts-tooltip-wrapper {
+    z-index: 10;
   }
 
-  .month-label {
-    fill: #555;
-    font-size: 9px;
-    font-weight: 400;
-  }
-
-  .tooltip-title {
-    fill: #17144f;
-    font-size: 11px;
-    font-weight: 500;
-  }
-
-  .tooltip-text {
-    fill: #17144f;
-    font-size: 10px;
-    font-weight: 400;
-  }
-
-  g[role="button"]:focus {
-    outline: none;
-  }
-
-  @media (max-width: 500px) {
-    .axis-label {
-      font-size: 9px;
-    }
-
-    .month-label {
-      font-size: 8px;
-    }
+  @media (max-width: 480px) {
+    height: 220px;
   }
 `;
 
-export const ChartDivider = styled.div`
-  height: 1px;
-  width: 100%;
-  background: #e7e7e7;
+export const CustomTooltipContainer = styled.div`
+  min-width: 115px;
+  padding: 9px 14px;
+  background: #ffffff;
+  border: 1px solid #e5e5e5;
+  border-radius: 12px;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.12);
+  color: #292957;
+  box-sizing: border-box;
+`;
+
+export const TooltipMonth = styled.div`
+  margin-bottom: 3px;
+  color: #292957;
+  font-size: 14px;
+  font-weight: 500;
+`;
+
+export const TooltipLabel = styled.div`
+  margin-bottom: 3px;
+  color: #292957;
+  font-size: 14px;
+  white-space: nowrap;
+`;
+
+export const TooltipValue = styled.div`
+  color: #292957;
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
 `;
 
 export const Legend = styled.div`
   display: flex;
   justify-content: center;
   align-items: center;
+  flex-wrap: wrap;
   gap: 16px;
   padding: 2px 0 5px;
-  color: #555;
-  font-size: 10px;
+  color: #555555;
+  font-size: 12px;
 `;
 
 export const LegendItem = styled.div`
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 6px;
 `;
 
 export const LegendColor = styled.span`
@@ -127,5 +135,5 @@ export const LegendColor = styled.span`
   width: 15px;
   height: 3px;
   border-radius: 2px;
-  background: ${(props) => props.$color};
+  background: ${({ $color }) => $color};
 `;
