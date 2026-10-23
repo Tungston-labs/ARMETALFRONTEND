@@ -88,7 +88,13 @@ export const StatementTable = styled.table`
   td:not(:first-child) {
     text-align: right;
   }
+td.positive {
+    color: #079b21;
+}
 
+td.negative {
+    color: #ff2525;
+}
   tbody tr:hover td {
     background: #fffaf4;
   }
@@ -119,13 +125,17 @@ color: white;
 `;
 
 export const SectionRow = styled.tr`
-  td {
-    height: 36px;
-    padding-top: 8px;
-    padding-bottom: 8px;
-    font-size: 12.5px;
-    font-weight: 600;
-  }
+ td {
+        height: 36px;
+        padding-top: 8px;
+        padding-bottom: 8px;
+        font-size: 12.5px;
+        font-weight: 600;
+        color: #3154c8;
+        background: #ffffff;
+        text-align: left !important;
+        
+    }
 `;
 
 export const DataRow = styled.tr`
@@ -138,7 +148,8 @@ export const TotalRow = styled.tr`
   td {
     height: 42px;
     font-size: 13px;
-    font-weight: 600;
+    font-weight: 500;
+    
   }
 `;
 
@@ -218,4 +229,31 @@ export const DateSeparator = styled.span`
     color: #6b7280;
     font-size: 13px;
     font-weight: 500;
+`;
+export const ClosingBalanceRow = styled.div`
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+
+    width: 100%;
+    padding: 12px 30px;
+    box-sizing: border-box;
+
+    background: #3250B5;
+    border-top: 1px solid #e8e8e8;
+`;
+
+export const ClosingBalanceLabel = styled.div`
+    font-size: 14px;
+    font-weight: 400;
+    color: #fff;
+`;
+
+export const ClosingBalanceAmount = styled.div`
+    font-size: 14px;
+    font-weight: 500;
+    color: white;
+    text-align: right;
+    white-space: nowrap;
 `;

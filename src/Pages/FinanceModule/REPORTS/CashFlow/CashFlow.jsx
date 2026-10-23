@@ -1,4 +1,5 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import {
     DollarSign,
     TrendingUp,
@@ -8,7 +9,6 @@ import {
 
 import {
     ProfitLossContainer,
-    StatementTitle,
     StatementTableWrapper,
     StatementTable,
     TableHeader,
@@ -20,6 +20,9 @@ import {
     DateInput,
     DateSeparator,
     ExportButton,
+    ClosingBalanceRow,
+    ClosingBalanceLabel,
+    ClosingBalanceAmount,
 } from "./CashFlow.style";
 
 import ReusableHeader from "../../../../Components/ReusableTable/ReusableHeader";
@@ -28,149 +31,137 @@ import StatsCards from "../../../../Components/StatsCards/StatsCards";
 import { FiDownload } from "react-icons/fi";
 import ReusablePagination from "../../../../Components/Pagination/ReusablePagination";
 
-const profitLossData = [
-    { type: "section", particular: "REVENUE" },
-    {
-        particular: "Product Sales",
-        currentYear: 18500000,
-        lastYear: 16450000,
-    },
-    {
-        particular: "Service Revenue",
-        currentYear: 8750000,
-        lastYear: 7950000,
-    },
-    {
-        particular: "Maintenance Contracts",
-        currentYear: 1800000,
-        lastYear: 1550000,
-    },
-    {
-        particular: "Other Income",
-        currentYear: 1450000,
-        lastYear: 1250000,
-    },
-    {
-        type: "total",
-        particular: "Total Revenue",
-        currentYear: 28500000,
-        lastYear: 25200000,
-    },
-    {
-        type: "section",
-        particular: "COST OF GOODS SOLD",
-    },
-    {
-        particular: "Direct Materials & Inventory",
-        currentYear: 12400000,
-        lastYear: 11450000,
-    },
-    {
-        particular: "Direct Labor",
-        currentYear: 2650000,
-        lastYear: 2350000,
-    },
-    {
-        particular: "Project Costs",
-        currentYear: 1750000,
-        lastYear: 1600000,
-    },
-    {
-        type: "total",
-        particular: "Total Cost of Goods Sold",
-        currentYear: 16800000,
-        lastYear: 15400000,
-    },
-    {
-        type: "total",
-        particular: "Gross Profit",
-        currentYear: 11700000,
-        lastYear: 9800000,
-    },
-];
-const taxTypeOptions = ["GST", "VAT", "TDS", "Income Tax"];
-const customerOptions = ["Customer A", "Customer B", "Customer C"];
-const vendorOptions = ["Vendor A", "Vendor B", "Vendor C"];
-const invoiceTypeOptions = ["Sales Invoice", "Purchase Invoice", "Credit Note", "Debit Note"];
-const taxStatusOptions = ["Paid", "Pending", "Overdue", "Exempt"];
+// NOTE: adjust this path to where you saved the slice in your project
+import {
+    getCashFlowReport,
+    clearCashFlowReportError,
+} from "../../../../Redux/finance/reports/Cashflowreportslice";
+
+// API amounts are strings like "1000.00"
 const formatAmount = (amount) =>
-    Number(amount || 0).toLocaleString("en-US");
+    Number(amount || 0).toLocaleString("en-US", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+    });
+
+const getErrorMessage = (error) =>
+    typeof error === "string"
+        ? error
+        : error?.detail || error?.message || "Failed to load cash flow report";
 
 const CashFlow = () => {
+    const dispatch = useDispatch();
+
+    const { summary, sections, totals, currency, loading, error } = useSelector(
+        (state) => state.cashFlowReport
+    );
+
     const [search, setSearch] = useState("");
-    const [department, setDepartment] = useState("");
-    const [status, setStatus] = useState("");
-    const [month, setMonth] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
-    const [taxType, setTaxType] = useState("");
-    const [customer, setCustomer] = useState("");
-    const [vendor, setVendor] = useState("");
-    const [invoiceType, setInvoiceType] = useState("");
-    const [taxStatus, setTaxStatus] = useState("");
+    const [dateFrom, setDateFrom] = useState("");
+    const [dateTo, setDateTo] = useState("");
+
     const rowsPerPage = 10;
 
-    const totalRevenue =
-        profitLossData.find(
-            (item) => item.particular === "Total Revenue"
-        )?.currentYear || 0;
+    // Fetch on mount and whenever the date range changes.
+    // Empty dates => backend returns the default (current month to date).
+    useEffect(() => {
+        const params = {};
+        if (dateFrom) params.date_from = dateFrom;
+        if (dateTo) params.date_to = dateTo;
 
-    const totalExpenses =
-        profitLossData.find(
-            (item) => item.particular === "Total Cost of Goods Sold"
-        )?.currentYear || 0;
-
-    const grossProfit =
-        profitLossData.find(
-            (item) => item.particular === "Gross Profit"
-        )?.currentYear || 0;
-
-    const netProfit = 8250000;
+        const request = dispatch(getCashFlowReport(params));
+        return () => request.abort();
+    }, [dispatch, dateFrom, dateTo]);
 
     const statsCards = [
         {
             title: "Opening Balance",
-            count: formatAmount(totalRevenue),
+            count: formatAmount(summary.openingBalance),
             icon: <DollarSign size={22} />,
             backgroundColor: "#E4F8EC",
             iconColor: "#16A34A",
         },
         {
-            title: "Cash Flow",
-            count: formatAmount(totalExpenses),
+            title: "Cash Inflow",
+            count: formatAmount(summary.cashInflow),
             icon: <Wallet size={22} />,
             backgroundColor: "#FCE7E7",
             iconColor: "#DC2626",
         },
         {
             title: "Cash Outflow",
-            count: formatAmount(grossProfit),
+            count: formatAmount(summary.cashOutflow),
             icon: <TrendingUp size={22} />,
             backgroundColor: "#E5EDFF",
             iconColor: "#2563EB",
         },
         {
             title: "Net Cash Flow",
-            count: formatAmount(grossProfit),
+            count: formatAmount(summary.netCashFlow),
             icon: <TrendingUp size={22} />,
             backgroundColor: "#E5EDFF",
             iconColor: "#2563EB",
         },
         {
             title: "Closing Balance",
-            count: formatAmount(netProfit),
+            count: formatAmount(summary.closingBalance),
             icon: <ChartNoAxesCombined size={22} />,
             backgroundColor: "#F3E8FF",
             iconColor: "#9333EA",
         },
     ];
 
+    // Flatten the API sections into the row format the table already uses:
+    // { type: "section" | "total" | undefined, particular, cashIn, cashOut, netAmount }
+    const cashFlowData = useMemo(() => {
+        const rows = [];
+
+        [sections.operating, sections.investing, sections.financing].forEach(
+            (section) => {
+                rows.push({
+                    type: "section",
+                    particular: section.label.toUpperCase(),
+                });
+
+                section.rows.forEach((row) =>
+                    rows.push({
+                        key: `${section.label}-${row.id}`,
+                        particular: row.particular,
+                        cashIn: row.cashIn,
+                        cashOut: row.cashOut,
+                        netAmount: row.netAmount,
+                    })
+                );
+
+                rows.push({
+                    type: "total",
+                    particular: `Net Cash from ${section.label}`,
+                    cashIn: section.cashIn,
+                    cashOut: section.cashOut,
+                    netAmount: section.netAmount,
+                });
+            }
+        );
+
+        rows.push({
+            type: "total",
+            particular: "Net Cash Flow",
+            cashIn: totals.cashIn,
+            cashOut: totals.cashOut,
+            netAmount: totals.netCashFlow,
+        });
+
+        return rows;
+    }, [sections, totals]);
+
     const filteredData = useMemo(() => {
-        return profitLossData.filter((item) =>
+        return cashFlowData.filter((item) =>
             item.particular
                 .toLowerCase()
                 .includes(search.toLowerCase())
         );
-    }, [search]);
+    }, [cashFlowData, search]);
 
     const totalPages = Math.max(
         1,
@@ -187,34 +178,35 @@ const CashFlow = () => {
         setCurrentPage(1);
     };
 
-    const handleDepartment = (value) => {
-        setDepartment(value);
+    const handleDateFromChange = (e) => {
+        setDateFrom(e.target.value);
         setCurrentPage(1);
+        if (error) dispatch(clearCashFlowReportError());
     };
 
-    const handleStatus = (value) => {
-        setStatus(value);
+    const handleDateToChange = (e) => {
+        setDateTo(e.target.value);
         setCurrentPage(1);
+        if (error) dispatch(clearCashFlowReportError());
     };
 
-    const handleMonth = (value) => {
-        setMonth(value);
-        setCurrentPage(1);
-    };
-    const createFilterHandler = (setter) => (value) => {
-        setter(value);
-        setCurrentPage(1);
-    };
     const handleExport = () => {
-        const header = ["Particular", "Current Year", "Last Year", "Variance"];
+        const header = [
+            "Particular",
+            `Cash In (${currency})`,
+            `Cash Out (${currency})`,
+            `Net Amount (${currency})`,
+        ];
 
-        const rows = profitLossData.map((item) => {
+        const rows = cashFlowData.map((item) => {
             if (item.type === "section") {
                 return [item.particular, "", "", ""];
             }
-            const variance = (item.currentYear || 0) - (item.lastYear || 0);
-            return [item.particular, item.currentYear, item.lastYear, variance];
+            return [item.particular, item.cashIn, item.cashOut, item.netAmount];
         });
+
+        rows.push(["Opening Cash Balance", "", "", summary.openingBalance]);
+        rows.push(["Closing Cash Balance", "", "", summary.closingBalance]);
 
         const csv = [header, ...rows]
             .map((row) =>
@@ -226,12 +218,13 @@ const CashFlow = () => {
         const url = URL.createObjectURL(blob);
         const link = document.createElement("a");
         link.href = url;
-        link.download = "profit-loss-statement.csv";
+        link.download = "cash-flow-statement.csv";
         link.click();
         URL.revokeObjectURL(url);
     };
+
     // Keep pagination valid if the search reduces the number of pages.
-    React.useEffect(() => {
+    useEffect(() => {
         if (currentPage > totalPages) {
             setCurrentPage(totalPages);
         }
@@ -248,9 +241,9 @@ const CashFlow = () => {
                         <DateInput
                             type="date"
                             aria-label="Start date"
-                        // value={dateFrom}
-                        // max={dateTo || undefined}
-                        // onChange={onDateFromChange}
+                            value={dateFrom}
+                            max={dateTo || undefined}
+                            onChange={handleDateFromChange}
                         />
 
                         <DateSeparator>-</DateSeparator>
@@ -258,135 +251,138 @@ const CashFlow = () => {
                         <DateInput
                             type="date"
                             aria-label="End date"
-                        // value={dateTo}
-                        // min={dateFrom || undefined}
-                        // onChange={onDateToChange}
+                            value={dateTo}
+                            min={dateFrom || undefined}
+                            onChange={handleDateToChange}
                         />
                     </DatePickerContainer>
                 </DateRangeWrapper>
 
-                <ExportButton type="button" onClick={handleExport}>
+                <ExportButton
+                    type="button"
+                    onClick={handleExport}
+                    disabled={loading}
+                >
                     <FiDownload />
                     Export
                 </ExportButton>
             </ReusableHeader>
+
             {/* Statistics Cards */}
             <StatsCards
-                loading={false}
+                loading={loading}
                 cards={statsCards}
             />
+
             <ReusableFilter
                 search={search}
                 onSearch={handleSearch}
                 searchPlaceholder="Search Account"
                 showSearch
-                filters={[
-                    {
-                        key: "taxType",
-                        value: taxType,
-                        onChange: createFilterHandler(setTaxType),
-                        options: taxTypeOptions,
-                        placeholder: "Account Type",
-                    },
-                    {
-                        key: "Parent Accounts",
-                        value: customer,
-                        onChange: createFilterHandler(setCustomer),
-                        options: customerOptions,
-                        placeholder: "Parent Accounts",
-                    },
-                    {
-                        key: "vendor",
-                        value: vendor,
-                        onChange: createFilterHandler(setVendor),
-                        options: vendorOptions,
-                        placeholder: "Status",
-                    },
-                    {
-                        key: "invoiceType",
-                        value: invoiceType,
-                        onChange: createFilterHandler(setInvoiceType),
-                        options: invoiceTypeOptions,
-                        placeholder: "All Users",
-                    },
-                    
-                ]}
             />
 
-
-
-
             <ProfitLossContainer>
-        
                 <StatementTableWrapper>
                     <StatementTable>
                         <thead>
                             <TableHeader>
                                 <th>PARTICULAR</th>
-                                <th>Cash In (SAR)</th>
-                                <th>Cash Out (SAR)</th>
-                                <th>Net Amount (SAR)</th>
+                                <th>Cash In ({currency})</th>
+                                <th>Cash Out ({currency})</th>
+                                <th>Net Amount ({currency})</th>
                             </TableHeader>
                         </thead>
 
                         <tbody>
-                            {paginatedData.map((item, index) => {
-                                if (item.type === "section") {
-                                    return (
-                                        <SectionRow
-                                            key={`${item.particular}-${index}`}
-                                        >
-                                            <td colSpan={4}>
-                                                {item.particular}
-                                            </td>
-                                        </SectionRow>
-                                    );
-                                }
+                            {loading && (
+                                <DataRow>
+                                    <td colSpan={4}>Loading...</td>
+                                </DataRow>
+                            )}
 
-                                const variance =
-                                    (item.currentYear || 0) -
-                                    (item.lastYear || 0);
-
-                                const Row =
-                                    item.type === "total"
-                                        ? TotalRow
-                                        : DataRow;
-
-                                return (
-                                    <Row
-                                        key={`${item.particular}-${index}`}
-                                    >
-                                        <td>{item.particular}</td>
-                                        <td>
-                                            {formatAmount(item.currentYear)}
-                                        </td>
-                                        <td>
-                                            {formatAmount(item.lastYear)}
-                                        </td>
-                                        <td>
-                                            {formatAmount(variance)}
-                                        </td>
-                                    </Row>
-                                );
-                            })}
-
-                            {paginatedData.length === 0 && (
+                            {!loading && error && (
                                 <DataRow>
                                     <td colSpan={4}>
-                                        No records found.
+                                        {getErrorMessage(error)}
                                     </td>
                                 </DataRow>
                             )}
+
+                            {!loading &&
+                                !error &&
+                                paginatedData.map((item, index) => {
+                                    if (item.type === "section") {
+                                        return (
+                                            <SectionRow
+                                                key={`${item.particular}-${index}`}
+                                            >
+                                                <td colSpan={4}>
+                                                    {item.particular}
+                                                </td>
+                                            </SectionRow>
+                                        );
+                                    }
+
+                                    const Row =
+                                        item.type === "total"
+                                            ? TotalRow
+                                            : DataRow;
+
+                                    return (
+                                        <Row
+                                            key={item.key || `${item.particular}-${index}`}
+                                        >
+                                            <td>{item.particular}</td>
+                                            <td>
+                                                {formatAmount(item.cashIn)}
+                                            </td>
+                                            <td>
+                                                {formatAmount(item.cashOut)}
+                                            </td>
+                                            <td
+                                                className={
+                                                    Number(item.cashOut || 0) > 0
+                                                        ? "negative"
+                                                        : Number(item.cashIn || 0) > 0
+                                                            ? "positive"
+                                                            : ""
+                                                }
+                                            >
+                                                {formatAmount(item.netAmount)}
+                                            </td>
+                                        </Row>
+                                    );
+                                })}
+
+                            {!loading &&
+                                !error &&
+                                paginatedData.length === 0 && (
+                                    <DataRow>
+                                        <td colSpan={4}>
+                                            No records found.
+                                        </td>
+                                    </DataRow>
+                                )}
                         </tbody>
                     </StatementTable>
                 </StatementTableWrapper>
 
-            <ReusablePagination
-    currentPage={currentPage}
-    totalPages={totalPages}
-    totalRecords={filteredData.length}
-    onPageChange={setCurrentPage}
-/>
+                <ClosingBalanceRow>
+                    <ClosingBalanceLabel>
+                        Closing Cash Balance
+                    </ClosingBalanceLabel>
+
+                    <ClosingBalanceAmount>
+                        {formatAmount(summary.closingBalance)} {currency}
+                    </ClosingBalanceAmount>
+                </ClosingBalanceRow>
+
+                <ReusablePagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    totalRecords={filteredData.length}
+                    onPageChange={setCurrentPage}
+                />
             </ProfitLossContainer>
         </div>
     );

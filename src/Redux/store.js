@@ -47,6 +47,7 @@ import salesReportReducer from "./finance/reports/Salesreportslice";
 import customerReportReducer from "./finance/reports/Customerreportslice";
 import vendorReportReducer from "./finance/reports/Vendorreportslice";
 import profitLossReportReducer from "./finance/reports/Profitlossreportslice";
+import cashFlowReportReducer from "./finance/reports/Cashflowreportslice";
 export const store = configureStore({
   reducer: {
 
@@ -90,12 +91,13 @@ export const store = configureStore({
     accounting: accountingReducer,
     ledger: ledgerReducer,
     receivable: receivableReducer,
-       payable: payableReducer,
-      trialBalance: trialBalanceReducer, 
-          journalEntry: journalEntryReducer,
- salesReport: salesReportReducer,    
-     customerReport: customerReportReducer, 
- vendorReport: vendorReportReducer,
+    payable: payableReducer,
+    trialBalance: trialBalanceReducer,
+    journalEntry: journalEntryReducer,
+    salesReport: salesReportReducer,
+    customerReport: customerReportReducer,
+    vendorReport: vendorReportReducer,
     profitLossReport: profitLossReportReducer,
+      cashFlowReport: cashFlowReportReducer,
   },
 });
