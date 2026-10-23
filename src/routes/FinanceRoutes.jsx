@@ -375,9 +375,7 @@ const FinanceRoutes = () => {
         element={<NewJournalentry />}
       />
 
-      <Route
-        path="accounts/journal-entries/edit/:id"
-        element={<NewJournalentry />}
+      <Route path="accounts/journal-entries/edit/:id" element={<NewJournalentry />}
       />
       <Route path="accounts/generalledger" element={<GeneralLedger />} />
       <Route path="accounts/expenses" element={<Expenses />} />
