@@ -13,7 +13,10 @@ import { TbFileInvoice, TbArrowUp, TbArrowDown } from "react-icons/tb";
 import { MdOutlineInventory2, MdOutlineAccountBalance } from "react-icons/md";
 import { FiDownload } from "react-icons/fi";
 
-import AddExpenseModal from "./modal/AddExpenseModal";
+import AddExpenseModal, {
+    EXPENSE_CATEGORIES,
+    PAYMENT_METHODS,
+} from "./modal/AddExpenseModal";
 
 import {
     getExpenses,
@@ -25,21 +28,61 @@ import {
 
 const PAGE_SIZE = 10;
 
+// Same list as the modal, so the filter and the form never drift apart
 const CATEGORY_OPTIONS = [
     { label: "All Categories", value: "all" },
-    { label: "Rent", value: "rent" },
-    { label: "Utilities", value: "utilities" },
-    { label: "Travel", value: "travel" },
-    { label: "Office Expense", value: "office" },
-    { label: "Salary", value: "salary" },
+    ...EXPENSE_CATEGORIES,
 ];
+
+const labelFor = (options, value) =>
+    options.find((o) => o.value === value)?.label || value || "";
+
+const formatMoney = (value) =>
+    Number(value || 0).toLocaleString("en-US", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+    });
+
+const getErrorMessage = (error) =>
+    typeof error === "string"
+        ? error
+        : error?.detail || error?.message || "Something went wrong";
+
+// "biggest_cost" is null when there are no expenses. When present it may be
+// a plain amount or an object; this handles both. Adjust once you see a
+// real response.
+const getBiggestCost = (biggestCost) => {
+    if (!biggestCost) return { amount: "-", label: "Biggest Cost" };
+
+    if (typeof biggestCost === "object") {
+        const amount = biggestCost.amount ?? biggestCost.total ?? biggestCost.value;
+        const name = biggestCost.category ?? biggestCost.name ?? "";
+
+        return {
+            amount: amount !== undefined ? formatMoney(amount) : "-",
+            label: name ? `Biggest Cost (${name})` : "Biggest Cost",
+        };
+    }
+
+    return { amount: formatMoney(biggestCost), label: "Biggest Cost" };
+};
 
 const Expenses = () => {
     const dispatch = useDispatch();
 
-    const { expenses, dashboard, pagination, loading, error } = useSelector(
-        (state) => state.expense
-    );
+    const expenseState = useSelector((state) => state.expense);
+
+    const {
+        expenses = [],
+        dashboard = {},
+        pagination = {
+            currentPage: 1,
+            totalPages: 1,
+            count: 0,
+        },
+        loading = false,
+        error = null,
+    } = expenseState || {};
 
     /* ------------------------- Local UI state ------------------------- */
     const [search, setSearch] = useState("");
@@ -69,7 +112,13 @@ const Expenses = () => {
     }, [debouncedSearch, category, status, currentPage]);
 
     const loadExpenses = useCallback(() => {
-        dispatch(getExpenses(params));
+        dispatch(getExpenses(params))
+            .unwrap()
+            .catch(() => {
+                // DRF returns 404 "Invalid page" when the current page no
+                // longer exists (e.g. after deleting the last row on it).
+                if (params.page > 1) setCurrentPage(1);
+            });
     }, [dispatch, params]);
 
     useEffect(() => {
@@ -94,8 +143,47 @@ const Expenses = () => {
         setCurrentPage(1);
     };
 
+    // Exports the rows currently loaded (the current page and filters)
     const handleExportExcel = () => {
-        console.log("Export Expenses to Excel");
+        const header = [
+            "Expense ID",
+            "Date",
+            "Category",
+            "Paid To",
+            "Method",
+            "Paid From Account",
+            "Amount",
+            "Status",
+            "Description",
+        ];
+
+        const rows = expenses.map((row) => [
+            row.expense_id,
+            row.expense_date,
+            labelFor(EXPENSE_CATEGORIES, row.category),
+            row.paid_to,
+            labelFor(PAYMENT_METHODS, row.paid_method),
+            row.paid_from_account_name || "Cash",
+            row.amount,
+            row.status,
+            row.description,
+        ]);
+
+        const csv = [header, ...rows]
+            .map((row) =>
+                row
+                    .map((cell) => `"${String(cell ?? "").replace(/"/g, '""')}"`)
+                    .join(",")
+            )
+            .join("\n");
+
+        const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = "expenses.csv";
+        link.click();
+        URL.revokeObjectURL(url);
     };
 
     // Modal calls this with the API-ready payload. If it throws, the modal
@@ -124,71 +212,95 @@ const Expenses = () => {
 
         try {
             await dispatch(deleteExpense(id)).unwrap();
-            loadExpenses();
+
+            // If that was the only row on this page, go back one page
+            if (expenses.length === 1 && currentPage > 1) {
+                setCurrentPage(currentPage - 1);
+            } else {
+                loadExpenses();
+            }
         } catch (e) {
             console.error(e);
         }
     };
 
     /* ----------------------------- KPI cards ----------------------------- */
-    // NOTE: adjust the dashboard keys to match what your API returns.
+    // Keys match the API: total_expense, this_month_expense, already_paid,
+    // still_pay, biggest_cost
+    const biggestCost = getBiggestCost(dashboard?.biggest_cost);
+
     const statsCards = [
         {
-            count: dashboard?.total_expenses ?? 0,
+            count: formatMoney(dashboard?.total_expense),
             title: "Total Expenses",
             icon: <TbFileInvoice />,
             backgroundColor: "#E7F8EC",
             iconColor: "#00A63C",
         },
         {
-            count: dashboard?.total_entries ?? pagination.count ?? 0,
-            title: "Total Expense Entries",
+            count: formatMoney(dashboard?.this_month_expense),
+            title: "This Month Expense",
             icon: <MdOutlineInventory2 />,
             backgroundColor: "#F1E8FF",
             iconColor: "#923CFF",
         },
         {
-            count: dashboard?.pending_expenses ?? 0,
-            title: "Pending Expenses",
-            icon: <MdOutlineAccountBalance />,
+            count: formatMoney(dashboard?.already_paid),
+            title: "Already Paid",
+            icon: <TbArrowUp />,
             backgroundColor: "#E7F8EC",
             iconColor: "#00A63C",
         },
         {
-            count: dashboard?.paid_expenses ?? 0,
-            title: "Paid Expenses",
-            icon: <TbArrowUp />,
+            count: formatMoney(dashboard?.still_pay),
+            title: "Still To Pay",
+            icon: <TbArrowDown />,
             backgroundColor: "#FFF1E5",
             iconColor: "#FF7200",
         },
         {
-            count: dashboard?.expense_categories ?? 0,
-            title: "Expense Categories",
-            icon: <TbArrowDown />,
+            count: biggestCost.amount,
+            title: biggestCost.label,
+            icon: <MdOutlineAccountBalance />,
             backgroundColor: "#FFE8E8",
             iconColor: "#FF3131",
         },
     ];
 
     /* ------------------------------ Columns ------------------------------ */
-    // NOTE: match the shape (key/label/render vs accessor/header) to what
-    // your ReusableTable expects, same as employeeColumns.
+    // ReusableTable expects `accessor` and `header` (not key/label)
     const expenseColumns = useMemo(
         () => [
-            { key: "expense_date", label: "Date" },
-            { key: "category", label: "Category" },
-            { key: "paid_to", label: "Paid To" },
-            { key: "paid_method", label: "Method" },
+            { accessor: "expense_id", header: "Expense ID" },
+            { accessor: "expense_date", header: "Date" },
             {
-                key: "amount",
-                label: "Amount",
-                render: (row) => Number(row.amount).toLocaleString(),
+                accessor: "category",
+                header: "Category",
+                render: (row) => labelFor(EXPENSE_CATEGORIES, row.category),
             },
-            { key: "status", label: "Status" },
-            { key: "description", label: "Description" },
+            { accessor: "paid_to", header: "Paid To" },
             {
-                key: "actions",
-                label: "Actions",
+                accessor: "paid_method",
+                header: "Method",
+                render: (row) => labelFor(PAYMENT_METHODS, row.paid_method),
+            },
+            {
+                accessor: "paid_from_account_name",
+                header: "Paid From",
+                // cash expenses have no bank account
+                render: (row) => row.paid_from_account_name || "Cash",
+            },
+            {
+                accessor: "amount",
+                header: "Amount",
+                render: (row) => formatMoney(row.amount),
+            },
+            { accessor: "status", header: "Status" },
+            { accessor: "description", header: "Description" },
+            {
+                accessor: "actions",
+                header: "Actions",
+                sortable: false,
                 render: (row) => (
                     <div style={{ display: "flex", gap: 8 }}>
                         {row.status === "paid" && (
@@ -210,7 +322,7 @@ const Expenses = () => {
             },
         ],
         // eslint-disable-next-line react-hooks/exhaustive-deps
-        [loadExpenses]
+        [loadExpenses, expenses.length, currentPage]
     );
 
     return (
@@ -229,7 +341,7 @@ const Expenses = () => {
             </ReusableHeader>
 
             {/* Stats */}
-            <StatsCards cards={statsCards} />
+            <StatsCards loading={loading} cards={statsCards} />
 
             {/* Filters */}
             <ReusableFilter
@@ -255,9 +367,7 @@ const Expenses = () => {
             {/* Error */}
             {error && (
                 <p style={{ color: "#e03131", margin: "8px 0" }}>
-                    {typeof error === "string"
-                        ? error
-                        : error.detail || "Something went wrong"}
+                    {getErrorMessage(error)}
                 </p>
             )}
 
@@ -270,8 +380,9 @@ const Expenses = () => {
 
             {/* Pagination */}
             <ReusablePagination
-                currentPage={pagination.currentPage}
+                currentPage={currentPage}
                 totalPages={pagination.totalPages}
+                totalRecords={pagination.count}
                 onPageChange={setCurrentPage}
             />
 
