@@ -384,6 +384,7 @@ const FinanceRoutes = () => {
       <Route path="accounts/payables" element={<Payables />} />
       <Route path="accounts/recievables" element={<Recievables />} />
       <Route path="accounts/banking" element={<Banking />} />
+            <Route path="accounts/trialbalance" element={<TrialBalance />} />
 
       {/* Report Section */}
       <Route path="reports/sales-report" element={<SalesReports />} />
@@ -391,6 +392,11 @@ const FinanceRoutes = () => {
       <Route path="reports/payment-report" element={<PaymentReports />} />
       <Route path="reports/inventory-report" element={<InventoryReports />} />
       <Route path="reports/tax-report" element={<TaxReport />} />
+         <Route path="reports/customer-report" element={<CustomerReport />} />
+         <Route path="reports/expense-report" element={<ExpenseReport />} />
+         <Route path="reports/vendor-report" element={<VendorReport />} />
+         <Route path="reports/profit-loss" element={<ProfitLoss />} />
+          <Route path="reports/cash-flow" element={<CashFlow />} />
     </>
   );
 };

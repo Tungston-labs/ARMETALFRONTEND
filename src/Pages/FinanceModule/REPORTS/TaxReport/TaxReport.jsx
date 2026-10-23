@@ -1,281 +1,367 @@
-
-import React, { useMemo, useState } from "react";
-import { FiDownload, FiDollarSign, FiActivity, FiCreditCard, FiAlertCircle, FiTrendingUp } from "react-icons/fi";
-
-import ReusableHeader from "../../../../Components/ReusableTable/ReusableHeader";
-import ReusablePagination from "../../../../Components/Pagination/ReusablePagination";
-import TaxCollectionCharts from "./Chart/TaxCollectionCharts";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import {
+    FiDownload,
+    FiDollarSign,
+    FiClock,
+    FiCheckCircle,
+    FiTrendingUp,
+} from "react-icons/fi";
 
 import {
-  ReportPage,
-  KPIGrid,
-  KPICard,
-  KPIIcon,
-  KPIInfo,
-  KPIName,
-  KPIValue,
-  FilterBar,
-  DateFilter,
-  DateInput,
-  FilterSelect,
-  ExportButton,
-  MainReportLayout,
-  TableSide,
-  TableWrapper,
-  TaxTable,
-  TableHead,
-  TableCell,
+    DateInput,
+    DatePickerContainer,
+    DateRangeWrapper,
+    DateSeparator,
+    ExportButton,
+    MainReportLayout,
+    TableSide,
 } from "./TaxReport.styles";
 
-const taxData = [
-  { id: 1, invoice: "INV-1001", date: "02 Jun 2026", type: "Sales", customer: "Al Noor Trading", taxable: "Travel", tax: 4500, taxType: "Approved", status: "Paid", taxTypeFilter: "VAT" },
-  { id: 2, invoice: "BILL-2045", date: "03 Jun 2026", type: "Purchase", customer: "Gulf Technologies", taxable: "Training", tax: 2200, taxType: "Pending", status: "Pending", taxTypeFilter: "GST" },
-  { id: 3, invoice: "INV-1002", date: "04 Jun 2026", type: "Sales", customer: "Riyadh Supplies", taxable: "Fuel", tax: 850, taxType: "Approved", status: "Paid", taxTypeFilter: "VAT" },
-  { id: 4, invoice: "BILL-2050", date: "05 Jun 2026", type: "Purchase", customer: "Saudi Retail Group", taxable: "Maintenance", tax: 6800, taxType: "Approved", status: "Paid", taxTypeFilter: "GST" },
-  { id: 5, invoice: "INV-1001", date: "05 Jun 2026", type: "Sales", customer: "Desert Manufacturing", taxable: "Travel", tax: 4500, taxType: "Approved", status: "Paid", taxTypeFilter: "VAT" },
-  { id: 6, invoice: "BILL-2045", date: "06 Jun 2026", type: "Purchase", customer: "Gulf Technologies", taxable: "Training", tax: 2200, taxType: "Approved", status: "Paid", taxTypeFilter: "GST" },
-  { id: 7, invoice: "INV-1002", date: "07 Jun 2026", type: "Sales", customer: "Al Noor Trading", taxable: "Fuel", tax: 850, taxType: "Pending", status: "Paid", taxTypeFilter: "VAT" },
-  { id: 8, invoice: "BILL-2050", date: "08 Jun 2026", type: "Purchase", customer: "Saudi Retail Group", taxable: "Maintenance", tax: 4500, taxType: "Approved", status: "Paid", taxTypeFilter: "GST" },
-  { id: 9, invoice: "INV-1001", date: "09 Jun 2026", type: "Sales", customer: "Najd Trading Co.", taxable: "Travel", tax: 2200, taxType: "Approved", status: "Pending", taxTypeFilter: "VAT" },
-  { id: 10, invoice: "BILL-2045", date: "10 Jun 2026", type: "Purchase", customer: "Kingdom Electronics", taxable: "Fuel", tax: 850, taxType: "Approved", status: "Paid", taxTypeFilter: "GST" },
-];
+import ReusableHeader from "../../../../Components/ReusableTable/ReusableHeader";
+import ReusableFilter from "../../../../Components/ReusableTable/ReusableFilter";
+import ReusableTable from "../../../../Components/ReusableTable/ReusableTable";
+import ReusablePagination from "../../../../Components/Pagination/ReusablePagination";
+import StatsCards from "../../../../Components/StatsCards/StatsCards";
+import TaxCollectionCharts from "./Chart/TaxCollectionCharts";
+import {
+    getTaxReport,
+    clearTaxReportError,
+} from "../../../../Redux/finance/reports/Taxreportslice";
 
-const kpis = [
-  { title: "Total Tax Collected", value: "SAR 4.25M", icon: FiDollarSign, bg: "#e8efff", color: "#3154b5" },
-  { title: "Input Tax Credit", value: "SAR 2.95M", icon: FiActivity, bg: "#fff2e6", color: "#ff850c" },
-  { title: "Net Tax Payable", value: "SAR 1.30M", icon: FiCreditCard, bg: "#dff4f7", color: "#19a8c2" },
-  { title: "Taxable Sales", value: "SAR 28.4M", icon: FiAlertCircle, bg: "#f3dede", color: "#ed3434" },
-  { title: "Total Expense Claims", value: "SAR 19.7M", icon: FiTrendingUp, bg: "#eee5ff", color: "#8647ff" },
-];
+const PAGE_SIZE = 10;
+
+const formatAmount = (value) =>
+    Number(value || 0).toLocaleString("en-US", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+    });
+
+const formatSar = (value) => `SAR ${formatAmount(value)}`;
+
+const labelFor = (options = [], value) =>
+    options.find((o) => String(o.value) === String(value))?.label || value || "";
+
+const getErrorMessage = (error) => {
+    if (typeof error === "string") return error;
+    if (error?.detail) return error.detail;
+
+    // DRF field errors: { start_date: ["Enter a valid date."] }
+    if (error && typeof error === "object") {
+        const text = Object.values(error)
+            .map((msg) => (Array.isArray(msg) ? msg.join(" ") : String(msg)))
+            .join(" | ");
+        if (text) return text;
+    }
+
+    return error?.message || "Failed to load tax report";
+};
 
 const TaxReport = () => {
-  const [startDate, setStartDate] = useState("2026-04-01");
-  const [endDate, setEndDate] = useState("2026-04-30");
-  const [taxType, setTaxType] = useState("all");
-  const [customer, setCustomer] = useState("all");
-  const [vendor, setVendor] = useState("all");
-  const [invoiceType, setInvoiceType] = useState("all");
-  const [taxStatus, setTaxStatus] = useState("all");
-  const [currentPage, setCurrentPage] = useState(1);
+    const dispatch = useDispatch();
 
-  const rowsPerPage = 10;
+    const { cards, filters, monthlyTax, report, pagination, loading, error } =
+        useSelector((state) => state.taxReport);
 
-  const filteredData = useMemo(() => {
-    return taxData.filter((item) => {
-      const matchesTaxType =
-        taxType === "all" || item.taxTypeFilter === taxType;
+    // "" means "All": ReusableFilter adds that first option itself
+    const [search, setSearch] = useState("");
+    const [taxType, setTaxType] = useState("");
+    const [customer, setCustomer] = useState("");
+    const [vendor, setVendor] = useState("");
+    const [invoiceType, setInvoiceType] = useState("");
+    const [taxStatus, setTaxStatus] = useState("");
+    const [dateFrom, setDateFrom] = useState("");
+    const [dateTo, setDateTo] = useState("");
+    const [chartYear, setChartYear] = useState(new Date().getFullYear());
+    const [currentPage, setCurrentPage] = useState(1);
 
-      const matchesCustomer =
-        customer === "all" || item.customer === customer;
+    /* -------------------------- Query params -------------------------- */
+    const params = useMemo(
+        () => ({
+            start_date: dateFrom,
+            end_date: dateTo,
+            tax_type: taxType,
+            invoice_type: invoiceType,
+            customer,
+            vendor,
+            tax_status: taxStatus,
+            chart_year: chartYear,
+            page: currentPage,
+            page_size: PAGE_SIZE,
+        }),
+        [
+            dateFrom,
+            dateTo,
+            taxType,
+            invoiceType,
+            customer,
+            vendor,
+            taxStatus,
+            chartYear,
+            currentPage,
+        ]
+    );
 
-      const matchesVendor =
-        vendor === "all" || item.customer === vendor;
+    const loadReport = useCallback(() => {
+        dispatch(getTaxReport(params))
+            .unwrap()
+            .catch(() => {
+                // DRF returns 404 "Invalid page" if the page no longer exists
+                if (params.page > 1) setCurrentPage(1);
+            });
+    }, [dispatch, params]);
 
-      const matchesInvoiceType =
-        invoiceType === "all" || item.type === invoiceType;
+    useEffect(() => {
+        loadReport();
+    }, [loadReport]);
 
-      const matchesTaxStatus =
-        taxStatus === "all" || item.taxType === taxStatus;
+    useEffect(() => () => dispatch(clearTaxReportError()), [dispatch]);
 
-      return (
-        matchesTaxType &&
-        matchesCustomer &&
-        matchesVendor &&
-        matchesInvoiceType &&
-        matchesTaxStatus
-      );
-    });
-  }, [taxType, customer, vendor, invoiceType, taxStatus]);
+    /* ---------------------------- Handlers ---------------------------- */
+    // Changing any filter goes back to page 1
+    const handleFilterChange = (setter) => (value) => {
+        setter(value);
+        setCurrentPage(1);
+    };
 
-  const totalPages = Math.max(1, Math.ceil(filteredData.length / rowsPerPage));
+    const handleDateFromChange = (e) => handleFilterChange(setDateFrom)(e.target.value);
+    const handleDateToChange = (e) => handleFilterChange(setDateTo)(e.target.value);
 
-  const paginatedData = useMemo(() => {
-    const start = (currentPage - 1) * rowsPerPage;
-    return filteredData.slice(start, start + rowsPerPage);
-  }, [filteredData, currentPage]);
-
-  const handleFilter = (setter) => (event) => {
-    setter(event.target.value);
-    setCurrentPage(1);
-  };
-
-  const exportReport = () => {
-    const headers = [
-      "Invoice/Bill No",
-      "Date",
-      "Type",
-      "Customer/Vendor",
-      "Taxable Amount",
-      "Tax Amount",
-      "Tax Type",
-      "Status",
+    /* ----------------------------- KPI cards ----------------------------- */
+    const statsCards = [
+        {
+            title: "Total Tax Collected",
+            count: formatSar(cards.totalTaxCollected),
+            icon: <FiDollarSign size={22} />,
+            backgroundColor: "#E5EDFF",
+            iconColor: "#2563EB",
+        },
+        {
+            title: "Input Tax Credit",
+            count: formatSar(cards.inputTaxCredit),
+            icon: <FiCheckCircle size={22} />,
+            backgroundColor: "#DCFCE7",
+            iconColor: "#16A34A",
+        },
+        {
+            title: "Net Tax Payable",
+            count: formatSar(cards.netTaxPayable),
+            icon: <FiClock size={22} />,
+            backgroundColor: "#FFF3D6",
+            iconColor: "#D97706",
+        },
+        {
+            title: "Taxable Sales",
+            count: formatSar(cards.taxableSales),
+            icon: <FiTrendingUp size={22} />,
+            backgroundColor: "#F3E8FF",
+            iconColor: "#9333EA",
+        },
     ];
 
-    const rows = filteredData.map((item) => [
-      item.invoice,
-      item.date,
-      item.type,
-      item.customer,
-      item.taxable,
-      item.tax,
-      item.taxType,
-      item.status,
-    ]);
+    /* ------------------------------ Table ------------------------------ */
+    // The search box filters the rows on the current page only. The API has
+    // no search parameter, so use the dropdowns and dates to filter the
+    // whole report.
+    const visibleRows = useMemo(() => {
+        const term = search.trim().toLowerCase();
+        if (!term) return report;
 
-    const csv = [headers, ...rows]
-      .map((row) =>
-        row.map((value) => `"${String(value).replace(/"/g, '""')}"`).join(",")
-      )
-      .join("\r\n");
+        return report.filter((row) =>
+            Object.values(row).some((value) =>
+                String(value ?? "").toLowerCase().includes(term)
+            )
+        );
+    }, [report, search]);
 
-    const blob = new Blob(["\uFEFF", csv], {
-      type: "text/csv;charset=utf-8;",
-    });
+    // ReusableTable expects `accessor` and `header`
+    const taxColumns = useMemo(
+        () => [
+            { accessor: "documentNumber", header: "Document No" },
+            { accessor: "date", header: "Date" },
+            {
+                accessor: "type",
+                header: "Type",
+                render: (row) => labelFor(filters.invoiceTypes, row.type),
+            },
+            { accessor: "customerVendor", header: "Customer / Vendor" },
+            {
+                accessor: "taxableAmount",
+                header: "Taxable Amount (SAR)",
+                render: (row) => formatAmount(row.taxableAmount),
+            },
+            {
+                accessor: "taxAmount",
+                header: "Tax Amount (SAR)",
+                render: (row) => formatAmount(row.taxAmount),
+            },
+            { accessor: "taxType", header: "Tax Type" },
+            {
+                accessor: "status",
+                header: "Status",
+                render: (row) => labelFor(filters.taxStatuses, row.status),
+            },
+        ],
+        [filters.invoiceTypes, filters.taxStatuses]
+    );
+    const handleExport = () => {
+        if (!report.length) return;
 
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = "tax-report.csv";
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    URL.revokeObjectURL(url);
-  };
+        const header = [
+            "Document No",
+            "Date",
+            "Type",
+            "Customer / Vendor",
+            "Taxable Amount",
+            "Tax Amount",
+            "Tax Type",
+            "Status",
+        ];
 
-  return (
-    <ReportPage>
-      <ReusableHeader
-        title="Tax Report"
-        breadcrumbs={["Reports", "Tax Report"]}
-      />
+        const rows = report.map((row) => [
+            row.documentNumber,
+            row.date,
+            labelFor(filters.invoiceTypes, row.type),
+            row.customerVendor,
+            row.taxableAmount,
+            row.taxAmount,
+            row.taxType,
+            labelFor(filters.taxStatuses, row.status),
+        ]);
 
-      <KPIGrid>
-        {kpis.map((item) => {
-          const Icon = item.icon;
+        const escapeCsvCell = (cell) =>
+            `"${String(cell ?? "").replace(/"/g, '""')}"`;
 
-          return (
-            <KPICard key={item.title}>
-              <KPIIcon $background={item.bg} $color={item.color}>
-                <Icon />
-              </KPIIcon>
-              <KPIInfo>
-                <KPIName>{item.title}</KPIName>
-                <KPIValue>{item.value}</KPIValue>
-              </KPIInfo>
-            </KPICard>
-          );
-        })}
-      </KPIGrid>
+        const csv = [header, ...rows]
+            .map((row) => row.map(escapeCsvCell).join(","))
+            .join("\n");
 
-      <FilterBar>
-        <DateFilter>
-          <DateInput
-            aria-label="Start date"
-            type="date"
-            value={startDate}
-            onChange={handleFilter(setStartDate)}
-          />
-          <span>-</span>
-          <DateInput
-            aria-label="End date"
-            type="date"
-            value={endDate}
-            onChange={handleFilter(setEndDate)}
-          />
-        </DateFilter>
+        const blob = new Blob(["\uFEFF", csv], {
+            type: "text/csv;charset=utf-8;",
+        });
 
-        <FilterSelect value={taxType} onChange={handleFilter(setTaxType)}>
-          <option value="all">Tax Type (VAT / GST)</option>
-          <option value="VAT">VAT</option>
-          <option value="GST">GST</option>
-        </FilterSelect>
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
 
-        <FilterSelect value={customer} onChange={handleFilter(setCustomer)}>
-          <option value="all">Customer</option>
-          {[...new Set(taxData.filter((item) => item.type === "Sales").map((item) => item.customer))].map((name) => (
-            <option key={name} value={name}>{name}</option>
-          ))}
-        </FilterSelect>
+        link.href = url;
+        link.download = "tax-report.csv";
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
 
-        <FilterSelect value={vendor} onChange={handleFilter(setVendor)}>
-          <option value="all">Vendor</option>
-          {[...new Set(taxData.filter((item) => item.type === "Purchase").map((item) => item.customer))].map((name) => (
-            <option key={name} value={name}>{name}</option>
-          ))}
-        </FilterSelect>
+        URL.revokeObjectURL(url);
+    };
 
-        <FilterSelect value={invoiceType} onChange={handleFilter(setInvoiceType)}>
-          <option value="all">Invoice Type</option>
-          <option value="Sales">Sales</option>
-          <option value="Purchase">Purchase</option>
-        </FilterSelect>
+    return (
+        <div style={{ padding: 20 }}>
+            <ReusableHeader
+                title="Tax Report"
+                breadcrumbs={["Reports", "Tax Report"]}
+            >
+                <DateRangeWrapper>
+                    <DatePickerContainer>
+                        <DateInput
+                            type="date"
+                            aria-label="Start date"
+                            value={dateFrom}
+                            max={dateTo || undefined}
+                            onChange={handleDateFromChange}
+                        />
 
-        <FilterSelect value={taxStatus} onChange={handleFilter(setTaxStatus)}>
-          <option value="all">Tax Status</option>
-          <option value="Approved">Approved</option>
-          <option value="Pending">Pending</option>
-        </FilterSelect>
+                        <DateSeparator>-</DateSeparator>
 
-        <ExportButton type="button" onClick={exportReport}>
-          Export Report <FiDownload />
-        </ExportButton>
-      </FilterBar>
+                        <DateInput
+                            type="date"
+                            aria-label="End date"
+                            value={dateTo}
+                            min={dateFrom || undefined}
+                            onChange={handleDateToChange}
+                        />
+                    </DatePickerContainer>
+                </DateRangeWrapper>
 
-      <MainReportLayout>
-        <TableSide>
-          <TableWrapper>
-            <TaxTable>
-              <TableHead>
-                <tr>
-                  <th>Invoice/<br />Bill No</th>
-                  <th>Date</th>
-                  <th>Type</th>
-                  <th>Customer/<br />Vendor</th>
-                  <th>Taxable<br />Amount</th>
-                  <th>Tax<br />Amount</th>
-                  <th>Tax Type</th>
-                  <th>Status</th>
-                </tr>
-              </TableHead>
+                <ExportButton
+                    type="button"
+                    onClick={handleExport}
+                    disabled={loading || !report.length}
+                >
+                    <FiDownload />
+                    Export Report
+                </ExportButton>
+            </ReusableHeader>
 
-              <tbody>
-                {paginatedData.map((item) => (
-                  <tr key={item.id}>
-                    <TableCell>{item.invoice}</TableCell>
-                    <TableCell>{item.date}</TableCell>
-                    <TableCell>{item.type}</TableCell>
-                    <TableCell>{item.customer}</TableCell>
-                    <TableCell>{item.taxable}</TableCell>
-                    <TableCell>
-                      SAR {item.tax.toLocaleString("en-US")}
-                    </TableCell>
-                    <TableCell>{item.taxType}</TableCell>
-                    <TableCell>{item.status}</TableCell>
-                  </tr>
-                ))}
+            <StatsCards loading={loading} cards={statsCards} />
 
-                {paginatedData.length === 0 && (
-                  <tr>
-                    <td colSpan={8} className="empty-state">
-                      No tax records found.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </TaxTable>
-          </TableWrapper>
+            <ReusableFilter
+                search={search}
+                onSearch={setSearch}
+                searchPlaceholder="Search this page"
+                showSearch
+                filters={[
+                    {
+                        key: "taxType",
+                        value: taxType,
+                        onChange: handleFilterChange(setTaxType),
+                        placeholder: "All Tax Types",
+                        options: filters.taxTypes,
+                    },
+                    {
+                        key: "customer",
+                        value: customer,
+                        onChange: handleFilterChange(setCustomer),
+                        placeholder: "All Customers",
+                        options: filters.customers,
+                    },
+                  
+                    {
+                        key: "invoiceType",
+                        value: invoiceType,
+                        onChange: handleFilterChange(setInvoiceType),
+                        placeholder: "All Invoice Types",
+                        options: filters.invoiceTypes,
+                    },
+                    {
+                        key: "taxStatus",
+                        value: taxStatus,
+                        onChange: handleFilterChange(setTaxStatus),
+                        placeholder: "All Tax Statuses",
+                        options: filters.taxStatuses,
+                    },
+                ]}
+            />
 
-          <ReusablePagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={setCurrentPage}
-          />
-        </TableSide>
+            {error && (
+                <p style={{ color: "#e03131", margin: "8px 0" }}>
+                    {getErrorMessage(error)}
+                </p>
+            )}
 
-        <TaxCollectionCharts />
-      </MainReportLayout>
-    </ReportPage>
-  );
+            <MainReportLayout>
+                <TableSide>
+                    <ReusableTable
+                        autoLayout
+                        columns={taxColumns}
+                        data={visibleRows}
+                        loading={loading}
+                    />
+
+                    <ReusablePagination
+                        currentPage={currentPage}
+                        totalPages={pagination.totalPages}
+                        totalRecords={pagination.count}
+                        onPageChange={setCurrentPage}
+                    />
+                </TableSide>
+
+                <TaxCollectionCharts
+                    monthlyTax={monthlyTax}
+                    year={chartYear}
+                    onYearChange={setChartYear}
+                    loading={loading}
+                />
+            </MainReportLayout>
+        </div>
+    );
 };
 
 export default TaxReport;

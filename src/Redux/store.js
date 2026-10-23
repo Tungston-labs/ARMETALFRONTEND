@@ -48,6 +48,7 @@ import expensesReducer from "./finance/accounts/Expenseslice";
 import salesReportReducer from "./finance/reports/Salesreportslice";
 import customerReportReducer from "./finance/reports/Customerreportslice";
 import vendorReportReducer from "./finance/reports/Vendorreportslice";
+import taxReportReducer from "./finance/reports/Taxreportslice";
 export const store = configureStore({
   reducer: {
     auth: authReducer,
@@ -98,5 +99,6 @@ export const store = configureStore({
     salesReport: salesReportReducer,
     customerReport: customerReportReducer,
     vendorReport: vendorReportReducer,
+       taxReport: taxReportReducer, 
   },
 });
