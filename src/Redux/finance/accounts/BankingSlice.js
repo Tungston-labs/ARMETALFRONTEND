@@ -6,8 +6,7 @@ import {
   transactionService,
 } from "../../../services/finance/accounts/bankingService";
 
-// Supports common DRF response formats:
-// [ ... ], { results: [...] }, or { data: [...] }.
+
 export const extractList = (response) => {
   const body = response?.data;
 

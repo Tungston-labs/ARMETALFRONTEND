@@ -1,6 +1,6 @@
 import api from "../../api";
 
-const BASE_URL = "/api/finance/banking";
+const BASE_URL = "/finance/banking";
 
 const createCrudService = (resource) => {
   const url = `${BASE_URL}/${resource}/`;
