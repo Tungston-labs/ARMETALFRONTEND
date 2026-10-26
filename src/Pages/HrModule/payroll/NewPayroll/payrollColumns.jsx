@@ -48,11 +48,11 @@ export const getPayrollColumns = ({
     header: "Employee Name",
     accessor: "employee_name",
   },
-  {
-    header: "Employee ID",
-    accessor: "employee_code",
-    render: (emp) => emp.employee_code,
-  },
+  // {
+  //   header: "Employee ID",
+  //   accessor: "employee_code",
+  //   render: (emp) => emp.employee_code,
+  // },
   {
     header: "Department",
     accessor: "department",

@@ -149,24 +149,22 @@ const AttendanceList = () => {
 
       {listLoading && <p>Loading attendance...</p>}
 
-      {error && <p style={{ color: "red" }}>{renderError(error)}</p>}
+{!listLoading && (
+  <>
+    <ReusableTable
+      columns={attendanceColumns}
+      data={visibleRows}
+      onRowClick={handleRowClick}
+    />
 
-      {!listLoading && !error && (
-        <>
-          <ReusableTable
-            columns={attendanceColumns}
-            data={visibleRows}
-            onRowClick={handleRowClick}
-          />
-
-          <ReusablePagination
-            currentPage={pagination?.current_page || currentPage}
-            totalPages={pagination?.total_pages || 1}
-            totalRecords={pagination?.total_items ?? 0}
-            onPageChange={setCurrentPage}
-          />
-        </>
-      )}
+    <ReusablePagination
+      currentPage={pagination?.current_page || currentPage}
+      totalPages={pagination?.total_pages || 1}
+      totalRecords={pagination?.total_items ?? 0}
+      onPageChange={setCurrentPage}
+    />
+  </>
+)}
     </div>
   );
 };

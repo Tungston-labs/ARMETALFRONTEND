@@ -15,7 +15,7 @@ const StatsCards = ({ cards = [], loading = false }) => {
   if (loading) {
     return (
       <Wrapper>
-        {Array.from({ length: 4 }).map((_, index) => (
+        {Array.from({ length: cards.length || 4 }).map((_, index) => (
           <SkeletonStatsCard key={index} />
         ))}
       </Wrapper>
@@ -25,15 +25,18 @@ const StatsCards = ({ cards = [], loading = false }) => {
   return (
     <Wrapper>
       {cards.map((card, index) => (
-        <Card key={index} onClick={card.onClick}>
-          <IconWrapper bg={card.backgroundColor} color={card.iconColor}>
+        <Card
+          key={card.title || index}
+          onClick={card.onClick}
+          $clickable={Boolean(card.onClick)}
+        >
+          <IconWrapper $bg={card.backgroundColor} $color={card.iconColor}>
             {card.icon}
           </IconWrapper>
 
           <Content>
-            <Count>{card.count}</Count>
-
-            <Title>{card.title}</Title>
+            <Count title={String(card.count)}>{card.count}</Count>
+            <Title title={card.title}>{card.title}</Title>
           </Content>
         </Card>
       ))}

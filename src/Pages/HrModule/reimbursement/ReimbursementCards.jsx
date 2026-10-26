@@ -29,6 +29,7 @@ import ReusableHeader from "../../../Components/ReusableTable/ReusableHeader";
 import ReusableFilter from "../../../Components/ReusableTable/ReusableFilter";
 import SkeletonCard from "../../../Components/Skeleton/ SkeletonCard";
 import { FiFileText } from "react-icons/fi";
+
 const DEFAULT_AVATAR = "https://i.pravatar.cc/100?img=1";
 
 const ReimbursementCards = () => {
@@ -40,25 +41,32 @@ const ReimbursementCards = () => {
   const [selectedMonth, setSelectedMonth] = useState("");
   const [allReimbursements, setAllReimbursements] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  // Errors are shown by the global error handler (popup / banner).
+  // This flag only prevents a misleading "No Reimbursement Found" message.
+  const [loadFailed, setLoadFailed] = useState(false);
 
-  const { list: departmentList = [] } = useSelector((state) => state.departments);
+  const { list: departmentList = [] } = useSelector(
+    (state) => state.departments
+  );
 
   const loadData = useCallback(async () => {
     setLoading(true);
-    setError(null);
+    setLoadFailed(false);
     try {
       // 1. Fetch departments
       await dispatch(getDepartments({ page: 1, search: "" })).unwrap();
-      
+
       // 2. Fetch all grouped reimbursements
       const groupedData = await getGroupedReimbursements();
-      const groups = Array.isArray(groupedData) ? groupedData : groupedData?.results || [];
+      const groups = Array.isArray(groupedData)
+        ? groupedData
+        : groupedData?.results || [];
 
-      // Flatten groups and attach group.date to each item (production grouped API returns date on the group object)
+      // Flatten groups and attach group.date to each item
       const flatList = groups.flatMap((group) => {
         const groupDate = group.date || group.created_at || "";
-        const list = group.reimbursements || (Array.isArray(group) ? group : []);
+        const list =
+          group.reimbursements || (Array.isArray(group) ? group : []);
         return list.map((r) => ({
           ...r,
           date: r.date || r.expense_date || groupDate,
@@ -68,8 +76,9 @@ const ReimbursementCards = () => {
 
       setAllReimbursements(flatList);
     } catch (err) {
+      // The global error handler already shows the popup
       console.error("Failed to load reimbursement cards:", err);
-      setError(err?.message || "Something went wrong while loading data.");
+      setLoadFailed(true);
     } finally {
       setLoading(false);
     }
@@ -88,9 +97,15 @@ const ReimbursementCards = () => {
     navigate(`/reimbursements/${deptId}`);
   };
 
-  // Helper to extract YYYY-MM from reimbursement record (prioritizing sending date created_at / submitted_date)
+  // Helper to extract YYYY-MM from reimbursement record
   const getReimbursementMonth = (r) => {
-    const dateStr = r.created_at || r.submitted_date || r.submittedDate || r.date || r.expense_date || r.expenseDate;
+    const dateStr =
+      r.created_at ||
+      r.submitted_date ||
+      r.submittedDate ||
+      r.date ||
+      r.expense_date ||
+      r.expenseDate;
     if (!dateStr) return "";
     const str = String(dateStr).trim();
     if (!str) return "";
@@ -101,7 +116,8 @@ const ReimbursementCards = () => {
     }
 
     // Fallback date parsing
-    const normalized = str.includes(" ") && !str.includes("T") ? str.replace(" ", "T") : str;
+    const normalized =
+      str.includes(" ") && !str.includes("T") ? str.replace(" ", "T") : str;
     const d = new Date(normalized);
     if (!isNaN(d.getTime())) {
       const year = d.getFullYear();
@@ -120,10 +136,9 @@ const ReimbursementCards = () => {
       })
     : allReimbursements;
 
-  // Process department cards - Only show departments that have reimbursement requests (>0)
+  // Process department cards - only departments that have requests (>0)
   const deptCards = departmentList
     .map((dept) => {
-      // Filter reimbursements for this department
       const deptReimbursements = monthFilteredReimbursements.filter(
         (r) => String(r.department?.id) === String(dept.id)
       );
@@ -168,10 +183,11 @@ const ReimbursementCards = () => {
     })
     .filter((card) => card.totalRequests > 0);
 
-  // Filter Cards by Selected Dropdown and Search Text
+  // Filter cards by selected dropdown and search text
   const filteredCards = deptCards.filter((card) => {
     const matchesDeptFilter =
-      selectedDeptFilter === "" || String(card.id) === String(selectedDeptFilter);
+      selectedDeptFilter === "" ||
+      String(card.id) === String(selectedDeptFilter);
     const matchesSearch =
       card.name.toLowerCase().includes(search.toLowerCase()) ||
       card.head.toLowerCase().includes(search.toLowerCase());
@@ -188,8 +204,7 @@ const ReimbursementCards = () => {
       <HeaderWrapper>
         <ReusableHeader
           title="Reimbursement"
-          breadcrumbs={[ "Reimbursement"]}
-       
+          breadcrumbs={["Reimbursement"]}
         />
       </HeaderWrapper>
 
@@ -211,54 +226,41 @@ const ReimbursementCards = () => {
         />
       </div>
 
-      {/* LOADING & ERROR STATES */}
-{loading && (
-  <CardsGrid>
-    {Array.from({ length: 6 }).map((_, index) => (
-      <SkeletonCard key={index} />
-    ))}
-  </CardsGrid>
-)}
-      {!loading && error && (
-        <p style={{ color: "red" }}>
-          {error}{" "}
-          <button type="button" onClick={loadData}>
-            Retry
-          </button>
-        </p>
+      {/* LOADING STATE */}
+      {loading && (
+        <CardsGrid>
+          {Array.from({ length: 6 }).map((_, index) => (
+            <SkeletonCard key={index} />
+          ))}
+        </CardsGrid>
       )}
 
-   {!loading && !error && filteredCards.length === 0 && (
-  <CardsGrid>
-    <EmptyState>
-      <EmptyStateIcon>
-        <FiFileText />
-      </EmptyStateIcon>
+      {/* EMPTY STATE (hidden when the load failed - the global handler shows that) */}
+      {!loading && !loadFailed && filteredCards.length === 0 && (
+        <CardsGrid>
+          <EmptyState>
+            <EmptyStateIcon>
+              <FiFileText />
+            </EmptyStateIcon>
 
-      <EmptyStateTitle>
-        No Reimbursement Found
-      </EmptyStateTitle>
+            <EmptyStateTitle>No Reimbursement Found</EmptyStateTitle>
 
-      <EmptyStateText>
-        There are no reimbursement requests matching your
-        current search or filter selection.
-      </EmptyStateText>
-    </EmptyState>
-  </CardsGrid>
-)}
+            <EmptyStateText>
+              There are no reimbursement requests matching your current search
+              or filter selection.
+            </EmptyStateText>
+          </EmptyState>
+        </CardsGrid>
+      )}
 
       {/* CARDS GRID */}
-      {!loading && !error && filteredCards.length > 0 && (
+      {!loading && filteredCards.length > 0 && (
         <CardsGrid>
           {filteredCards.map((card) => (
             <DeptCard key={card.id}>
               <CardHeader>
-                <ReimbursementName>
-                  {card.name} DEPARTMENT
-                </ReimbursementName>
-                <StatusBadge status="Approved">
-                  Active
-                </StatusBadge>
+                <ReimbursementName>{card.name} DEPARTMENT</ReimbursementName>
+                <StatusBadge status="Approved">Active</StatusBadge>
               </CardHeader>
 
               <div
@@ -267,7 +269,7 @@ const ReimbursementCards = () => {
                   color: "#3154d8",
                   fontWeight: "600",
                   marginBottom: "12px",
-                  fontFamily: "Poppins, sans-serif"
+                  fontFamily: "Poppins, sans-serif",
                 }}
               >
                 Head Of The Department : {card.head}
@@ -283,7 +285,7 @@ const ReimbursementCards = () => {
                   fontWeight: "500",
                   borderRadius: "4px",
                   marginBottom: "8px",
-                  fontFamily: "Poppins, sans-serif"
+                  fontFamily: "Poppins, sans-serif",
                 }}
               >
                 Total Request : {String(card.totalRequests).padStart(2, "0")}
@@ -307,7 +309,7 @@ const ReimbursementCards = () => {
                       alt={emp.name}
                       style={{
                         marginLeft: idx > 0 ? "-8px" : "0",
-                        zIndex: 3 - idx
+                        zIndex: 3 - idx,
                       }}
                     />
                   ))}
@@ -318,7 +320,10 @@ const ReimbursementCards = () => {
                   )}
                 </EmployeeCount>
 
-                <ViewButton type="button" onClick={() => handleViewReimbursement(card.id)}>
+                <ViewButton
+                  type="button"
+                  onClick={() => handleViewReimbursement(card.id)}
+                >
                   VIEW REQUEST
                 </ViewButton>
               </CardBottom>

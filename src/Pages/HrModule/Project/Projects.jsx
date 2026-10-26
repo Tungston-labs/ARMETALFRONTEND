@@ -20,7 +20,6 @@ import StatsCards from "../../../Components/StatsCards/StatsCards";
 import ProjectModal from "../../../Components/Hrmodule/Project/modal/ProjectModal";
 import AddEmployeeModal from "../../../Components/Hrmodule/Project/modal/Addemployeemodal";
 
-
 import {
     getProjects,
     createProject,
@@ -34,11 +33,19 @@ import { getProjectCards } from "../../../utils/projectCards";
 import SkeletonCard from "../../../Components/Skeleton/ SkeletonCard";
 import { FiInbox } from "react-icons/fi";
 
+const STATUS_MAP = {
+    "In Progress": "in_progress",
+    Completed: "completed",
+    "On Hold": "on_hold",
+    Cancelled: "cancelled",
+};
+
 const Projects = () => {
     const dispatch = useDispatch();
 
     // =========================
     // REDUX STATE
+    // (errors are shown by the global error handler)
     // =========================
 
     const {
@@ -53,7 +60,6 @@ const Projects = () => {
         },
         isLoading,
         isError,
-        message,
     } = useSelector((state) => state.projects);
 
     // =========================
@@ -61,6 +67,7 @@ const Projects = () => {
     // =========================
 
     const [search, setSearch] = useState("");
+    const [debouncedSearch, setDebouncedSearch] = useState("");
     const [status, setStatus] = useState("");
     const [month, setMonth] = useState("");
     const [page, setPage] = useState(1);
@@ -76,19 +83,36 @@ const Projects = () => {
     const [isAssigning, setIsAssigning] = useState(false);
 
     // =========================
-    // GET PROJECTS
+    // SEARCH DEBOUNCE (also resets to page 1)
     // =========================
 
     useEffect(() => {
+        const handler = setTimeout(() => {
+            setDebouncedSearch(search.trim());
+            setPage(1);
+        }, 300);
+
+        return () => clearTimeout(handler);
+    }, [search]);
+
+    // =========================
+    // GET PROJECTS
+    // =========================
+
+    const loadProjects = () =>
         dispatch(
             getProjects({
-                search,
+                search: debouncedSearch,
                 page,
                 status,
                 date: month,
             })
         );
-    }, [dispatch, search, page, status, month]);
+
+    useEffect(() => {
+        loadProjects();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [dispatch, debouncedSearch, page, status, month]);
 
     // =========================
     // GET PROJECT COUNTS
@@ -99,7 +123,21 @@ const Projects = () => {
     }, [dispatch]);
 
     // =========================
-    // ADD PROJECT
+    // FILTER HANDLERS
+    // =========================
+
+    const handleStatusChange = (value) => {
+        setStatus(STATUS_MAP[value] || "");
+        setPage(1);
+    };
+
+    const handleMonthChange = (value) => {
+        setMonth(value);
+        setPage(1);
+    };
+
+    // =========================
+    // PROJECT MODAL
     // =========================
 
     const handleAddProject = () => {
@@ -107,88 +145,45 @@ const Projects = () => {
         setShowProjectModal(true);
     };
 
-    // =========================
-    // CLOSE PROJECT MODAL
-    // =========================
-
     const handleCloseProjectModal = () => {
         setShowProjectModal(false);
         setSelectedProject(null);
     };
 
-    // =========================
-    // PROJECT PAYLOAD
-    // =========================
-
     const toProjectPayload = (formData) => ({
         name: formData.projectName.trim(),
-
         punch_type: formData.projectType,
-
         latitude:
-            formData.latitude !== ""
-                ? Number(formData.latitude)
-                : null,
-
+            formData.latitude !== "" ? Number(formData.latitude) : null,
         longitude:
-            formData.longitude !== ""
-                ? Number(formData.longitude)
-                : null,
-
+            formData.longitude !== "" ? Number(formData.longitude) : null,
         priority: formData.priority,
-
         start_date: formData.startDate || null,
-
         status: formData.projectStatus,
     });
-
-    // =========================
-    // CREATE / UPDATE PROJECT
-    // =========================
 
     const handleProjectSubmit = async (formData, editData) => {
         try {
             const projectData = toProjectPayload(formData);
 
-            console.log("PROJECT PAYLOAD:", projectData);
-
             if (editData) {
                 await dispatch(
-                    updateProject({
-                        id: editData.id,
-                        projectData,
-                    })
+                    updateProject({ id: editData.id, projectData })
                 ).unwrap();
             } else {
-                await dispatch(
-                    createProject(projectData)
-                ).unwrap();
+                await dispatch(createProject(projectData)).unwrap();
             }
 
-            // Refresh project list
-            dispatch(
-                getProjects({
-                    search,
-                    page,
-                    status,
-                    date: month,
-                })
-            );
-
-            // Refresh stats
+            loadProjects();
             dispatch(getProjectCount());
-
             handleCloseProjectModal();
         } catch (error) {
-            console.error(
-                "Project operation failed:",
-                error
-            );
+            console.error("Project operation failed:", error);
         }
     };
 
     // =========================
-    // ADD EMPLOYEE
+    // EMPLOYEE MODAL
     // =========================
 
     const handleAddEmployee = async (project) => {
@@ -197,39 +192,20 @@ const Projects = () => {
         setSelectedEmployeeProject(project);
 
         try {
-            await dispatch(
-                getEmployeesNotInProject(project.id)
-            ).unwrap();
-
+            await dispatch(getEmployeesNotInProject(project.id)).unwrap();
             setShowAddEmployee(true);
         } catch (error) {
-            console.error(
-                "Failed to get available employees:",
-                error
-            );
+            console.error("Failed to get available employees:", error);
         }
     };
-
-    // =========================
-    // CLOSE EMPLOYEE MODAL
-    // =========================
 
     const handleCloseAddEmployee = () => {
         setShowAddEmployee(false);
         setSelectedEmployeeProject(null);
     };
 
-    // =========================
-    // ASSIGN EMPLOYEES
-    // =========================
-
     const handleAssignEmployees = async (employeeIds) => {
-        if (
-            !selectedEmployeeProject?.id ||
-            !employeeIds?.length
-        ) {
-            return;
-        }
+        if (!selectedEmployeeProject?.id || !employeeIds?.length) return;
 
         try {
             setIsAssigning(true);
@@ -241,22 +217,10 @@ const Projects = () => {
                 })
             ).unwrap();
 
-            // Refresh project list
-            dispatch(
-                getProjects({
-                    search,
-                    page,
-                    status,
-                    date: month,
-                })
-            );
-
+            loadProjects();
             handleCloseAddEmployee();
         } catch (error) {
-            console.error(
-                "Failed to assign employees:",
-                error
-            );
+            console.error("Failed to assign employees:", error);
         } finally {
             setIsAssigning(false);
         }
@@ -268,17 +232,16 @@ const Projects = () => {
 
     const projectCards = getProjectCards(projectCount);
 
+    // Skeleton only on the very first load, so the stats don't
+    // flash every time a filter or page changes.
+    const showStatsSkeleton = isLoading && projectCount.total === 0;
+
     // =========================
     // RENDER
     // =========================
 
     return (
         <ProjectsPage>
-
-            {/* ========================= */}
-            {/* HEADER */}
-            {/* ========================= */}
-
             <ReusableHeader
                 title="Projects"
                 breadcrumbs={["Projects"]}
@@ -286,11 +249,7 @@ const Projects = () => {
                 onButtonClick={handleAddProject}
             />
 
-            {/* ========================= */}
-            {/* STATS */}
-            {/* ========================= */}
-
-            {isLoading ? (
+            {showStatsSkeleton ? (
                 <StatsCards
                     cards={Array.from({ length: 4 }).map(() => ({}))}
                     loading
@@ -299,186 +258,80 @@ const Projects = () => {
                 <StatsCards cards={projectCards} />
             )}
 
-            {/* ========================= */}
-            {/* FILTERS */}
-            {/* ========================= */}
-
             <ReusableFilter
                 search={search}
-                onSearch={(value) => {
-                    setSearch(value);
-                    setPage(1);
-                }}
+                onSearch={setSearch}
                 searchPlaceholder="Search by Project Name"
-
-                status={status}
-                statuses={[
-                    "In Progress",
-                    "Completed",
-                    "On Hold",
-                    "Cancelled",
-                ]}
-                onStatus={(value) => {
-                    const statusMap = {
-                        "In Progress": "in_progress",
-                        "Completed": "completed",
-                        "On Hold": "on_hold",
-                        "Cancelled": "cancelled",
-                    };
-
-                    setStatus(
-                        statusMap[value] || ""
-                    );
-
-                    setPage(1);
-                }}
-
+                status={
+                    Object.keys(STATUS_MAP).find(
+                        (label) => STATUS_MAP[label] === status
+                    ) || ""
+                }
+                statuses={Object.keys(STATUS_MAP)}
+                onStatus={handleStatusChange}
                 date={month}
-                onDate={(value) => {
-                    setMonth(value);
-                    setPage(1);
-                }}
-
+                onDate={handleMonthChange}
                 showSearch
                 showStatus
-            // showDate
+                // showDate
             />
-
-            {/* ========================= */}
-            {/* ERROR */}
-            {/* ========================= */}
-
-            {isError && (
-                <div>
-                    {message ||
-                        "Failed to load projects."}
-                </div>
-            )}
-
-            {/* ========================= */}
-            {/* PROJECT CARDS */}
-            {/* ========================= */}
 
             <ProjectsContainer>
                 <ProjectsGrid>
-
                     {isLoading ? (
-
-                        // Skeleton cards
-                        Array.from({ length: 8 }).map(
-                            (_, index) => (
-                                <SkeletonCard
-                                    key={index}
-                                />
-                            )
-                        )
-
+                        Array.from({ length: 8 }).map((_, index) => (
+                            <SkeletonCard key={index} />
+                        ))
                     ) : projects.length > 0 ? (
-
-                        // Actual project cards
                         projects.map((project) => (
                             <ProjectCard
                                 key={project.id}
-
                                 id={project.id}
-
                                 project={project}
-
-                                category={
-                                    project.punch_type
-                                }
-
-                                title={
-                                    project.name
-                                }
-
+                                category={project.punch_type}
+                                title={project.name}
                                 date={
-                                    project.start_date ||
-                                    project.date ||
-                                    ""
+                                    project.start_date || project.date || ""
                                 }
-
-                                status={
-                                    project.status
-                                }
-
-                                priority={
-                                    project.priority ||
-                                    ""
-                                }
-
-                                members={
-                                    project.employees ||
-                                    []
-                                }
-
-                                memberCount={
-                                    project.employees
-                                        ?.length || 0
-                                }
-
-                                onAddMember={
-                                    handleAddEmployee
-                                }
+                                status={project.status}
+                                priority={project.priority || ""}
+                                members={project.employees || []}
+                                memberCount={project.employees?.length || 0}
+                                onAddMember={handleAddEmployee}
                             />
                         ))
-
-                    ) : (
-
+                    ) : !isError ? (
+                        // Hidden when the load failed - the global handler shows that
                         <EmptyState>
                             <EmptyStateIcon>
                                 <FiInbox />
                             </EmptyStateIcon>
 
-                            <EmptyStateTitle>
-                                No Projects Found
-                            </EmptyStateTitle>
+                            <EmptyStateTitle>No Projects Found</EmptyStateTitle>
 
                             <EmptyStateText>
-                                There are no projects matching your
-                                current search or filter selection.
+                                There are no projects matching your current
+                                search or filter selection.
                             </EmptyStateText>
                         </EmptyState>
-
-                    )}
+                    ) : null}
                 </ProjectsGrid>
             </ProjectsContainer>
 
-            {/* ========================= */}
-            {/* ADD / EDIT PROJECT MODAL */}
-            {/* ========================= */}
-
             <ProjectModal
                 isOpen={showProjectModal}
-                onClose={
-                    handleCloseProjectModal
-                }
+                onClose={handleCloseProjectModal}
                 editData={selectedProject}
-                onSubmit={
-                    handleProjectSubmit
-                }
+                onSubmit={handleProjectSubmit}
             />
-
-            {/* ========================= */}
-            {/* ADD EMPLOYEE MODAL */}
-            {/* ========================= */}
 
             <AddEmployeeModal
                 isOpen={showAddEmployee}
-                onClose={
-                    handleCloseAddEmployee
-                }
-                employees={
-                    employeesNotInProject
-                }
-                onAdd={
-                    handleAssignEmployees
-                }
-                isLoading={
-                    isAssigning
-                }
+                onClose={handleCloseAddEmployee}
+                employees={employeesNotInProject}
+                onAdd={handleAssignEmployees}
+                isLoading={isAssigning}
             />
-
         </ProjectsPage>
     );
 };

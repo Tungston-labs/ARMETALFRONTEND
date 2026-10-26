@@ -13,6 +13,7 @@ import {
   TwoColumnRows,
   FormGroups,
   Label,
+  Hr,
 
 } from "./Table.Styles";
 import {
@@ -35,7 +36,7 @@ const Table = ({
   swiftCode,
   setSwiftCode,
   ifscCode,
-setIfscCode,
+  setIfscCode,
   accountNumber,
   setAccountNumber,
   uanNumber,
@@ -68,23 +69,23 @@ setIfscCode,
   return (
     <Container>
       <Header>
-            <SectionTitle >Bank Details</SectionTitle>
+        <SectionTitle >Bank Details</SectionTitle>
       </Header>
- 
+
       <FormSection>
         <Row>
-                    <TwoColumnRows>
-          <FormGroups>
-            <Label>Bank Name</Label>
-            <Input
-              placeholder="Enter Bank Name"
-              value={bankName}
-              onChange={(e) => setBankName(e.target.value)}
-            />
-            <ErrorMsg msg={errors.bankName} />
-          </FormGroups>
-          
-             <FormGroups>
+          <TwoColumnRows>
+            <FormGroups>
+              <Label>Bank Name</Label>
+              <Input
+                placeholder="Enter Bank Name"
+                value={bankName}
+                onChange={(e) => setBankName(e.target.value)}
+              />
+              <ErrorMsg msg={errors.bankName} />
+            </FormGroups>
+
+            <FormGroups>
               <Label>{bankConfig.accountLabel}</Label>
 
               <Input
@@ -107,30 +108,30 @@ setIfscCode,
                 <ErrorMsg msg={errors.uanNumber} />
               </FormGroups>
             )}
-            </TwoColumnRows>
+          </TwoColumnRows>
         </Row>
         <Row>
           <TwoColumnRows>
-      <FormGroups>
-  <Label>{bankConfig.bankCodeLabel}</Label>
+            <FormGroups>
+              <Label>{bankConfig.bankCodeLabel}</Label>
 
 
 
-  <Input
-    placeholder={bankConfig.bankCodePlaceholder}
-    value={bankCodeValue}
-    onChange={(e) => setBankCodeValue(e.target.value.toUpperCase())}
-  />
-    <ErrorMsg
-    msg={bankConfig.bankCodeField === "ifscCode" ? errors.ifscCode : errors.swiftCode}
-  />
-</FormGroups>
+              <Input
+                placeholder={bankConfig.bankCodePlaceholder}
+                value={bankCodeValue}
+                onChange={(e) => setBankCodeValue(e.target.value.toUpperCase())}
+              />
+              <ErrorMsg
+                msg={bankConfig.bankCodeField === "ifscCode" ? errors.ifscCode : errors.swiftCode}
+              />
+            </FormGroups>
 
-             <FormGroups>
+            <FormGroups>
               <Label>Basic Salary</Label>
 
               <Input
-              type="number"
+                type="number"
                 placeholder="Enter Basic Salary"
                 value={basicSalary}
                 onChange={(e) => setBasicSalary(e.target.value)}
@@ -140,72 +141,73 @@ setIfscCode,
 
           </TwoColumnRows>
         </Row>
-   
+
         {bankConfig.showIndianTax && (
           <>
-          <Divider/>
+           <Hr />
+
             <SectionTitle>Tax and Compliance</SectionTitle>
             <Row>
               <TwoColumnRows>
-              <FormGroups>
-                <Label>PAN Number</Label>
+                <FormGroups>
+                  <Label>PAN Number</Label>
 
-                <Input
-                  placeholder="Enter PAN Number"
-                  value={panNumber}
-                  onChange={(e) => setPanNumber(e.target.value)}
-                />
-                <ErrorMsg msg={errors.panNumber} />
-              </FormGroups>
+                  <Input
+                    placeholder="Enter PAN Number"
+                    value={panNumber}
+                    onChange={(e) => setPanNumber(e.target.value)}
+                  />
+                  <ErrorMsg msg={errors.panNumber} />
+                </FormGroups>
 
-              <FormGroups>
-                <Label>Tax Regime</Label>
-                <Select
-                  value={taxRegime}
-                  onChange={(e) => setTaxRegime(e.target.value)}
-                >
-                  <option value="">Select Regime</option>
-                  <option value="old">Old Regime</option>
-                  <option value="new">New Regime</option>
-                </Select>
-                <ErrorMsg msg={errors.taxRegime} />
-              </FormGroups>
-            </TwoColumnRows>
+                <FormGroups>
+                  <Label>Tax Regime</Label>
+                  <Select
+                    value={taxRegime}
+                    onChange={(e) => setTaxRegime(e.target.value)}
+                  >
+                    <option value="">Select Regime</option>
+                    <option value="old">Old Regime</option>
+                    <option value="new">New Regime</option>
+                  </Select>
+                  <ErrorMsg msg={errors.taxRegime} />
+                </FormGroups>
+              </TwoColumnRows>
 
-            <TwoColumnRows>
-              <FormGroups>
-                <Label>TDS Deduction Amount</Label>
+              <TwoColumnRows>
+                <FormGroups>
+                  <Label>TDS Deduction Amount</Label>
 
-                <Select
-                  value={tdsAmount}
-                  onChange={(e) => setTdsAmount(e.target.value)}
-                >
-                  <option value="">Select TDS %</option>
-                  {[0, 10, 20, 30].map((i) => (
-                    <option key={i} value={i}>
-                      {i}%
-                    </option>
-                  ))}
-                </Select>
-                <ErrorMsg msg={errors.tdsAmount} />
-              </FormGroups>
+                  <Select
+                    value={tdsAmount}
+                    onChange={(e) => setTdsAmount(e.target.value)}
+                  >
+                    <option value="">Select TDS %</option>
+                    {[0, 10, 20, 30].map((i) => (
+                      <option key={i} value={i}>
+                        {i}%
+                      </option>
+                    ))}
+                  </Select>
+                  <ErrorMsg msg={errors.tdsAmount} />
+                </FormGroups>
 
-              <FormGroups>
-                <Label>Declaration under 80C</Label>
+                <FormGroups>
+                  <Label>Declaration under 80C</Label>
 
-                <Select
-                  value={declaration80C}
-                  onChange={(e) => setDeclaration80C(e.target.value)}
-                >
-                  <option value="">Declaration under 80C?</option>
-                  <option value="true">Yes</option>
-                  <option value="false">No</option>
-                </Select>
-                <ErrorMsg msg={errors.declaration80C} />
-              </FormGroups>
-            </TwoColumnRows>
-          </Row>
-        </>
+                  <Select
+                    value={declaration80C}
+                    onChange={(e) => setDeclaration80C(e.target.value)}
+                  >
+                    <option value="">Declaration under 80C?</option>
+                    <option value="true">Yes</option>
+                    <option value="false">No</option>
+                  </Select>
+                  <ErrorMsg msg={errors.declaration80C} />
+                </FormGroups>
+              </TwoColumnRows>
+            </Row>
+          </>
         )}
 
         {showNextButton && (

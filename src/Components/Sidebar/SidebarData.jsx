@@ -31,7 +31,7 @@ const getSidebarData = (user) => {
         icon: <FaReceipt />,
         path: "/finance",
       },
-       {
+      {
         title: "PLANS & PRICING",
         icon: <LuCircleDollarSign />,
         path: "/PlanAndPricing",
@@ -90,6 +90,26 @@ const getSidebarData = (user) => {
       items.push({ title: "PROJECT", icon: <FiCodesandbox />, path: "/projects" });
     }
 
+
+    if (modules.project) {
+      items.push({ title: "Sales-Report", icon: <FiCodesandbox />, path: "/reports/sales-report" });
+    }
+  if (modules.project) {
+      items.push({ title: "Customer-Report", icon: <FiCodesandbox />, path: "/reports/customer-report" });
+    }
+      if (modules.project) {
+      items.push({ title: "vendor-Report", icon: <FiCodesandbox />, path: "/reports/vendor-report" });
+    }
+     if (modules.project) {
+      items.push({ title: "expense-Report", icon: <FiCodesandbox />, path: "/reports/expense-report" });
+    }
+
+      if (modules.project) {
+      items.push({ title: "Profit or Loss", icon: <FiCodesandbox />, path: "/reports/profit-loss" });
+    }
+       if (modules.project) {
+      items.push({ title: "Cash Flow", icon: <FiCodesandbox />, path: "/reports/cash-flow" });
+    }
     return items;
   }
 

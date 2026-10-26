@@ -32,6 +32,7 @@ export const getCustomerColumns = ({
         header: "Code",
         priority: 2,
     },
+
     {
         accessor: "customer_name",
         header: "Customer Name",
@@ -67,11 +68,13 @@ export const getCustomerColumns = ({
             </BalanceAmount>
         ),
     },
+
     {
         accessor: "outstanding_days",
         header: "Outstanding Days",
         priority: 5,
     },
+
     {
         accessor: "last_payment",
         header: "Last Payment",

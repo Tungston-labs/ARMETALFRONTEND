@@ -6,7 +6,7 @@ export const LedgerTableWrapper = styled.div`
 
   .ledgerTotalRow {
     display: grid;
-    grid-template-columns: 110px 105px 1.4fr 1.2fr 1fr 1fr 1.1fr 80px;
+    grid-template-columns: 110px 120px 1.4fr 1fr 1fr 1fr 1.1fr;
     align-items: center;
 
     min-height: 35px;

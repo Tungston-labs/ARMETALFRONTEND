@@ -1,4 +1,5 @@
 import axios from "axios";
+import { setupErrorInterceptor } from "../utils/Errorhandling/Errorhandling";
 
 export const BASE_URL = String(
   import.meta.env.VITE_API_BASE_URL || "http://localhost:8000"
@@ -14,30 +15,39 @@ const API = axios.create({
 
 API.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem("accessToken") || sessionStorage.getItem("accessToken");
+    const token =
+      localStorage.getItem("accessToken") || sessionStorage.getItem("accessToken");
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+
+    // Let the browser set multipart/form-data with the correct boundary itself
+    if (config.data instanceof FormData) {
+      delete config.headers["Content-Type"];
+    }
+
     return config;
   },
   (error) => Promise.reject(error)
 );
 
+// 1) Token refresh handling (runs first)
 API.interceptors.response.use(
   (response) => response,
   async (error) => {
-    
     const originalRequest = error.config;
 
     if (
       error.response?.status === 401 &&
+      originalRequest &&
       !originalRequest._retry &&
-      (localStorage.getItem("refreshToken")|| sessionStorage.getItem("refreshToken"))
+      (localStorage.getItem("refreshToken") || sessionStorage.getItem("refreshToken"))
     ) {
       originalRequest._retry = true;
 
       try {
-        const refreshToken = localStorage.getItem("refreshToken")|| sessionStorage.getItem("refreshToken");
+        const refreshToken =
+          localStorage.getItem("refreshToken") || sessionStorage.getItem("refreshToken");
         const res = await axios.post(`${BASE_URL}/api/token/refresh/`, {
           refresh: refreshToken,
         });
@@ -61,8 +71,14 @@ API.interceptors.response.use(
         return API(originalRequest);
       } catch (refreshErr) {
         console.error("Refresh token failed:", refreshErr);
-        localStorage.clear();
-        window.location.href = "/login";
+
+        // Only log the user out if the server actually rejected the refresh token.
+        // If it was just a network problem, keep the session so they can retry.
+        const status = refreshErr.response?.status;
+        if (status === 400 || status === 401) {
+          localStorage.clear();
+          window.location.href = "/login";
+        }
         return Promise.reject(refreshErr);
       }
     }
@@ -71,5 +87,7 @@ API.interceptors.response.use(
   }
 );
 
+// 2) Friendly error popups (must be added AFTER the refresh interceptor)
+setupErrorInterceptor(API);
 
 export default API;

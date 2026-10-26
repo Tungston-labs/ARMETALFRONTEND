@@ -1,5 +1,6 @@
 // Components/Table.Styles.js
 import styled from "styled-components";
+const CONTROL_HEIGHT = "40px";
 
 // Main container
 export const Container = styled.div`
@@ -44,34 +45,68 @@ export const FormGroups = styled.div`
 
 // Label
 export const Label = styled.label`
-  font-weight: 500;
-  font-size: 0.9rem;
-  color: #172554;
-  margin-bottom: 5px;
+   display: block;
+  margin-bottom: 8px;
+  color: #333;
+  font-family: "Poppins", sans-serif;
+  font-weight: 400;
+  font-size: 14px;
+  line-height: 1.2;
+
+  ${(props) =>
+    props.$required &&
+    `
+      &::after {
+        content: " *";
+        color: #ef4444;
+      }
+    `}
 `;
 
 
 export const Input = styled.input`
-  padding: 8px;
-  border-radius: 4px;
+ box-sizing: border-box;
+  width: 100%;
+  height: ${CONTROL_HEIGHT};
+  padding: 0 10px;
   border: 1px solid lightgray;
-  font-size: 0.95rem;
+  border-radius: 4px;
+  font-size: 1rem;
+  background: #fff;
+
   &:focus {
-    border-color: #4f46e5;
+    border-color: #3352ba;
     outline: none;
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
   }
 `;
 
 // Select
 export const Select = styled.select`
-  padding: 8px;
-  border-radius: 4px;
-  background:white;
+  box-sizing: border-box;
+  width: 100%;
+  height: ${CONTROL_HEIGHT};
+  padding: 0 10px;
   border: 1px solid lightgray;
-  font-size: 0.95rem;
+  border-radius: 4px;
+  font-size: 1rem;
+  background: #fff;
+
+  /* Gray placeholder when no option is selected */
+  color: ${(props) => (props.value ? "#333333" : "#9ca3af")};
+
   &:focus {
-    border-color: #4f46e5;
+    border-color: #3352ba;
     outline: none;
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+  }
+
+  option {
+    color: #333333;
+  }
+
+  option[value=""] {
+    color: #9ca3af;
   }
 `;
 
@@ -98,11 +133,19 @@ export const Button = styled.button`
 `;
 
 export const SectionTitle = styled.h2`
-  font-family: "Poppins";
-font-weight: 400;
-font-style: Regular;
-font-size: 16px;
-line-height: 100%;
-letter-spacing: 0%;
-margin-bottom:15px;
+ margin: 0;
+  color: #333;
+  font-family: "Poppins", sans-serif;
+  font-weight: 400;
+  font-size: 16px;
+  line-height: 1.2;
+  margin-bottom: 15px;
+`;
+
+export const Hr = styled.hr`
+  width: 100%;
+  height: 0;
+  margin: 4px 0;
+  border: 0;
+  border-top: 1px solid #e5e7eb;
 `;

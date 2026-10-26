@@ -15,14 +15,49 @@ import companyReducer from "../Redux/companySlice";
 import financeReducer from "./financeSlice";
 import salaryIncrementReducer from "../Redux/salaryIncrementSlice";
 import warehouseReducer from "../Redux/warehouseSlice";
-import categoryReducer from "./finance/categorySlice";
-import productReducer from "./finance/ProductSlice";
-import customerReducer from "./finance/CustomerSlice";
-import inventoryReducer from "../Redux/inventorySlice";
+import quotationReducer from "./quotationSlice";
+import deliveryNotesReducer from "../Redux/finance/Sales/deliveryNotesSlice";
+import categoryReducer from "./finance/Product/categorySlice";
+import productReducer from "./finance/Product/ProductSlice";
+import customerReducer from "./finance/Sales/CustomerSlice";
+import inventoryReducer from "../Redux/finance/Product/inventorySlice";
+import salesOrderReducer from "../Redux/finance/Sales/Salesorderslice";
+import invoiceReducer from "../Redux/finance/Sales/InvoiceSlice";
+import recurringReducer from "../Redux/finance/Sales/recurringSlice";
+import paymentReducer from "../Redux/finance/Sales/paymentSlice";
+import creditNotesReducer from "../Redux/finance/Sales/creditNoteSlice";
+import salesReturnsReducer from "./finance/Sales/Salesreturnslice";
+import customerLedgerReducer from "./finance/Sales/Customerledgerslice";
+import vendorReducer from "./finance/purchases/vendorsSlice";
+import billReducer from "./finance/purchases/BillSlice";
+import purchaseOrderReducer from "./finance/purchases/Purchaseordersslice";
+import vendorDetailReducer from "./finance/purchases/Vendordetailslice";
+import debitNoteReducer from "./finance/purchases/debitNoteSlice";
+import purchasePaymentsReducer from "./finance/purchases/paymentSlice";
+
+import vendorLedgerReducer from "./finance/purchases/vendorLedgerslice";
+import accountingReducer from "./finance/accounts/Accountingslice";
+import ledgerReducer from "./finance/accounts/Ledgerslice";
+import receivableReducer from "./finance/accounts/Receivableslice";
+import payableReducer from "./finance/accounts/payableSlice";
+import bankingReducer from "./finance/accounts/BankingSlice";
+
+import trialBalanceReducer from "./finance/accounts/TrialBalanceslice";
+import journalEntryReducer from "./finance/accounts/Journalslice";
+import expensesReducer from "./finance/accounts/Expenseslice";
+import salesReportReducer from "./finance/reports/Salesreportslice";
+import customerReportReducer from "./finance/reports/Customerreportslice";
+import vendorReportReducer from "./finance/reports/Vendorreportslice";
+import profitLossReportReducer from "./finance/reports/Profitlossreportslice";
+import cashFlowReportReducer from "./finance/reports/Cashflowreportslice";
+import taxReportReducer from "./finance/reports/Taxreportslice";
+import purchaseReportReducer from "./finance/reports/PurchaseReportSlice";
+import paymentReportReducer from "./finance/reports/paymentReportSlice";
+
+
 
 export const store = configureStore({
   reducer: {
-
     auth: authReducer,
     departments: departmentReducer,
     holidays: holidayReducer,
@@ -37,6 +72,7 @@ export const store = configureStore({
     projects: projectReducer,
     company: companyReducer,
     finance: financeReducer,
+    quotation: quotationReducer,
     salaryIncrement: salaryIncrementReducer,
 
     category: categoryReducer,
@@ -44,5 +80,36 @@ export const store = configureStore({
     customer: customerReducer,
     warehouse: warehouseReducer,
     inventory: inventoryReducer,
+    salesOrder: salesOrderReducer,
+    deliveryNotes: deliveryNotesReducer,
+    invoice: invoiceReducer,
+    customerLedger: customerLedgerReducer,
+    recurring: recurringReducer,
+    payments: paymentReducer,
+    creditNotes: creditNotesReducer,
+    salesReturns: salesReturnsReducer,
+    vendor: vendorReducer,
+    bill: billReducer,
+    purchaseOrder: purchaseOrderReducer,
+    debitNote: debitNoteReducer,
+    purchasePayments: purchasePaymentsReducer,
+    vendorLedger: vendorLedgerReducer,
+    vendorDetail: vendorDetailReducer,
+    accounting: accountingReducer,
+    ledger: ledgerReducer,
+    receivable: receivableReducer,
+    payable: payableReducer,
+    trialBalance: trialBalanceReducer,
+    journalEntry: journalEntryReducer,
+       expense: expensesReducer,   
+      banking: bankingReducer,
+    profitLossReport: profitLossReportReducer,
+      cashFlowReport: cashFlowReportReducer,
+    salesReport: salesReportReducer,
+    customerReport: customerReportReducer,
+    vendorReport: vendorReportReducer,
+       taxReport: taxReportReducer, 
+    purchaseReport: purchaseReportReducer,
+    paymentReport: paymentReportReducer,
   },
 });

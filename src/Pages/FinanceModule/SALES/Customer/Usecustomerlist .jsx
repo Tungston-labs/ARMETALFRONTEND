@@ -16,7 +16,7 @@ import {
     addCustomer,
     editCustomer,
     removeCustomer,
-} from "../../../../Redux/finance/CustomerSlice";
+} from "../../../../Redux/finance/Sales/CustomerSlice";
 
 export const useCustomerList = () => {
     const dispatch = useDispatch();
@@ -42,9 +42,6 @@ export const useCustomerList = () => {
 
     const rowsPerPage = 10;
 
-    // ============================================================
-    // CLOSE ACTION MENU WHEN CLICKING OUTSIDE
-    // ============================================================
     useEffect(() => {
         const handleClickOutside = (e) => {
             if (!e.target.closest("[data-menu-root]")) {
@@ -62,9 +59,6 @@ export const useCustomerList = () => {
         setOpenMenuId((prev) => (prev === rowId ? null : rowId));
     };
 
-    // ============================================================
-    // FETCH CUSTOMERS
-    // ============================================================
     useEffect(() => {
         const timer = setTimeout(() => {
             dispatch(
@@ -79,9 +73,6 @@ export const useCustomerList = () => {
         return () => clearTimeout(timer);
     }, [dispatch, search, page]);
 
-    // ============================================================
-    // STATS
-    // ============================================================
     const formatCurrency = (value) =>
         `SAR ${Number(value || 0).toLocaleString()}`;
 
@@ -118,7 +109,7 @@ export const useCustomerList = () => {
         },
         {
             title: "Active Customers",
-            count: formatCurrency(totalCreditLimit),
+            count: totalCreditLimit,
             icon: <FiDollarSign />,
             backgroundColor: "#e3e7ff",
             iconColor: "#3250B5",
@@ -132,23 +123,20 @@ export const useCustomerList = () => {
         },
         {
             title: "Inactive Customers",
-            count: formatCurrency(totalPaymentsReceived),
+            count: totalPaymentsReceived,
             icon: <FiCheckCircle />,
             backgroundColor: "#fff3f3",
             iconColor: "#DB0F12",
         },
         {
             title: "Payments Received",
-            count: formatCurrency(totalOutstanding),
+            count: totalOutstanding,
             icon: <FiAlertCircle />,
             backgroundColor: "#f4fff2",
             iconColor: "#21C034",
         },
     ];
 
-    // ============================================================
-    // CUSTOMER ACTIONS
-    // ============================================================
     const handleAddCustomer = () => {
         setModalMode("add");
         setEditingCustomer(null);
@@ -266,21 +254,16 @@ export const useCustomerList = () => {
         handleCreateInvoice,
         handleViewLedger,
         handleViewOverview,
-
-        // filter state
         search,
         setSearch,
         page,
         setPage,
         startDate,
         endDate,
-
-        // modal state
         isCustomerModalOpen,
         modalMode,
         editingCustomer,
 
-        // handlers
         handleAddCustomer,
         handleViewCustomer,
         handleEditCustomer,

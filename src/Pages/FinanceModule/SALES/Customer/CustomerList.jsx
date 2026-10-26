@@ -27,7 +27,7 @@ const CustomerList = () => {
         loading,
         selectedCustomer,
         cards,
-totalRecords,
+        totalRecords,
         openMenuId,
         toggleActionsMenu,
         handleCreateInvoice,
@@ -73,11 +73,6 @@ totalRecords,
                 buttonText="+ NEW CUSTOMER"
                 onButtonClick={handleAddCustomer}
             >
-                <ExportButton type="button" onClick={handleExport}>
-                    <FiDownload />
-                    <span>Export</span>
-                </ExportButton>
-
                 <DateRangeWrapper>
                     <DatePickerContainer>
                         <DateInput

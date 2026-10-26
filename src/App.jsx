@@ -5,12 +5,16 @@ import { useDispatch } from "react-redux";
 
 import { login } from "./Redux/authSlice";
 
-import ErrorBoundary from "./Components/ErrorBoundary.jsx";
 import RequireAuth from "./Components/RequireAuth.jsx";
 import Layout from "./Components/layout/Layout.jsx";
 
 import Loder from "./Components/Loader/Loder.jsx";
-import ErrorSomething from "./Pages/error/ErrorSomething.jsx";
+
+import {
+  ErrorBoundary,
+  OfflineBanner,
+  NotFound,
+} from "./utils/Errorhandling/Errorhandling.jsx";
 
 import AuthRoutes from "./routes/AuthRoutes.jsx";
 import HRRoutes from "./routes/HRRoutes.jsx";
@@ -42,6 +46,9 @@ function App() {
 
   return (
     <ErrorBoundary>
+      {/* Shows "You're offline" bar on every page */}
+      <OfflineBanner />
+
       <Routes>
 
         {/* ================= AUTH ROUTES ================= */}
@@ -63,11 +70,11 @@ function App() {
             {/* ================= SUPER ADMIN MODULE ================= */}
             {SuperAdminRoutes()}
 
-            {/* ================= 404 ================= */}
-            <Route path="*" element={<ErrorSomething />} />
-
           </Route>
         </Route>
+
+        {/* ================= 404 (wrong URL) ================= */}
+        <Route path="*" element={<NotFound />} />
 
       </Routes>
     </ErrorBoundary>
