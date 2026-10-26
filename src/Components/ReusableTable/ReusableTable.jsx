@@ -224,9 +224,9 @@ const ReusableTable = ({
   onRowClick,
   emptyMessage = "No Records Found",
   loadingMessage = "Loading...",
-  totalRow,
+   totalRow, // NEW: object keyed by accessor, e.g. { debit: "10,000.00", credit: "0.00", balance: "10,000.00" }
   totalRowLabel = "TOTAL",
-  autoLayout = false,
+    autoLayout = false,
 }) => {
   const [sortKey, setSortKey] = useState("");
   const [sortDirection, setSortDirection] = useState("asc");
@@ -292,7 +292,8 @@ const ReusableTable = ({
   return (
     <Container>
       <TableScrollContainer>
-        <StyledTable $autoLayout={autoLayout}>
+     <StyledTable $autoLayout={autoLayout}>
+
           <colgroup>
             {safeColumns.map((column, index) => (
               <col
@@ -370,55 +371,53 @@ const ReusableTable = ({
                     {safeColumns.map((column, columnIndex) => {
                       const columnKey = getColumnKey(column, columnIndex);
 
-                      return (
-                        <Td
-                          key={`${rowKey}-${columnKey}`}
-                          data-priority={column.priority ?? 1}
-                          style={{
-                            whiteSpace: autoLayout ? "nowrap" : "normal",
-                          }}
-                          title={
-                            typeof column.render === "function" ||
-                            typeof column.cell === "function"
-                              ? undefined
-                              : String(getCellValue(row, column) ?? "")
-                          }
-                        >
-                          {renderCell(column, row, rowIndex)}
-                        </Td>
-                      );
-                    })}
-                  </Tr>
-                );
-              })
-            )}
+            {!loading &&
+              sortedData.map((row, index) => (
+                <Tr
+                  key={row.id ?? index}
+                  onClick={() => onRowClick?.(row)}
+                  style={onRowClick ? { cursor: "pointer" } : undefined}
+                >
+                  {columns.map((column) => (
+                    <Td
+                      key={column.accessor}
+                      data-priority={column.priority || 1}
+                      style={
+                        column.render
+                           ? { whiteSpace: autoLayout ? "nowrap" : "normal" }
+                          : undefined
+                      }
+                      title={
+                        column.render
+                          ? undefined
+                          : String(row[column.accessor] ?? "")
+                      }
+                    >
+                      {column.render
+                        ? column.render(row, index)
+                        : row[column.accessor]}
+                    </Td>
+                  ))}
+                </Tr>
+              ))}
           </Tbody>
 
-          {totalRow && !loading && (
-            <tfoot>
-              <TotalRow>
-                {safeColumns.map((column, index) => {
-                  const accessor = column.accessor ?? column.key ?? column.id;
-                  const columnKey = getColumnKey(column, index);
+        {totalRow && !loading && (
+  <tfoot>
+    <TotalRow>
+      {columns.map((column, i) => {
+        const value = i === 0 ? totalRowLabel : (totalRow[column.accessor] ?? "");
 
-                  const value =
-                    index === 0 ? totalRowLabel : (totalRow[accessor] ?? "");
+        let content = value;
+        if (column.accessor === "debit") content = <TotalDebit>{value}</TotalDebit>;
+        if (column.accessor === "credit") content = <TotalCredit>{value}</TotalCredit>;
+        if (column.accessor === "balance") content = <TotalBalance>{value}</TotalBalance>;
 
-                  let content = value;
-
-                  if (accessor === "debit") {
-                    content = <TotalDebit>{value}</TotalDebit>;
-                  } else if (accessor === "credit") {
-                    content = <TotalCredit>{value}</TotalCredit>;
-                  } else if (accessor === "balance") {
-                    content = <TotalBalance>{value}</TotalBalance>;
-                  }
-
-                  return <Td key={`total-${columnKey}`}>{content}</Td>;
-                })}
-              </TotalRow>
-            </tfoot>
-          )}
+        return <Td key={column.accessor}>{content}</Td>;
+      })}
+    </TotalRow>
+  </tfoot>
+)}
         </StyledTable>
       </TableScrollContainer>
     </Container>

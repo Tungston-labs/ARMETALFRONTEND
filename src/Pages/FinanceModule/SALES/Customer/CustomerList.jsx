@@ -112,6 +112,7 @@ const CustomerList = () => {
                 columns={customerColumns}
                 data={customers}
                 loading={loading}
+                autoLayout
             />
 
             <ReusablePagination
