@@ -4,8 +4,8 @@ import userEvent from "@testing-library/user-event";
 import "@testing-library/jest-dom";
 import { describe, it, expect, beforeEach, vi } from "vitest";
 
-import CategoriesList from "../../../Pages/FinanceModule/PRODUCTS/Categories/CategoriesList";
-import { useCategoriesList } from "../../../Pages/FinanceModule/PRODUCTS/Categories/useCategoriesList";
+import CategoriesList from "../../../../Pages/FinanceModule/PRODUCTS/Categories/CategoriesList";
+import { useCategoriesList } from "../../../../Pages/FinanceModule/PRODUCTS/Categories/useCategoriesList";
 
 
 vi.mock("../../Pages/FinanceModule/PRODUCTS/Categories/useCategoriesList");
