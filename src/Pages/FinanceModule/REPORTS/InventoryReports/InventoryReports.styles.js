@@ -309,3 +309,32 @@ export const StatusText = styled.span`
   font-weight: 400;
   white-space: nowrap;
 `;
+
+export const Message = styled.div`
+  padding: 16px;
+  margin: 12px 0;
+  text-align: center;
+  color: #64748b;
+  font-size: 13px;
+  line-height: 1.5;
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+`;
+
+export const PaginationRow = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid #e7e7e7;
+  border-top: none;
+  border-radius: 0 0 5px 5px;
+
+  @media (max-width: 650px) {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+`;

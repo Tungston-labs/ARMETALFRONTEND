@@ -12,8 +12,9 @@ export const ChartsPanel = styled.div`
 `;
 
 export const ChartSection = styled.section`
+  width: 100%;
   min-width: 0;
-  padding: 10px 10px 8px;
+  padding: 10px;
   box-sizing: border-box;
 `;
 
@@ -22,7 +23,7 @@ export const ChartHeader = styled.div`
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  margin-bottom: 3px;
+  margin-bottom: 8px;
 `;
 
 export const ChartTitle = styled.h3`
@@ -35,7 +36,7 @@ export const ChartTitle = styled.h3`
 `;
 
 export const ChartSelect = styled.select`
-  width: 59px;
+  width: 70px;
   height: 28px;
   flex-shrink: 0;
   padding: 0 5px;
@@ -47,6 +48,10 @@ export const ChartSelect = styled.select`
   font-family: inherit;
   font-size: 11px;
   cursor: pointer;
+
+  &:focus {
+    border-color: #7772d8;
+  }
 `;
 
 export const ChartSvg = styled.svg`
@@ -85,8 +90,16 @@ export const ChartSvg = styled.svg`
     font-weight: 400;
   }
 
-  g[role="button"]:focus {
-    outline: none;
+  .chart-line {
+    fill: none;
+    stroke-width: 2.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .chart-point {
+    stroke: #fff;
+    stroke-width: 1.5;
   }
 
   @media (max-width: 500px) {
@@ -101,8 +114,8 @@ export const ChartSvg = styled.svg`
 `;
 
 export const ChartDivider = styled.div`
-  height: 1px;
   width: 100%;
+  height: 1px;
   background: #e7e7e7;
 `;
 
@@ -110,22 +123,35 @@ export const Legend = styled.div`
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 16px;
-  padding: 2px 0 5px;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  margin-top: 10px;
+  padding: 2px 8px 8px;
   color: #555;
+  font-family: "Poppins", sans-serif;
   font-size: 10px;
+  box-sizing: border-box;
+
+  @media (max-width: 500px) {
+    gap: 8px 12px;
+    font-size: 9px;
+  }
 `;
 
 export const LegendItem = styled.div`
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 5px;
+  gap: 7px;
+  min-width: 0;
+  color: #555;
+  font-size: inherit;
 `;
 
 export const LegendColor = styled.span`
   display: inline-block;
-  width: 15px;
-  height: 3px;
-  border-radius: 2px;
-  background: ${(props) => props.$color};
+  width: 9px;
+  height: 9px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: ${(props) => props.$color || "#888"};
 `;
