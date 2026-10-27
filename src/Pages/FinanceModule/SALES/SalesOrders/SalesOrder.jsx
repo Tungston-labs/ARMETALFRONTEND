@@ -1,5 +1,4 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { FiDownload } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 
@@ -34,9 +33,15 @@ import {
     selectSalesOrderLoading,
     selectCustomers,
 } from "../../../../Redux/finance/Sales/Salesorderslice";
-
+const INVOICE_STATUS_OPTIONS = [
+    { label: "Draft", value: "draft" },
+    { label: "Pending", value: "pending" },
+    { label: "Partially Invoiced", value: "partially_invoiced" },
+    { label: "Invoiced", value: "invoiced" },
+    { label: "Overdue", value: "overdue" },
+];
 const getCurrentMonthRange = () => {
-    const today = new Date(2026, 8, 21); // Sep 21, 2026
+    const today = new Date(2026, 8, 21);
 
     const year = today.getFullYear();
     const month = today.getMonth();
@@ -79,11 +84,11 @@ const SalesOrder = () => {
     const [search, setSearch] = useState("");
     const [orderStatus, setOrderStatus] = useState("");
     const [customer, setCustomer] = useState("");
-    const [startDate, setStartDate] = useState(currentMonth.start);
-    const [endDate, setEndDate] = useState(currentMonth.end);
+    const [startDate, setStartDate] = useState("");
+    const [endDate, setEndDate] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
+    const [invoiceStatus, setInvoiceStatus] = useState("");
 
-    // Delete confirmation modal state
     const [orderToDelete, setOrderToDelete] = useState(null);
     const [deleteError, setDeleteError] = useState("");
     const debouncedSearch = useDebouncedValue(search);
@@ -211,43 +216,56 @@ const SalesOrder = () => {
 
             <StatsCards cards={stats} />
 
-            <ReusableFilter
-                search={search}
-                onSearch={(value) => {
-                    setSearch(value);
-                    setCurrentPage(1);
-                }}
-                searchPlaceholder="Search SO Number or Customer"
-                showSearch
-                status={orderStatus}
-                statuses={ORDER_STATUS_OPTIONS.map((s) => s.label)}
-                onStatus={(value) => {
-                    const match = ORDER_STATUS_OPTIONS.find(
-                        (s) => s.label === value
-                    );
-                    setOrderStatus(match ? match.value : "");
-                    setCurrentPage(1);
-                }}
-                showStatus
-                filters={[
-                    {
-                        key: "customer",
-                        value: customer,
-                        onChange: (value) => {
-                            setCustomer(value);
-                            setCurrentPage(1);
-                        },
-                        options: customerOptions,
-                        placeholder: "All Customers",
-                    },
-                ]}
+          <ReusableFilter
+    search={search}
+    onSearch={(value) => {
+        setSearch(value);
+        setCurrentPage(1);
+    }}
+    searchPlaceholder="Search SO Number,Customer,Quote"
+    showSearch
 
-            />
+    status={orderStatus}
+    statuses={ORDER_STATUS_OPTIONS.map((s) => s.label)}
+    onStatus={(value) => {
+        const match = ORDER_STATUS_OPTIONS.find(
+            (s) => s.label === value
+        );
+        setOrderStatus(match ? match.value : "");
+        setCurrentPage(1);
+    }}
+    statusPlaceholder="Order Status"
+    showStatus
+
+    filters={[
+        {
+            key: "customer",
+            value: customer,
+            onChange: (value) => {
+                setCustomer(value);
+                setCurrentPage(1);
+            },
+            options: customerOptions,
+            placeholder: "All Customers",
+        },
+        {
+            key: "invoiceStatus",
+            value: invoiceStatus,
+            onChange: (value) => {
+                setInvoiceStatus(value);
+                setCurrentPage(1);
+            },
+            options: INVOICE_STATUS_OPTIONS,
+            placeholder: "All Invoice Statuses",
+        },
+    ]}
+/>
 
             <ReusableTable
                 columns={columns}
                 data={salesOrders}
                 loading={loading}
+                autoLayout
             />
 
             <ReusablePagination

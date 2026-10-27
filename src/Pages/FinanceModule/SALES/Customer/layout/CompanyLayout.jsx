@@ -23,11 +23,11 @@ import { getCustomerById } from "../../../../../Redux/finance/Sales/CustomerSlic
 
 const pageMeta = {
   overview:      { title: "Overview",     showAddButton: false, showDateFilter: false },
-  quotations:    { title: "Quotations",   showAddButton: false, showDateFilter: true },
+  quotations:    { title: "Quotations",   showAddButton: false, showDateFilter: true, buttonText: "+ Generate Invoice", },
   orders:        { title: "Orders",       showAddButton: false, showDateFilter: true },
-  invoices:      { title: "Invoices",     showAddButton: true,  buttonText: "+ Generate Invoice",    showDateFilter: true },
-  payments:      { title: "Payments",     showAddButton: true,  buttonText: "+ Record Payment",      showDateFilter: true },
-  ledger:        { title: "Ledger",       showAddButton: true,  buttonText: "+ New Journal Entry",   showDateFilter: true },
+  invoices:      { title: "Invoices",     showAddButton: true,   showDateFilter: true },
+  payments:      { title: "Payments",     showAddButton: true,   showDateFilter: true },
+  ledger:        { title: "Ledger",       showAddButton: true,   showDateFilter: true },
   "credit-notes":{ title: "Credit Notes", showAddButton: false, showDateFilter: false },
 };
 
@@ -83,20 +83,6 @@ const toDate = (s) => (s ? new Date(`${s}T00:00:00`) : null);
   const handleHeaderButtonClick = () => {
     if (!customerId) return;
 
-    if (activeKey === "invoices") {
-      navigate(`/sales/invoices/add`);
-      return;
-    }
-
-    if (activeKey === "payments") {
-      // setShowPaymentModal(true);
-      return;
-    }
-
-    if (activeKey === "ledger") {
-      navigate(`/finance/ledger/create?customer_id=${customerId}`);
-      return;
-    }
   };
 
   /* ---------- DATE CHANGE ---------- */

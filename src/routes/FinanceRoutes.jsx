@@ -159,6 +159,7 @@ import Banking from "../Pages/FinanceModule/ACCOUNTS/Bank/Banking.jsx";
 import TrialBalance from "../Pages/FinanceModule/ACCOUNTS/TrialBalance/TrialBalance.jsx";
 import ProfitLoss from "../Pages/FinanceModule/REPORTS/ProfitLoss/ProfitLoss.jsx";
 import CashFlow from "../Pages/FinanceModule/REPORTS/CashFlow/CashFlow.jsx";
+import AddingRecurring from "../Pages/FinanceModule/SALES/Recurring Billing/modal/AddingRecurring.jsx";
 
 const FinanceRoutes = () => {
   return (
@@ -168,13 +169,9 @@ const FinanceRoutes = () => {
       ===================================================== */}
 
       <Route path="Categories-List" element={<CategoriesList />} />
-
       <Route path="Product-List" element={<ProductList />} />
-
       <Route path="Warehouse-List" element={<Warehouse />} />
-
       <Route path="warehouse/:id" element={<WarehouseDetails />} />
-
       <Route path="Inventory-List" element={<InventoryList />} />
 
       {/* =====================================================
@@ -182,9 +179,7 @@ const FinanceRoutes = () => {
       ===================================================== */}
 
       <Route path="purchases/bill" element={<Bill />} />
-
       <Route path="purchases/bill/add" element={<CreateBill />} />
-
       <Route path="purchases/bill/edit/:id" element={<CreateBill />} />
 
       {/* =====================================================
@@ -255,6 +250,8 @@ const FinanceRoutes = () => {
       ===================================================== */}
 
       <Route path="sales/recurring-billing" element={<RecurringBilling />} />
+      <Route path="sales/recurring-billing/add" element={<AddingRecurring />} />
+      <Route path="sales/recurring-billing/;id" element={<RecurringBilling />} />
 
       {/* =====================================================
           SALES - CUSTOMER LEDGER

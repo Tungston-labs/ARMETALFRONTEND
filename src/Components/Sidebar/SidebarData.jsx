@@ -89,26 +89,23 @@ const getSidebarData = (user) => {
     if (modules.project) {
       items.push({ title: "PROJECT", icon: <FiCodesandbox />, path: "/projects" });
     }
-
-
-    if (modules.project) {
-      items.push({ title: "Sales-Report", icon: <FiCodesandbox />, path: "/reports/sales-report" });
-    }
-  if (modules.project) {
-      items.push({ title: "Customer-Report", icon: <FiCodesandbox />, path: "/reports/customer-report" });
-    }
-      if (modules.project) {
-      items.push({ title: "vendor-Report", icon: <FiCodesandbox />, path: "/reports/vendor-report" });
-    }
-     if (modules.project) {
-      items.push({ title: "expense-Report", icon: <FiCodesandbox />, path: "/reports/expense-report" });
-    }
-
-      if (modules.project) {
-      items.push({ title: "Profit or Loss", icon: <FiCodesandbox />, path: "/reports/profit-loss" });
-    }
-       if (modules.project) {
-      items.push({ title: "Cash Flow", icon: <FiCodesandbox />, path: "/reports/cash-flow" });
+    if (modules.employee) {
+      items.push({
+        title: "SALES",
+        icon: <PiUsersThreeLight />,
+        children: [
+          { title: "Customers", path: "/sales/customers" },
+          { title: "Quotations", path: "/Quotation-List" },
+          { title: "Sales Orders", path: "/sales/orders" },
+          { title: "Delivery Notes", path: "/delivery/notes" },
+          { title: "Invoices", path: "/sales/invoices" },
+          { title: "Payments", path: "/sales/payments" },
+          { title: "Customer Ledger", path: "/sales/customer-ledger" },
+          { title: "Credit Notes", path: "/credit-notes" },
+          { title: "Sales Returns", path: "/sales-return" },
+          { title: "Recurring Billing", path: "/sales/recurring-billing" },
+        ],
+      });
     }
     return items;
   }

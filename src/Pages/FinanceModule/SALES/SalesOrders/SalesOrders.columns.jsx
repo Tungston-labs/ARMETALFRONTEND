@@ -71,6 +71,10 @@ export const getSalesOrderColumns = ({ onDelete }) => [
         accessor: "customer_name",
     },
     {
+        header: "Quote Ref",
+        accessor: "quote_reference",
+    },
+    {
     header: "Order Date",
     accessor: "order_date",
     render: (row) => formatDate(row.order_date),
@@ -80,8 +84,10 @@ export const getSalesOrderColumns = ({ onDelete }) => [
     accessor: "delivery_date",
     render: (row) => formatDate(row.delivery_date),
 },
+
+   
     {
-        header: "Amount",
+        header: "Order Value",
         accessor: "order_value",
         render: (row) => formatCurrency(row.order_value),
     },
@@ -96,6 +102,10 @@ export const getSalesOrderColumns = ({ onDelete }) => [
         render: (row) => formatStatusLabel(row.delivery_status),
     },
     {
+        header: "Invoice Status",
+        accessor: "customer_name",
+    },
+    {
         header: "Action",
         accessor: "actions",
         sortable: false,
@@ -105,38 +115,35 @@ export const getSalesOrderColumns = ({ onDelete }) => [
     },
 ];
 
-// Builds StatsCards entries directly from the /summary/ KPI payload.
-// Pass whatever the backend returns for /finance/sales-order/summary/ —
-// unmatched fields simply render as 0 until field names are confirmed
-// against the live response.
+
 export const buildSalesOrderStats = (kpi = {}) => [
     {
-        title: "Total Sales Orders",
+        title: "Total Orders",
         count: kpi.total_sales_order ?? 0,
         icon: <FiShoppingCart />,
         backgroundColor: "#E8F1FF",
         iconColor: "#3478F6",
     },
     {
-        title: "Total Order Value",
+        title: "Order Value",
         count: kpi.total_order_value ?? 0,
         icon: <FiDollarSign />,
         backgroundColor: "#FFF4E5",
         iconColor: "#F59E0B",
     },
     {
-        title: "Pending Orders",
+        title: "Open Orders",
         count: kpi.pending_order ?? 0,
         icon: <FiClock />,
         backgroundColor: "#FFF4E5",
         iconColor: "#F59E0B",
     },
     {
-        title: "Partially Delivered",
+        title: "Rejected Orders",
         count: kpi.partially_delivered ?? 0,
         icon: <FiLoader />,
-        backgroundColor: "#E8F1FF",
-        iconColor: "#3478F6",
+        backgroundColor: "#ffe8e8",
+        iconColor: "#f63434f2",
     },
     {
         title: "Completed Orders",
