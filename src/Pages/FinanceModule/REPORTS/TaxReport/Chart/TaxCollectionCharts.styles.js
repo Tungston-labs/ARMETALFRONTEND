@@ -1,14 +1,15 @@
 
 import styled from "styled-components";
 
-export const ChartsPanel = styled.div`
+export const DashboardContainer = styled.div`
   width: 100%;
   min-width: 0;
-  border: 1px solid #e7e7e7;
+  background: #ffffff;
+  border: 1px solid #e5e5e5;
   border-radius: 5px;
-  background: #fff;
-  overflow: hidden;
+  padding: 0 17px;
   box-sizing: border-box;
+  font-family: "Urbanist", sans-serif;
 `;
 
 export const ChartSection = styled.section`
@@ -57,19 +58,66 @@ export const ChartSelect = styled.select`
 export const ChartSvg = styled.svg`
   display: block;
   width: 100%;
-  height: auto;
-  overflow: visible;
-  font-family: "Poppins", sans-serif;
+  min-width: 0;
+  padding: 18px 0 22px;
+  box-sizing: border-box;
+  border-bottom: ${({ $last }) =>
+    $last ? "none" : "1px solid #e8e8e8"};
+`;
 
-  .grid-line {
-    stroke: #e9e9e9;
+export const SectionHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+`;
+
+export const SectionTitle = styled.h3`
+  margin: 0;
+  color: #111111;
+  font-family: "Urbanist", sans-serif;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.4;
+`;
+
+export const Dropdown = styled.select`
+  min-width: 74px;
+  height: 36px;
+  padding: 0 10px;
+  flex-shrink: 0;
+  background: #ffffff;
+  border: 1px solid #e3e3e3;
+  border-radius: 6px;
+  color: #111111;
+  font-family: inherit;
+  font-size: 14px;
+  outline: none;
+  cursor: pointer;
+
+  &:focus {
+    border-color: #a5a5a5;
+  }
+`;
+
+export const ChartWrapper = styled.div`
+  width: 100%;
+  height: 242px;
+  min-width: 0;
+
+  .recharts-wrapper {
+    font-family: "Urbanist", sans-serif;
+  }
+
+  .recharts-cartesian-grid-horizontal line,
+  .recharts-cartesian-grid-vertical line {
+    stroke: #e8e8e8;
     stroke-width: 1;
   }
 
-  .axis-label {
-    fill: #555;
-    font-size: 10px;
-    font-weight: 400;
+  .recharts-tooltip-wrapper {
+    z-index: 10;
   }
 
   .month-label {

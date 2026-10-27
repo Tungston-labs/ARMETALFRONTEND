@@ -221,7 +221,6 @@ export const useCustomerList = () => {
         if (!customer?.id) return;
         navigate(`${customer.id}/overview`);
     };
-
     const handleExport = () => {
         console.log("Export Customer List", {
             startDate,
@@ -249,6 +248,7 @@ export const useCustomerList = () => {
         loading,
         selectedCustomer,
         cards,
+
         openMenuId,
         toggleActionsMenu,
         handleCreateInvoice,
