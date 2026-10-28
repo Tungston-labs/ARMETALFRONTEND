@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { FiSave } from "react-icons/fi";
 
 import {
     Overlay,
@@ -17,149 +18,138 @@ import {
     SaveButton,
 } from "./AddProductModal.styles";
 
-import { FiSave } from "react-icons/fi";
-
 import { getCategories } from "../../../../../Redux/finance/Product/categorySlice";
-
 import { getWarehouses } from "../../../../../services/warehouseService";
+
+/* =====================================================
+   CONSTANTS
+===================================================== */
 
 const initialFormData = {
     product_type: "product",
-
     product_name: "",
     sku: "",
-
     category: "",
     brand: "",
     supplier: "",
     warehouse: "",
-
     opening_stock_qty: "0",
     reorder_level: "10",
-
     unit: "",
     quantity: "0",
-
     description: "",
-
     tax_type: "",
     tax_rate: "",
-
     hsn_sac_code: "",
-
     cost_price: "",
     selling_price: "",
-
     status: "active",
 };
 
+const PRODUCT_TYPE_OPTIONS = [
+    { value: "product", label: "Product" },
+    { value: "service", label: "Service" },
+];
+
+const UNIT_OPTIONS = [
+    { value: "PCS", label: "Piece (PCS)" },
+    { value: "Box", label: "Box" },
+    { value: "Pack", label: "Pack" },
+    { value: "Month", label: "Month" },
+    { value: "Project", label: "Project" },
+    { value: "Set", label: "Set" },
+    { value: "Kg", label: "Kilogram (Kg)" },
+    { value: "Meter", label: "Meter" },
+    { value: "Other", label: "Other" },
+];
+
+const TAX_TYPE_OPTIONS = [
+    { value: "inclusive", label: "Inclusive" },
+    { value: "exclusive", label: "Exclusive" },
+];
+
+const TAX_RATE_OPTIONS = ["0", "5", "10", "15", "18", "20"].map((rate) => ({
+    value: rate,
+    label: `${rate}%`,
+}));
 
 /* =====================================================
-   MAP EXISTING PRODUCT INTO FORM DATA
+   HELPERS
 ===================================================== */
 
+const getWarehouseName = (warehouse) =>
+    warehouse?.warehouse_name ||
+    warehouse?.name ||
+    warehouse?.warehouseName ||
+    "Warehouse";
+
+// Accepts [..], { results: [..] } or { data: [..] } / { data: { results: [..] } }
+const toList = (response) => {
+    const list = Array.isArray(response)
+        ? response
+        : response?.results ||
+        response?.data?.results ||
+        response?.data ||
+        [];
+
+    return Array.isArray(list) ? list : [];
+};
+
 const mapProductToFormData = (product) => {
-    if (!product) {
-        return {
-            ...initialFormData,
-        };
-    }
+    if (!product) return { ...initialFormData };
 
     return {
-        product_type:
-            product.product_type || "product",
-
-        product_name:
-            product.product_name || "",
-
-        sku:
-            product.sku || "",
-
-        /*
-         * Category may come as:
-         *
-         * category: 1
-         *
-         * OR
-         *
-         * category: {
-         *     id: 1,
-         *     category_name: "Electronics"
-         * }
-         */
-        category:
-            product.category?.id ??
-            product.category ??
-            "",
-
-        brand:
-            product.brand || "",
-
-        supplier:
-            product.supplier || "",
-
-        /*
-         * Warehouse may come as:
-         *
-         * warehouse: 1
-         *
-         * OR
-         *
-         * warehouse: {
-         *     id: 1,
-         *     warehouse_name: "Main Warehouse"
-         * }
-         */
-        warehouse:
-            product.warehouse?.id ??
-            product.warehouse ??
-            "",
-
+        product_type: product.product_type || "product",
+        product_name: product.product_name || "",
+        sku: product.sku || "",
+        category: product.category?.id ?? product.category ?? "",
+        brand: product.brand || "",
+        supplier: product.supplier || "",
+        warehouse: product.warehouse?.id ?? product.warehouse ?? "",
         opening_stock_qty: String(
-            product.opening_stock_qty ??
-            product.current_stock ??
-            "0"
+            product.opening_stock_qty ?? product.current_stock ?? "0"
         ),
-
-        reorder_level: String(
-            product.reorder_level ?? "10"
-        ),
-
-        unit:
-            product.unit || "",
-
-        quantity: String(
-            product.quantity ??
-            product.current_stock ??
-            "0"
-        ),
-
-        description:
-            product.description || "",
-
-        tax_type:
-            product.tax_type || "",
-
-        tax_rate: String(
-            product.tax_rate ?? ""
-        ),
-
-        hsn_sac_code:
-            product.hsn_sac_code || "",
-
-        cost_price: String(
-            product.cost_price ?? ""
-        ),
-
-        selling_price: String(
-            product.selling_price ?? ""
-        ),
-
-        status:
-            product.status || "active",
+        reorder_level: String(product.reorder_level ?? "10"),
+        unit: product.unit || "",
+        quantity: String(product.quantity ?? product.current_stock ?? "0"),
+        description: product.description || "",
+        tax_type: product.tax_type || "",
+        tax_rate: String(product.tax_rate ?? ""),
+        hsn_sac_code: product.hsn_sac_code || "",
+        cost_price: String(product.cost_price ?? ""),
+        selling_price: String(product.selling_price ?? ""),
+        status: product.status || "active",
     };
 };
 
+const buildPayload = (formData) => ({
+    ...formData,
+    category: formData.category || null,
+    warehouse: formData.warehouse || null,
+
+    quantity: Number(formData.quantity) || 0,
+    opening_stock_qty: Number(formData.opening_stock_qty) || 0,
+    reorder_level: Number(formData.reorder_level) || 0,
+
+    cost_price: formData.cost_price || "0",
+    selling_price: formData.selling_price || "0",
+    tax_rate: formData.tax_rate || "0",
+});
+
+/* =====================================================
+   SMALL RENDER HELPERS
+===================================================== */
+
+const renderOptions = (options) =>
+    options.map(({ value, label }) => (
+        <option key={value} value={value}>
+            {label}
+        </option>
+    ));
+
+/* =====================================================
+   COMPONENT
+===================================================== */
 
 const AddProductModal = ({
     isOpen,
@@ -170,274 +160,93 @@ const AddProductModal = ({
     initialData = null,
     mode = "add",
 }) => {
-
     const dispatch = useDispatch();
+    const isEditMode = mode === "edit";
 
-
-    /* =====================================================
-       GET CATEGORIES FROM REDUX
-    ===================================================== */
-
-    const {
-        categories = [],
-        loading: categoryLoading,
-    } = useSelector(
+    const { categories = [], loading: categoryLoading } = useSelector(
         (state) => state.category
     );
 
+    const [formData, setFormData] = useState(initialFormData);
+    const [fetchedWarehouses, setFetchedWarehouses] = useState([]);
 
-    const [formData, setFormData] =
-        useState(initialFormData);
-    const [modalWarehouses, setModalWarehouses] =
-        useState(Array.isArray(warehouses) ? warehouses : []);
+    /* ---------- warehouse options: prop first, API as fallback ---------- */
 
+    const hasWarehouseProp =
+        Array.isArray(warehouses) && warehouses.length > 0;
 
-    const isEditMode =
-        mode === "edit";
+    const warehouseOptions = useMemo(
+        () => (hasWarehouseProp ? warehouses : fetchedWarehouses),
+        [hasWarehouseProp, warehouses, fetchedWarehouses]
+    );
 
-
-    /* =====================================================
-       FETCH CATEGORIES WHEN MODAL OPENS
-    ===================================================== */
-    const resolveWarehouseName = (warehouse) =>
-        warehouse?.warehouse_name ||
-        warehouse?.name ||
-        warehouse?.warehouseName ||
-        "Warehouse";
-
-    /* =========================
-       PREFILL WHEN OPENED
-    ========================= */
+    /* ---------- load categories when the modal opens ---------- */
 
     useEffect(() => {
-
         if (!isOpen) return;
 
-        dispatch(
-            getCategories({
-                page: 1,
-                page_size: 100,
-            })
-        );
-
+        dispatch(getCategories({ page: 1, page_size: 100 }));
     }, [isOpen, dispatch]);
 
-
-    /* =====================================================
-       PREFILL FORM WHEN MODAL OPENS
-    ===================================================== */
-
-    useEffect(() => {
-
-        if (!isOpen) return;
-
-        if (initialData) {
-
-            setFormData(
-                mapProductToFormData(
-                    initialData
-                )
-            );
-
-        } else {
-
-            setFormData({
-                ...initialFormData,
-            });
-
-        }
-
-    }, [
-        isOpen,
-        initialData,
-    ]);
-
-
-    /* =====================================================
-       HANDLE INPUT CHANGE
-    ===================================================== */
+    /* ---------- prefill (edit) or reset (add) when the modal opens ---------- */
 
     useEffect(() => {
         if (!isOpen) return;
 
-        if (Array.isArray(warehouses) && warehouses.length > 0) {
-            setModalWarehouses(warehouses);
-            return;
-        }
+        setFormData(mapProductToFormData(initialData));
+    }, [isOpen, initialData]);
+
+    /* ---------- load warehouses only if none were passed in ---------- */
+
+    useEffect(() => {
+        if (!isOpen || hasWarehouseProp) return;
 
         let cancelled = false;
 
-        const loadWarehouses = async () => {
-            try {
-                const response = await getWarehouses({
-                    page: 1,
-                    page_size: 100,
-                });
-
-                const nextWarehouses = Array.isArray(response)
-                    ? response
-                    : (response?.results || response?.data?.results || response?.data || []);
-
-                const normalized = Array.isArray(nextWarehouses)
-                    ? nextWarehouses.map((warehouse) => ({
-                        ...warehouse,
-                        warehouse_name:
-                            resolveWarehouseName(warehouse),
-                    }))
-                    : [];
-
-                if (!cancelled) {
-                    setModalWarehouses(normalized);
-                }
-            } catch (error) {
+        getWarehouses({ page: 1, page_size: 100 })
+            .then((response) => {
+                if (!cancelled) setFetchedWarehouses(toList(response));
+            })
+            .catch((error) => {
                 console.error("Failed to load warehouse options:", error);
-                if (!cancelled) {
-                    setModalWarehouses([]);
-                }
-            }
-        };
-
-        loadWarehouses();
+                if (!cancelled) setFetchedWarehouses([]);
+            });
 
         return () => {
             cancelled = true;
         };
-    }, [isOpen, warehouses]);
+    }, [isOpen, hasWarehouseProp]);
+
+    /* ---------- handlers ---------- */
 
     const handleChange = (e) => {
+        const { name, value } = e.target;
 
-        const {
-            name,
-            value,
-        } = e.target;
-
-        setFormData((prev) => ({
-            ...prev,
-            [name]: value,
-        }));
+        setFormData((prev) => ({ ...prev, [name]: value }));
     };
-
-
-    /* =====================================================
-       HANDLE SUBMIT
-    ===================================================== */
 
     const handleSubmit = (e) => {
-
         e.preventDefault();
 
-
-        const payload = {
-
-            ...formData,
-
-
-            /* =========================
-               CATEGORY
-            ========================= */
-
-            category:
-                formData.category || null,
-
-
-            /* =========================
-               WAREHOUSE
-            ========================= */
-
-            warehouse:
-                formData.warehouse || null,
-
-
-            /* =========================
-               NUMERIC VALUES
-            ========================= */
-
-            quantity:
-                Number(
-                    formData.quantity
-                ) || 0,
-
-            opening_stock_qty:
-                Number(
-                    formData.opening_stock_qty
-                ) || 0,
-
-            reorder_level:
-                Number(
-                    formData.reorder_level
-                ) || 0,
-
-
-            /* =========================
-               DECIMAL VALUES
-            ========================= */
-
-            cost_price:
-                formData.cost_price || "0",
-
-            selling_price:
-                formData.selling_price || "0",
-
-            tax_rate:
-                formData.tax_rate || "0",
-        };
-
-
-        onSave(payload);
-
-
-        setFormData({
-            ...initialFormData,
-        });
+        onSave(buildPayload(formData));
+        setFormData({ ...initialFormData });
     };
 
-
-    /* =====================================================
-       HANDLE CLOSE
-    ===================================================== */
-
     const handleClose = () => {
-
         if (loading) return;
 
-        setFormData({
-            ...initialFormData,
-        });
-
+        setFormData({ ...initialFormData });
         onClose();
     };
 
-
-    /* =====================================================
-       DON'T RENDER WHEN CLOSED
-    ===================================================== */
-
-    if (!isOpen) {
-        return null;
-    }
-
+    if (!isOpen) return null;
 
     return (
-        <Overlay
-            onClick={handleClose}
-        >
-
-            <Modal
-                onClick={(e) =>
-                    e.stopPropagation()
-                }
-            >
-
-                {/* =================================================
-                    HEADER
-                ================================================= */}
-
+        <Overlay onClick={handleClose}>
+            <Modal onClick={(e) => e.stopPropagation()}>
                 <Header>
-
                     <Title>
-                        {isEditMode
-                            ? "Edit Product"
-                            : "Add New Product"}
+                        {isEditMode ? "Edit Product" : "Add New Product"}
                     </Title>
 
                     <Subtitle>
@@ -445,640 +254,274 @@ const AddProductModal = ({
                             ? "Update the details of this product or service."
                             : "Create a new product or service."}
                     </Subtitle>
-
                 </Header>
 
-
-                {/* =================================================
-                    FORM
-                ================================================= */}
-
-                <Form
-                    onSubmit={handleSubmit}
-                >
-
-
-                    {/* =================================================
-                        PRODUCT TYPE
-                    ================================================= */}
-
+                <Form onSubmit={handleSubmit}>
+                    {/* TYPE */}
                     <FormGroup>
-
-                        <Label>
-                            TYPE
-                        </Label>
-
+                        <Label>TYPE</Label>
                         <Select
                             name="product_type"
-                            value={
-                                formData.product_type
-                            }
-                            onChange={
-                                handleChange
-                            }
+                            value={formData.product_type}
+                            onChange={handleChange}
                         >
-
-                            <option value="product">
-                                Product
-                            </option>
-
-                            <option value="service">
-                                Service
-                            </option>
-
+                            {renderOptions(PRODUCT_TYPE_OPTIONS)}
                         </Select>
-
                     </FormGroup>
 
-
-                    {/* =================================================
-                        PRODUCT NAME
-                    ================================================= */}
-
+                    {/* PRODUCT NAME */}
                     <FormGroup>
-
-                        <Label>
-                            PRODUCT NAME
-                        </Label>
-
+                        <Label>PRODUCT NAME</Label>
                         <Input
                             name="product_name"
-                            value={
-                                formData.product_name
-                            }
-                            onChange={
-                                handleChange
-                            }
+                            value={formData.product_name}
+                            onChange={handleChange}
                             placeholder="Enter name"
                             required
+                            autoComplete="off"
                         />
-
                     </FormGroup>
 
-
-                    {/* =================================================
-                        SKU
-                    ================================================= */}
-
+                    {/* SKU */}
                     <FormGroup>
-
-                        <Label>
-                            SKU
-                        </Label>
-
+                        <Label>SKU</Label>
                         <Input
                             name="sku"
-                            value={
-                                formData.sku
-                            }
-                            onChange={
-                                handleChange
-                            }
+                            value={formData.sku}
+                            onChange={handleChange}
                             placeholder="1253698"
+                            autoComplete="off"
                         />
-
                     </FormGroup>
 
-
-                    {/* =================================================
-                        CATEGORY - DYNAMIC FROM API
-                    ================================================= */}
-
+                    {/* CATEGORY */}
                     <FormGroup>
-
-                        <Label>
-                            CATEGORY
-                        </Label>
-
+                        <Label>CATEGORY</Label>
                         <Select
                             name="category"
-                            value={
-                                formData.category
-                            }
-                            onChange={
-                                handleChange
-                            }
+                            value={formData.category}
+                            onChange={handleChange}
                             required
                         >
-
                             <option value="">
                                 {categoryLoading
                                     ? "Loading Categories..."
                                     : "Select Category"}
                             </option>
 
-
                             {!categoryLoading &&
-                                categories.map(
-                                    (category) => (
-                                        <option
-                                            key={
-                                                category.id
-                                            }
-                                            value={
-                                                category.id
-                                            }
-                                        >
-                                            {
-                                                category.category_name
-                                            }
-                                        </option>
-                                    )
-                                )}
-
+                                categories.map((category) => (
+                                    <option
+                                        key={category.id}
+                                        value={category.id}
+                                    >
+                                        {category.category_name}
+                                    </option>
+                                ))}
                         </Select>
-
                     </FormGroup>
 
-
-                    {/* =================================================
-                        BRAND
-                    ================================================= */}
-
+                    {/* BRAND */}
                     <FormGroup>
-
-                        <Label>
-                            BRAND
-                        </Label>
-
+                        <Label>BRAND</Label>
                         <Input
                             name="brand"
-                            value={
-                                formData.brand
-                            }
-                            onChange={
-                                handleChange
-                            }
+                            value={formData.brand}
+                            onChange={handleChange}
                             placeholder="Enter Brand"
+                            autoComplete="off"
                         />
-
                     </FormGroup>
 
-
-                    {/* =================================================
-                        SUPPLIER
-                    ================================================= */}
-
+                    {/* SUPPLIER */}
                     <FormGroup>
-
-                        <Label>
-                            SUPPLIER
-                        </Label>
-
+                        <Label>SUPPLIER</Label>
                         <Input
                             name="supplier"
-                            value={
-                                formData.supplier
-                            }
-                            onChange={
-                                handleChange
-                            }
+                            value={formData.supplier}
+                            onChange={handleChange}
                             placeholder="Enter Supplier"
+                            autoComplete="off"
                         />
-
                     </FormGroup>
 
-
-                    {/* =================================================
-                        WAREHOUSE
-                    ================================================= */}
-
+                    {/* WAREHOUSE */}
                     <FormGroup>
-
-                        <Label>
-                            WAREHOUSE
-                        </Label>
-
+                        <Label>WAREHOUSE</Label>
                         <Select
                             name="warehouse"
-                            value={
-                                formData.warehouse
-                            }
-                            onChange={
-                                handleChange
-                            }
+                            value={formData.warehouse}
+                            onChange={handleChange}
                         >
+                            <option value="">SELECT WAREHOUSE</option>
 
-                            <option value="">
-                                SELECT WAREHOUSE
-                            </option>
-
-
-                            {warehouses.map(
-                                (warehouse) => (
-
-                                    <option
-                                        key={
-                                            warehouse.id
-                                        }
-                                        value={
-                                            warehouse.id
-                                        }
-                                    >
-                                        {
-                                            warehouse.warehouse_name
-                                        }
-                                    </option>
-
-                                )
-                            )}
-
-                            {modalWarehouses.map((warehouse) => (
+                            {warehouseOptions.map((warehouse) => (
                                 <option
                                     key={warehouse.id}
                                     value={warehouse.id}
                                 >
-                                    {resolveWarehouseName(warehouse)}
+                                    {getWarehouseName(warehouse)}
                                 </option>
                             ))}
                         </Select>
-
                     </FormGroup>
 
-
-                    {/* =================================================
-                        OPENING STOCK
-                    ================================================= */}
-
+                    {/* OPENING STOCK */}
                     <FormGroup>
-
-                        <Label>
-                            OPENING STOCK QTY
-                        </Label>
-
+                        <Label>OPENING STOCK QTY</Label>
                         <Input
                             type="number"
                             name="opening_stock_qty"
-                            value={
-                                formData.opening_stock_qty
-                            }
-                            onChange={
-                                handleChange
-                            }
+                            value={formData.opening_stock_qty}
+                            onChange={handleChange}
+                            autoComplete="off"
                         />
-
                     </FormGroup>
 
-
-                    {/* =================================================
-                        REORDER LEVEL
-                    ================================================= */}
-
+                    {/* REORDER LEVEL */}
                     <FormGroup>
-
-                        <Label>
-                            REORDER LEVEL
-                        </Label>
-
+                        <Label>REORDER LEVEL</Label>
                         <Input
                             type="number"
                             name="reorder_level"
-                            value={
-                                formData.reorder_level
-                            }
-                            onChange={
-                                handleChange
-                            }
+                            value={formData.reorder_level}
+                            onChange={handleChange}
+                            autoComplete="off"
                         />
-
                     </FormGroup>
 
-
-                    {/* =================================================
-                        UNIT
-                    ================================================= */}
-
+                    {/* UNIT */}
                     <FormGroup>
-
-                        <Label>
-                            UNIT
-                        </Label>
-
+                        <Label>UNIT</Label>
                         <Select
                             name="unit"
-                            value={
-                                formData.unit
-                            }
-                            onChange={
-                                handleChange
-                            }
+                            value={formData.unit}
+                            onChange={handleChange}
                             required
                         >
-
-                            <option value="">
-                                Select Unit
-                            </option>
-
-                            <option value="PCS">
-                                Piece (PCS)
-                            </option>
-
-                            <option value="Box">
-                                Box
-                            </option>
-
-                            <option value="Pack">
-                                Pack
-                            </option>
-
-                            <option value="Month">
-                                Month
-                            </option>
-
-                            <option value="Project">
-                                Project
-                            </option>
-
-                            <option value="Set">
-                                Set
-                            </option>
-
-                            <option value="Kg">
-                                Kilogram (Kg)
-                            </option>
-
-                            <option value="Meter">
-                                Meter
-                            </option>
-
-                            <option value="Other">
-                                Other
-                            </option>
-
+                            <option value="">Select Unit</option>
+                            {renderOptions(UNIT_OPTIONS)}
                         </Select>
-
                     </FormGroup>
 
-
-                    {/* =================================================
-                        QUANTITY
-                    ================================================= */}
-
+                    {/* QUANTITY */}
                     <FormGroup>
-
-                        <Label>
-                            QUANTITY
-                        </Label>
-
+                        <Label>QUANTITY</Label>
                         <Input
                             type="number"
                             name="quantity"
-                            value={
-                                formData.quantity
-                            }
-                            onChange={
-                                handleChange
-                            }
+                            value={formData.quantity}
+                            onChange={handleChange}
+                              autoComplete="off"
                         />
-
                     </FormGroup>
 
-
-                    {/* =================================================
-                        DESCRIPTION
-                    ================================================= */}
-
+                    {/* DESCRIPTION */}
                     <FormGroup>
-
-                        <Label>
-                            DESCRIPTION /
-                            SPECIFICATION
-                        </Label>
-
+                        <Label>DESCRIPTION / SPECIFICATION</Label>
                         <Input
                             name="description"
-                            value={
-                                formData.description
-                            }
-                            onChange={
-                                handleChange
-                            }
+                            value={formData.description}
+                            onChange={handleChange}
                             placeholder="Enter Note..."
+                              autoComplete="off"
                         />
-
                     </FormGroup>
 
-
-                    {/* =================================================
-                        TAX TYPE
-                    ================================================= */}
-
+                    {/* TAX TYPE */}
                     <FormGroup>
-
-                        <Label>
-                            TAX TYPE
-                        </Label>
-
+                        <Label>TAX TYPE</Label>
                         <Select
                             name="tax_type"
-                            value={
-                                formData.tax_type
-                            }
-                            onChange={
-                                handleChange
-                            }
+                            value={formData.tax_type}
+                            onChange={handleChange}
                         >
-
-                            <option value="">
-                                Select
-                            </option>
-
-                            <option value="inclusive">
-                                Inclusive
-                            </option>
-
-                            <option value="exclusive">
-                                Exclusive
-                            </option>
-
+                            <option value="">Select</option>
+                            {renderOptions(TAX_TYPE_OPTIONS)}
                         </Select>
-
                     </FormGroup>
 
-
-                    {/* =================================================
-                        TAX RATE
-                    ================================================= */}
-
+                    {/* TAX RATE */}
                     <FormGroup>
-
-                        <Label>
-                            TAX RATE (%)
-                        </Label>
-
+                        <Label>TAX RATE (%)</Label>
                         <Select
                             name="tax_rate"
-                            value={
-                                formData.tax_rate
-                            }
-                            onChange={
-                                handleChange
-                            }
+                            value={formData.tax_rate}
+                            onChange={handleChange}
                         >
-
-                            <option value="">
-                                Select
-                            </option>
-
-                            <option value="0">
-                                0%
-                            </option>
-
-                            <option value="5">
-                                5%
-                            </option>
-
-                            <option value="10">
-                                10%
-                            </option>
-
-                            <option value="15">
-                                15%
-                            </option>
-
-                            <option value="18">
-                                18%
-                            </option>
-
-                            <option value="20">
-                                20%
-                            </option>
-
+                            <option value="">Select</option>
+                            {renderOptions(TAX_RATE_OPTIONS)}
                         </Select>
-
                     </FormGroup>
 
-
-                    {/* =================================================
-                        HSN / SAC
-                    ================================================= */}
-
+                    {/* HSN / SAC */}
                     <FormGroup>
-
-                        <Label>
-                            HSN / SAC CODE
-                        </Label>
-
+                        <Label>HSN / SAC CODE</Label>
                         <Input
                             name="hsn_sac_code"
-                            value={
-                                formData.hsn_sac_code
-                            }
-                            onChange={
-                                handleChange
-                            }
+                            value={formData.hsn_sac_code}
+                            onChange={handleChange}
                             placeholder="Enter Code"
+                              autoComplete="off"
                         />
-
                     </FormGroup>
 
-
-                    {/* =================================================
-                        PURCHASE PRICE
-                    ================================================= */}
-
+                    {/* PURCHASE PRICE */}
                     <FormGroup>
-
-                        <Label>
-                            PURCHASE PRICE
-                        </Label>
-
+                        <Label>PURCHASE PRICE</Label>
                         <Input
                             type="number"
                             step="0.01"
                             name="cost_price"
-                            value={
-                                formData.cost_price
-                            }
-                            onChange={
-                                handleChange
-                            }
+                            value={formData.cost_price}
+                            onChange={handleChange}
                             placeholder="0.00"
+                              autoComplete="off"
                         />
-
                     </FormGroup>
 
-
-                    {/* =================================================
-                        SELLING PRICE
-                    ================================================= */}
-
+                    {/* SELLING PRICE */}
                     <FormGroup>
-
-                        <Label>
-                            SELLING PRICE
-                        </Label>
-
+                        <Label>SELLING PRICE</Label>
                         <Input
                             type="number"
                             step="0.01"
                             name="selling_price"
-                            value={
-                                formData.selling_price
-                            }
-                            onChange={
-                                handleChange
-                            }
+                            value={formData.selling_price}
+                            onChange={handleChange}
                             placeholder="0.00"
+                              autoComplete="off"
                         />
-
                     </FormGroup>
 
-
-                    {/* =================================================
-                        EMPTY FORM GROUP
-                    ================================================= */}
-
+                    {/* keeps the button row aligned in the grid */}
                     <FormGroup />
 
-
-                    {/* =================================================
-                        BUTTONS
-                    ================================================= */}
-
                     <ButtonRow>
-
                         <CancelButton
                             type="button"
-                            onClick={
-                                handleClose
-                            }
+                            onClick={handleClose}
                             disabled={loading}
                         >
                             CANCEL
                         </CancelButton>
 
-
-                        <SaveButton
-                            type="submit"
-                            disabled={loading}
-                        >
-
+                        <SaveButton type="submit" disabled={loading}>
                             <FiSave />
 
                             {loading
-                                ? (
-                                    isEditMode
-                                        ? "UPDATING..."
-                                        : "SAVING..."
-                                )
-                                : (
-                                    isEditMode
-                                        ? "UPDATE PRODUCT"
-                                        : "SAVE PRODUCT"
-                                )}
-
+                                ? isEditMode
+                                    ? "UPDATING..."
+                                    : "SAVING..."
+                                : isEditMode
+                                    ? "UPDATE PRODUCT"
+                                    : "SAVE PRODUCT"}
                         </SaveButton>
-
                     </ButtonRow>
-
                 </Form>
-
             </Modal>
-
         </Overlay>
     );
 };
-
 
 export default AddProductModal;

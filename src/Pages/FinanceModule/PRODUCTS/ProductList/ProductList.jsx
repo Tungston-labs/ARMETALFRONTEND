@@ -89,12 +89,6 @@ const ProductList = () => {
                 console.error("Failed to load product warehouse options:", error);
                 setWarehouses([]);
             });
-
-        // NOTE: KPI is no longer fetched separately here.
-        // The product list endpoint (getProducts, called
-        // inside useProductList) already returns the KPI
-        // fields in the same response, so a dedicated
-        // kpi/ request is unnecessary.
     }, [dispatch]);
 
     const {
@@ -317,6 +311,7 @@ const ProductList = () => {
                     columns={columns}
                     data={paginatedData}
                     loading={loading}
+                    autoLayout
                 />
 
                 <ReusablePagination

@@ -91,19 +91,14 @@ const getSidebarData = (user) => {
     }
     if (modules.employee) {
       items.push({
-        title: "SALES",
+        title: "PRODUCT",
         icon: <PiUsersThreeLight />,
         children: [
-          { title: "Customers", path: "/sales/customers" },
-          { title: "Quotations", path: "/Quotation-List" },
-          { title: "Sales Orders", path: "/sales/orders" },
-          { title: "Delivery Notes", path: "/delivery/notes" },
-          { title: "Invoices", path: "/sales/invoices" },
-          { title: "Payments", path: "/sales/payments" },
-          { title: "Customer Ledger", path: "/sales/customer-ledger" },
-          { title: "Credit Notes", path: "/credit-notes" },
-          { title: "Sales Returns", path: "/sales-return" },
-          { title: "Recurring Billing", path: "/sales/recurring-billing" },
+          { title: "Product List", path: "/Product-List" },
+          { title: "Categories", path: "/Categories-List" },
+          { title: "Inventory", path: "/Inventory-List" },
+          { title: "Warehouses", path: "/Warehouse-List" },
+          
         ],
       });
     }
