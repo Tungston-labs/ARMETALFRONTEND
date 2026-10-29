@@ -6,6 +6,7 @@ import {
     ActionButton,
     FloatingAction,
 } from "./ProductActions.styles";
+import { PiDotsThreeCircleVertical, PiDotsThreeCircleVerticalLight } from "react-icons/pi";
 
 const ProductActions = ({ row, onEdit, onDelete }) => {
     const [open, setOpen] = useState(false);
@@ -35,7 +36,7 @@ const ProductActions = ({ row, onEdit, onDelete }) => {
                 type="button"
                 onClick={() => setOpen((prev) => !prev)}
             >
-                <FiMoreVertical size={12} />
+                <PiDotsThreeCircleVerticalLight size={14} />
             </ActionButton>
 
             <FloatingAction

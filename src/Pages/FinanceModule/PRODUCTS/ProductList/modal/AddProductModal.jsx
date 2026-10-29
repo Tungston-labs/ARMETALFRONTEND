@@ -16,6 +16,8 @@ import {
     ButtonRow,
     CancelButton,
     SaveButton,
+    RequiredStar,
+    ErrorText,
 } from "./AddProductModal.styles";
 
 import { getCategories } from "../../../../../Redux/finance/Product/categorySlice";
@@ -73,6 +75,117 @@ const TAX_RATE_OPTIONS = ["0", "5", "10", "15", "18", "20"].map((rate) => ({
     label: `${rate}%`,
 }));
 
+const STATUS_OPTIONS = [
+    { value: "active", label: "Active" },
+    { value: "inactive", label: "Inactive" },
+];
+
+/* =====================================================
+   VALIDATION
+===================================================== */
+
+const isBlank = (v) => v === null || v === undefined || String(v).trim() === "";
+
+const validateForm = (data) => {
+    const errors = {};
+
+    // TYPE *
+    if (!PRODUCT_TYPE_OPTIONS.some((o) => o.value === data.product_type)) {
+        errors.product_type = "Select a type.";
+    }
+
+    // PRODUCT NAME *
+    const name = data.product_name.trim();
+    if (!name) errors.product_name = "Product name is required.";
+    else if (name.length < 2)
+        errors.product_name = "Name must be at least 2 characters.";
+    else if (name.length > 150)
+        errors.product_name = "Name must be 150 characters or fewer.";
+
+    // SKU (optional)
+    if (!isBlank(data.sku)) {
+        if (!/^[A-Za-z0-9\-_/.]+$/.test(data.sku.trim()))
+            errors.sku = "Use only letters, numbers, - _ / .";
+        else if (data.sku.trim().length > 50)
+            errors.sku = "SKU must be 50 characters or fewer.";
+    }
+
+    // CATEGORY *
+    if (isBlank(data.category)) errors.category = "Select a category.";
+
+    // BRAND (optional)
+    if (data.brand.trim().length > 100)
+        errors.brand = "Brand must be 100 characters or fewer.";
+
+    // SUPPLIER (optional)
+    if (data.supplier.trim().length > 100)
+        errors.supplier = "Supplier must be 100 characters or fewer.";
+
+    // WAREHOUSE *
+    if (isBlank(data.warehouse)) errors.warehouse = "Select a warehouse.";
+
+    // OPENING STOCK QTY *
+    if (isBlank(data.opening_stock_qty))
+        errors.opening_stock_qty = "Opening stock is required.";
+    else if (Number.isNaN(Number(data.opening_stock_qty)))
+        errors.opening_stock_qty = "Enter a valid number.";
+    else if (Number(data.opening_stock_qty) < 0)
+        errors.opening_stock_qty = "Opening stock cannot be negative.";
+
+    // REORDER LEVEL *
+    if (isBlank(data.reorder_level))
+        errors.reorder_level = "Reorder level is required.";
+    else if (!/^\d+$/.test(String(data.reorder_level).trim()))
+        errors.reorder_level = "Enter a whole number (0 or more).";
+
+    // UNIT *
+    if (isBlank(data.unit)) errors.unit = "Select a unit.";
+
+    // QUANTITY *
+    if (isBlank(data.quantity)) errors.quantity = "Quantity is required.";
+    else if (Number.isNaN(Number(data.quantity)))
+        errors.quantity = "Enter a valid number.";
+    else if (Number(data.quantity) < 0)
+        errors.quantity = "Quantity cannot be negative.";
+
+    // DESCRIPTION (optional)
+    if (data.description.trim().length > 500)
+        errors.description = "Description must be 500 characters or fewer.";
+
+     // TAX TYPE *
+    if (isBlank(data.tax_type)) errors.tax_type = "Tax type is required.";
+
+    // TAX RATE (optional)
+
+    // HSN / SAC CODE *
+    if (isBlank(data.hsn_sac_code))
+        errors.hsn_sac_code = "HSN / SAC code is required.";
+    else if (!/^\d{4,8}$/.test(data.hsn_sac_code.trim()))
+        errors.hsn_sac_code = "Enter 4 to 8 digits.";
+
+    // PURCHASE PRICE (optional)
+    if (!isBlank(data.cost_price)) {
+        if (Number.isNaN(Number(data.cost_price)))
+            errors.cost_price = "Enter a valid amount.";
+        else if (Number(data.cost_price) < 0)
+            errors.cost_price = "Purchase price cannot be negative.";
+    }
+
+    // SELLING PRICE *
+    if (isBlank(data.selling_price))
+        errors.selling_price = "Selling price is required.";
+    else if (Number.isNaN(Number(data.selling_price)))
+        errors.selling_price = "Enter a valid amount.";
+    else if (Number(data.selling_price) <= 0)
+        errors.selling_price = "Selling price must be greater than 0.";
+
+    // STATUS *
+    if (!STATUS_OPTIONS.some((o) => o.value === data.status))
+        errors.status = "Select a status.";
+
+    return errors;
+};
+
 /* =====================================================
    HELPERS
 ===================================================== */
@@ -124,8 +237,16 @@ const mapProductToFormData = (product) => {
 
 const buildPayload = (formData) => ({
     ...formData,
+    product_name: formData.product_name.trim(),
+    sku: formData.sku.trim(),
+    brand: formData.brand.trim(),
+    supplier: formData.supplier.trim(),
+    description: formData.description.trim(),
+    hsn_sac_code: formData.hsn_sac_code.trim(),
+
     category: formData.category || null,
     warehouse: formData.warehouse || null,
+
 
     quantity: Number(formData.quantity) || 0,
     opening_stock_qty: Number(formData.opening_stock_qty) || 0,
@@ -146,6 +267,17 @@ const renderOptions = (options) =>
             {label}
         </option>
     ));
+
+// Label with a red * for required fields (styles live in AddProductModal.styles)
+const FieldLabel = ({ children, required }) => (
+    <Label>
+        {children}
+        {required && <RequiredStar>*</RequiredStar>}
+    </Label>
+);
+
+const FieldError = ({ message }) =>
+    message ? <ErrorText role="alert">{message}</ErrorText> : null;
 
 /* =====================================================
    COMPONENT
@@ -168,6 +300,8 @@ const AddProductModal = ({
     );
 
     const [formData, setFormData] = useState(initialFormData);
+    const [touched, setTouched] = useState({});
+    const [submitted, setSubmitted] = useState(false);
     const [fetchedWarehouses, setFetchedWarehouses] = useState([]);
 
     /* ---------- warehouse options: prop first, API as fallback ---------- */
@@ -179,6 +313,24 @@ const AddProductModal = ({
         () => (hasWarehouseProp ? warehouses : fetchedWarehouses),
         [hasWarehouseProp, warehouses, fetchedWarehouses]
     );
+
+    /* ---------- validation state ---------- */
+
+    const errors = useMemo(() => validateForm(formData), [formData]);
+
+    // show an error once the field was touched, or after a submit attempt
+    const getError = (name) =>
+        touched[name] || submitted ? errors[name] : undefined;
+
+    // props shared by every control
+    const fieldProps = (name) => ({
+        name,
+        value: formData[name],
+        onChange: handleChange,
+        onBlur: handleBlur,
+        "aria-invalid": Boolean(getError(name)),
+        $hasError: Boolean(getError(name)),
+    });
 
     /* ---------- load categories when the modal opens ---------- */
 
@@ -194,6 +346,8 @@ const AddProductModal = ({
         if (!isOpen) return;
 
         setFormData(mapProductToFormData(initialData));
+        setTouched({});
+        setSubmitted(false);
     }, [isOpen, initialData]);
 
     /* ---------- load warehouses only if none were passed in ---------- */
@@ -219,23 +373,41 @@ const AddProductModal = ({
 
     /* ---------- handlers ---------- */
 
-    const handleChange = (e) => {
+    function handleChange(e) {
         const { name, value } = e.target;
 
         setFormData((prev) => ({ ...prev, [name]: value }));
-    };
+    }
+
+    function handleBlur(e) {
+        const { name } = e.target;
+
+        setTouched((prev) => ({ ...prev, [name]: true }));
+    }
 
     const handleSubmit = (e) => {
         e.preventDefault();
+        setSubmitted(true);
+
+        // block save and jump to the first invalid field
+        const firstInvalid = Object.keys(errors)[0];
+        if (firstInvalid) {
+            e.target.elements[firstInvalid]?.focus();
+            return;
+        }
 
         onSave(buildPayload(formData));
         setFormData({ ...initialFormData });
+        setTouched({});
+        setSubmitted(false);
     };
 
     const handleClose = () => {
         if (loading) return;
 
         setFormData({ ...initialFormData });
+        setTouched({});
+        setSubmitted(false);
         onClose();
     };
 
@@ -256,53 +428,44 @@ const AddProductModal = ({
                     </Subtitle>
                 </Header>
 
-                <Form onSubmit={handleSubmit}>
+                <Form onSubmit={handleSubmit} noValidate>
                     {/* TYPE */}
                     <FormGroup>
-                        <Label>TYPE</Label>
-                        <Select
-                            name="product_type"
-                            value={formData.product_type}
-                            onChange={handleChange}
-                        >
+                        <FieldLabel required>TYPE</FieldLabel>
+                        <Select {...fieldProps("product_type")}>
                             {renderOptions(PRODUCT_TYPE_OPTIONS)}
                         </Select>
+                        <FieldError message={getError("product_type")} />
                     </FormGroup>
 
                     {/* PRODUCT NAME */}
                     <FormGroup>
-                        <Label>PRODUCT NAME</Label>
+                        <FieldLabel required>PRODUCT NAME</FieldLabel>
                         <Input
-                            name="product_name"
-                            value={formData.product_name}
-                            onChange={handleChange}
+                            {...fieldProps("product_name")}
                             placeholder="Enter name"
-                            required
+                            maxLength={150}
                             autoComplete="off"
                         />
+                        <FieldError message={getError("product_name")} />
                     </FormGroup>
 
                     {/* SKU */}
                     <FormGroup>
-                        <Label>SKU</Label>
+                        <FieldLabel>SKU</FieldLabel>
                         <Input
-                            name="sku"
-                            value={formData.sku}
-                            onChange={handleChange}
+                            {...fieldProps("sku")}
                             placeholder="1253698"
+                            maxLength={50}
                             autoComplete="off"
                         />
+                        <FieldError message={getError("sku")} />
                     </FormGroup>
 
                     {/* CATEGORY */}
                     <FormGroup>
-                        <Label>CATEGORY</Label>
-                        <Select
-                            name="category"
-                            value={formData.category}
-                            onChange={handleChange}
-                            required
-                        >
+                        <FieldLabel required>CATEGORY</FieldLabel>
+                        <Select {...fieldProps("category")}>
                             <option value="">
                                 {categoryLoading
                                     ? "Loading Categories..."
@@ -319,40 +482,37 @@ const AddProductModal = ({
                                     </option>
                                 ))}
                         </Select>
+                        <FieldError message={getError("category")} />
                     </FormGroup>
 
                     {/* BRAND */}
                     <FormGroup>
-                        <Label>BRAND</Label>
+                        <FieldLabel>BRAND</FieldLabel>
                         <Input
-                            name="brand"
-                            value={formData.brand}
-                            onChange={handleChange}
+                            {...fieldProps("brand")}
                             placeholder="Enter Brand"
+                            maxLength={100}
                             autoComplete="off"
                         />
+                        <FieldError message={getError("brand")} />
                     </FormGroup>
 
                     {/* SUPPLIER */}
                     <FormGroup>
-                        <Label>SUPPLIER</Label>
+                        <FieldLabel>SUPPLIER</FieldLabel>
                         <Input
-                            name="supplier"
-                            value={formData.supplier}
-                            onChange={handleChange}
+                            {...fieldProps("supplier")}
                             placeholder="Enter Supplier"
+                            maxLength={100}
                             autoComplete="off"
                         />
+                        <FieldError message={getError("supplier")} />
                     </FormGroup>
 
                     {/* WAREHOUSE */}
                     <FormGroup>
-                        <Label>WAREHOUSE</Label>
-                        <Select
-                            name="warehouse"
-                            value={formData.warehouse}
-                            onChange={handleChange}
-                        >
+                        <FieldLabel required>WAREHOUSE</FieldLabel>
+                        <Select {...fieldProps("warehouse")}>
                             <option value="">SELECT WAREHOUSE</option>
 
                             {warehouseOptions.map((warehouse) => (
@@ -364,138 +524,137 @@ const AddProductModal = ({
                                 </option>
                             ))}
                         </Select>
+                        <FieldError message={getError("warehouse")} />
                     </FormGroup>
 
                     {/* OPENING STOCK */}
                     <FormGroup>
-                        <Label>OPENING STOCK QTY</Label>
+                        <FieldLabel required>OPENING STOCK QTY</FieldLabel>
                         <Input
+                            {...fieldProps("opening_stock_qty")}
                             type="number"
-                            name="opening_stock_qty"
-                            value={formData.opening_stock_qty}
-                            onChange={handleChange}
+                            min="0"
                             autoComplete="off"
                         />
+                        <FieldError message={getError("opening_stock_qty")} />
                     </FormGroup>
 
                     {/* REORDER LEVEL */}
                     <FormGroup>
-                        <Label>REORDER LEVEL</Label>
+                        <FieldLabel required>REORDER LEVEL</FieldLabel>
                         <Input
+                            {...fieldProps("reorder_level")}
                             type="number"
-                            name="reorder_level"
-                            value={formData.reorder_level}
-                            onChange={handleChange}
+                            min="0"
+                            step="1"
                             autoComplete="off"
                         />
+                        <FieldError message={getError("reorder_level")} />
                     </FormGroup>
 
                     {/* UNIT */}
                     <FormGroup>
-                        <Label>UNIT</Label>
-                        <Select
-                            name="unit"
-                            value={formData.unit}
-                            onChange={handleChange}
-                            required
-                        >
+                        <FieldLabel required>UNIT</FieldLabel>
+                        <Select {...fieldProps("unit")}>
                             <option value="">Select Unit</option>
                             {renderOptions(UNIT_OPTIONS)}
                         </Select>
+                        <FieldError message={getError("unit")} />
                     </FormGroup>
 
                     {/* QUANTITY */}
                     <FormGroup>
-                        <Label>QUANTITY</Label>
+                        <FieldLabel required>QUANTITY</FieldLabel>
                         <Input
+                            {...fieldProps("quantity")}
                             type="number"
-                            name="quantity"
-                            value={formData.quantity}
-                            onChange={handleChange}
-                              autoComplete="off"
+                            min="0"
+                            autoComplete="off"
                         />
+                        <FieldError message={getError("quantity")} />
                     </FormGroup>
 
                     {/* DESCRIPTION */}
                     <FormGroup>
-                        <Label>DESCRIPTION / SPECIFICATION</Label>
+                        <FieldLabel>DESCRIPTION / SPECIFICATION</FieldLabel>
                         <Input
-                            name="description"
-                            value={formData.description}
-                            onChange={handleChange}
+                            {...fieldProps("description")}
                             placeholder="Enter Note..."
-                              autoComplete="off"
+                            maxLength={500}
+                            autoComplete="off"
                         />
+                        <FieldError message={getError("description")} />
                     </FormGroup>
 
                     {/* TAX TYPE */}
                     <FormGroup>
-                        <Label>TAX TYPE</Label>
-                        <Select
-                            name="tax_type"
-                            value={formData.tax_type}
-                            onChange={handleChange}
-                        >
+                        <FieldLabel>TAX TYPE</FieldLabel>
+                        <Select {...fieldProps("tax_type")}>
                             <option value="">Select</option>
                             {renderOptions(TAX_TYPE_OPTIONS)}
                         </Select>
+                        <FieldError message={getError("tax_type")} />
                     </FormGroup>
 
                     {/* TAX RATE */}
                     <FormGroup>
-                        <Label>TAX RATE (%)</Label>
-                        <Select
-                            name="tax_rate"
-                            value={formData.tax_rate}
-                            onChange={handleChange}
-                        >
+                        <FieldLabel>TAX RATE (%)</FieldLabel>
+                        <Select {...fieldProps("tax_rate")}>
                             <option value="">Select</option>
                             {renderOptions(TAX_RATE_OPTIONS)}
                         </Select>
+                        <FieldError message={getError("tax_rate")} />
                     </FormGroup>
 
                     {/* HSN / SAC */}
                     <FormGroup>
-                        <Label>HSN / SAC CODE</Label>
+                        <FieldLabel required>HSN / SAC CODE</FieldLabel>
                         <Input
-                            name="hsn_sac_code"
-                            value={formData.hsn_sac_code}
-                            onChange={handleChange}
+                            {...fieldProps("hsn_sac_code")}
                             placeholder="Enter Code"
-                              autoComplete="off"
+                            maxLength={8}
+                            inputMode="numeric"
+                            autoComplete="off"
                         />
+                        <FieldError message={getError("hsn_sac_code")} />
                     </FormGroup>
 
                     {/* PURCHASE PRICE */}
                     <FormGroup>
-                        <Label>PURCHASE PRICE</Label>
+                        <FieldLabel>PURCHASE PRICE</FieldLabel>
                         <Input
+                            {...fieldProps("cost_price")}
                             type="number"
+                            min="0"
                             step="0.01"
-                            name="cost_price"
-                            value={formData.cost_price}
-                            onChange={handleChange}
                             placeholder="0.00"
-                              autoComplete="off"
+                            autoComplete="off"
                         />
+                        <FieldError message={getError("cost_price")} />
                     </FormGroup>
 
                     {/* SELLING PRICE */}
                     <FormGroup>
-                        <Label>SELLING PRICE</Label>
+                        <FieldLabel required>SELLING PRICE</FieldLabel>
                         <Input
+                            {...fieldProps("selling_price")}
                             type="number"
+                            min="0"
                             step="0.01"
-                            name="selling_price"
-                            value={formData.selling_price}
-                            onChange={handleChange}
                             placeholder="0.00"
-                              autoComplete="off"
+                            autoComplete="off"
                         />
+                        <FieldError message={getError("selling_price")} />
                     </FormGroup>
 
-                    {/* keeps the button row aligned in the grid */}
-                    <FormGroup />
+                    {/* STATUS */}
+                    <FormGroup>
+                        <FieldLabel required>STATUS</FieldLabel>
+                        <Select {...fieldProps("status")}>
+                            {renderOptions(STATUS_OPTIONS)}
+                        </Select>
+                        <FieldError message={getError("status")} />
+                    </FormGroup>
 
                     <ButtonRow>
                         <CancelButton
