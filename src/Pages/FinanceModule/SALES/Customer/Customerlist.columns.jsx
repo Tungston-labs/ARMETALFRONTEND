@@ -7,7 +7,7 @@ import {
     FiEdit2,
     FiTrash2,
 } from "react-icons/fi";
-
+import { IoEllipsisVerticalCircleOutline } from "react-icons/io5";
 import {
     LinkName,
     BalanceAmount,
@@ -97,7 +97,7 @@ export const getCustomerColumns = ({
                         aria-label="More actions"
                         aria-expanded={isMenuOpen}
                     >
-                        <FiMoreVertical size={15} />
+                        <IoEllipsisVerticalCircleOutline size={15} />
                     </KebabButton>
 
                     {isMenuOpen && (

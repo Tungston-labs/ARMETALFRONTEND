@@ -325,3 +325,7 @@ export const SaveButton = styled.button`
     background: #3049a5;
   }
 `;
+export const Required = styled.span`
+  color: #e53935;
+  margin-left: 3px;
+`;

@@ -4,11 +4,9 @@ import {
     useDispatch,
     useSelector,
 } from "react-redux";
-
 import {
     PiPackage,
 } from "react-icons/pi";
-
 import {
     LuPackageCheck,
     LuPackageMinus,
@@ -17,15 +15,12 @@ import {
 } from "react-icons/lu";
 
 import { getProductColumns } from "./columns.jsx";
-
 import ReusableHeader from "../../../../Components/ReusableTable/ReusableHeader";
 import ReusableFilter from "../../../../Components/ReusableTable/ReusableFilter";
 import ReusableTable from "../../../../Components/ReusableTable/ReusableTable";
 import ReusablePagination from "../../../../Components/Pagination/ReusablePagination";
 import StatsCards from "../../../../Components/StatsCards/StatsCards.jsx";
-
 import AddProductModal from "./modal/AddProductModal";
-import DeleteConfirmModal from "./modal/DeleteConfirmModal";
 
 import {
     addProduct,
@@ -41,6 +36,7 @@ import { getCategories } from "../../../../Redux/finance/Product/categorySlice.j
 import { getWarehouses } from "../../../../services/warehouseService";
 
 import { useProductList } from "./productHooks";
+import ReusableConfirmModal from "../../../../Components/modals/ReusableConfirmModal.jsx";
 
 const ProductList = () => {
     const dispatch = useDispatch();
@@ -89,12 +85,6 @@ const ProductList = () => {
                 console.error("Failed to load product warehouse options:", error);
                 setWarehouses([]);
             });
-
-        // NOTE: KPI is no longer fetched separately here.
-        // The product list endpoint (getProducts, called
-        // inside useProductList) already returns the KPI
-        // fields in the same response, so a dedicated
-        // kpi/ request is unnecessary.
     }, [dispatch]);
 
     const {
@@ -317,6 +307,7 @@ const ProductList = () => {
                     columns={columns}
                     data={paginatedData}
                     loading={loading}
+                    autoLayout
                 />
 
                 <ReusablePagination
@@ -344,18 +335,21 @@ const ProductList = () => {
                 }
             />
 
-            <DeleteConfirmModal
-                isOpen={!!deleteTarget}
-                title="Delete Product"
-                message={
-                    deleteTarget
-                        ? `Are you sure you want to delete "${deleteTarget.product_name}"? This action cannot be undone.`
-                        : ""
-                }
-                loading={deleteLoading}
-                onCancel={handleCancelDelete}
-                onConfirm={handleConfirmDelete}
-            />
+           <ReusableConfirmModal
+    show={!!deleteTarget}
+    title="Delete Product"
+    message={
+        deleteTarget
+            ? `Are you sure you want to delete "${deleteTarget.product_name}"? This action cannot be undone.`
+            : ""
+    }
+    confirmText="Delete"
+    cancelText="Cancel"
+    confirmVariant="danger"
+    loadingText="Deleting..."
+    onClose={handleCancelDelete}
+    onConfirm={handleConfirmDelete}
+/>
         </>
     );
 };

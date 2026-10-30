@@ -79,11 +79,11 @@ export const KebabButton = styled.button`
   height: 28px;
   flex-shrink: 0;
 
-  color: #6b7280;
+  color: #000;
 
-  background: #f3f4f6;
-  border: none;
-  border-radius: 999px;
+  background: #fff;
+  border: 1px solid #ccc;
+border-radius: 10px;
 
   cursor: pointer;
 

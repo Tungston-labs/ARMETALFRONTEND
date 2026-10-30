@@ -37,6 +37,7 @@ import {
     SaveButton,
     InputWithIcon,
     IconButton,
+    Required,
 } from "./CustomerModal.styles";
 
 const initialFormData = {
@@ -52,9 +53,8 @@ const initialFormData = {
     crExpiryDate: "",
     billingAddress: "",
     city: "",
-    state: "",          // stores state ISO code when a dropdown is available,
-    // otherwise free text (see stateOptions fallback below)
-    country: "",         // stores the cca2 code, e.g. "IN"
+    state: "",
+    country: "",
     postalCode: "",
     phoneNumber: "",
     adminContactEmail: "",
@@ -108,10 +108,6 @@ const CustomerModal = ({
     const [errors, setErrors] = useState({});
     const [saving, setSaving] = useState(false);
     const [submitError, setSubmitError] = useState(null);
-
-    // Cascading location dropdown data. Empty array means "no known
-    // subdivisions for this selection" — the UI falls back to a plain
-    // text input in that case instead of an empty dropdown.
     const [stateOptions, setStateOptions] = useState([]);
     const [cityOptions, setCityOptions] = useState([]);
 
@@ -123,19 +119,12 @@ const CustomerModal = ({
         () => getCountryByCode(formData.country),
         [formData.country]
     );
-
-    // Resolves the display name for the currently selected state code.
-    // Falls back to the raw value itself when state is free text (i.e.
-    // the selected country has no known subdivisions).
     const selectedStateName = useMemo(() => {
         if (!formData.state) return "";
         const match = stateOptions.find((s) => s.code === formData.state);
         return match?.name || formData.state;
     }, [formData.state, stateOptions]);
 
-    // ============================================================
-    // LOAD CUSTOMER / RESET
-    // ============================================================
 
     useEffect(() => {
         if (!isOpen) return;
@@ -144,21 +133,13 @@ const CustomerModal = ({
         setSubmitError(null);
 
         if ((isEdit || isView) && customer) {
-            // Backend stores country as a free-text name (e.g. "india").
-            // world-countries keys off cca2 codes, so we match by name to
-            // recover the code for the dropdown. Unmatched legacy data
-            // just leaves the dropdown on "Select Country".
+
             const matchedCountry = COUNTRY_OPTIONS.find(
                 (c) =>
                     c.name.toLowerCase() ===
                     (customer.country || "").toLowerCase()
             );
 
-            // Same idea for state: backend stores a free-text name, the
-            // state dropdown is keyed off ISO codes, so we resolve the
-            // code from the name. If nothing matches (legacy data, or a
-            // country with no subdivisions in the dataset) we just keep
-            // the raw text and the field falls back to a text input.
             let resolvedStateCode = customer.state || "";
             let states = [];
             let cities = [];
@@ -256,17 +237,9 @@ const CustomerModal = ({
         setFormData((prev) => ({
             ...prev,
             country: code,
-            // Only auto-fill currency if the user hasn't already typed
-            // one manually for this session's add/edit — cheap heuristic:
-            // fill it whenever it's currently blank.
             currency: prev.currency || country?.currencyCode || "",
-            // Pre-seed the phone field with the dial code the first time
-            // a country is chosen and phone is still empty, so the user
-            // isn't stuck typing the prefix themselves.
             phoneNumber:
                 prev.phoneNumber || (country?.dialCode ? `${country.dialCode} ` : ""),
-            // State/city belonged to the previous country — reset both
-            // so a stale selection can't be submitted with the new one.
             state: "",
             city: "",
         }));
@@ -307,12 +280,12 @@ const CustomerModal = ({
         const financialEmail = formData.financialContactEmail.trim();
         const technicalEmail = formData.technicalContactEmail.trim();
         const website = formData.website.trim();
-
+        const creditLimit = String(formData.creditLimit ?? "").trim();
         if (!name) {
-            nextErrors.customerName = "Customer name is required";
+            nextErrors.customerName = "Company name is required";
         } else if (name.length < 2) {
             nextErrors.customerName =
-                "Customer name must be at least 2 characters";
+                "Company name must be at least 2 characters";
         }
 
         if (!formData.industry) {
@@ -347,7 +320,9 @@ const CustomerModal = ({
             nextErrors.adminContactEmail = "Enter a valid email address";
         }
 
-        if (financialEmail && !EMAIL_PATTERN.test(financialEmail)) {
+        if (!financialEmail) {
+            nextErrors.financialContactEmail = "Financial contact email is required";
+        } else if (!EMAIL_PATTERN.test(financialEmail)) {
             nextErrors.financialContactEmail = "Enter a valid email address";
         }
 
@@ -359,8 +334,10 @@ const CustomerModal = ({
             nextErrors.website = "Enter a valid website URL";
         }
 
-        if (formData.creditLimit !== "") {
-            const value = Number(formData.creditLimit);
+        if (creditLimit === "") {
+            nextErrors.creditLimit = "Credit limit is required";
+        } else {
+            const value = Number(creditLimit);
             if (Number.isNaN(value) || value < 0) {
                 nextErrors.creditLimit = "Enter a valid non-negative amount";
             }
@@ -383,7 +360,6 @@ const CustomerModal = ({
     // ============================================================
 
     const prepareCustomerData = () => {
-        // customer_id omitted — backend-generated, never written by client.
         return {
             customer_name: formData.customerName.trim(),
             company_name: formData.companyType.trim(),
@@ -396,13 +372,7 @@ const CustomerModal = ({
             cr_expiry_date: formData.crExpiryDate || null,
             billing_address: formData.billingAddress.trim(),
             city: formData.city.trim(),
-            // Send the display name to match the existing backend data
-            // shape (e.g. "Kerala"), not the ISO code the dropdown uses
-            // internally. Falls back to the raw text when the field was
-            // a free-text input (country had no known subdivisions).
             state: selectedStateName.trim(),
-            // Send the full country name to match your existing backend
-            // data shape (e.g. "India"), not the cca2 code.
             country: selectedCountry?.name || "",
             postal: formData.postalCode.trim(),
             phno: formData.phoneNumber.trim(),
@@ -438,7 +408,7 @@ const CustomerModal = ({
             setSaving(true);
             setSubmitError(null);
 
-            await onSave(customerData);
+            await onSave(customerData, formData.documents);
         } catch (err) {
             const backendFieldErrors = err?.errors;
 
@@ -511,14 +481,14 @@ const CustomerModal = ({
                         </FormGroup>
 
                         <FormGroup>
-                            <Label>CUSTOMER NAME</Label>
+                            <Label>COMPANY NAME
+                                <Required>*</Required></Label>
                             <Input
                                 name="customerName"
                                 value={formData.customerName}
                                 onChange={handleChange}
-                                placeholder="Enter customer name"
+                                placeholder="Enter company name"
                                 disabled={isReadOnly}
-                                aria-invalid={!!errors.customerName}
                             />
                             {errors.customerName && (
                                 <span style={errorStyle}>{errors.customerName}</span>
@@ -526,16 +496,39 @@ const CustomerModal = ({
                         </FormGroup>
 
                         <FormGroup>
-                            <Label>COMPANY NAME</Label>
-                            <Input
-                                name="companyType"
-                                value={formData.companyType}
+                            <Label>CUSTOMER TYPE</Label>
+                            <Select
+                                name="customer_type"
+                                value={formData.customer_type}
                                 onChange={handleChange}
-                                placeholder="Enter company name"
                                 disabled={isReadOnly}
-                            />
-                        </FormGroup>
+                                aria-invalid={!!errors.customer_type}
+                            >
+                                <option value="">Select Category</option>
+                                <option value="manufacturing">Company</option>
+                                <option value="construction">Individual</option>
+                                <option value="healthcare">Individual</option>
+                                <option value="finance">Government</option>
+                            </Select>
 
+                        </FormGroup>
+                        <FormGroup>
+                            <Label>CUSTOMER CATEGORY</Label>
+                            <Select
+                                name="customer_category"
+                                value={formData.customer_category}
+                                onChange={handleChange}
+                                disabled={isReadOnly}
+                                aria-invalid={!!errors.customer_category}
+                            >
+                                <option value="">Select Category</option>
+                                <option value="manufacturing">Corporate</option>
+                                <option value="construction">SME</option>
+                                <option value="healthcare">Individual</option>
+                                <option value="finance">Government</option>
+                            </Select>
+
+                        </FormGroup>
                         <FormGroup>
                             <Label>INDUSTRY</Label>
                             <Select
@@ -546,35 +539,26 @@ const CustomerModal = ({
                                 aria-invalid={!!errors.industry}
                             >
                                 <option value="">Select Industry</option>
+                                <option value="manufacturing">IT & Software</option>
                                 <option value="manufacturing">Manufacturing</option>
-                                <option value="construction">Construction</option>
-                                <option value="healthcare">Healthcare</option>
-                                <option value="finance">Finance</option>
+                                <option value="construction">Construction & Real Estate</option>
+                                <option value="healthcare">Trading</option>
+                                <option value="healthcare">Wholesale & Distribution</option>
+                                <option value="finance">Banking & Financial Services</option>
                                 <option value="retail">Retail</option>
-                                <option value="technology">Technology</option>
+                                <option value="technology">Others</option>
                             </Select>
                             {errors.industry && (
                                 <span style={errorStyle}>{errors.industry}</span>
                             )}
                         </FormGroup>
 
-                        <FormGroup>
-                            <Label>WEBSITE</Label>
-                            <Input
-                                name="website"
-                                value={formData.website}
-                                onChange={handleChange}
-                                placeholder="https://example.com"
-                                disabled={isReadOnly}
-                                aria-invalid={!!errors.website}
-                            />
-                            {errors.website && (
-                                <span style={errorStyle}>{errors.website}</span>
-                            )}
-                        </FormGroup>
+
 
                         <FormGroup>
-                            <Label>CR NUMBER</Label>
+                            <Label>COMMERCIAL REGISTRATION NUMBER
+                                <Required>*</Required>
+                            </Label>
                             <Input
                                 name="crNumber"
                                 value={formData.crNumber}
@@ -584,7 +568,7 @@ const CustomerModal = ({
                             />
                         </FormGroup>
 
-                        <FormGroup>
+                        {/* <FormGroup>
                             <Label>CURRENCY</Label>
                             <Select
                                 name="currency"
@@ -607,7 +591,7 @@ const CustomerModal = ({
                                         </option>
                                     )}
                             </Select>
-                        </FormGroup>
+                        </FormGroup> */}
 
                         <FormGroup>
                             <Label>VAT REGISTRATION NUMBER</Label>
@@ -620,8 +604,25 @@ const CustomerModal = ({
                             />
                         </FormGroup>
 
+
                         <FormGroup>
-                            <Label>PAYMENT TERM</Label>
+                            <Label>VAT REGISTRATION EFFECTIVE DATE</Label>
+                            <InputWithIcon>
+                                <Input
+                                    type="date"
+                                    name="crExpiryDate"
+                                    value={formData.crExpiryDate}
+                                    onChange={handleChange}
+                                    disabled={isReadOnly}
+                                />
+
+                            </InputWithIcon>
+                        </FormGroup>
+
+                        <FormGroup>
+                            <Label>PAYMENT TERM
+                                <Required>*</Required>
+                            </Label>
                             <Select
                                 name="paymentTerm"
                                 value={formData.paymentTerm}
@@ -642,24 +643,26 @@ const CustomerModal = ({
                         </FormGroup>
 
                         <FormGroup>
-                            <Label>CR EXPIRY DATE</Label>
-                            <InputWithIcon>
-                                <Input
-                                    type="date"
-                                    name="crExpiryDate"
-                                    value={formData.crExpiryDate}
-                                    onChange={handleChange}
-                                    disabled={isReadOnly}
-                                />
-                                <IconButton type="button">
-                                    <FiCalendar size={16} />
-                                </IconButton>
-                            </InputWithIcon>
+                            <Label>CLIENT STATUS</Label>
+                            <Select
+                                name="clientStatus"
+                                value={formData.clientStatus}
+                                onChange={handleChange}
+                                disabled={isReadOnly}
+                                aria-invalid={!!errors.clientStatus}
+                            >
+                                <option value="">Select status</option>
+                                <option value="active">Active</option>
+                                <option value="inactive">Inactive</option>
+                            </Select>
+                            {errors.clientStatus && (
+                                <span style={errorStyle}>{errors.clientStatus}</span>
+                            )}
                         </FormGroup>
-
                         <FormGroup>
                             <AddressLabel>
                                 BILLING ADDRESS
+                                <Required>*</Required>
                                 <PlusButton type="button">
                                     <FiPlus size={15} />
                                 </PlusButton>
@@ -674,7 +677,9 @@ const CustomerModal = ({
                         </FormGroup>
 
                         <FormGroup>
-                            <Label>COUNTRY</Label>
+                            <Label>COUNTRY
+                                <Required>*</Required>
+                            </Label>
                             <Select
                                 name="country"
                                 value={formData.country}
@@ -695,7 +700,9 @@ const CustomerModal = ({
                         </FormGroup>
 
                         <FormGroup>
-                            <Label>STATE</Label>
+                            <Label>STATE
+                                <Required>*</Required>
+                            </Label>
                             {stateOptions.length > 0 ? (
                                 <Select
                                     name="state"
@@ -731,7 +738,8 @@ const CustomerModal = ({
                         </FormGroup>
 
                         <FormGroup>
-                            <Label>CITY</Label>
+                            <Label>CITY
+                                <Required>*</Required></Label>
                             {cityOptions.length > 0 ? (
                                 <Select
                                     name="city"
@@ -767,7 +775,8 @@ const CustomerModal = ({
                         </FormGroup>
 
                         <FormGroup>
-                            <Label>POSTAL/ZIP CODE</Label>
+                            <Label>POSTAL/ZIP CODE
+                                <Required>*</Required></Label>
                             <Input
                                 name="postalCode"
                                 value={formData.postalCode}
@@ -778,7 +787,8 @@ const CustomerModal = ({
                         </FormGroup>
 
                         <FormGroup>
-                            <Label>PHONE NUMBER</Label>
+                            <Label>PHONE NUMBER
+                                <Required>*</Required></Label>
                             <Input
                                 name="phoneNumber"
                                 value={formData.phoneNumber}
@@ -811,7 +821,8 @@ const CustomerModal = ({
                         </FormGroup>
 
                         <FormGroup>
-                            <Label>FINANCIAL CONTACT EMAIL ID</Label>
+                            <Label>FINANCIAL CONTACT EMAIL ID
+                                <Required>*</Required></Label>
                             <Input
                                 type="email"
                                 name="financialContactEmail"
@@ -847,20 +858,17 @@ const CustomerModal = ({
                         </FormGroup>
 
                         <FormGroup>
-                            <Label>CLIENT STATUS</Label>
-                            <Select
-                                name="clientStatus"
-                                value={formData.clientStatus}
+                            <Label>WEBSITE</Label>
+                            <Input
+                                name="website"
+                                value={formData.website}
                                 onChange={handleChange}
+                                placeholder="https://example.com"
                                 disabled={isReadOnly}
-                                aria-invalid={!!errors.clientStatus}
-                            >
-                                <option value="">Select status</option>
-                                <option value="active">Active</option>
-                                <option value="inactive">Inactive</option>
-                            </Select>
-                            {errors.clientStatus && (
-                                <span style={errorStyle}>{errors.clientStatus}</span>
+                                aria-invalid={!!errors.website}
+                            />
+                            {errors.website && (
+                                <span style={errorStyle}>{errors.website}</span>
                             )}
                         </FormGroup>
 
@@ -880,7 +888,8 @@ const CustomerModal = ({
                         <FormGrid>
 
                             <FormGroup>
-                                <Label>CREDIT LIMIT</Label>
+                                <Label>CREDIT LIMIT
+                                    <Required>*</Required></Label>
                                 <Input
                                     name="creditLimit"
                                     value={formData.creditLimit}
@@ -905,18 +914,18 @@ const CustomerModal = ({
                             </FormGroup>
 
                             <FormGroup>
-                                <Label>PAYMENT TERMS</Label>
+                                <Label>PAYMENT METHODS</Label>
                                 <Select
                                     name="financialPaymentTerms"
                                     value={formData.financialPaymentTerms}
                                     onChange={handleChange}
                                     disabled={isReadOnly}
                                 >
-                                    <option value="">Select Date</option>
-                                    <option value="15_days">15 Days</option>
-                                    <option value="30_days">30 Days</option>
-                                    <option value="45_days">45 Days</option>
-                                    <option value="60_days">60 Days</option>
+                                    <option value="">Select </option>
+                                    <option value="15_days">Bank Transfer</option>
+                                    <option value="30_days">Cash</option>
+                                    <option value="45_days">Card</option>
+                                    <option value="60_days">Cheque</option>
                                 </Select>
                             </FormGroup>
 
@@ -963,6 +972,9 @@ const CustomerModal = ({
                                         readOnly
                                         value={formData.documents?.name || ""}
                                         placeholder="Upload document"
+                                        onClick={() =>
+                                            !isReadOnly && document.getElementById("customer-document").click()
+                                        }
                                     />
 
                                     {!isReadOnly && (

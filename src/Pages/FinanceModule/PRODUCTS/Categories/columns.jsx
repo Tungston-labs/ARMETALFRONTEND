@@ -29,11 +29,7 @@ export const getCategoryColumns = ({ onView, onEdit, onDelete }) => [
     { accessor: "category_type", header: "Items Count" },
     { accessor: "category_type", header: "Inventory Value" },
     { accessor: "status", header: "Status" },
-    {
-        accessor: "created_at",
-        header: "Created On",
-        render: (row) => formatDate(row.created_at),
-    },
+    
     {
         accessor: "actions",
         header: "Actions",

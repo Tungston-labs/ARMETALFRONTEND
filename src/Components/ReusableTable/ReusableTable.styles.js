@@ -97,7 +97,7 @@ export const Tr = styled.tr`
 ========================================================= */
 
 export const Th = styled.th`
-  background: #f78926;
+  background: #DD6F02;
   color: white;
 
   padding: 14px 8px;

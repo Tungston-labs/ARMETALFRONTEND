@@ -89,26 +89,18 @@ const getSidebarData = (user) => {
     if (modules.project) {
       items.push({ title: "PROJECT", icon: <FiCodesandbox />, path: "/projects" });
     }
-
-
-    if (modules.project) {
-      items.push({ title: "Sales-Report", icon: <FiCodesandbox />, path: "/reports/sales-report" });
-    }
-  if (modules.project) {
-      items.push({ title: "Customer-Report", icon: <FiCodesandbox />, path: "/reports/customer-report" });
-    }
-      if (modules.project) {
-      items.push({ title: "vendor-Report", icon: <FiCodesandbox />, path: "/reports/vendor-report" });
-    }
-     if (modules.project) {
-      items.push({ title: "expense-Report", icon: <FiCodesandbox />, path: "/reports/expense-report" });
-    }
-
-      if (modules.project) {
-      items.push({ title: "Profit or Loss", icon: <FiCodesandbox />, path: "/reports/profit-loss" });
-    }
-       if (modules.project) {
-      items.push({ title: "Cash Flow", icon: <FiCodesandbox />, path: "/reports/cash-flow" });
+    if (modules.employee) {
+      items.push({
+        title: "PRODUCT",
+        icon: <PiUsersThreeLight />,
+        children: [
+          { title: "Product List", path: "/Product-List" },
+          { title: "Categories", path: "/Categories-List" },
+          { title: "Inventory", path: "/Inventory-List" },
+          { title: "Warehouses", path: "/Warehouse-List" },
+          
+        ],
+      });
     }
     return items;
   }

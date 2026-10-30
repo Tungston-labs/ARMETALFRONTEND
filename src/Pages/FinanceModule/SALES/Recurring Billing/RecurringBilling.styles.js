@@ -98,3 +98,39 @@ export const ExportButton = styled.button`
         }
     }
 `;
+export const ToggleSwitch = styled.button`
+    position: relative;
+    width: 44px;
+    height: 24px;
+    padding: 0;
+    border: none;
+    border-radius: 999px;
+    cursor: pointer;
+    background: ${({ $on }) => ($on ? "#16a34a" : "#e5e7eb")};
+    transition: background 0.2s ease;
+    flex-shrink: 0;
+
+    &:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
+    &:focus-visible {
+        outline: 2px solid #f78926;
+        outline-offset: 2px;
+    }
+
+    &::after {
+        content: "";
+        position: absolute;
+        top: 2px;
+        left: 2px;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background: #ffffff;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+        transform: translateX(${({ $on }) => ($on ? "20px" : "0")});
+        transition: transform 0.2s ease;
+    }
+`;

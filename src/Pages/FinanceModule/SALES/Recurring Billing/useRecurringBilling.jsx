@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
 import {
@@ -14,30 +14,8 @@ import {
 } from "../../../../services/finance/Sales/RecurringService";
 import { FiCheckCircle, FiClock, FiDollarSign, FiShoppingCart, FiXCircle } from "react-icons/fi";
 
-const getCurrentMonthRange = () => {
-    const today = new Date();
-    const year = today.getFullYear();
-    const month = today.getMonth();
-
-    const firstDay = new Date(year, month, 1);
-    const lastDay = new Date(year, month + 1, 0);
-
-    const formatDate = (date) => {
-        const y = date.getFullYear();
-        const m = String(date.getMonth() + 1).padStart(2, "0");
-        const d = String(date.getDate()).padStart(2, "0");
-        return `${y}-${m}-${d}`;
-    };
-
-    return {
-        start: formatDate(firstDay),
-        end: formatDate(lastDay),
-    };
-};
-
 export const useRecurringBilling = () => {
     const dispatch = useDispatch();
-    const currentMonth = getCurrentMonthRange();
 
     /* ===============================
        FILTER STATES
@@ -49,8 +27,8 @@ export const useRecurringBilling = () => {
 
     const [billingCycle, setBillingCycle] = useState("");
     const [service, setService] = useState("");
-const [startDate, setStartDate] = useState("");
-const [endDate, setEndDate] = useState("");
+    const [startDate, setStartDate] = useState("");
+    const [endDate, setEndDate] = useState("");
 
     const [currentPage, setCurrentPage] = useState(1);
 
@@ -91,10 +69,6 @@ const [endDate, setEndDate] = useState("");
         ]).then(([customerRes, categoryRes, productRes]) => {
             if (!isMounted) return;
 
-            console.log("Raw customers response:", customerRes);
-            console.log("Raw categories response:", categoryRes);
-            console.log("Raw products response:", productRes);
-
             setCustomers(
                 customerRes?.results || customerRes?.data || customerRes || []
             );
@@ -125,24 +99,35 @@ const [endDate, setEndDate] = useState("");
     } = useSelector((state) => state.recurring);
 
     /* ===============================
+       BILLING LIST PARAMS + REFETCH
+       Single source of truth so the list effect, the save handler
+       and the toggle handler all refetch with the same filters.
+    =============================== */
+
+    const buildBillingParams = useCallback(
+        () => ({
+            page: currentPage,
+            search: search || undefined,
+            recurrence_status: status || undefined,
+            customer: customer || undefined,
+            frequency: billingCycle || undefined,
+            renewal_from: startDate || undefined,
+            renewal_to: endDate || undefined,
+        }),
+        [currentPage, search, status, customer, billingCycle, startDate, endDate]
+    );
+
+    const refetchBilling = useCallback(() => {
+        dispatch(getRecurringBilling(buildBillingParams()));
+    }, [dispatch, buildBillingParams]);
+
+    /* ===============================
        FETCH BILLING LIST
-       renewal_from / renewal_to come straight from the header's
-       start/end date picker.
     =============================== */
 
     useEffect(() => {
-        dispatch(
-            getRecurringBilling({
-                page: currentPage,
-                search: search || undefined,
-                recurrence_status: status || undefined,
-                customer: customer || undefined,
-                frequency: billingCycle || undefined,
-                renewal_from: startDate || undefined,
-                renewal_to: endDate || undefined,
-            })
-        );
-    }, [dispatch, currentPage, search, status, customer, billingCycle, startDate, endDate]);
+        refetchBilling();
+    }, [refetchBilling]);
 
     /* ===============================
        FETCH SUMMARY
@@ -155,6 +140,7 @@ const [endDate, setEndDate] = useState("");
     /* ===============================
        STATS
     =============================== */
+
     const recurringStats = [
         {
             title: "Active Subscriptions",
@@ -163,13 +149,15 @@ const [endDate, setEndDate] = useState("");
             backgroundColor: "#E8F1FF",
             iconColor: "#3478F6",
         },
-
         {
             title: "Monthly Revenue",
-            count: Number(summary?.total_monthly_revenue_amount ?? 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2, }),
-             icon: <FiDollarSign />, 
-             backgroundColor: "#FFF4E5", 
-             iconColor: "#F59E0B",
+            count: Number(summary?.total_monthly_revenue_amount ?? 0).toLocaleString("en-US", {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+            }),
+            icon: <FiDollarSign />,
+            backgroundColor: "#FFF4E5",
+            iconColor: "#F59E0B",
         },
         {
             title: "Upcoming Renewals",
@@ -193,9 +181,10 @@ const [endDate, setEndDate] = useState("");
             iconColor: "#E5484D",
         },
     ];
+
     /* ===============================
        FILTER DEFINITIONS
-       (renewal date filter removed — now handled by the header's
+       (renewal date filter is handled by the header's
        start/end date picker instead of a preset dropdown)
     =============================== */
 
@@ -232,7 +221,7 @@ const [endDate, setEndDate] = useState("");
 
     /* ===============================
        DATE HANDLERS
-       These now double as the renewal date range filter.
+       These double as the renewal date range filter.
     =============================== */
 
     const handleStartDateChange = (e) => {
@@ -291,6 +280,10 @@ const [endDate, setEndDate] = useState("");
         });
     };
 
+    /* ===============================
+       SAVE NEW RECURRING SERVICE
+    =============================== */
+
     const handleSaveProductService = (data, files = {}) => {
         dispatch(addRecurringService(data))
             .unwrap()
@@ -319,18 +312,38 @@ const [endDate, setEndDate] = useState("");
                 }
 
                 setShowProductServiceModal(false);
-                dispatch(
-                    getRecurringBilling({
-                        page: currentPage,
-                        search: search || undefined,
-                    })
-                );
+                refetchBilling();
                 dispatch(getRecurringSummary());
             })
             .catch((err) => {
                 console.error("Failed to create recurring service", err);
             });
     };
+
+    /* ===============================
+       TOGGLE AUTO-SEND
+       Patches auto_send, then refetches the list with the
+       current filters so the switch reflects the server value.
+    =============================== */
+
+    const handleToggleAutoSend = useCallback(
+        (row) => {
+            dispatch(
+                updateRecurringServicePartial({
+                    id: row.id,
+                    payload: { auto_send: !row.auto_send },
+                })
+            )
+                .unwrap()
+                .then(() => {
+                    refetchBilling();
+                })
+                .catch((err) => {
+                    console.error("Failed to update auto send", err);
+                });
+        },
+        [dispatch, refetchBilling]
+    );
 
     return {
         // data
@@ -369,5 +382,6 @@ const [endDate, setEndDate] = useState("");
         handleEndDateChange,
         handleExport,
         handleSaveProductService,
+        handleToggleAutoSend,
     };
 };

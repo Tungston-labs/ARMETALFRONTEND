@@ -177,34 +177,45 @@ const ReusableTable = ({
                 </Td>
               </Tr>
             ) : (
-              sortedData.map((row, rowIndex) => (
-                <Tr
-                  key={getRowKey(row, rowIndex)}
-                  onClick={() => onRowClick?.(row)}
-                  style={onRowClick ? { cursor: "pointer" } : undefined}
-                >
-                  {safeColumns.map((column, columnIndex) => (
-                    <Td
-                      key={getColumnKey(column, columnIndex)}
-                      data-priority={column.priority ?? 1}
-                      style={
-                        column.render || column.cell
-                          ? {
-                              whiteSpace: autoLayout ? "nowrap" : "normal",
-                            }
-                          : undefined
-                      }
-                      title={
-                        column.render || column.cell
-                          ? undefined
-                          : String(getCellValue(row, column) ?? "")
-                      }
-                    >
-                      {renderCell(column, row, rowIndex)}
-                    </Td>
-                  ))}
-                </Tr>
-              ))
+              sortedData.map((row, rowIndex) => {
+                const rowKey =
+                  row.id ??
+                  row.pk ??
+                  row.uuid ??
+                  row.account_number ??
+                  row.transaction_id ??
+                  `row-${rowIndex}`;
+
+                return (
+                  <Tr
+                    key={rowKey}
+                    onClick={() => onRowClick?.(row)}
+                    style={onRowClick ? { cursor: "pointer" } : undefined}
+                  >
+                    {safeColumns.map((column, columnIndex) => {
+                      const columnKey = getColumnKey(column, columnIndex);
+
+                      return (
+                        <Td
+                          key={`${rowKey}-${columnKey}`}
+                          data-priority={column.priority ?? 1}
+                          style={{
+                            whiteSpace: autoLayout ? "nowrap" : "normal",
+                          }}
+                          title={
+                            typeof column.render === "function" ||
+                            typeof column.cell === "function"
+                              ? undefined
+                              : String(getCellValue(row, column) ?? "")
+                          }
+                        >
+                          {renderCell(column, row, rowIndex)}
+                        </Td>
+                      );
+                    })}
+                  </Tr>
+                );
+              })
             )}
           </Tbody>
 
@@ -212,13 +223,11 @@ const ReusableTable = ({
             <tfoot>
               <TotalRow>
                 {safeColumns.map((column, index) => {
-                  const accessor = getAccessor(column);
+                  const accessor = column.accessor ?? column.key ?? column.id;
+                  const columnKey = getColumnKey(column, index);
+
                   const value =
-                    index === 0
-                      ? totalRowLabel
-                      : accessor
-                        ? totalRow[accessor] ?? ""
-                        : "";
+                    index === 0 ? totalRowLabel : (totalRow[accessor] ?? "");
 
                   let content = value;
 
@@ -230,11 +239,7 @@ const ReusableTable = ({
                     content = <TotalBalance>{value}</TotalBalance>;
                   }
 
-                  return (
-                    <Td key={getColumnKey(column, index)}>
-                      {content}
-                    </Td>
-                  );
+                  return <Td key={`total-${columnKey}`}>{content}</Td>;
                 })}
               </TotalRow>
             </tfoot>

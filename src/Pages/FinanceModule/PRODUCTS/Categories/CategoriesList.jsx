@@ -147,7 +147,12 @@ const CategoriesList = () => {
 
       {/* TABLE */}
 
-      <ReusableTable columns={columns} data={filteredData} loading={loading} />
+      <ReusableTable
+       columns={columns}
+        data={filteredData} 
+        loading={loading} 
+        autoLayout
+        />
 
       {/* PAGINATION */}
 
@@ -155,6 +160,7 @@ const CategoriesList = () => {
         currentPage={currentPage}
         totalPages={totalPages}
         onPageChange={handlePageChange}
+        
       />
 
       {/* ADD / EDIT MODAL */}

@@ -1,5 +1,5 @@
-import React from "react";
-import { billingColumns } from "./billingColumns";
+import React, { useMemo } from "react";
+import { getBillingColumns } from "./billingColumns";
 import { useRecurringBilling } from "./useRecurringBilling";
 import ReusableHeader from "../../../../Components/ReusableTable/ReusableHeader";
 import ReusableFilter from "../../../../Components/ReusableTable/ReusableFilter";
@@ -41,7 +41,14 @@ const RecurringBilling = () => {
         handleStartDateChange,
         handleEndDateChange,
         handleSaveProductService,
+        handleToggleAutoSend,
     } = useRecurringBilling();
+
+    // Rebuild columns only when the toggle handler changes
+    const columns = useMemo(
+        () => getBillingColumns({ onToggleAutoSend: handleToggleAutoSend }),
+        [handleToggleAutoSend]
+    );
 
     return (
         <>
@@ -52,8 +59,6 @@ const RecurringBilling = () => {
                     buttonText="+ ADD NEW RECURRING BILLING"
                     onButtonClick={() => setShowProductServiceModal(true)}
                 >
-                 
-
                     <DateRangeWrapper>
                         <DatePickerContainer>
                             <DateInput
@@ -90,9 +95,10 @@ const RecurringBilling = () => {
                 />
 
                 <ReusableTable
-                    columns={billingColumns}
+                    columns={columns}
                     data={billing}
                     loading={billingLoading}
+                    autoLayout
                 />
 
                 <ReusablePagination

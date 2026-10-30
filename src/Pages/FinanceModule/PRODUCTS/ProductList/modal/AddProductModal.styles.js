@@ -1,5 +1,7 @@
 import styled from "styled-components";
 
+const ERROR_COLOR = "#dc2626";
+
 export const Overlay = styled.div`
   position: fixed;
   inset: 0;
@@ -49,41 +51,35 @@ export const Header = styled.div`
 `;
 
 export const Title = styled.h2`
- margin: 0 0 12px;
+  margin: 0 0 12px;
   font-family: "Poppins", sans-serif;
   color: #111111;
-font-weight: 500;
-font-style: Medium;
-font-size: 20px;
-line-height: 100%;
-letter-spacing: 0%;
-
+  font-weight: 500;
+  font-size: 20px;
+  line-height: 100%;
+  letter-spacing: 0%;
 `;
 
 export const Subtitle = styled.p`
   margin: 0;
   color: #333;
-   font-family: "Poppins", sans-serif;
-font-weight: 400;
-font-style: Regular;
-font-size: 14px;
-line-height: 100%;
-letter-spacing: 0%;
-
+  font-family: "Poppins", sans-serif;
+  font-weight: 400;
+  font-size: 14px;
+  line-height: 100%;
+  letter-spacing: 0%;
 `;
 
 export const Form = styled.form`
   display: grid;
 
-  grid-template-columns:
-    repeat(6, minmax(0, 1fr));
+  grid-template-columns: repeat(6, minmax(0, 1fr));
 
   column-gap: 18px;
   row-gap: 15px;
 
   @media (max-width: 1100px) {
-    grid-template-columns:
-      repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   @media (max-width: 650px) {
@@ -98,83 +94,68 @@ export const FormGroup = styled.div`
 export const Label = styled.label`
   display: block;
   margin-bottom: 10px;
-  font-size: 10px;
-  line-height: 1;
-  font-weight: 500;
   color: #222;
   text-transform: uppercase;
-    font-family: "Poppins", sans-serif;
-font-weight: 400;
-font-style: Regular;
-font-size: 13px;
-line-height: 100%;
-letter-spacing: 0%;
-
+  font-family: "Poppins", sans-serif;
+  font-weight: 400;
+  font-size: 13px;
+  line-height: 100%;
+  letter-spacing: 0%;
 `;
 
-export const Input = styled.input`
+/* red star shown after the label of a required field */
+export const RequiredStar = styled.span`
+  color: ${ERROR_COLOR};
+  margin-left: 4px;
+  font-weight: 600;
+`;
+
+/* validation message shown under a field */
+export const ErrorText = styled.span`
+  display: block;
+  margin-top: 4px;
+  color: ${ERROR_COLOR};
+  font-family: "Poppins", sans-serif;
+  font-size: 12px;
+  line-height: 1.3;
+`;
+
+/* shared look for Input and Select; $hasError turns the border red */
+const fieldStyles = `
   width: 100%;
   height: 41px;
-
   padding: 0 12px;
-
   box-sizing: border-box;
-
-  border: 1px solid #e1e1e1;
-
   border-radius: 4px;
-
   outline: none;
-
   background: #ffffff;
-
   font-family: "Poppins", sans-serif;
-
   font-size: 13px;
-
   color: #333333;
-
   transition: 0.2s ease;
 
   &::placeholder {
     color: #999999;
   }
+`;
+
+export const Input = styled.input`
+  ${fieldStyles}
+
+  border: 1px solid ${({ $hasError }) => ($hasError ? ERROR_COLOR : "#e1e1e1")};
 
   &:focus {
-    border-color: #3654b5;
+    border-color: ${({ $hasError }) => ($hasError ? ERROR_COLOR : "#3654b5")};
   }
 `;
 
 export const Select = styled.select`
-  width: 100%;
-  height: 41px;
+  ${fieldStyles}
 
-  padding: 0 12px;
-
-  box-sizing: border-box;
-
-  border: 1px solid #e1e1e1;
-
-  border-radius: 4px;
-
-  outline: none;
-
-  background: #ffffff;
-
-  font-family: "Poppins", sans-serif;
-
-  font-size: 13px;
-
-  color: #333333;
-
-  transition: 0.2s ease;
-
-  &::placeholder {
-    color: #999999;
-  }
+  border: 1px solid ${({ $hasError }) => ($hasError ? ERROR_COLOR : "#e1e1e1")};
 
   &:focus {
-    border-color: #3654b5;
+    border-color: ${({ $hasError }) => ($hasError ? ERROR_COLOR : "#3654b5")};
   }
 `;
 
@@ -190,27 +171,17 @@ export const ButtonRow = styled.div`
 `;
 
 export const CancelButton = styled.button`
-height: 40px;
-
+  height: 40px;
   min-width: 86px;
-
   padding: 0 18px;
-
   background: #ffffff;
-
   border: 1px solid #111111;
-
   border-radius: 4px;
-
   font-family: "Poppins", sans-serif;
-
   font-size: 13px;
   font-weight: 500;
-
   color: #111111;
-
   cursor: pointer;
-
   transition: 0.2s ease;
 
   &:hover {
@@ -220,35 +191,25 @@ height: 40px;
 
 export const SaveButton = styled.button`
   height: 40px;
-
   min-width: 207px;
-
   padding: 0 25px;
 
   display: flex;
-
   align-items: center;
   justify-content: center;
-
   gap: 10px;
 
   background: #3857b9;
-
   border: none;
-
   border-radius: 4px;
 
   font-family: "Poppins", sans-serif;
-
   font-size: 13px;
   font-weight: 500;
-
   letter-spacing: 0.4px;
-
   color: #ffffff;
 
   cursor: pointer;
-
   transition: 0.2s ease;
 
   svg {
