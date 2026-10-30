@@ -1,5 +1,4 @@
 import React from "react";
-import { FiInfo } from "react-icons/fi";
 
 // =====================================================
 // FORMAT NUMBER
@@ -38,43 +37,21 @@ const formatCurrency = (value) => {
 };
 
 // =====================================================
-// FORMAT DATE
-// =====================================================
-
-const formatDate = (value) => {
-  if (!value) {
-    return "-";
-  }
-
-  const date = new Date(value);
-
-  if (Number.isNaN(date.getTime())) {
-    return value;
-  }
-
-  return date.toLocaleDateString("en-GB", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  });
-};
-
-// =====================================================
-// STOCK STATUS CLASS
+// STOCK STATUS
 // =====================================================
 
 const getStockStatusClass = (status) => {
-  if (!status) {
-    return "";
-  }
-
-  const normalizedStatus = status.toString().toLowerCase().replace(/\s+/g, "-");
+  const normalizedStatus = (status || "")
+    .toString()
+    .toLowerCase()
+    .replace(/\s+/g, "-");
 
   return `stock-status stock-status-${normalizedStatus}`;
 };
 
 // =====================================================
 // INVENTORY COLUMNS
+// Matching the provided screenshot
 // =====================================================
 
 export const inventoryColumns = [
@@ -86,7 +63,7 @@ export const inventoryColumns = [
 
   {
     accessor: "product_name",
-    header: "Product",
+    header: "Item",
     render: (row) => row?.product_name || "-",
   },
 
@@ -104,7 +81,7 @@ export const inventoryColumns = [
 
   {
     accessor: "available_qty",
-    header: "Available Qty",
+    header: "In stock",
     render: (row) => formatNumber(row?.available_qty),
   },
 
@@ -127,41 +104,33 @@ export const inventoryColumns = [
   },
 
   {
-    accessor: "stock_status",
-    header: "Stock Status",
-    render: (row) => (
-      <span className={getStockStatusClass(row?.stock_status)}>
-        {row?.stock_status || "-"}
-      </span>
-    ),
-  },
-
-  {
     accessor: "inventory_value",
-    header: "Inventory Value",
+    header: "Stock value",
     render: (row) => formatCurrency(row?.inventory_value),
   },
 
   {
-    accessor: "updated_at",
-    header: "Last Updated",
-    render: (row) => formatDate(row?.updated_at),
-  },
-
-  {
-    accessor: "action",
-    header: "Action",
+    accessor: "stock_status",
+    header: "Stock Status",
     render: (row) => (
-      <button
-        type="button"
-        className="inventory-info-button"
-        title={`View ${row?.product_name || "inventory"} details`}
-        onClick={() => {
-          console.log("Inventory details:", row);
+      <span
+        className={getStockStatusClass(row?.stock_status)}
+        style={{
+          color:
+            row?.stock_status?.toLowerCase() === "in stock"
+              ? "#16a34a"
+              : row?.stock_status?.toLowerCase() === "low stock"
+                ? "#f97316"
+                : row?.stock_status?.toLowerCase() === "out of stock"
+                  ? "#ef4444"
+                  : "#333333",
+          fontSize: "12px",
+          fontWeight: 400,
+          whiteSpace: "nowrap",
         }}
       >
-        <FiInfo size={15} />
-      </button>
+        {row?.stock_status || "-"}
+      </span>
     ),
   },
 ];

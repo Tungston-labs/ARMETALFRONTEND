@@ -253,7 +253,10 @@ const FinanceRoutes = () => {
 
       <Route path="sales/recurring-billing" element={<RecurringBilling />} />
       <Route path="sales/recurring-billing/add" element={<AddingRecurring />} />
-      <Route path="sales/recurring-billing/;id" element={<RecurringBilling />} />
+      <Route
+        path="sales/recurring-billing/;id"
+        element={<RecurringBilling />}
+      />
 
       {/* =====================================================
           SALES - CUSTOMER LEDGER

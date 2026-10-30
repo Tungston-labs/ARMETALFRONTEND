@@ -28,7 +28,7 @@ import { getWarehouses } from "../../../../services/warehouseService";
 
 import { fetchProducts } from "../../../../services/finance/Product/productServices";
 
-import { inventoryColumns } from "../../../../Components/ReusableTable/inventoryColumns.jsx";
+import { inventoryColumns } from "./inventoryColumns.jsx";
 
 const InventoryList = () => {
   const dispatch = useDispatch();
@@ -640,11 +640,7 @@ const InventoryList = () => {
             options: warehouseFilterOptions,
           },
         ]}
-        rightButton={
-          <HeaderButton $variant="orange" onClick={handleApplyFilters}>
-            Apply Filters
-          </HeaderButton>
-        }
+       
       />
 
       {error && (

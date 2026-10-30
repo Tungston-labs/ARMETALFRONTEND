@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { FiSave, FiUpload } from "react-icons/fi";
+import { FiSave, FiUpload, FiChevronDown } from "react-icons/fi";
 
 import {
   Overlay,
@@ -15,6 +15,9 @@ import {
   Select,
   UnitInput,
   UnitText,
+  NoteWrapper,
+  NoteInput,
+  NoteChevron,
   AttachmentWrapper,
   AttachmentInput,
   UploadLabel,
@@ -22,18 +25,20 @@ import {
   ButtonGroup,
   CancelButton,
   SaveButton,
+  ErrorMessage,
 } from "./InventoryModal.style";
 
 const DEFAULT_FORM_DATA = {
   adjustmentNumber: "",
-  adjustmentDate: "",
-  warehouse: "",
   product: "",
   adjustmentType: "Reduce Stock",
   reason: "Damaged Goods",
+  adjustmentDate: "",
+  warehouse: "",
   currentStock: "",
   adjustmentQuantity: "",
   adjustedStock: "",
+  note: "",
   attachment: null,
 };
 
@@ -47,34 +52,43 @@ const StockAdjustmentModal = ({
   warehouses = [],
   products = [],
 }) => {
-  const [formData, setFormData] = useState({
-    ...DEFAULT_FORM_DATA,
-    ...(initialData || {}),
-  });
+  const [formData, setFormData] = useState(DEFAULT_FORM_DATA);
+  const [validationError, setValidationError] = useState("");
 
-  /* =======================================================
-     RESET FORM WHEN MODAL OPENS
-  ======================================================= */
-
+  // Reset form whenever modal opens or edit data changes.
   useEffect(() => {
-    if (!isOpen) {
-      return;
-    }
+    if (!isOpen) return;
 
-    setFormData({
+    const initial = {
       ...DEFAULT_FORM_DATA,
       ...(initialData || {}),
-    });
+    };
+
+    const current = initial.currentStock;
+    const quantity = initial.adjustmentQuantity;
+
+    if (
+      current !== "" &&
+      current !== null &&
+      quantity !== "" &&
+      quantity !== null
+    ) {
+      const currentValue = Number(current) || 0;
+      const quantityValue = Number(quantity) || 0;
+
+      initial.adjustedStock =
+        initial.adjustmentType === "Add Stock"
+          ? currentValue + quantityValue
+          : currentValue - quantityValue;
+    }
+
+    setFormData(initial);
+    setValidationError("");
   }, [isOpen, initialData]);
 
-  /* =======================================================
-     ESCAPE KEY
-  ======================================================= */
-
+  // Close modal using Escape key.
   useEffect(() => {
-    if (!isOpen) {
-      return undefined;
-    }
+    if (!isOpen) return undefined;
 
     const handleEscape = (event) => {
       if (event.key === "Escape" && !submitting) {
@@ -89,31 +103,38 @@ const StockAdjustmentModal = ({
     };
   }, [isOpen, onClose, submitting]);
 
-  /* =======================================================
-     CALCULATE ADJUSTED STOCK
-  ======================================================= */
-
+  // Calculate adjusted stock.
   const calculateAdjustedStock = (
     currentStock,
     adjustmentQuantity,
     adjustmentType,
   ) => {
-    const current = Number(currentStock) || 0;
-    const quantity = Number(adjustmentQuantity) || 0;
-
-    if (adjustmentType === "Add Stock") {
-      return current + quantity;
+    if (
+      currentStock === "" ||
+      currentStock === null ||
+      adjustmentQuantity === "" ||
+      adjustmentQuantity === null
+    ) {
+      return "";
     }
 
-    return current - quantity;
+    const current = Number(currentStock);
+    const quantity = Number(adjustmentQuantity);
+
+    if (!Number.isFinite(current) || !Number.isFinite(quantity)) {
+      return "";
+    }
+
+    return adjustmentType === "Add Stock"
+      ? current + quantity
+      : current - quantity;
   };
 
-  /* =======================================================
-     INPUT CHANGE
-  ======================================================= */
-
+  // Handle normal input changes.
   const handleChange = (event) => {
     const { name, value } = event.target;
+
+    setValidationError("");
 
     setFormData((previous) => {
       const updated = {
@@ -128,9 +149,7 @@ const StockAdjustmentModal = ({
       ) {
         updated.adjustedStock = calculateAdjustedStock(
           name === "currentStock" ? value : previous.currentStock,
-
           name === "adjustmentQuantity" ? value : previous.adjustmentQuantity,
-
           name === "adjustmentType" ? value : previous.adjustmentType,
         );
       }
@@ -139,10 +158,7 @@ const StockAdjustmentModal = ({
     });
   };
 
-  /* =======================================================
-     FILE CHANGE
-  ======================================================= */
-
+  // Handle attachment selection.
   const handleFileChange = (event) => {
     const file = event.target.files?.[0] || null;
 
@@ -152,33 +168,65 @@ const StockAdjustmentModal = ({
     }));
   };
 
-  /* =======================================================
-     SUBMIT
-  ======================================================= */
-
+  // Validate and submit form.
   const handleSubmit = (event) => {
     event.preventDefault();
 
-    if (!onSubmit || submitting) {
+    if (!onSubmit || submitting) return;
+
+    const current = Number(formData.currentStock);
+    const quantity = Number(formData.adjustmentQuantity);
+    const adjusted = Number(formData.adjustedStock);
+
+    if (!formData.product) {
+      setValidationError("Please select a product.");
+      return;
+    }
+
+    if (!formData.warehouse) {
+      setValidationError("Please select a warehouse.");
+      return;
+    }
+
+    if (
+      formData.adjustmentQuantity === "" ||
+      !Number.isFinite(quantity) ||
+      quantity <= 0
+    ) {
+      setValidationError("Please enter a valid adjustment quantity.");
+      return;
+    }
+
+    if (
+      formData.currentStock === "" ||
+      !Number.isFinite(current) ||
+      current < 0
+    ) {
+      setValidationError("Please enter a valid current stock.");
+      return;
+    }
+
+    if (formData.adjustmentType === "Reduce Stock" && quantity > current) {
+      setValidationError("Adjustment quantity cannot exceed current stock.");
+      return;
+    }
+
+    if (!Number.isFinite(adjusted) || adjusted < 0) {
+      setValidationError("Adjusted stock cannot be negative.");
       return;
     }
 
     onSubmit(formData);
   };
 
-  /* =======================================================
-     OVERLAY
-  ======================================================= */
-
+  // Close when clicking outside the modal.
   const handleOverlayClick = (event) => {
     if (event.target === event.currentTarget && !submitting) {
       onClose();
     }
   };
 
-  if (!isOpen) {
-    return null;
-  }
+  if (!isOpen) return null;
 
   return (
     <Overlay onClick={handleOverlayClick}>
@@ -187,10 +235,6 @@ const StockAdjustmentModal = ({
         aria-modal="true"
         aria-labelledby="stock-adjustment-modal-title"
       >
-        {/* =====================================================
-            HEADER
-        ===================================================== */}
-
         <Header>
           <Title id="stock-adjustment-modal-title">Stock Adjustment</Title>
 
@@ -200,30 +244,82 @@ const StockAdjustmentModal = ({
           </Description>
         </Header>
 
-        {/* =====================================================
-            FORM
-        ===================================================== */}
-
         <Form onSubmit={handleSubmit}>
           <FormGrid>
-            {/* =================================================
-                ROW 1
-            ================================================= */}
-
-            {/* ADJUSTMENT NUMBER */}
+            {/* ROW 1 - PRODUCT */}
 
             <Field>
-              <Label htmlFor="adjustmentNumber">ADJUSTMENT NUMBER</Label>
+              <Label htmlFor="product">
+                PRODUCT <span>*</span>
+              </Label>
 
-              <Input
-                id="adjustmentNumber"
-                name="adjustmentNumber"
-                value={formData.adjustmentNumber ?? ""}
+              <Select
+                id="product"
+                name="product"
+                value={formData.product ?? ""}
                 onChange={handleChange}
-                placeholder="SA20260008"
-                readOnly={isEdit}
                 disabled={submitting}
-              />
+                required
+              >
+                <option value="">-----</option>
+
+                {products.length > 0 ? (
+                  products.map((product) => (
+                    <option
+                      key={product.id ?? product.value}
+                      value={product.id ?? product.value}
+                    >
+                      {product.name ?? product.label}
+                    </option>
+                  ))
+                ) : (
+                  <>
+                    <option value="Fiber Cable">Fiber Cable</option>
+                    <option value="Steel Cable">Steel Cable</option>
+                    <option value="Copper Wire">Copper Wire</option>
+                  </>
+                )}
+              </Select>
+            </Field>
+
+            {/* ADJUSTMENT TYPE */}
+
+            <Field>
+              <Label htmlFor="adjustmentType">
+                ADJUSTMENT TYPE <span>*</span>
+              </Label>
+
+              <Select
+                id="adjustmentType"
+                name="adjustmentType"
+                value={formData.adjustmentType}
+                onChange={handleChange}
+                disabled={submitting}
+                required
+              >
+                <option value="Reduce Stock">Reduce Stock</option>
+                <option value="Add Stock">Add Stock</option>
+              </Select>
+            </Field>
+
+            {/* REASON */}
+
+            <Field>
+              <Label htmlFor="reason">REASON</Label>
+
+              <Select
+                id="reason"
+                name="reason"
+                value={formData.reason ?? ""}
+                onChange={handleChange}
+                disabled={submitting}
+              >
+                <option value="Damaged Goods">Damaged Goods</option>
+                <option value="Expired Goods">Expired Goods</option>
+                <option value="Stock Correction">Stock Correction</option>
+                <option value="Physical Count">Physical Count</option>
+                <option value="Other">Other</option>
+              </Select>
             </Field>
 
             {/* ADJUSTMENT DATE */}
@@ -244,7 +340,9 @@ const StockAdjustmentModal = ({
             {/* WAREHOUSE */}
 
             <Field>
-              <Label htmlFor="warehouse">WAREHOUSE</Label>
+              <Label htmlFor="warehouse">
+                WAREHOUSE <span>*</span>
+              </Label>
 
               <Select
                 id="warehouse"
@@ -252,6 +350,7 @@ const StockAdjustmentModal = ({
                 value={formData.warehouse ?? ""}
                 onChange={handleChange}
                 disabled={submitting}
+                required
               >
                 <option value="">Select</option>
 
@@ -274,88 +373,7 @@ const StockAdjustmentModal = ({
               </Select>
             </Field>
 
-            {/* PRODUCT */}
-
-            <Field>
-              <Label htmlFor="product">PRODUCT</Label>
-
-              <Select
-                id="product"
-                name="product"
-                value={formData.product ?? ""}
-                onChange={handleChange}
-                disabled={submitting}
-              >
-                <option value="">Select</option>
-
-                {products.length > 0 ? (
-                  products.map((product) => (
-                    <option
-                      key={product.id ?? product.value}
-                      value={product.id ?? product.value}
-                    >
-                      {product.name ?? product.label}
-                    </option>
-                  ))
-                ) : (
-                  <>
-                    <option value="Fiber Cable">Fiber Cable</option>
-
-                    <option value="Steel Cable">Steel Cable</option>
-
-                    <option value="Copper Wire">Copper Wire</option>
-                  </>
-                )}
-              </Select>
-            </Field>
-
-            {/* ADJUSTMENT TYPE */}
-
-            <Field>
-              <Label htmlFor="adjustmentType">ADJUSTMENT TYPE</Label>
-
-              <Select
-                id="adjustmentType"
-                name="adjustmentType"
-                value={formData.adjustmentType ?? ""}
-                onChange={handleChange}
-                disabled={submitting}
-              >
-                <option value="Reduce Stock">Reduce Stock</option>
-
-                <option value="Add Stock">Add Stock</option>
-              </Select>
-            </Field>
-
-            {/* =================================================
-                ROW 2
-            ================================================= */}
-
-            {/* REASON */}
-
-            <Field>
-              <Label htmlFor="reason">REASON</Label>
-
-              <Select
-                id="reason"
-                name="reason"
-                value={formData.reason ?? ""}
-                onChange={handleChange}
-                disabled={submitting}
-              >
-                <option value="Damaged Goods">Damaged Goods</option>
-
-                <option value="Expired Goods">Expired Goods</option>
-
-                <option value="Stock Correction">Stock Correction</option>
-
-                <option value="Physical Count">Physical Count</option>
-
-                <option value="Other">Other</option>
-              </Select>
-            </Field>
-
-            {/* CURRENT STOCK */}
+            {/* ROW 2 - CURRENT STOCK */}
 
             <Field>
               <Label htmlFor="currentStock">CURRENT STOCK</Label>
@@ -366,6 +384,7 @@ const StockAdjustmentModal = ({
                   name="currentStock"
                   type="number"
                   min="0"
+                  step="any"
                   value={formData.currentStock ?? ""}
                   onChange={handleChange}
                   placeholder="120"
@@ -379,7 +398,9 @@ const StockAdjustmentModal = ({
             {/* ADJUSTMENT QUANTITY */}
 
             <Field>
-              <Label htmlFor="adjustmentQuantity">ADJUSTMENT QUANTITY</Label>
+              <Label htmlFor="adjustmentQuantity">
+                ADJUSTMENT QUANTITY <span>*</span>
+              </Label>
 
               <UnitInput>
                 <Input
@@ -387,10 +408,12 @@ const StockAdjustmentModal = ({
                   name="adjustmentQuantity"
                   type="number"
                   min="0"
+                  step="any"
                   value={formData.adjustmentQuantity ?? ""}
                   onChange={handleChange}
                   placeholder="05"
                   disabled={submitting}
+                  required
                 />
 
                 <UnitText>PCS</UnitText>
@@ -408,11 +431,35 @@ const StockAdjustmentModal = ({
                   name="adjustedStock"
                   type="number"
                   value={formData.adjustedStock ?? ""}
+                  placeholder="115"
                   readOnly
+                  disabled={submitting}
                 />
 
                 <UnitText>PCS</UnitText>
               </UnitInput>
+            </Field>
+
+            {/* NOTE */}
+
+            <Field>
+              <Label htmlFor="note">NOTE</Label>
+
+              <NoteWrapper>
+                <NoteInput
+                  id="note"
+                  name="note"
+                  type="text"
+                  value={formData.note ?? ""}
+                  onChange={handleChange}
+                  placeholder="Add any extra details"
+                  disabled={submitting}
+                />
+
+                <NoteChevron>
+                  <FiChevronDown size={15} />
+                </NoteChevron>
+              </NoteWrapper>
             </Field>
 
             {/* ATTACHMENT */}
@@ -425,10 +472,12 @@ const StockAdjustmentModal = ({
                   type="text"
                   value={
                     formData.attachment?.name ||
-                    (initialData?.attachmentName ?? "-")
+                    initialData?.attachmentName ||
+                    "-"
                   }
                   placeholder="-"
                   readOnly
+                  aria-label="Selected attachment"
                 />
 
                 <UploadLabel htmlFor="attachment">
@@ -446,9 +495,11 @@ const StockAdjustmentModal = ({
             </Field>
           </FormGrid>
 
-          {/* =====================================================
-              BUTTONS
-          ===================================================== */}
+          {validationError && (
+            <ErrorMessage role="alert">{validationError}</ErrorMessage>
+          )}
+
+          {/* BUTTONS */}
 
           <ButtonGroup>
             <CancelButton type="button" onClick={onClose} disabled={submitting}>
@@ -456,13 +507,13 @@ const StockAdjustmentModal = ({
             </CancelButton>
 
             <SaveButton type="submit" disabled={submitting}>
-              <FiSave size={14} />
+              <FiSave size={13} />
 
               {submitting
                 ? "SAVING..."
                 : isEdit
                   ? "UPDATE ADJUSTMENT"
-                  : "CONFIRM ADJUSTMENT"}
+                  : "SAVE ADJUSTMENT"}
             </SaveButton>
           </ButtonGroup>
         </Form>

@@ -13,7 +13,7 @@ export const Overlay = styled.div`
   align-items: center;
   justify-content: center;
 
-  padding: 15px;
+  padding: 8px;
 
   background: rgba(0, 0, 0, 0.35);
 
@@ -27,9 +27,9 @@ export const Overlay = styled.div`
 export const ModalContainer = styled.div`
   width: 100%;
   max-width: 1205px;
-  max-height: calc(100vh - 30px);
+  max-height: calc(100vh - 16px);
 
-  padding: 48px 22px 46px;
+  padding: 27px 20px 28px;
 
   box-sizing: border-box;
 
@@ -42,7 +42,11 @@ export const ModalContainer = styled.div`
   overflow-y: auto;
 
   @media (max-width: 768px) {
-    padding: 30px 20px;
+    padding: 24px 16px;
+  }
+
+  @media (max-width: 500px) {
+    padding: 22px 14px;
   }
 `;
 
@@ -51,7 +55,7 @@ export const ModalContainer = styled.div`
 ========================================================= */
 
 export const Header = styled.div`
-  margin-bottom: 22px;
+  margin-bottom: 20px;
 `;
 
 /* =========================================================
@@ -95,7 +99,7 @@ export const Form = styled.form`
 `;
 
 /* =========================================================
-   FORM GRID
+   FORM GRID - FIVE COLUMNS
 ========================================================= */
 
 export const FormGrid = styled.div`
@@ -114,6 +118,9 @@ export const FormGrid = styled.div`
 
   @media (max-width: 768px) {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+
+    column-gap: 16px;
+    row-gap: 16px;
   }
 
   @media (max-width: 500px) {
@@ -140,12 +147,19 @@ export const Label = styled.label`
   margin-bottom: 8px;
 
   font-family: "Poppins", sans-serif;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 500;
 
   line-height: 1.2;
 
   color: #111111;
+
+  white-space: nowrap;
+
+  span {
+    color: #ed3535;
+    font-weight: 600;
+  }
 `;
 
 /* =========================================================
@@ -178,13 +192,13 @@ const fieldStyles = `
 
   &::placeholder {
     color: #888888;
+    opacity: 1;
   }
 
   &:focus {
     border-color: #3454b9;
 
-    box-shadow:
-      0 0 0 2px rgba(52, 84, 185, 0.08);
+    box-shadow: 0 0 0 2px rgba(52, 84, 185, 0.08);
   }
 
   &:disabled {
@@ -205,12 +219,16 @@ export const Input = styled.input`
   ${fieldStyles}
 
   &[type="date"] {
-    color: #333333;
+    color: #777777;
   }
 
   &[type="date"]::-webkit-calendar-picker-indicator {
     cursor: pointer;
     opacity: 0.65;
+  }
+
+  &[type="number"] {
+    padding-right: 42px;
   }
 `;
 
@@ -225,8 +243,7 @@ export const Select = styled.select`
 
   appearance: auto;
 
-  color: ${({ value }) =>
-    value ? "#333333" : "#888888"};
+  color: ${({ value }) => (value ? "#777777" : "#888888")};
 
   option {
     color: #333333;
@@ -269,6 +286,39 @@ export const UnitText = styled.span`
 `;
 
 /* =========================================================
+   NOTE
+========================================================= */
+
+export const NoteWrapper = styled.div`
+  position: relative;
+
+  width: 100%;
+`;
+
+export const NoteInput = styled.input`
+  ${fieldStyles}
+
+  padding-right: 32px;
+`;
+
+export const NoteChevron = styled.span`
+  position: absolute;
+
+  top: 50%;
+  right: 10px;
+
+  transform: translateY(-50%);
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  color: #333333;
+
+  pointer-events: none;
+`;
+
+/* =========================================================
    ATTACHMENT
 ========================================================= */
 
@@ -293,8 +343,7 @@ export const AttachmentWrapper = styled.div`
   &:focus-within {
     border-color: #3454b9;
 
-    box-shadow:
-      0 0 0 2px rgba(52, 84, 185, 0.08);
+    box-shadow: 0 0 0 2px rgba(52, 84, 185, 0.08);
   }
 `;
 
@@ -368,6 +417,19 @@ export const HiddenFileInput = styled.input`
 `;
 
 /* =========================================================
+   VALIDATION ERROR
+========================================================= */
+
+export const ErrorMessage = styled.p`
+  margin: 12px 0 0;
+
+  font-family: "Poppins", sans-serif;
+  font-size: 11px;
+
+  color: #dc2626;
+`;
+
+/* =========================================================
    BUTTON GROUP
 ========================================================= */
 
@@ -377,7 +439,7 @@ export const ButtonGroup = styled.div`
 
   gap: 12px;
 
-  margin-top: 21px;
+  margin-top: 22px;
 `;
 
 /* =========================================================
@@ -385,7 +447,7 @@ export const ButtonGroup = styled.div`
 ========================================================= */
 
 export const CancelButton = styled.button`
-  height: 36px;
+  height: 35px;
 
   padding: 0 15px;
 
@@ -424,13 +486,13 @@ export const CancelButton = styled.button`
 `;
 
 /* =========================================================
-   SAVE / CONFIRM BUTTON
+   SAVE BUTTON
 ========================================================= */
 
 export const SaveButton = styled.button`
-  height: 36px;
+  height: 35px;
 
-  padding: 0 24px;
+  padding: 0 10px;
 
   display: inline-flex;
   align-items: center;
@@ -444,7 +506,7 @@ export const SaveButton = styled.button`
   background: #3454b9;
 
   font-family: "Poppins", sans-serif;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 500;
 
   color: #ffffff;

@@ -841,9 +841,7 @@ const Warehouselist = () => {
         showSearch
         showDepartment
         showStatus
-        rightButton={
-          <HeaderButton $variant="orange">Apply Filters</HeaderButton>
-        }
+        
       />
 
       {/* ===================================================
