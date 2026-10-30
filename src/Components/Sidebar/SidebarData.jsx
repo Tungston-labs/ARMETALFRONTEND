@@ -91,14 +91,15 @@ const getSidebarData = (user) => {
     }
     if (modules.employee) {
       items.push({
-        title: "PRODUCT",
+        title: "PURCHASE",
         icon: <PiUsersThreeLight />,
         children: [
-          { title: "Product List", path: "/Product-List" },
-          { title: "Categories", path: "/Categories-List" },
-          { title: "Inventory", path: "/Inventory-List" },
-          { title: "Warehouses", path: "/Warehouse-List" },
-          
+          { title: "vendors", path: "/purchase/vendors" },
+          { title: "purchhase order", path: "/purchase/purchaseorder" },
+          { title: "bills", path: "/purchases/bill" },
+          { title: "payments", path: "/purchases/payments" },
+           { title: "debit notes", path: "/purchases/debit-notes" },
+          { title: "vendor ledger", path: "/purchases/vendor-ledger" },
         ],
       });
     }

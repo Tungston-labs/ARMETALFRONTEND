@@ -95,6 +95,11 @@ export const getPurchaseOrderColumns = ({ onDelete } = {}) => [
         accessor: "total_amount",
         render: (row) => formatAmount(row.total_amount),
     },
+     {
+        header: "Warehouse",
+        accessor: "warehouse_name",
+        render: (row) => formatAmount(row.warehouse_name                                               ),
+    },
     {
         header: "Order Status",
         accessor: "status",

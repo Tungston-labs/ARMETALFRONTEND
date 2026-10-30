@@ -235,13 +235,6 @@ const VendorLedger = () => {
                 searchPlaceholder="Search Vendor / Reference / Description"
                 filters={[
                     {
-                        key: "vendor",
-                        value: vendor,
-                        onChange: handleVendorChange,
-                        options: VENDOR_OPTIONS,
-                        placeholder: "All Vendor",
-                    },
-                    {
                         key: "transactionType",
                         value: transactionType,
                         onChange: handleTransactionTypeChange,

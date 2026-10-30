@@ -6,7 +6,7 @@ import {
     FiDollarSign,
 } from "react-icons/fi";
 import VendorActions from "./modal/Vendoractions";
-
+import { CiFileOn } from "react-icons/ci";
 const formatAmount = (value) =>
     Number(value || 0).toLocaleString("en-US", {
         minimumFractionDigits: 2,
@@ -23,6 +23,7 @@ export const getVendorColumns = ({ onEdit, onDelete } = {}) => [
     { header: "Vendor Group", accessor: "vendor_type_display" },
     { header: "Phone Number", accessor: "phno" },
     { header: "Payment Terms", accessor: "payment_term_display" },
+     { header: "Status", accessor: "status" },
     {
         header: "Credit Limit",
         accessor: "credit_limit",
@@ -86,11 +87,18 @@ export const vendorStats = (dashboard = {}, totalItems = 0) => {
             iconColor: "#B00020",
         },
         {
-            title: "Total Payable",
+            title: "Payments This Month",
             count: formatAmount(payable),
             icon: <FiDollarSign size={22} />,
             backgroundColor: "#FEF7E0",
             iconColor: "#B06000",
+        },
+        {
+            title: "Total Outstanding Balance",
+            count: formatAmount(payable),
+            icon: <CiFileOn size={22} />,
+            backgroundColor: "#fee0e0",
+            iconColor: "#e61d1d",
         },
     ];
 };

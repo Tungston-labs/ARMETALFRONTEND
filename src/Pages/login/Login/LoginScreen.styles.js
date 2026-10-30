@@ -4,11 +4,25 @@ import { Link } from "react-router-dom";
 export const PageBackground = styled.div`
   min-height: 100vh;
   width: 100%;
+  box-sizing: border-box;
+
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 40px 20px;
-  background: linear-gradient(135deg, #2b2fa3 0%, #6a5fd0 45%, #E0822D 100%);
+
+  padding: 20px;
+  overflow-x: hidden;
+
+  background: linear-gradient(
+    135deg,
+    #2b2fa3 0%,
+    #6a5fd0 45%,
+    #E0822D 100%
+  );
+
+  @media (max-width: 600px) {
+    padding: 12px;
+  }
 `;
 
 export const PageWrapper = styled.div`
@@ -16,28 +30,24 @@ export const PageWrapper = styled.div`
   width: 100%;
   max-width: 1000px;
   min-height: 520px;
+  box-sizing: border-box;
 
   border-radius: 24px;
   overflow: hidden;
-
   box-shadow: 0 30px 60px rgba(20, 20, 43, 0.35);
-
   background: #ffffff;
 
-  /* Below 1024px */
   @media (max-width: 1023px) {
     max-width: 480px;
     min-height: auto;
     border-radius: 20px;
   }
 
-  /* Mobile */
   @media (max-width: 480px) {
     width: 100%;
     border-radius: 16px;
   }
 `;
-
 /* ---------- LEFT SIDE ---------- */
 
 export const LeftPanel = styled.div`
@@ -128,14 +138,19 @@ export const IllustrationArea = styled.div`
   flex: 1;
   margin-top: 16px;
   min-height: 320px;
+  min-width: 0;
+  overflow: hidden;
 
   .dot-grid {
     position: absolute;
-    left: -10px;
+    left: 0;
     top: 40px;
     width: 160px;
     height: 160px;
-    background-image: radial-gradient(#dcdfef 1.5px, transparent 1.5px);
+    background-image: radial-gradient(
+      #dcdfef 1.5px,
+      transparent 1.5px
+    );
     background-size: 14px 14px;
     opacity: 0.8;
   }
@@ -143,14 +158,12 @@ export const IllustrationArea = styled.div`
   .girl-illustration {
     position: absolute;
     bottom: -12px;
-    left: 60px;
-    width: 340px;
-    max-width: 80%;
+    left: 10px;
+    width: min(340px, 90%);
+    max-width: 100%;
     height: auto;
   }
-
 `;
-
 /* ---------- RIGHT SIDE ---------- */
 
 export const RightPanel = styled.div`

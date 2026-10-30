@@ -98,7 +98,7 @@ export const Count = styled.div`
 
 export const Title = styled.div`
   margin-top: 5px;
-  font-size: clamp(12px, 1.1vw, 14px);
+  font-size: clamp(10px, 1.1vw, 12px);
   color: #8c89b4;
   font-weight: 400;
   font-family: "poppins";
