@@ -54,6 +54,8 @@ import taxReportReducer from "./finance/reports/Taxreportslice";
 import purchaseReportReducer from "./finance/reports/PurchaseReportSlice";
 import paymentReportReducer from "./finance/reports/paymentReportSlice";
 import inventoryReportReducer from "./finance/reports/InventoryReportSlice";
+import balanceSheetReducer from "./finance/reports/BalanceSheetSlice";
+import changesInEquityReportReducer from "./finance/reports/ChangesInEquitySlice";
 
 export const store = configureStore({
   reducer: {
@@ -112,5 +114,7 @@ export const store = configureStore({
     purchaseReport: purchaseReportReducer,
     paymentReport: paymentReportReducer,
     inventoryReport: inventoryReportReducer,
+    balanceSheet: balanceSheetReducer,
+    changesInEquityReport: changesInEquityReportReducer,
   },
 });

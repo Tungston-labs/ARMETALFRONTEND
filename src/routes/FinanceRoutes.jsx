@@ -159,6 +159,8 @@ import Banking from "../Pages/FinanceModule/ACCOUNTS/Bank/Banking.jsx";
 import TrialBalance from "../Pages/FinanceModule/ACCOUNTS/TrialBalance/TrialBalance.jsx";
 import ProfitLoss from "../Pages/FinanceModule/REPORTS/ProfitLoss/ProfitLoss.jsx";
 import CashFlow from "../Pages/FinanceModule/REPORTS/CashFlow/CashFlow.jsx";
+import BalanceSheet from "../Pages/FinanceModule/REPORTS/BalanceSheet/BalanceSheet.jsx";
+import ChangesInEquity from "../Pages/FinanceModule/REPORTS/ChangesInEquityReport/ChangesInEquityReport.jsx";
 
 const FinanceRoutes = () => {
   return (
@@ -375,14 +377,16 @@ const FinanceRoutes = () => {
         element={<NewJournalentry />}
       />
 
-      <Route path="accounts/journal-entries/edit/:id" element={<NewJournalentry />}
+      <Route
+        path="accounts/journal-entries/edit/:id"
+        element={<NewJournalentry />}
       />
       <Route path="accounts/generalledger" element={<GeneralLedger />} />
       <Route path="accounts/expenses" element={<Expenses />} />
       <Route path="accounts/payables" element={<Payables />} />
       <Route path="accounts/recievables" element={<Recievables />} />
       <Route path="accounts/banking" element={<Banking />} />
-            <Route path="accounts/trialbalance" element={<TrialBalance />} />
+      <Route path="accounts/trialbalance" element={<TrialBalance />} />
 
       {/* Report Section */}
       <Route path="reports/sales-report" element={<SalesReports />} />
@@ -390,11 +394,13 @@ const FinanceRoutes = () => {
       <Route path="reports/payment-report" element={<PaymentReports />} />
       <Route path="reports/inventory-report" element={<InventoryReports />} />
       <Route path="reports/tax-report" element={<TaxReport />} />
-         <Route path="reports/customer-report" element={<CustomerReport />} />
-         <Route path="reports/expense-report" element={<ExpenseReport />} />
-         <Route path="reports/vendor-report" element={<VendorReport />} />
-         <Route path="reports/profit-loss" element={<ProfitLoss />} />
-          <Route path="reports/cash-flow" element={<CashFlow />} />
+      <Route path="reports/customer-report" element={<CustomerReport />} />
+      <Route path="reports/expense-report" element={<ExpenseReport />} />
+      <Route path="reports/vendor-report" element={<VendorReport />} />
+      <Route path="reports/profit-loss" element={<ProfitLoss />} />
+      <Route path="reports/cash-flow" element={<CashFlow />} />
+      <Route path="reports/balance-sheet" element={<BalanceSheet />} />
+      <Route path="reports/changeinequity" element={<ChangesInEquity />} />
     </>
   );
 };

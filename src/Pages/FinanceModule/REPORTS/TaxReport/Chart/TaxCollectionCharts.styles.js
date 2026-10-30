@@ -1,14 +1,13 @@
-
 import styled from "styled-components";
 
-export const DashboardContainer = styled.div`
+export const ChartsPanel = styled.div`
   width: 100%;
   min-width: 0;
+  padding: 0 17px;
+  box-sizing: border-box;
   background: #ffffff;
   border: 1px solid #e5e5e5;
   border-radius: 5px;
-  padding: 0 17px;
-  box-sizing: border-box;
   font-family: "Urbanist", sans-serif;
 `;
 
@@ -58,83 +57,26 @@ export const ChartSelect = styled.select`
 export const ChartSvg = styled.svg`
   display: block;
   width: 100%;
+  height: auto;
   min-width: 0;
+  overflow: visible;
   padding: 18px 0 22px;
   box-sizing: border-box;
-  border-bottom: ${({ $last }) =>
-    $last ? "none" : "1px solid #e8e8e8"};
-`;
+  border-bottom: ${({ $last }) => ($last ? "none" : "1px solid #e8e8e8")};
 
-export const SectionHeader = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 12px;
-`;
-
-export const SectionTitle = styled.h3`
-  margin: 0;
-  color: #111111;
-  font-family: "Urbanist", sans-serif;
-  font-size: 16px;
-  font-weight: 600;
-  line-height: 1.4;
-`;
-
-export const Dropdown = styled.select`
-  min-width: 74px;
-  height: 36px;
-  padding: 0 10px;
-  flex-shrink: 0;
-  background: #ffffff;
-  border: 1px solid #e3e3e3;
-  border-radius: 6px;
-  color: #111111;
-  font-family: inherit;
-  font-size: 14px;
-  outline: none;
-  cursor: pointer;
-
-  &:focus {
-    border-color: #a5a5a5;
-  }
-`;
-
-export const ChartWrapper = styled.div`
-  width: 100%;
-  height: 242px;
-  min-width: 0;
-
-  .recharts-wrapper {
-    font-family: "Urbanist", sans-serif;
-  }
-
-  .recharts-cartesian-grid-horizontal line,
-  .recharts-cartesian-grid-vertical line {
+  .grid-line {
     stroke: #e8e8e8;
     stroke-width: 1;
   }
 
-  .recharts-tooltip-wrapper {
-    z-index: 10;
+  .axis-label {
+    fill: #777;
+    font-size: 10px;
   }
 
   .month-label {
     fill: #555;
     font-size: 9px;
-    font-weight: 400;
-  }
-
-  .tooltip-title {
-    fill: #17144f;
-    font-size: 11px;
-    font-weight: 500;
-  }
-
-  .tooltip-text {
-    fill: #17144f;
-    font-size: 10px;
     font-weight: 400;
   }
 
@@ -201,5 +143,5 @@ export const LegendColor = styled.span`
   height: 9px;
   flex-shrink: 0;
   border-radius: 50%;
-  background: ${(props) => props.$color || "#888"};
+  background: ${({ $color }) => $color || "#888"};
 `;
