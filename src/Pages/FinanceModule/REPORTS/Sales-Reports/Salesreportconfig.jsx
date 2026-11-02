@@ -1,6 +1,7 @@
 import { FiDollarSign, FiShoppingCart, FiFileText } from "react-icons/fi";
 import { BsGraphUpArrow } from "react-icons/bs";
 import { MdOutlineReceiptLong } from "react-icons/md";
+import { formatDate } from "../../../../utils/Formatdate";
 
 export const formatNumber = (value) =>
     Number(value || 0).toLocaleString("en-US");
@@ -76,7 +77,11 @@ const number = (accessor) => (row) => formatNumber(row[accessor]);
 
 export const salesColumns = [
     { accessor: "invoice_number", header: "Invoice No." },
-    { accessor: "date", header: "Date" },
+    {
+    accessor: "date",
+    header: "Date",
+    render: (row) => formatDate(row.date),
+},
     { accessor: "customer", header: "Customer" },
     { accessor: "amount", header: "Amount", render: number("amount") },
     { accessor: "tax_amount", header: "Tax", render: number("tax_amount") },

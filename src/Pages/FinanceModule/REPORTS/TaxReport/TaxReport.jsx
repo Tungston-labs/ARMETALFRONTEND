@@ -1,5 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import React, { useMemo } from "react";
 import {
     FiDownload,
     FiDollarSign,
@@ -24,110 +23,38 @@ import ReusableTable from "../../../../Components/ReusableTable/ReusableTable";
 import ReusablePagination from "../../../../Components/Pagination/ReusablePagination";
 import StatsCards from "../../../../Components/StatsCards/StatsCards";
 import TaxCollectionCharts from "./Chart/TaxCollectionCharts";
-import {
-    getTaxReport,
-    clearTaxReportError,
-} from "../../../../Redux/finance/reports/Taxreportslice";
-
-const PAGE_SIZE = 10;
-
-const formatAmount = (value) =>
-    Number(value || 0).toLocaleString("en-US", {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-    });
-
-const formatSar = (value) => `SAR ${formatAmount(value)}`;
-
-const labelFor = (options = [], value) =>
-    options.find((o) => String(o.value) === String(value))?.label || value || "";
-
-const getErrorMessage = (error) => {
-    if (typeof error === "string") return error;
-    if (error?.detail) return error.detail;
-
-    // DRF field errors: { start_date: ["Enter a valid date."] }
-    if (error && typeof error === "object") {
-        const text = Object.values(error)
-            .map((msg) => (Array.isArray(msg) ? msg.join(" ") : String(msg)))
-            .join(" | ");
-        if (text) return text;
-    }
-
-    return error?.message || "Failed to load tax report";
-};
+import useTax, {
+    formatAmount,
+    formatSar,
+    getErrorMessage,
+    labelFor,
+} from "./Usetax";
+import { formatDate } from "../../../../utils/Formatdate";
 
 const TaxReport = () => {
-    const dispatch = useDispatch();
+    const {
+        cards,
+        filters,
+        monthlyTax,
+        report,
+        visibleRows,
+        pagination,
+        loading,
+        error,
+        search,
+        dateFrom,
+        dateTo,
+        chartYear,
+        currentPage,
+        filterConfig,
+        setSearch,
+        setChartYear,
+        setCurrentPage,
+        handleDateFromChange,
+        handleDateToChange,
+        handleExport,
+    } = useTax();
 
-    const { cards, filters, monthlyTax, report, pagination, loading, error } =
-        useSelector((state) => state.taxReport);
-
-    // "" means "All": ReusableFilter adds that first option itself
-    const [search, setSearch] = useState("");
-    const [taxType, setTaxType] = useState("");
-    const [customer, setCustomer] = useState("");
-    const [vendor, setVendor] = useState("");
-    const [invoiceType, setInvoiceType] = useState("");
-    const [taxStatus, setTaxStatus] = useState("");
-    const [dateFrom, setDateFrom] = useState("");
-    const [dateTo, setDateTo] = useState("");
-    const [chartYear, setChartYear] = useState(new Date().getFullYear());
-    const [currentPage, setCurrentPage] = useState(1);
-
-    /* -------------------------- Query params -------------------------- */
-    const params = useMemo(
-        () => ({
-            start_date: dateFrom,
-            end_date: dateTo,
-            tax_type: taxType,
-            invoice_type: invoiceType,
-            customer,
-            vendor,
-            tax_status: taxStatus,
-            chart_year: chartYear,
-            page: currentPage,
-            page_size: PAGE_SIZE,
-        }),
-        [
-            dateFrom,
-            dateTo,
-            taxType,
-            invoiceType,
-            customer,
-            vendor,
-            taxStatus,
-            chartYear,
-            currentPage,
-        ]
-    );
-
-    const loadReport = useCallback(() => {
-        dispatch(getTaxReport(params))
-            .unwrap()
-            .catch(() => {
-                // DRF returns 404 "Invalid page" if the page no longer exists
-                if (params.page > 1) setCurrentPage(1);
-            });
-    }, [dispatch, params]);
-
-    useEffect(() => {
-        loadReport();
-    }, [loadReport]);
-
-    useEffect(() => () => dispatch(clearTaxReportError()), [dispatch]);
-
-    /* ---------------------------- Handlers ---------------------------- */
-    // Changing any filter goes back to page 1
-    const handleFilterChange = (setter) => (value) => {
-        setter(value);
-        setCurrentPage(1);
-    };
-
-    const handleDateFromChange = (e) => handleFilterChange(setDateFrom)(e.target.value);
-    const handleDateToChange = (e) => handleFilterChange(setDateTo)(e.target.value);
-
-    /* ----------------------------- KPI cards ----------------------------- */
     const statsCards = [
         {
             title: "Total Tax Collected",
@@ -158,27 +85,14 @@ const TaxReport = () => {
             iconColor: "#9333EA",
         },
     ];
-
-    /* ------------------------------ Table ------------------------------ */
-    // The search box filters the rows on the current page only. The API has
-    // no search parameter, so use the dropdowns and dates to filter the
-    // whole report.
-    const visibleRows = useMemo(() => {
-        const term = search.trim().toLowerCase();
-        if (!term) return report;
-
-        return report.filter((row) =>
-            Object.values(row).some((value) =>
-                String(value ?? "").toLowerCase().includes(term)
-            )
-        );
-    }, [report, search]);
-
-    // ReusableTable expects `accessor` and `header`
     const taxColumns = useMemo(
         () => [
             { accessor: "documentNumber", header: "Document No" },
-            { accessor: "date", header: "Date" },
+           {
+    accessor: "date",
+    header: "Date",
+    render: (row) => formatDate(row.date),
+},
             {
                 accessor: "type",
                 header: "Type",
@@ -204,53 +118,6 @@ const TaxReport = () => {
         ],
         [filters.invoiceTypes, filters.taxStatuses]
     );
-    const handleExport = () => {
-        if (!report.length) return;
-
-        const header = [
-            "Document No",
-            "Date",
-            "Type",
-            "Customer / Vendor",
-            "Taxable Amount",
-            "Tax Amount",
-            "Tax Type",
-            "Status",
-        ];
-
-        const rows = report.map((row) => [
-            row.documentNumber,
-            row.date,
-            labelFor(filters.invoiceTypes, row.type),
-            row.customerVendor,
-            row.taxableAmount,
-            row.taxAmount,
-            row.taxType,
-            labelFor(filters.taxStatuses, row.status),
-        ]);
-
-        const escapeCsvCell = (cell) =>
-            `"${String(cell ?? "").replace(/"/g, '""')}"`;
-
-        const csv = [header, ...rows]
-            .map((row) => row.map(escapeCsvCell).join(","))
-            .join("\n");
-
-        const blob = new Blob(["\uFEFF", csv], {
-            type: "text/csv;charset=utf-8;",
-        });
-
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-
-        link.href = url;
-        link.download = "tax-report.csv";
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
-
-        URL.revokeObjectURL(url);
-    };
 
     return (
         <div style={{ padding: 20 }}>
@@ -297,37 +164,7 @@ const TaxReport = () => {
                 onSearch={setSearch}
                 searchPlaceholder="Search this page"
                 showSearch
-                filters={[
-                    {
-                        key: "taxType",
-                        value: taxType,
-                        onChange: handleFilterChange(setTaxType),
-                        placeholder: "All Tax Types",
-                        options: filters.taxTypes,
-                    },
-                    {
-                        key: "customer",
-                        value: customer,
-                        onChange: handleFilterChange(setCustomer),
-                        placeholder: "All Customers",
-                        options: filters.customers,
-                    },
-                  
-                    {
-                        key: "invoiceType",
-                        value: invoiceType,
-                        onChange: handleFilterChange(setInvoiceType),
-                        placeholder: "All Invoice Types",
-                        options: filters.invoiceTypes,
-                    },
-                    {
-                        key: "taxStatus",
-                        value: taxStatus,
-                        onChange: handleFilterChange(setTaxStatus),
-                        placeholder: "All Tax Statuses",
-                        options: filters.taxStatuses,
-                    },
-                ]}
+                filters={filterConfig}
             />
 
             {error && (

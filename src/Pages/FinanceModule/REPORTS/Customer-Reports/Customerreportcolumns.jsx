@@ -1,3 +1,4 @@
+import { formatDate } from "../../../../utils/Formatdate";
 import { formatSAR, normalize } from "./Usecustomerreport";
 
 const STATUS_COLORS = {
@@ -10,7 +11,7 @@ const STATUS_COLORS = {
 const customerColumns = [
     { accessor: "customer_name", header: "Customer" },
     { accessor: "invoice", header: "Invoice" },
-    { accessor: "invoice_date", header: "Invoice Date" },
+    { accessor: "invoice_date", header: "Invoice Date" , render: (row) => formatDate(row.invoice_date),},
     {
         accessor: "revenue",
         header: "Revenue",

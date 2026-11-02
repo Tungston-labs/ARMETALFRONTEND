@@ -91,15 +91,21 @@ const getSidebarData = (user) => {
     }
     if (modules.employee) {
       items.push({
-        title: "PURCHASE",
+        title: "REPORTS",
         icon: <PiUsersThreeLight />,
         children: [
-          { title: "vendors", path: "/purchase/vendors" },
-          { title: "purchhase order", path: "/purchase/purchaseorder" },
-          { title: "bills", path: "/purchases/bill" },
-          { title: "payments", path: "/purchases/payments" },
-           { title: "debit notes", path: "/purchases/debit-notes" },
-          { title: "vendor ledger", path: "/purchases/vendor-ledger" },
+          { title: "sale report", path: "/reports/sales-report" },
+          { title: "purchhase report", path: "/reports/purchase-report" },
+          { title: "customer report", path: "/reports/customer-report" },
+          { title: "vendor report", path: "/reports/vendor-report" },
+           { title: " payment report", path: "/reports/payment-report" },
+          { title: "inventory report", path: "/reports/inventory-report" },
+           { title: " expense report", path: "/reports/expense-report" },
+          { title: "tax report", path: "/reports/tax-report" },
+           { title: "profit & loss", path: "/reports/profit-loss" },
+          // { title: "balance sheet", path: "/purchases/vendor-ledger" },
+           { title: "cash flow", path: "/reports/cash-flow" },
+          // { title: "change in equity", path: "/purchases/vendor-ledger" },
         ],
       });
     }
