@@ -1,5 +1,11 @@
+import { formatDate } from "../../../../../utils/Formatdate";
+
 export const vendorLedgerColumns = [
-    { header: "Date", accessor: "date" },
+  {
+    accessor: "date",
+    header: "Date",
+    render: (row) => formatDate(row.date),
+},
     { header: "Reference No.", accessor: "reference" },
     { header: "Description", accessor: "description" },
     { header: "Type", accessor: "type" },

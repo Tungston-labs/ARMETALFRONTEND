@@ -1,7 +1,7 @@
 import styled from "styled-components";
 
 export const ModalOverlay = styled.div`
-   position: fixed;
+  position: fixed;
   inset: 0;
   z-index: 9999;
 
@@ -15,7 +15,7 @@ export const ModalOverlay = styled.div`
 `;
 
 export const ModalContainer = styled.div`
-width: 100%;
+  width: 100%;
   max-width: 1420px;
 
   background: #fff;
@@ -97,6 +97,15 @@ export const Label = styled.label`
   font-size: 13px;
   font-weight: 500;
   line-height: 1.3;
+
+  ${({ $required }) =>
+    $required &&
+    `
+    &::after {
+      content: " *";
+      color: #d32f2f;
+    }
+  `}
 `;
 
 const fieldStyles = `
@@ -128,8 +137,19 @@ const fieldStyles = `
   }
 `;
 
+// Must stay above Input, Select and UploadLabel
+const errorStyles = ({ $error }) =>
+  $error
+    ? `
+  &, &:focus, &:hover {
+    border-color: #d32f2f;
+  }
+`
+    : "";
+
 export const Input = styled.input`
   ${fieldStyles}
+  ${errorStyles}
 `;
 
 export const Select = styled.select`
@@ -139,6 +159,8 @@ export const Select = styled.select`
   option {
     color: #222222;
   }
+
+  ${errorStyles}
 `;
 
 export const AddressHeader = styled.div`
@@ -203,6 +225,8 @@ export const UploadLabel = styled.label`
   &:hover {
     border-color: #3151bd;
   }
+
+  ${errorStyles}
 `;
 
 export const HiddenFileInput = styled.input`
@@ -274,4 +298,11 @@ export const SaveButton = styled.button`
   @media (max-width: 450px) {
     width: 100%;
   }
+`;
+
+export const ErrorText = styled.span`
+  color: #d32f2f;
+  font-size: 11.5px;
+  line-height: 1.3;
+  margin-top: -4px;
 `;

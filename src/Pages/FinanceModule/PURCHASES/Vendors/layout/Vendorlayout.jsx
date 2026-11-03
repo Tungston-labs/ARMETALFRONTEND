@@ -16,15 +16,15 @@ import ReusableHeader from "../../../../../Components/ReusableTable/ReusableHead
 import {
   getVendorOverview,
   clearVendorDetail,
-} from "../../../../../Redux/finance/purchases/Vendordetailslice"; 
+} from "../../../../../Redux/finance/purchases/Vendordetailslice";
 
 const pageMeta = {
   overview: { title: "Overview", showAddButton: false, showDateFilter: false },
 
   "purchase-orders": {
     title: "Purchase Orders",
-    showAddButton: true,
-    buttonText: "+ New Purchase Order",
+    showAddButton: false,
+    // buttonText: "+ New Purchase Order",
     showDateFilter: true,
   },
 
@@ -80,6 +80,11 @@ const VendorLayout = () => {
   // ignore a stale vendor left over from a previously opened row
   const selectedVendor =
     fetched && String(fetched.id) === String(vendorId) ? fetched : null;
+
+  // "Active" / "Inactive" in any casing -> lowercase for comparison
+  const vendorStatus = String(
+    selectedVendor?.client_status || "active"
+  ).toLowerCase();
 
   /* ---------- DATE STATES (empty by default) ---------- */
 
@@ -189,7 +194,8 @@ const VendorLayout = () => {
               }`
             : ""
         }
-        badge={selectedVendor?.client_status || "active"}
+        badge={vendorStatus}
+        badgeVariant={vendorStatus === "inactive" ? "danger" : "success"}
         showBack
         onBack={() => navigate("/purchase/vendors")}
         showButton={showAddButton}

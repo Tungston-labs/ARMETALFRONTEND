@@ -1,57 +1,49 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
-import { useParams } from "react-router-dom";
-import { FiFileText, FiClock, FiCheckCircle, FiPackage } from "react-icons/fi";
+import React from "react";
+import { FiFileText, FiClock, FiCheckCircle, FiPackage, FiDollarSign } from "react-icons/fi";
 
 import ReusableFilter from "../../../../../Components/ReusableTable/ReusableFilter";
 import ReusableTable from "../../../../../Components/ReusableTable/ReusableTable";
 import ReusablePagination from "../../../../../Components/Pagination/ReusablePagination";
 import StatsCards from "../../../../../Components/StatsCards/StatsCards";
 
-import { getVendorPurchaseOrders } from "../../../../../Redux/finance/purchases/Vendordetailslice";
+import useVendorPurchaseOrders, {
+    STATUS_OPTIONS,
+    STATUS_COLORS,
+    pretty,
+    formatAmount,
+    formatError,
+} from "./UsevendorPurchaseOrders";
 
-const ROWS_PER_PAGE = 10;
+/* ---------------- Status badge ---------------- */
 
-const STATUS_OPTIONS = [
-    "Draft",
-    "Pending",
-    "Approved",
-    "Ordered",
-    "Partially Received",
-    "Received",
-    "Cancelled",
-];
-const toStatusKey = (label) => label.toLowerCase().replace(/\s+/g, "_");
+const StatusBadge = ({ value }) => {
+    const c = STATUS_COLORS[value] || { bg: "#F1F1F1", color: "#555555" };
 
-// "partially_received" -> "Partially Received"
-const pretty = (v) =>
-    v
-        ? String(v)
-              .replace(/_/g, " ")
-              .replace(/\b\w/g, (c) => c.toUpperCase())
-        : "—";
-
-const formatAmount = (value) =>
-    Number(value || 0).toLocaleString("en-US", {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-    });
-
-const formatError = (error) => {
-    if (!error) return "";
-    if (typeof error === "string") return error;
-    if (error.detail) return error.detail;
-    return Object.entries(error)
-        .map(([f, m]) => `${f}: ${Array.isArray(m) ? m.join(", ") : m}`)
-        .join(" | ");
+    return (
+        <span
+            style={{
+                display: "inline-block",
+                padding: "4px 12px",
+                borderRadius: 999,
+                background: c.bg,
+                color: c.color,
+                fontSize: 12,
+                fontWeight: 600,
+                whiteSpace: "nowrap",
+            }}
+        >
+            {pretty(value)}
+        </span>
+    );
 };
 
-// IMPORTANT: I haven't seen employeeColumns. Match these keys
-// (header / accessor / render) to the format ReusableTable expects.
+/* ---------------- Table columns ---------------- */
+
 const purchaseOrderColumns = [
-    { header: "PO Number", accessor: "po_number" },
-    { header: "PO Date", accessor: "po_date" },
+    { header: "PO No", accessor: "po_number" },
+    { header: "Order Date", accessor: "po_date" },
     { header: "Delivery Date", accessor: "delivery_date" },
+    { header: "Warehouse", accessor: "warehouse" },
     {
         header: "Amount",
         accessor: "total_amount",
@@ -60,100 +52,66 @@ const purchaseOrderColumns = [
     {
         header: "Order Status",
         accessor: "order_status",
-        render: (row) => pretty(row.order_status),
+        render: (row) => <StatusBadge value={row.order_status} />,
     },
-    {
-        header: "Delivery Status",
-        accessor: "delivery_status",
-        render: (row) => pretty(row.delivery_status),
-    },
-    {
-        header: "Bill Status",
-        accessor: "bill_status",
-        render: (row) => pretty(row.bill_status),
-    },
-    {
-        header: "Payment Status",
-        accessor: "payment_status",
-        render: (row) => pretty(row.payment_status),
-    },
+    { header: "Linked Bill", accessor: "linked_bill" },
 ];
 
+/* ---------------- Page ---------------- */
+
 const VendorPurchaseOrders = () => {
-    const dispatch = useDispatch();
-    const params = useParams();
-    const id = params.id ?? params.vendorId;
-
     const {
-        purchaseOrders = [],
-        purchaseOrdersSummary = null,
-        purchaseOrdersLoading = false,
-        purchaseOrdersError: error = null,
-    } = useSelector((state) => state.vendorDetail) || {};
+        id,
+        params,
+        error,
+        loading,
+        stats,
+        rows,
+        totalRecords,
+        search,
+        status,
+        handleSearch,
+        handleStatus,
+        currentPage,
+        totalPages,
+        setCurrentPage,
+    } = useVendorPurchaseOrders();
 
-    const [search, setSearch] = useState("");
-    const [status, setStatus] = useState("");
-    const [currentPage, setCurrentPage] = useState(1);
-
-    useEffect(() => {
-        if (id) dispatch(getVendorPurchaseOrders({ vendorId: id }));
-    }, [dispatch, id]);
-
-    // The API returns every order, so search and status filter run here
-    const filtered = useMemo(() => {
-        const q = search.trim().toLowerCase();
-        return purchaseOrders.filter((po) => {
-            if (status && po.order_status !== toStatusKey(status)) return false;
-            if (q && !String(po.po_number || "").toLowerCase().includes(q)) return false;
-            return true;
-        });
-    }, [purchaseOrders, search, status]);
-
-    const totalPages = Math.ceil(filtered.length / ROWS_PER_PAGE) || 1;
-
-    const paginatedData = useMemo(() => {
-        const start = (currentPage - 1) * ROWS_PER_PAGE;
-        return filtered.slice(start, start + ROWS_PER_PAGE);
-    }, [filtered, currentPage]);
-
-    const handleSearch = (value) => {
-        setSearch(value);
-        setCurrentPage(1);
-    };
-    const handleStatus = (value) => {
-        setStatus(value);
-        setCurrentPage(1);
-    };
-
-    const s = purchaseOrdersSummary || {};
     const statsCards = [
         {
             title: "Total Purchase Orders",
-            count: s.total_orders ?? 0,
+            count: stats.totalOrders,
             icon: <FiFileText />,
             backgroundColor: "#EEF2FF",
             iconColor: "#4F46E5",
         },
         {
-            title: "Pending Approval",
-            count: s.pending_approval_count ?? 0,
-            icon: <FiClock />,
+            title: "Total PO Value",
+            count: formatAmount(stats.totalValue),
+            icon: <FiDollarSign />,
             backgroundColor: "#FFF7ED",
             iconColor: "#F59E0B",
         },
         {
-            title: "Open Orders",
-            count: s.open_orders_count ?? 0,
-            icon: <FiPackage />,
+            title: "Fully Received",
+            count: stats.received,
+            icon: <FiCheckCircle />,
             backgroundColor: "#EFF6FF",
             iconColor: "#3B82F6",
         },
         {
-            title: "Completed Orders",
-            count: s.completed_orders_count ?? 0,
-            icon: <FiCheckCircle />,
-            backgroundColor: "#ECFDF5",
-            iconColor: "#10B981",
+            title: "Awaiting Delivery",
+            count: stats.awaiting,
+            icon: <FiClock />,
+            backgroundColor: "#fdf9ec",
+            iconColor: "#F59E0B",
+        },
+        {
+            title: "Cancelled Orders",
+            count: stats.cancelled,
+            icon: <FiPackage />,
+            backgroundColor: "#fdecec",
+            iconColor: "#b91010",
         },
     ];
 
@@ -182,7 +140,7 @@ const VendorPurchaseOrders = () => {
                 </div>
             )}
 
-            <StatsCards cards={statsCards} loading={purchaseOrdersLoading} />
+            <StatsCards cards={statsCards} loading={loading} />
 
             <ReusableFilter
                 search={search}
@@ -197,14 +155,15 @@ const VendorPurchaseOrders = () => {
 
             <ReusableTable
                 columns={purchaseOrderColumns}
-                data={paginatedData}
-                loading={purchaseOrdersLoading}
+                data={rows}
+                loading={loading}
+                autoLayout
             />
 
             <ReusablePagination
                 currentPage={currentPage}
                 totalPages={totalPages}
-                totalRecords={filtered.length}
+                totalRecords={totalRecords}
                 onPageChange={setCurrentPage}
             />
         </>

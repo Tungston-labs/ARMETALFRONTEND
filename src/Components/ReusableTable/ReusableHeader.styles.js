@@ -450,33 +450,42 @@ export const Badge = styled.span`
   display: inline-flex;
   align-items: center;
   justify-content: center;
-
   min-height: 22px;
 
   padding: 2px 10px;
-
   border-radius: 5px;
 
   font-family: "Poppins", sans-serif;
   font-size: 12px;
   font-weight: 500;
+  text-transform: capitalize;
 
   white-space: nowrap;
 
   box-sizing: border-box;
 
-  ${({ $variant }) =>
-    $variant === "success"
-      ? `
-        background: #ecfdf3;
-        color: #03AC17;
-        border: 1px solid #a6f4c5;
-      `
-      : `
-        background: #f2f4f7;
-        color: #667085;
-        border: 1px solid #d0d5dd;
-      `}
+  ${({ $variant }) => {
+    switch ($variant) {
+      case "success":
+        return `
+          background: #ecfdf3;
+          color: #03AC17;
+          border: 1px solid #a6f4c5;
+        `;
+      case "danger":
+        return `
+          background: #FDECEC;
+          color: #D32F2F;
+          border: 1px solid #F5B5B5;
+        `;
+      default:
+        return `
+          background: #f2f4f7;
+          color: #667085;
+          border: 1px solid #d0d5dd;
+        `;
+    }
+  }}
 
   @media (max-width: ${breakpoints.mobile}) {
     min-height: 20px;

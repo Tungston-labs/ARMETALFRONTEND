@@ -4,12 +4,9 @@ import {
     FiDollarSign,
     FiClock,
     FiTruck,
+    FiCheckCircle,
 } from "react-icons/fi";
 import PurchaseOrderActions from "./action/Purchaseorderactions";
-
-// ===============================
-// Helpers
-// ===============================
 
 const formatAmount = (value) =>
     Number(value || 0).toLocaleString("en-US", {
@@ -29,21 +26,20 @@ const formatDate = (value) => {
           });
 };
 
-// "partially_received" -> "Partially Received"
 const humanize = (value) =>
     value
         ? String(value).replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())
         : "-";
 
-// key -> label + badge colours
 export const STATUS_META = {
-    draft: { label: "Draft", bg: "#F3F4F6", color: "#4B5563" },
+    draft: { label: "Draft", bg: "#E8EDFB", color: "#3250B5" },           // blue
+    sent_to_vendor: { label: "Sent to Vendor", bg: "#FFF4E5", color: "#F48211" }, // yellow/orange
     pending: { label: "Pending", bg: "#FFF7ED", color: "#B06000" },
-    approved: { label: "Approved", bg: "#E8F0FE", color: "#1A73E8" },
+    approved: { label: "Approved", bg: "#E0F2F1", color: "#00796B" },
     ordered: { label: "Ordered", bg: "#EEF2FF", color: "#4F46E5" },
     partially_received: { label: "Partially Received", bg: "#FEF7E0", color: "#B06000" },
-    received: { label: "Received", bg: "#E6F4EA", color: "#188038" },
-    cancelled: { label: "Cancelled", bg: "#FDEEEE", color: "#B00020" },
+    received: { label: "Received", bg: "#E6F4EA", color: "#018611" },       // green
+    cancelled: { label: "Cancelled", bg: "#FDEEEE", color: "#D32F2F" },    // red
 };
 
 const StatusBadge = ({ status }) => {
@@ -71,12 +67,6 @@ const StatusBadge = ({ status }) => {
     );
 };
 
-// ===============================
-// Table columns (match the API list fields)
-// ===============================
-// A function because the action buttons need the delete handler from the hook.
-// Usage: getPurchaseOrderColumns({ onDelete })
-
 export const getPurchaseOrderColumns = ({ onDelete } = {}) => [
     { header: "PO Number", accessor: "po_number" },
     { header: "Vendor", accessor: "vendor_name" },
@@ -95,10 +85,10 @@ export const getPurchaseOrderColumns = ({ onDelete } = {}) => [
         accessor: "total_amount",
         render: (row) => formatAmount(row.total_amount),
     },
-     {
+    {
         header: "Warehouse",
         accessor: "warehouse_name",
-        render: (row) => formatAmount(row.warehouse_name                                               ),
+        render: (row) => row.warehouse_name || "-",
     },
     {
         header: "Order Status",
@@ -130,13 +120,6 @@ export const getPurchaseOrderColumns = ({ onDelete } = {}) => [
     },
 ];
 
-// ===============================
-// Stat cards
-// ===============================
-// `dashboard` is the response of GET /finance/purchase-order/dashboard/.
-// I haven't seen its shape, so each card tries a few likely key names.
-// Once you send a sample response, replace the key lists with the real ones.
-
 const pick = (obj, keys) => {
     for (const key of keys) {
         if (obj?.[key] !== undefined && obj?.[key] !== null) {
@@ -154,8 +137,23 @@ export const purchaseOrderStats = (dashboard = {}, totalItems = 0) => {
         totalItems;
     const value =
         pick(d, ["total_purchase_value", "total_value", "total_amount"]) ?? 0;
-    const pending =
-        pick(d, ["pending_orders", "pending_count", "pending"]) ?? 0;
+    const received =
+        pick(d, [
+            "fully_received",
+            "fully_received_orders",
+            "fully_received_count",
+            "received_orders",
+            "received_count",
+            "received",
+        ]) ?? 0;
+    const awaiting =
+        pick(d, [
+            "awaiting_delivery",
+            "awaiting_delivery_count",
+            "pending_orders",
+            "pending_count",
+            "pending",
+        ]) ?? 0;
     const partial =
         pick(d, [
             "partially_received",
@@ -175,12 +173,19 @@ export const purchaseOrderStats = (dashboard = {}, totalItems = 0) => {
             title: "Total Purchase Value",
             count: formatAmount(value),
             icon: <FiDollarSign size={22} />,
+            backgroundColor: "#fdfbec",
+            iconColor: "#b96a10",
+        },
+        {
+            title: "Fully Received",
+            count: received,
+            icon: <FiCheckCircle size={22} />,
             backgroundColor: "#ECFDF5",
             iconColor: "#10B981",
         },
         {
-            title: "Pending Orders",
-            count: pending,
+            title: "Awaiting Delivery",
+            count: awaiting,
             icon: <FiClock size={22} />,
             backgroundColor: "#FFF7ED",
             iconColor: "#F59E0B",
@@ -193,4 +198,4 @@ export const purchaseOrderStats = (dashboard = {}, totalItems = 0) => {
             iconColor: "#EF4444",
         },
     ];
-};
+};  

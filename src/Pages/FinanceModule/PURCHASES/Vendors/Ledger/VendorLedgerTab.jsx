@@ -1,25 +1,30 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { useParams } from "react-router-dom";
+import { useOutletContext, useParams } from "react-router-dom";
 import {
   FiDollarSign,
   FiFileText,
   FiCheckCircle,
   FiAlertCircle,
 } from "react-icons/fi";
-
+import { AiOutlineTransaction } from "react-icons/ai";
 import ReusableFilter from "../../../../../Components/ReusableTable/ReusableFilter";
 import ReusableTable from "../../../../../Components/ReusableTable/ReusableTable";
 import ReusablePagination from "../../../../../Components/Pagination/ReusablePagination";
 import StatsCards from "../../../../../Components/StatsCards/StatsCards";
-import { vendorLedgerColumns } from "./dummydata";
+import { vendorLedgerColumns } from "./VendorLedgerColumns";
 import {
   getVendorLedger,
   clearVendorLedger,
   selectVendorDetail,
 } from "../../../../../Redux/finance/purchases/Vendordetailslice";
 
-const LEDGER_TYPES = ["Manual Entry", "Credit Note", "Debit Note"];
+const LEDGER_TYPES = [
+  "Opening Balance",
+  "Manual Entry",
+  "Credit Note",
+  "Debit Note",
+];
 const ROWS_PER_PAGE = 10;
 
 const formatAmount = (value) =>
@@ -37,12 +42,19 @@ const formatError = (error) => {
     .join(" | ");
 };
 
-// vendorId can come from the parent as a prop, or from the route
+// vendorId can come from the parent as a prop, the outlet context, or the route
 const VendorLedgerTab = ({ vendorId: vendorIdProp }) => {
   const dispatch = useDispatch();
   const params = useParams();
-  // Same lookup as the Overview and Purchase Orders tabs
-  const vendorId = vendorIdProp ?? params.id ?? params.vendorId;
+
+  // Context from VendorLayout (may be undefined if rendered outside the Outlet)
+  const outlet = useOutletContext() || {};
+  const vendorId =
+    vendorIdProp ?? outlet.vendorId ?? params.id ?? params.vendorId;
+
+  // Dates come from the date picker in the layout header (YYYY-MM-DD or "")
+  const dateFrom = outlet.dateRange?.date_from || "";
+  const dateTo = outlet.dateRange?.date_to || "";
 
   const {
     ledger = [],
@@ -56,16 +68,13 @@ const VendorLedgerTab = ({ vendorId: vendorIdProp }) => {
   const [type, setType] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
 
-  // Temporary: remove once the API call shows up in the Network tab
-  console.log("VendorLedgerTab", { vendorId, params, vendorIdProp });
-
   // Debounce search so we don't call the API on every keystroke
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(search), 400);
     return () => clearTimeout(t);
   }, [search]);
 
-  // Fetch whenever vendor or filters change
+  // Fetch whenever vendor, filters or header dates change
   useEffect(() => {
     if (!vendorId) return;
     dispatch(
@@ -73,12 +82,14 @@ const VendorLedgerTab = ({ vendorId: vendorIdProp }) => {
         vendorId,
         params: {
           search: debouncedSearch,
-          type: type === "All" ? "" : type,
+          type,
+          date_from: dateFrom,
+          date_to: dateTo,
         },
       }),
     );
     setCurrentPage(1);
-  }, [dispatch, vendorId, debouncedSearch, type]);
+  }, [dispatch, vendorId, debouncedSearch, type, dateFrom, dateTo]);
 
   // Clear stale data when leaving the tab or switching vendors
   useEffect(() => {
@@ -103,7 +114,7 @@ const VendorLedgerTab = ({ vendorId: vendorIdProp }) => {
     [ledger],
   );
 
-  // Client-side pagination (the endpoint returns all rows)
+  // Client-side pagination
   const totalPages = Math.max(1, Math.ceil(rows.length / ROWS_PER_PAGE));
 
   const paginatedData = useMemo(() => {
@@ -154,6 +165,14 @@ const VendorLedgerTab = ({ vendorId: vendorIdProp }) => {
       backgroundColor: "#FEF2F2",
       iconColor: "#EF4444",
     },
+    {
+      title: "Total Transactions",
+      // a count, not money, so no decimals
+      count: ledgerCards?.total_transactions ?? 0,
+      icon: <AiOutlineTransaction />,
+      backgroundColor: "#ecf4fd",
+      iconColor: "#1045b9",
+    },
   ];
 
   if (!vendorId) {
@@ -195,6 +214,7 @@ const VendorLedgerTab = ({ vendorId: vendorIdProp }) => {
           data={paginatedData}
           totalRow={totalRow}
           totalRowLabel="TOTAL"
+          autoLayout
         />
       )}
 

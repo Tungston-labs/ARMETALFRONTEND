@@ -104,7 +104,8 @@ const vendorDetailSlice = createSlice({
             })
             .addCase(getVendorPurchaseOrders.fulfilled, (state, action) => {
                 state.purchaseOrdersLoading = false;
-                state.purchaseOrders = action.payload?.purchase_orders || [];
+                state.purchaseOrders =
+                    action.payload?.results || action.payload?.purchase_orders || [];
                 state.purchaseOrdersSummary = action.payload?.summary || null;
             })
             .addCase(getVendorPurchaseOrders.rejected, (state, action) => {
@@ -119,7 +120,7 @@ const vendorDetailSlice = createSlice({
             })
             .addCase(getVendorLedger.fulfilled, (state, action) => {
                 state.ledgerLoading = false;
-                state.ledger = action.payload?.data || [];
+                state.ledger = action.payload?.results || action.payload?.data || [];
                 state.ledgerCards = action.payload?.cards || null;
                 state.ledgerFilters = action.payload?.filters || null;
                 // NOTE: no longer writes state.vendor here. The ledger response only
