@@ -1,575 +1,325 @@
 import styled from "styled-components";
 
-export const InvoiceContainer = styled.div`
-    width: 100%;
-    min-height: 100%;
-    padding: 24px;
-    box-sizing: border-box;
+export const DeliveryNoteContainer = styled.div`
+  width: 100%;
+  min-height: 100%;
+  padding: 20px 24px 28px;
+  box-sizing: border-box;
+  background: #fff;
+  border: 1px solid #eee;
+  border-radius: 6px;
 
-    background: #ffffff;
-    border: 1px solid #eeeeee;
-    border-radius: 6px;
+  .form-error {
+    margin: 14px 24px 0;
+    padding: 11px 13px;
+    color: #b42318;
+    background: #fef3f2;
+    border: 1px solid #fecdca;
+    border-radius: 5px;
+    font-size: 12px;
+  }
 `;
 
-export const InvoiceForm = styled.div`
-    width: 100%;
-    margin-top: 22px;
+export const DeliveryNoteForm = styled.div`
+  width: 100%;
+  margin-top: 22px;
+  padding: 0 24px 20px;
+  box-sizing: border-box;
 `;
-
-export const SectionTitle = styled.h3`
-    margin: 0;
-
-    font-family: "Poppins", sans-serif;
-    font-size: 16px;
-    font-weight: 500;
-    line-height: 20px;
-
-    color: #111111;
-
-    display: flex;
-    align-items: center;
-    gap: 6px;
-
-    svg {
-        width: 15px;
-        height: 15px;
-    }
-`;
-
-/* =========================
-   FORM
-========================= */
 
 export const FormGrid = styled.div`
-    width: 100%;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  column-gap: 24px;
+  row-gap: 13px;
 
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+  .warehouse-field {
+    grid-column: span 2;
+  }
 
-    column-gap: 24px;
-    row-gap: 10px;
+  @media (max-width: 900px) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    .warehouse-field {
+      grid-column: span 2;
+    }
+  }
+
+  @media (max-width: 560px) {
+    grid-template-columns: 1fr;
+    .warehouse-field {
+      grid-column: span 1;
+    }
+  }
 `;
 
 export const FormGroup = styled.div`
-    width: 100%;
-    min-width: 0;
-
-    display: flex;
-    flex-direction: column;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
 `;
 
 export const Label = styled.label`
-    margin-bottom: 7px;
-
-    font-family: "Poppins", sans-serif;
-    font-size: 14px;
-    font-weight: 400;
-    line-height: 18px;
-
+  margin: 0 0 7px;
+  color: #171717;
+  font-family: "Poppins", sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 15px;
 `;
 
 export const Input = styled.input`
-    width: 100%;
-    height: 38px;
+  width: 100%;
+  height: 36px;
+  padding: 0 12px;
+  box-sizing: border-box;
+  border: 1px solid #e5e7eb;
+  border-radius: 5px;
+  outline: none;
+  background: #fff;
+  color: #4b5563;
+  font-family: "Poppins", sans-serif;
+  font-size: 12px;
 
-    box-sizing: border-box;
-
-    border: 1px solid #e2e5ea;
-    border-radius: 5px;
-
-    padding: 0 12px;
-
-    background: #ffffff;
-
-    color: #333333;
-
-    font-family: "Poppins", sans-serif;
-    font-size: 13px;
-    font-weight: 400;
-
-    outline: none;
-
-    transition: border-color 0.2s ease;
-
-    &::placeholder {
-        color: #9ca3af;
-    }
-
-    &:focus {
-        border-color: #3049a3;
-    }
+  &::placeholder {
+    color: #9ca3af;
+  }
+  &:focus {
+    border-color: #3049a3;
+  }
 `;
-
-/* =========================
-   DATE
-========================= */
-
-export const CalendarInput = styled.div`
-    position: relative;
-    width: 100%;
-
-    /* input {
-        padding-right: 42px;
-    } */
-
-   
-`;
-
-/* =========================
-   SELECT
-========================= */
 
 export const SelectWrapper = styled.div`
-    position: relative;
-    width: 100%;
+  position: relative;
+  width: 100%;
 
-    svg {
-        position: absolute;
-
-        right: 13px;
-        top: 50%;
-
-        transform: translateY(-50%);
-
-        width: 16px;
-        height: 16px;
-
-        color: #4b5563;
-
-        pointer-events: none;
-    }
+  svg {
+    position: absolute;
+    top: 50%;
+    right: 12px;
+    width: 15px;
+    height: 15px;
+    transform: translateY(-50%);
+    pointer-events: none;
+    color: #111827;
+  }
 `;
 
 export const Select = styled.select`
+  width: 100%;
+  height: 36px;
+  padding: 0 36px 0 12px;
+  box-sizing: border-box;
+  appearance: none;
+  border: 1px solid #e5e7eb;
+  border-radius: 5px;
+  outline: none;
+  background: #fff;
+  color: #4b5563;
+  font-family: "Poppins", sans-serif;
+  font-size: 12px;
+  cursor: pointer;
+
+  &:focus {
+    border-color: #3049a3;
+  }
+`;
+
+export const ItemsTitle = styled.h3`
+  margin: 25px 0 13px 4px;
+  color: #111;
+  font-family: "Poppins", sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+`;
+
+export const ItemsTableWrapper = styled.div`
+  width: 100%;
+  overflow-x: auto;
+`;
+
+export const ItemsTable = styled.table`
+  width: 100%;
+  min-width: 900px;
+  border-collapse: collapse;
+  table-layout: fixed;
+  font-family: "Poppins", sans-serif;
+
+  thead {
+    background: #304db3;
+  }
+
+  th {
+    height: 35px;
+    padding: 0 8px;
+    color: #fff;
+    font-size: 11px;
+    font-weight: 600;
+    text-align: center;
+    white-space: nowrap;
+  }
+
+  td {
+    height: 39px;
+    padding: 4px 8px;
+    color: #555;
+    font-size: 10px;
+    text-align: center;
+    border-bottom: 1px solid #f0f0f0;
+  }
+
+  tbody tr:last-child td {
+    border-bottom: 0;
+  }
+
+  th:nth-child(1),
+  td:nth-child(1) {
+    width: 7%;
+  }
+  th:nth-child(2),
+  td:nth-child(2) {
+    width: 17%;
+  }
+  th:nth-child(3),
+  td:nth-child(3) {
+    width: 12%;
+  }
+  th:nth-child(4),
+  td:nth-child(4) {
+    width: 14%;
+  }
+  th:nth-child(5),
+  td:nth-child(5) {
+    width: 13%;
+  }
+  th:nth-child(6),
+  td:nth-child(6) {
+    width: 10%;
+  }
+  th:nth-child(7),
+  td:nth-child(7) {
+    width: 14%;
+  }
+  th:nth-child(8),
+  td:nth-child(8) {
+    width: 13%;
+  }
+
+  input {
     width: 100%;
-    height: 40px;
-
+    max-width: 112px;
+    height: 27px;
+    padding: 0 6px;
     box-sizing: border-box;
-
-    border: 1px solid #e2e5ea;
-    border-radius: 5px;
-
-    padding: 0 40px 0 12px;
-
-    background: #ffffff;
-
-    color: #4b5563;
-
-    font-family: "Poppins", sans-serif;
-    font-size: 13px;
-    font-weight: 400;
-
-    appearance: none;
+    border: 1px solid #e5e7eb;
+    border-radius: 3px;
     outline: none;
-
-    cursor: pointer;
+    background: #fff;
+    color: #555;
+    font-family: "Poppins", sans-serif;
+    font-size: 10px;
+    text-align: center;
 
     &:focus {
-        border-color: #3049a3;
+      border-color: #3049a3;
     }
+    &:read-only {
+      background: #fff;
+    }
+  }
+
+  td:nth-child(2) input {
+    max-width: 130px;
+  }
+  .item-status {
+    font-size: 10px;
+    white-space: nowrap;
+  }
+  .item-status.fully-delivered {
+    color: #07952f;
+  }
+  .item-status.partial {
+    color: #ff7900;
+  }
+  .item-status.pending {
+    color: #e11d48;
+  }
 `;
 
-/* =========================
-   INVOICE ITEMS HEADER
-========================= */
-
-export const InvoiceItemsHeader = styled.div`
-    width: 100%;
-
-    margin-top: 30px;
-    margin-bottom: 12px;
-
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-`;
-
-export const AddItemButton = styled.button`
-    height: 36px;
-
-    padding: 0 16px;
-
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    gap: 7px;
-
-    border: none;
-    border-radius: 4px;
-
-    background: #F48211;
-    color: #ffffff;
-
-    font-family: "Poppins", sans-serif;
-    font-size: 12px;
-    font-weight: 600;
-
-    cursor: pointer;
-
-    transition: background 0.2s ease;
-
-    svg {
-        width: 15px;
-        height: 15px;
-    }
-
-    &:hover {
-        background: #F48211;
-    }
-`;
-
-/* =========================
-   TABLE
-========================= */
-
-export const InvoiceTableWrapper = styled.div`
-    width: 100%;
-
-    overflow-x: auto;
-
-    border: 1px solid #e5e7eb;
-    border-radius: 5px;
-
-    scrollbar-width: thin;
-`;
-
-export const InvoiceTable = styled.table`
-    width: 100%;
-    min-width: 1050px;
-
-    border-collapse: collapse;
-    table-layout: fixed;
-
-    thead {
-        background: #2C469F;
-    }
-
-    th {
-        height: 42px;
-
-        padding: 0 9px;
-
-        color: #ffffff;
-
-        font-family: "Poppins", sans-serif;
-        font-size: 11px;
-        font-weight: 600;
-
-        text-align: left;
-
-        white-space: nowrap;
-    }
-
-    td {
-        height: 48px;
-
-        padding: 5px 8px;
-
-        border-bottom: 1px solid #eeeeee;
-
-        color: #555555;
-
-        font-family: "Poppins", sans-serif;
-        font-size: 11px;
-
-        vertical-align: middle;
-    }
-
-    tbody tr:last-child td {
-        border-bottom: none;
-    }
-
-    th:nth-child(1),
-    td:nth-child(1) {
-        width: 6%;
-        text-align: center;
-    }
-
-    th:nth-child(2),
-    td:nth-child(2) {
-        width: 11%;
-    }
-
-    th:nth-child(3),
-    td:nth-child(3) {
-        width: 19%;
-    }
-
-    th:nth-child(4),
-    td:nth-child(4) {
-        width: 7%;
-    }
-
-    th:nth-child(5),
-    td:nth-child(5) {
-        width: 9%;
-    }
-
-    th:nth-child(6),
-    td:nth-child(6) {
-        width: 10%;
-    }
-
-    th:nth-child(7),
-    td:nth-child(7) {
-        width: 8%;
-    }
-
-    th:nth-child(8),
-    td:nth-child(8) {
-        width: 10%;
-    }
-
-    th:nth-child(9),
-    td:nth-child(9) {
-        width: 11%;
-    }
-
-    th:nth-child(10),
-    td:nth-child(10) {
-        width: 7%;
-        text-align: center;
-    }
-
-    input {
-        width: 100%;
-        height: 32px;
-
-        box-sizing: border-box;
-
-        padding: 0 8px;
-
-        border: 1px solid #e3e5e8;
-        border-radius: 3px;
-
-        background: #ffffff;
-
-        color: #4b5563;
-
-        font-family: "Poppins", sans-serif;
-        font-size: 11px;
-
-        outline: none;
-
-        &:focus {
-            border-color: #3049a3;
-        }
-
-        &::placeholder {
-            color: #9ca3af;
-        }
-    }
-`;
-
-export const DeleteButton = styled.button`
-    width: 28px;
-    height: 28px;
-
-    margin: 0 auto;
-
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    border: 1px solid #ff3b30;
-    border-radius: 50%;
-
-    background: #ffffff;
-    color: #ff3b30;
-
-    cursor: pointer;
-
-    transition: all 0.2s ease;
-
-    svg {
-        width: 14px;
-        height: 14px;
-    }
-
-    &:hover {
-        background: #fff1f0;
-    }
-`;
-
-/* =========================
-   PAYMENT SECTION
-========================= */
-
-export const PaymentSection = styled.div`
-    width: 100%;
-
-    display: grid;
-    grid-template-columns: minmax(0, 1.6fr) minmax(300px, 1fr);
-
-    gap: 60px;
-
-    margin-top: 28px;
-`;
-
-export const PaymentLeft = styled.div`
+export const NotesSection = styled.div`
+  width: 52%;
+  min-width: 320px;
+  margin-top: 15px;
+
+  @media (max-width: 700px) {
     width: 100%;
     min-width: 0;
+  }
 `;
 
-export const PaymentGrid = styled.div`
-    width: 100%;
+export const NotesTextarea = styled.textarea`
+  width: 100%;
+  min-height: 41px;
+  margin-top: 7px;
+  padding: 11px;
+  box-sizing: border-box;
+  resize: vertical;
+  border: 1px solid #e5e7eb;
+  border-radius: 5px;
+  outline: none;
+  color: #4b5563;
+  font-family: "Poppins", sans-serif;
+  font-size: 10px;
 
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-
-    column-gap: 18px;
-    row-gap: 16px;
-
-    margin-top: 14px;
+  &::placeholder {
+    color: #9ca3af;
+  }
+  &:focus {
+    border-color: #3049a3;
+  }
 `;
-
-export const PaymentRight = styled.div`
-    width: 100%;
-
-    padding-top: 2px;
-`;
-
-export const SummaryRow = styled.div`
-    min-height: 32px;
-
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-
-    gap: 20px;
-
-    font-family: "Poppins", sans-serif;
-    font-size: 12px;
-
-    color: #111111;
-
-    span {
-        color: #4b5563;
-    }
-
-    strong {
-        font-weight: 600;
-        color: #111111;
-        white-space: nowrap;
-    }
-
-    .discount {
-        color: #20a34a;
-    }
-`;
-
-export const TotalAmount = styled.div`
-    width: 100%;
-    height: 42px;
-
-    margin-top: 10px;
-    padding: 0 16px;
-
-    box-sizing: border-box;
-
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-
-    border-radius: 5px;
-
-    background: #ff8500;
-    color: #ffffff;
-
-    font-family: "Poppins", sans-serif;
-    font-size: 12px;
-    font-weight: 600;
-
-    strong {
-        font-size: 14px;
-        font-weight: 600;
-    }
-`;
-
-/* =========================
-   BUTTONS
-========================= */
 
 export const ButtonWrapper = styled.div`
-    width: 100%;
-
-    display: flex;
-    justify-content: flex-end;
-    align-items: center;
-
-    gap: 12px;
-
-    margin-top: 30px;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 12px;
+  margin-top: 18px;
 `;
 
 export const CancelButton = styled.button`
-    width: 100px;
-    height: 38px;
+  width: 96px;
+  height: 36px;
+  border: 1px solid #3049a3;
+  border-radius: 4px;
+  background: #fff;
+  color: #111;
+  font-family: "Poppins", sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
 
-    border: 1px solid #3049a3;
-    border-radius: 4px;
-
-    background: #ffffff;
-    color: #111111;
-
-    font-family: "Poppins", sans-serif;
-    font-size: 12px;
-    font-weight: 500;
-
-    cursor: pointer;
-
-    &:hover {
-        background: #f5f7ff;
-    }
+  &:hover {
+    background: #f5f7ff;
+  }
 `;
 
-export const PreviewButton = styled.button`
-    width: 100px;
-    height: 38px;
+export const CreateButton = styled.button`
+  width: 96px;
+  height: 36px;
+  border: 1px solid #3049a3;
+  border-radius: 4px;
+  background: #3049a3;
+  color: #fff;
+  font-family: "Poppins", sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
 
-    border: 1px solid #3049a3;
-    border-radius: 4px;
-
-    background: #3049a3;
-    color: #ffffff;
-
-    font-family: "Poppins", sans-serif;
-    font-size: 12px;
-    font-weight: 500;
-
-    cursor: pointer;
-
-    &:hover {
-        background: #263b88;
-    }
+  &:hover {
+    background: #263b88;
+  }
+  &:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+  }
 `;
-
-/* =========================
-   RESPONSIVE
-========================= */
-
-export const UploadBox = styled.div`
-    width: 100%;
-    height: 40px;
-
-    box-sizing: border-box;
-
-    border: 1px solid #e2e5ea;
-    border-radius: 5px;
-
-    display: flex;
-    align-items: center;
-
-    padding: 0 12px;
-
-    color: #374151;
-
-    cursor: pointer;
-
-    svg {
-        width: 16px;
-        height: 16px;
-    }
-`;
-

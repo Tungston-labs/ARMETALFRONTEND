@@ -133,9 +133,7 @@ const Payment = () => {
     () =>
       customers.map((customer) => ({
         label:
-          customer.name ||
-          customer.customer_name ||
-          `Customer #${customer.id}`,
+          customer.name || customer.customer_name || `Customer #${customer.id}`,
         value: String(customer.id),
       })),
     [customers],
@@ -389,7 +387,6 @@ const Payment = () => {
       getPaymentColumns({
         onInfo: handlePaymentInfo,
       }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [],
   );
 

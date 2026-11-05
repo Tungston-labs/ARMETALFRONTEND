@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
+import styled from "styled-components";
 
-import { FiChevronDown, FiX } from "react-icons/fi";
+import { FiChevronDown, FiX, FiPlus } from "react-icons/fi";
 
 import { useNavigate, useParams } from "react-router-dom";
 
@@ -55,6 +56,32 @@ import {
   getCustomers,
   selectCustomers,
 } from "../../../../../Redux/finance/Sales/CustomerSlice";
+
+const AddItemButton = styled.button`
+  height: 36px;
+  padding: 0 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  border: none;
+  border-radius: 4px;
+  background: #f48211;
+  color: #ffffff;
+  font-family: "Poppins", sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+
+  svg {
+    width: 15px;
+    height: 15px;
+  }
+
+  &:hover {
+    background: #e87508;
+  }
+`;
 
 /* -------------------------------------------------------
    Helpers
@@ -146,6 +173,11 @@ const mapReturnToForm = (salesReturn) => {
       "",
 
     returnDate: salesReturn.return_date || getToday(),
+    invoiceDate:
+      salesReturn.invoice_date || salesReturn.invoice?.invoice_date || "",
+    deliveryDate:
+      salesReturn.delivery_date || salesReturn.invoice?.delivery_date || "",
+    status: salesReturn.status || "pending",
 
     reason: salesReturn.reason || "",
 
@@ -250,6 +282,9 @@ const CreateSalesReturnAction = () => {
   const [invoiceId, setInvoiceId] = useState("");
 
   const [returnDate, setReturnDate] = useState(getToday());
+  const [invoiceDate, setInvoiceDate] = useState("");
+  const [deliveryDate, setDeliveryDate] = useState("");
+  const [status, setStatus] = useState("pending");
 
   const [reason, setReason] = useState("");
 
@@ -332,6 +367,9 @@ const CreateSalesReturnAction = () => {
     setInvoiceReference(mapped.invoiceReference);
 
     setReturnDate(mapped.returnDate);
+    setInvoiceDate(mapped.invoiceDate);
+    setDeliveryDate(mapped.deliveryDate);
+    setStatus(mapped.status);
 
     setReason(mapped.reason);
 
@@ -397,6 +435,16 @@ const CreateSalesReturnAction = () => {
       selectedInvoice.invoice_number || selectedInvoice.number || "",
     );
 
+    setInvoiceDate(selectedInvoice.invoice_date || selectedInvoice.date || "");
+    setDeliveryDate(
+      selectedInvoice.delivery_date ||
+        selectedInvoice.delivered_at ||
+        selectedInvoice.delivery?.date ||
+        selectedInvoice.invoice_date ||
+        selectedInvoice.date ||
+        "",
+    );
+
     setInvoiceValue(
       selectedInvoice.total ??
         selectedInvoice.invoice_value ??
@@ -445,6 +493,23 @@ const CreateSalesReturnAction = () => {
     setEligibleToReturn(Math.max(0, invoiceTotal - invoiceAlreadyReturned));
   }, [selectedInvoice]);
 
+  const daysSinceDelivery = useMemo(() => {
+    const startDate = deliveryDate || invoiceDate;
+    if (!startDate || !returnDate) return "";
+    const invoice = new Date(`${startDate}T00:00:00`);
+    const returned = new Date(`${returnDate}T00:00:00`);
+    if (Number.isNaN(invoice.getTime()) || Number.isNaN(returned.getTime()))
+      return "";
+    return Math.max(0, Math.floor((returned - invoice) / 86400000));
+  }, [deliveryDate, invoiceDate, returnDate]);
+
+  const returnWindow =
+    daysSinceDelivery === ""
+      ? "Select invoice date"
+      : daysSinceDelivery <= 30
+        ? "Within 30 Days"
+        : "Outside 30 Days";
+
   /* ---------------------------------------------
        Invoice change
     --------------------------------------------- */
@@ -458,6 +523,9 @@ const CreateSalesReturnAction = () => {
       dispatch(clearSelectedInvoice());
 
       setInvoiceReference("");
+
+      setInvoiceDate("");
+      setDeliveryDate("");
 
       setInvoiceValue(0);
 
@@ -484,6 +552,10 @@ const CreateSalesReturnAction = () => {
           : item,
       ),
     );
+  };
+
+  const addItem = () => {
+    setItems((previous) => [...previous, createDefaultItem(previous.length)]);
   };
 
   const removeItem = (itemId) => {
@@ -533,6 +605,10 @@ const CreateSalesReturnAction = () => {
       return "Please select a return reason.";
     }
 
+    if (!billTo.client || !billTo.address || !billTo.phone || !billTo.email) {
+      return "Please complete all required Bill To details.";
+    }
+
     if (totalReturnValue <= 0) {
       return "Please enter a valid returning quantity.";
     }
@@ -545,6 +621,10 @@ const CreateSalesReturnAction = () => {
       const returned = Number(item.alreadyReturned) || 0;
 
       const available = Math.max(0, invoiced - returned);
+
+      if (!item.product && returning > 0) {
+        return "Please enter a product for each item being returned.";
+      }
 
       if (returning > available) {
         return `Returning quantity for ${
@@ -573,6 +653,11 @@ const CreateSalesReturnAction = () => {
       invoice_reference: invoiceReference,
 
       return_date: returnDate,
+      invoice_date: invoiceDate,
+      delivery_date: deliveryDate,
+      days_since_delivery: daysSinceDelivery === "" ? 0 : daysSinceDelivery,
+      return_window: returnWindow,
+      status,
 
       reason,
 
@@ -724,12 +809,14 @@ const CreateSalesReturnAction = () => {
               value={returnNumber}
               onChange={(e) => setReturnNumber(e.target.value)}
               placeholder="SR 0123"
-              readOnly={isEditMode}
+              readOnly
             />
           </FormGroup>
 
           <FormGroup>
-            <Label>INVOICE REFERENCE</Label>
+            <Label>
+              AGAINST INVOICE <span style={{ color: "red" }}>*</span>
+            </Label>
 
             {isEditMode ? (
               <Input value={invoiceReference} readOnly />
@@ -762,7 +849,9 @@ const CreateSalesReturnAction = () => {
           </FormGroup>
 
           <FormGroup>
-            <Label>RETURN DATE</Label>
+            <Label>
+              RETURN DATE <span style={{ color: "red" }}>*</span>
+            </Label>
 
             <CalendarInput>
               <Input
@@ -774,7 +863,9 @@ const CreateSalesReturnAction = () => {
           </FormGroup>
 
           <FormGroup>
-            <Label>REASON</Label>
+            <Label>
+              REASON <span style={{ color: "red" }}>*</span>
+            </Label>
 
             <SelectWrapper>
               <Select
@@ -795,39 +886,47 @@ const CreateSalesReturnAction = () => {
           </FormGroup>
 
           <FormGroup>
-            <Label>INVOICE VALUE</Label>
+            <Label>INVOICE DATE</Label>
+            <CalendarInput>
+              <Input type="date" value={invoiceDate} readOnly />
+            </CalendarInput>
+          </FormGroup>
 
+          <FormGroup>
+            <Label>DAYS SINCE DELIVERY</Label>
             <Input
-              value={`SAR ${Number(invoiceValue).toLocaleString("en-US")}`}
+              value={
+                daysSinceDelivery === "" ? "—" : `${daysSinceDelivery} Days`
+              }
               readOnly
             />
           </FormGroup>
 
           <FormGroup>
-            <Label>ALREADY RETURNED</Label>
-
+            <Label>RETURN WINDOW</Label>
             <Input
-              value={`SAR ${Number(alreadyReturned).toLocaleString("en-US")}`}
+              value={returnWindow}
               readOnly
+              style={{
+                background:
+                  returnWindow === "Outside 30 Days" ? "#fff1f0" : "#fff7e8",
+              }}
             />
           </FormGroup>
 
           <FormGroup>
-            <Label>ELIGIBLE TO RETURN</Label>
-
-            <Input
-              value={`SAR ${Number(eligibleToReturn).toLocaleString("en-US")}`}
-              readOnly
-            />
-          </FormGroup>
-
-          <FormGroup>
-            <Label>THIS RETURN</Label>
-
-            <Input
-              value={`SAR ${Number(totalReturnValue).toLocaleString("en-US")}`}
-              readOnly
-            />
+            <Label>STATUS</Label>
+            <SelectWrapper>
+              <Select
+                value={status}
+                onChange={(e) => setStatus(e.target.value)}
+              >
+                <option value="pending">Pending</option>
+                <option value="approved">Approved</option>
+                <option value="rejected">Rejected</option>
+              </Select>
+              <FiChevronDown />
+            </SelectWrapper>
           </FormGroup>
 
           <FormGroup>
@@ -891,7 +990,9 @@ const CreateSalesReturnAction = () => {
           </FormGroup>
 
           <FormGroup>
-            <Label>BILL TO</Label>
+            <Label>
+              BILL TO <span style={{ color: "red" }}>*</span>
+            </Label>
 
             <SelectWrapper>
               <Select
@@ -929,7 +1030,9 @@ const CreateSalesReturnAction = () => {
           </FormGroup>
 
           <FormGroup>
-            <Label>ADDRESS</Label>
+            <Label>
+              ADDRESS <span style={{ color: "red" }}>*</span>
+            </Label>
 
             <Input
               value={billTo.address}
@@ -944,7 +1047,9 @@ const CreateSalesReturnAction = () => {
           </FormGroup>
 
           <FormGroup>
-            <Label>PHONE NUMBER</Label>
+            <Label>
+              PHONE NUMBER <span style={{ color: "red" }}>*</span>
+            </Label>
 
             <Input
               value={billTo.phone}
@@ -959,7 +1064,9 @@ const CreateSalesReturnAction = () => {
           </FormGroup>
 
           <FormGroup>
-            <Label>Finance Contact Email</Label>
+            <Label>
+              Finance Contact Email <span style={{ color: "red" }}>*</span>
+            </Label>
 
             <Input
               value={billTo.email}
@@ -975,7 +1082,10 @@ const CreateSalesReturnAction = () => {
         </FormGrid>
 
         <ReturnItemsHeader>
-          <SectionTitle>RETURNED ITEMS</SectionTitle>
+          <SectionTitle>ITEMS BEING RETURNED</SectionTitle>
+          <AddItemButton type="button" onClick={addItem}>
+            <FiPlus /> ADD ITEM
+          </AddItemButton>
         </ReturnItemsHeader>
 
         <ReturnTableWrapper>
@@ -1002,13 +1112,23 @@ const CreateSalesReturnAction = () => {
                   <td>
                     <input
                       value={item.product}
-                      readOnly
+                      onChange={(e) =>
+                        updateItem(item.id, "product", e.target.value)
+                      }
                       placeholder="Product"
                     />
                   </td>
 
                   <td>
-                    <input value={item.invoicedQty} readOnly />
+                    <input
+                      type={item.productId ? "text" : "number"}
+                      min="0"
+                      value={item.invoicedQty}
+                      readOnly={Boolean(item.productId)}
+                      onChange={(e) =>
+                        updateItem(item.id, "invoicedQty", e.target.value)
+                      }
+                    />
                   </td>
 
                   <td>
@@ -1041,17 +1161,41 @@ const CreateSalesReturnAction = () => {
                   </td>
 
                   <td>
-                    <input
+                    <select
                       value={item.condition}
                       onChange={(e) =>
                         updateItem(item.id, "condition", e.target.value)
                       }
-                      placeholder="Wrong Item"
-                    />
+                      style={{
+                        width: "100%",
+                        height: "32px",
+                        border: "1px solid #e3e5e8",
+                        borderRadius: "3px",
+                        padding: "0 8px",
+                        background: "#fff",
+                        color: "#4b5563",
+                        fontFamily: "inherit",
+                        fontSize: "11px",
+                      }}
+                    >
+                      <option value="">Select</option>
+                      <option value="wrong_item">Wrong Item</option>
+                      <option value="damaged_product">Damaged</option>
+                      <option value="quality_issue">Quality Issue</option>
+                    </select>
                   </td>
 
                   <td>
-                    <input value={item.unitPrice} readOnly />
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={item.unitPrice}
+                      readOnly={Boolean(item.productId)}
+                      onChange={(e) =>
+                        updateItem(item.id, "unitPrice", e.target.value)
+                      }
+                    />
                   </td>
 
                   <td>
@@ -1136,9 +1280,7 @@ const CreateSalesReturnAction = () => {
               ? isEditMode
                 ? "UPDATING..."
                 : "CREATING..."
-              : isEditMode
-                ? "UPDATE"
-                : "CREATE"}
+              : "SENT FOR APPROVAL"}
           </PreviewButton>
         </ButtonWrapper>
       </ReturnForm>

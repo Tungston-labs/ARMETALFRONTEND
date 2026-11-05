@@ -21,6 +21,7 @@ const initialFormData = {
   customerId: "",
   customer: "",
   invoiceAmount: "",
+  alreadyPaid: "",
   outstandingAmount: "",
   paymentDate: "",
   paymentType: "Full Payment",
@@ -40,59 +41,65 @@ const PaymentModal = ({
   customers = [],
 }) => {
   const [formData, setFormData] = useState(initialFormData);
-
   const [validationError, setValidationError] = useState("");
 
-  /* =====================================================
-       RESET FORM WHEN MODAL OPENS
-    ===================================================== */
-
+  // Reset form when modal opens
   useEffect(() => {
-    if (!isOpen) {
-      return;
-    }
+    if (!isOpen) return;
 
     if (initialData) {
+      const invoiceAmount = initialData.invoice_amount ?? "";
+
+      const alreadyPaid =
+        initialData.already_paid ?? initialData.amount_paid ?? "";
+
       setFormData({
-        invoiceNo: initialData.invoice_no || "",
+        invoiceNo: initialData.invoice_no || initialData.invoice_ref || "",
+
         customerId:
           initialData.customer_id ??
           initialData.customer?.id ??
           initialData.customer ??
           "",
+
         customer:
           initialData.customer_name ||
           initialData.customer?.name ||
           initialData.customer ||
           "",
-        invoiceAmount: initialData.invoice_amount ?? "",
-        outstandingAmount: initialData.outstanding_amount ?? "",
+
+        invoiceAmount,
+
+        alreadyPaid,
+
+        outstandingAmount:
+          initialData.outstanding_amount ?? initialData.balance_due ?? "",
+
         paymentDate: initialData.payment_date || "",
+
         paymentType: initialData.payment_type || "Full Payment",
+
         paymentMethod: initialData.payment_method || "Bank Transfer",
+
         amountReceived: initialData.amount_received ?? initialData.amount ?? "",
-        referenceNumber: initialData.reference_number || "",
+
+        referenceNumber:
+          initialData.transaction_id || initialData.reference_number || "",
+
         notes: initialData.notes || "",
       });
 
+      setValidationError("");
       return;
     }
 
-    setFormData({
-      ...initialFormData,
-    });
-
+    setFormData({ ...initialFormData });
     setValidationError("");
   }, [isOpen, initialData]);
 
-  if (!isOpen) {
-    return null;
-  }
+  if (!isOpen) return null;
 
-  /* =====================================================
-       INPUT CHANGE
-    ===================================================== */
-
+  // Input change handler
   const handleChange = (e) => {
     const { name, value } = e.target;
 
@@ -108,9 +115,20 @@ const PaymentModal = ({
         );
 
         next.customer =
-          selectedCustomer?.name ||
-          selectedCustomer?.customer_name ||
-          "";
+          selectedCustomer?.name || selectedCustomer?.customer_name || "";
+      }
+
+      // Calculate balance due automatically
+      if (name === "invoiceAmount" || name === "alreadyPaid") {
+        const invoiceTotal =
+          Number(name === "invoiceAmount" ? value : prev.invoiceAmount) || 0;
+
+        const paidAmount =
+          Number(name === "alreadyPaid" ? value : prev.alreadyPaid) || 0;
+
+        next.outstandingAmount = Math.max(invoiceTotal - paidAmount, 0).toFixed(
+          2,
+        );
       }
 
       return next;
@@ -119,15 +137,12 @@ const PaymentModal = ({
     setValidationError("");
   };
 
-  /* =====================================================
-       SUBMIT
-    ===================================================== */
-
+  // Submit handler
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!formData.invoiceNo.trim()) {
-      setValidationError("Invoice No is required.");
+      setValidationError("Payment Category is required.");
       return;
     }
 
@@ -143,6 +158,16 @@ const PaymentModal = ({
 
     if (!formData.amountReceived) {
       setValidationError("Amount Received is required.");
+      return;
+    }
+
+    if (Number(formData.amountReceived) <= 0) {
+      setValidationError("Amount Received must be greater than zero.");
+      return;
+    }
+
+    if (!formData.referenceNumber.trim()) {
+      setValidationError("Transaction ID is required.");
       return;
     }
 
@@ -167,23 +192,10 @@ const PaymentModal = ({
 
         <form onSubmit={handleSubmit}>
           <FormGrid>
+            {/* Customer */}
             <FormGroup>
               <Label>
-                Invoice No <span>*</span>
-              </Label>
-
-              <Input
-                type="text"
-                name="invoiceNo"
-                placeholder="CLT0012563"
-                value={formData.invoiceNo}
-                onChange={handleChange}
-              />
-            </FormGroup>
-
-            <FormGroup>
-              <Label>
-                Customer <span>*</span>
+                CUSTOMER <span>*</span>
               </Label>
 
               {customers.length > 0 ? (
@@ -191,12 +203,15 @@ const PaymentModal = ({
                   name="customerId"
                   value={formData.customerId}
                   onChange={handleChange}
+                  required
                 >
                   <option value="">Select a customer</option>
 
                   {customers.map((customer) => (
                     <option key={customer.id} value={customer.id}>
-                      {customer.name || customer.customer_name || `Customer #${customer.id}`}
+                      {customer.name ||
+                        customer.customer_name ||
+                        `Customer #${customer.id}`}
                     </option>
                   ))}
                 </Select>
@@ -207,37 +222,106 @@ const PaymentModal = ({
                   placeholder="Enter client name"
                   value={formData.customer}
                   onChange={handleChange}
+                  required
                 />
               )}
             </FormGroup>
 
-            <FormGroup>
-              <Label>Invoice Amount (SAR)</Label>
-
-              <Input
-                type="number"
-                name="invoiceAmount"
-                placeholder="00.00 SAR"
-                value={formData.invoiceAmount}
-                onChange={handleChange}
-              />
-            </FormGroup>
-
-            <FormGroup>
-              <Label>Outstanding Amount (SAR)</Label>
-
-              <Input
-                type="number"
-                name="outstandingAmount"
-                placeholder="00.00 SAR"
-                value={formData.outstandingAmount}
-                onChange={handleChange}
-              />
-            </FormGroup>
-
+            {/* Payment Category */}
             <FormGroup>
               <Label>
-                Payment Date <span>*</span>
+                PAYMENT CATEGORY <span>*</span>
+              </Label>
+
+              <Select
+                name="invoiceNo"
+                value={formData.invoiceNo}
+                onChange={handleChange}
+                required
+              >
+                <option value="">INVOICE REF</option>
+
+                {formData.invoiceNo &&
+                  !["INVOICE REF"].includes(formData.invoiceNo) && (
+                    <option value={formData.invoiceNo}>
+                      {formData.invoiceNo}
+                    </option>
+                  )}
+
+                <option value="INVOICE REF">INVOICE REF</option>
+              </Select>
+            </FormGroup>
+
+            {/* Invoice Total */}
+            <FormGroup>
+              <Label>INVOICE TOTAL</Label>
+
+              <Input
+                type="text"
+                name="invoiceAmount"
+                placeholder="SAR 0.00"
+                value={
+                  formData.invoiceAmount === ""
+                    ? ""
+                    : `SAR ${Number(formData.invoiceAmount).toLocaleString(
+                        "en-US",
+                        {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        },
+                      )}`
+                }
+                readOnly
+              />
+            </FormGroup>
+
+            {/* Already Paid */}
+            <FormGroup>
+              <Label>ALREADY PAID</Label>
+
+              <Input
+                type="text"
+                name="alreadyPaid"
+                placeholder="00.00 SAR"
+                value={
+                  formData.alreadyPaid === ""
+                    ? "00.00 SAR"
+                    : `${Number(formData.alreadyPaid).toLocaleString("en-US", {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })} SAR`
+                }
+                readOnly
+              />
+            </FormGroup>
+
+            {/* Balance Due */}
+            <FormGroup>
+              <Label>BALANCE DUE</Label>
+
+              <Input
+                type="text"
+                name="outstandingAmount"
+                value={
+                  formData.outstandingAmount === ""
+                    ? "SAR 0.00"
+                    : `SAR ${Number(formData.outstandingAmount).toLocaleString(
+                        "en-US",
+                        {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        },
+                      )}`
+                }
+                readOnly
+                $isBalance
+              />
+            </FormGroup>
+
+            {/* Payment Date */}
+            <FormGroup>
+              <Label>
+                PAYMENT DATE <span>*</span>
               </Label>
 
               <Input
@@ -245,18 +329,21 @@ const PaymentModal = ({
                 name="paymentDate"
                 value={formData.paymentDate}
                 onChange={handleChange}
+                required
               />
             </FormGroup>
 
+            {/* Payment Type */}
             <FormGroup>
               <Label>
-                Payment Type <span>*</span>
+                PAYMENT TYPE <span>*</span>
               </Label>
 
               <Select
                 name="paymentType"
                 value={formData.paymentType}
                 onChange={handleChange}
+                required
               >
                 <option value="Full Payment">Full Payment</option>
 
@@ -266,15 +353,17 @@ const PaymentModal = ({
               </Select>
             </FormGroup>
 
+            {/* Payment Method */}
             <FormGroup>
               <Label>
-                Payment Method <span>*</span>
+                PAYMENT METHOD <span>*</span>
               </Label>
 
               <Select
                 name="paymentMethod"
                 value={formData.paymentMethod}
                 onChange={handleChange}
+                required
               >
                 <option value="Bank Transfer">Bank Transfer</option>
 
@@ -286,9 +375,10 @@ const PaymentModal = ({
               </Select>
             </FormGroup>
 
+            {/* Amount Received */}
             <FormGroup>
               <Label>
-                Amount Received <span>*</span>
+                AMOUNT (SAR) <span>*</span>
               </Label>
 
               <Input
@@ -297,42 +387,31 @@ const PaymentModal = ({
                 placeholder="00.00 SAR"
                 value={formData.amountReceived}
                 onChange={handleChange}
+                min="0.01"
+                step="0.01"
+                required
               />
             </FormGroup>
 
+            {/* Transaction ID */}
             <FormGroup>
-              <Label>Reference Number</Label>
+              <Label>
+                TRANSACTION ID <span>*</span>
+              </Label>
 
               <Input
                 type="text"
                 name="referenceNumber"
-                placeholder="Enter Number"
+                placeholder="enter transaction id"
                 value={formData.referenceNumber}
                 onChange={handleChange}
-              />
-            </FormGroup>
-
-            <FormGroup>
-              <Label>Notes</Label>
-
-              <Input
-                type="text"
-                name="notes"
-                placeholder=""
-                value={formData.notes}
-                onChange={handleChange}
+                required
               />
             </FormGroup>
           </FormGrid>
 
           {(validationError || error) && (
-            <div
-              style={{
-                color: "#dc2626",
-                marginTop: "10px",
-                fontSize: "13px",
-              }}
-            >
+            <div className="payment-error">
               {validationError ||
                 (typeof error === "string" ? error : "Unable to save payment.")}
             </div>
@@ -346,7 +425,7 @@ const PaymentModal = ({
             <SaveButton type="submit" disabled={submitting}>
               <span>▣</span>
 
-              {submitting ? "SAVING..." : "SAVE PAYMENT"}
+              {submitting ? "RECORDING..." : "RECORD PAYMENT"}
             </SaveButton>
           </ButtonWrapper>
         </form>

@@ -1,11 +1,11 @@
 export const normalizePaymentPayload = (formData = {}) => {
   const rawCustomerId =
-    formData.customerId ??
-    formData.customer_id ??
-    formData.customer;
+    formData.customerId ?? formData.customer_id ?? formData.customer;
 
   const parsedCustomerId =
-    rawCustomerId === "" || rawCustomerId === null || rawCustomerId === undefined
+    rawCustomerId === "" ||
+    rawCustomerId === null ||
+    rawCustomerId === undefined
       ? null
       : Number(rawCustomerId);
 
@@ -26,7 +26,9 @@ export const normalizePaymentPayload = (formData = {}) => {
     invoice_amount:
       formData.invoiceAmount === "" ? null : Number(formData.invoiceAmount),
     outstanding_amount:
-      formData.outstandingAmount === "" ? null : Number(formData.outstandingAmount),
+      formData.outstandingAmount === ""
+        ? null
+        : Number(formData.outstandingAmount),
     payment_date: formData.paymentDate,
     payment_type: String(formData.paymentType)
       .trim()

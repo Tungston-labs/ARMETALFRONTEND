@@ -1,245 +1,295 @@
 import styled from "styled-components";
 
 export const ModalOverlay = styled.div`
-    position: fixed;
-    inset: 0;
-    z-index: 1000;
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
 
-    display: flex;
-    align-items: flex-start;
-    justify-content: center;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
 
-    padding: 8px 6px;
+  padding: 5px 6px;
 
-    background: rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.5);
 
-    overflow-y: auto;
+  overflow-y: auto;
 `;
 
 export const ModalContainer = styled.div`
-    width: 100%;
-    max-width: 1205px;
-    min-height: 450px;
+  width: 100%;
+  max-width: 1180px;
 
-    margin-top: 0;
+  min-height: 322px;
+  margin: 0 auto;
 
-    padding: 74px 22px 76px;
+  padding: 44px 20px 45px;
 
-    background: #ffffff;
-    border-radius: 2px;
+  background: #ffffff;
+  border-radius: 3px;
 
-    box-sizing: border-box;
+  box-sizing: border-box;
 
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
 
-    @media (max-width: 700px) {
-        padding: 35px 20px;
-    }
+  @media (max-width: 1000px) {
+    padding: 35px 20px;
+  }
 
-    @media (max-width: 480px) {
-        padding: 30px 15px;
-    }
+  @media (max-width: 700px) {
+    padding: 30px 18px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 25px 14px;
+  }
 `;
 
 export const ModalHeader = styled.div`
-    margin-bottom: 46px;
+  margin-bottom: 12px;
 `;
 
 export const Title = styled.h2`
-    margin: 0 0 2px;
+  margin: 0 0 2px;
 
-    color: #2f4eb5;
+  color: #3154bd;
 
-    font-size: 20px;
-    font-weight: 600;
-    line-height: 1.3;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.4;
 `;
 
 export const Subtitle = styled.p`
-    margin: 0;
+  margin: 0;
 
-    color: #777777;
+  color: #777777;
 
-    font-size: 12px;
-    font-weight: 400;
-    line-height: 1.5;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.5;
 `;
 
 export const FormGrid = styled.div`
-    display: grid;
-    grid-template-columns: repeat(5, 1fr);
-    column-gap: 22px;
-    row-gap: 17px;
+  display: grid;
 
-    width: 100%;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
 
-    @media (max-width: 1000px) {
-        grid-template-columns: repeat(3, 1fr);
-    }
+  column-gap: 22px;
+  row-gap: 18px;
 
-    @media (max-width: 700px) {
-        grid-template-columns: repeat(2, 1fr);
-    }
+  width: 100%;
 
-    @media (max-width: 480px) {
-        grid-template-columns: 1fr;
-    }
+  @media (max-width: 1000px) {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    column-gap: 18px;
+  }
+
+  @media (max-width: 700px) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 15px;
+    row-gap: 16px;
+  }
+
+  @media (max-width: 480px) {
+    grid-template-columns: 1fr;
+  }
 `;
 
 export const FormGroup = styled.div`
-    display: flex;
-    flex-direction: column;
+  display: flex;
+  flex-direction: column;
 
-    min-width: 0;
+  min-width: 0;
 `;
 
 export const Label = styled.label`
-    margin-bottom: 8px;
+  margin-bottom: 8px;
 
-    color: #111111;
+  color: #111111;
 
-    font-size: 13px;
-    font-weight: 400;
-    line-height: 1.2;
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 1.2;
 
-    span {
-        color: #111111;
-    }
+  span {
+    color: #dc2626;
+    margin-left: 1px;
+  }
 `;
 
 const fieldStyles = `
-    width: 100%;
-    height: 35px;
+  width: 100%;
+  height: 35px;
 
-    padding: 0 10px;
+  padding: 0 10px;
 
-    box-sizing: border-box;
+  box-sizing: border-box;
 
-    border: 1px solid #e3e3e3;
-    border-radius: 4px;
+  border: 1px solid #e5e5e5;
+  border-radius: 4px;
 
-    background: #ffffff;
+  background: #ffffff;
 
-    color: #555555;
+  color: #777777;
 
-    font-family: inherit;
-    font-size: 11px;
-    font-weight: 400;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 400;
 
-    outline: none;
+  outline: none;
 
-    transition: border-color 0.2s ease;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
 
-    &::placeholder {
-        color: #999999;
-    }
+  &::placeholder {
+    color: #999999;
+  }
 
-    &:focus {
-        border-color: #3154bd;
-    }
+  &:focus {
+    border-color: #3154bd;
+    box-shadow: 0 0 0 1px rgba(49, 84, 189, 0.08);
+  }
+
+  &:disabled {
+    background: #f9f9f9;
+    cursor: not-allowed;
+  }
 `;
 
 export const Input = styled.input`
-    ${fieldStyles}
+  ${fieldStyles}
 
-    &[type="date"] {
-        color: #999999;
-        cursor: pointer;
-    }
+  &[type="date"] {
+    color: #777777;
+    cursor: pointer;
+  }
 
-    &[type="date"]::-webkit-calendar-picker-indicator {
-        width: 12px;
-        height: 12px;
+  &[type="date"]::-webkit-calendar-picker-indicator {
+    width: 12px;
+    height: 12px;
 
-        cursor: pointer;
-    }
+    cursor: pointer;
+  }
+
+  &[readonly] {
+    cursor: default;
+    background: #ffffff;
+  }
+
+  ${({ $isBalance }) =>
+    $isBalance &&
+    `
+      color: #dc2626 !important;
+      font-weight: 500;
+    `}
 `;
 
 export const Select = styled.select`
-    ${fieldStyles}
+  ${fieldStyles}
 
-    appearance: auto;
+  appearance: auto;
 
-    color: #777777;
+  color: #777777;
 
-    cursor: pointer;
+  cursor: pointer;
+
+  option {
+    color: #333333;
+    background: #ffffff;
+  }
 `;
 
 export const Textarea = styled.textarea`
-    ${fieldStyles}
+  ${fieldStyles}
 
-    height: 70px;
+  height: 70px;
 
-    padding-top: 9px;
+  padding-top: 9px;
 
-    resize: none;
+  resize: none;
 `;
 
 export const ButtonWrapper = styled.div`
-    display: flex;
-    align-items: center;
-    gap: 12px;
+  display: flex;
+  align-items: center;
 
-    margin-top: 40px;
+  gap: 12px;
 
-    @media (max-width: 480px) {
-        flex-wrap: wrap;
-    }
+  margin-top: 16px;
+
+  @media (max-width: 480px) {
+    flex-wrap: wrap;
+    margin-top: 20px;
+  }
 `;
 
 export const CancelButton = styled.button`
-    height: 35px;
-    min-width: 75px;
+  height: 35px;
+  min-width: 74px;
 
-    padding: 0 15px;
+  padding: 0 15px;
 
-    border: 1px solid #222222;
-    border-radius: 4px;
+  border: 1px solid #222222;
+  border-radius: 4px;
 
-    background: #ffffff;
-    color: #111111;
+  background: #ffffff;
+  color: #111111;
 
-    font-size: 12px;
-    font-weight: 500;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 500;
 
-    cursor: pointer;
+  cursor: pointer;
 
-    transition: all 0.2s ease;
+  transition: all 0.2s ease;
 
-    &:hover {
-        background: #f5f5f5;
-    }
+  &:hover {
+    background: #f5f5f5;
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
 `;
 
 export const SaveButton = styled.button`
-    height: 35px;
-    min-width: 149px;
+  height: 35px;
+  min-width: 138px;
 
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 
-    padding: 0 16px;
+  gap: 8px;
 
-    border: none;
-    border-radius: 4px;
+  padding: 0 15px;
 
-    background: #3453b5;
-    color: #ffffff;
+  border: none;
+  border-radius: 4px;
 
-    font-size: 12px;
-    font-weight: 500;
+  background: #3453b5;
+  color: #ffffff;
 
-    cursor: pointer;
+  font-family: inherit;
+  font-size: 10px;
+  font-weight: 500;
 
-    transition: background 0.2s ease;
+  cursor: pointer;
 
-    span {
-        font-size: 11px;
-    }
+  transition: background 0.2s ease;
 
-    &:hover {
-        background: #29469f;
-    }
+  span {
+    font-size: 11px;
+  }
+
+  &:hover {
+    background: #29469f;
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
 `;
