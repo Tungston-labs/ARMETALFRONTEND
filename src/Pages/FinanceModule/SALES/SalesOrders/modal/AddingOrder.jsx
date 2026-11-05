@@ -39,6 +39,8 @@ import {
   DraftButton,
   DownloadButton,
   SendButton,
+  NotesTitle,
+  NotesBox,
 } from "./AddingOrder.styles";
 import ReusableHeader from "../../../../../Components/ReusableTable/ReusableHeader";
 
@@ -189,7 +191,7 @@ const AddingOrder = () => {
   const [payment, setPayment] = useState(emptyForm.payment);
   const [summary, setSummary] = useState(emptyForm.summary);
   const [items, setItems] = useState(emptyForm.items);
-const [isSendForApproval, setIsSendForApproval] = useState(false);
+  const [isSendForApproval, setIsSendForApproval] = useState(false);
   const [errors, setErrors] = useState({});
 
   const clearError = (field) =>
@@ -323,30 +325,30 @@ const [isSendForApproval, setIsSendForApproval] = useState(false);
     const num = Number(value);
     return Number.isNaN(num) ? undefined : num;
   };
-const handleSaveDraft = async () => {
-  try {
-    // Replace with your draft-save API function.
-    await handleSaveAsDraft();
+  const handleSaveDraft = async () => {
+    try {
+      // Replace with your draft-save API function.
+      await handleSaveAsDraft();
 
-    console.log("Draft saved successfully");
-  } catch (error) {
-    console.error("Failed to save draft:", error);
-  }
-};
+      console.log("Draft saved successfully");
+    } catch (error) {
+      console.error("Failed to save draft:", error);
+    }
+  };
 
-const handleDownload = () => {
-  // Connect your existing PDF/Excel download function here.
-  handleDownloadDocument();
-};
+  const handleDownload = () => {
+    // Connect your existing PDF/Excel download function here.
+    handleDownloadDocument();
+  };
 
-const handleSendClick = async () => {
-  if (!isSendForApproval) {
-    setIsSendForApproval(true);
-    return;
-  }
+  const handleSendClick = async () => {
+    if (!isSendForApproval) {
+      setIsSendForApproval(true);
+      return;
+    }
 
-  await handleSendForApproval();
-};
+    await handleSendForApproval();
+  };
   // ============================================================
   // VALIDATION
   // ============================================================
@@ -602,7 +604,7 @@ const handleSendClick = async () => {
 
           </FormGroup>
 
-          <FormGroup>
+          {/* <FormGroup>
             <Label>DUE DATE</Label>
             <CalendarInput>
               <Input
@@ -614,7 +616,7 @@ const handleSendClick = async () => {
                 disabled={isEditMode}
               />
             </CalendarInput>
-          </FormGroup>
+          </FormGroup> */}
 
           <FormGroup>
             <Label>
@@ -676,7 +678,7 @@ const handleSendClick = async () => {
             {errors.warehouse && <ErrorText>{errors.warehouse}</ErrorText>}
 
           </FormGroup>
-
+          <br />
           <FormGroup>
             <Label>FROM</Label>
             {isEditMode ? (
@@ -841,8 +843,8 @@ const handleSendClick = async () => {
             <thead>
               <tr>
                 <th>SL No</th>
-                <th>Service</th>
-                <th>Particular</th>
+                <th>Product</th>
+                <th>Describe</th>
                 <th>QTY</th>
                 <th>HS Code</th>
                 <th>Rate</th>
@@ -945,6 +947,17 @@ const handleSendClick = async () => {
         </OrderTableWrapper>
 
         <PaymentSection>
+           <PaymentLeft>
+    <NotesTitle>NOTES</NotesTitle>
+    <NotesBox>
+      <span>
+        Above information is not an invoice and only an estimate of services.
+      </span>
+      <strong>
+        PLEASE CONFIRM YOUR ACCEPTANCE OF THIS QUOTE
+      </strong>
+    </NotesBox>
+  </PaymentLeft>
           <PaymentRight>
             <SummaryRow>
               <span>Sub Total</span>
@@ -956,9 +969,24 @@ const handleSendClick = async () => {
             </SummaryRow>
             <SummaryRow>
               <span>Discount</span>
-              <strong className="discount">
-                {summary.discount || "SAR 0"}
-              </strong>
+
+              <Input
+                type="number"
+                min="0"
+                placeholder="Enter discount"
+                value={summary.discount}
+                onChange={(e) =>
+                  setSummary((prev) => ({
+                    ...prev,
+                    discount: e.target.value,
+                  }))
+                }
+                style={{
+                  maxWidth: "150px",
+                  textAlign: "left",
+                  color: "#03AC17"
+                }}
+              />
             </SummaryRow>
             <SummaryRow>
               <span>Round Off</span>
@@ -971,41 +999,41 @@ const handleSendClick = async () => {
           </PaymentRight>
         </PaymentSection>
 
-     <ButtonWrapper>
-  <CancelButton type="button" onClick={handleCancel}>
-    CANCEL
-  </CancelButton>
+        <ButtonWrapper>
+          <CancelButton type="button" onClick={handleCancel}>
+            CANCEL
+          </CancelButton>
 
-  <DraftButton
-    type="button"
-    onClick={handleSaveDraft}
-    disabled={isSaving}
-  >
-    SAVE DRAFT
-  </DraftButton>
+          <DraftButton
+            type="button"
+            onClick={handleSaveDraft}
+            disabled={isSaving}
+          >
+            SAVE DRAFT
+          </DraftButton>
 
-  <DownloadButton type="button" onClick={handleDownload}>
-    DOWNLOAD
-  </DownloadButton>
+          <DownloadButton type="button" onClick={handleDownload}>
+            DOWNLOAD
+          </DownloadButton>
 
-  
-<SendButton
-  type="button"
-  onClick={handleSendClick}
-  disabled={isSaving}
->
-  {isSaving ? (
-    <>
-      <Hourglass className="loading-icon" />
-      SENDING...
-    </>
-  ) : isSendForApproval ? (
-    "SEND FOR APPROVAL"
-  ) : (
-    "SEND"
-  )}
-</SendButton>
-</ButtonWrapper>
+
+          <SendButton
+            type="button"
+            onClick={handleSendClick}
+            disabled={isSaving}
+          >
+            {isSaving ? (
+              <>
+                <Hourglass className="loading-icon" />
+                SENDING...
+              </>
+            ) : isSendForApproval ? (
+              "SEND FOR APPROVAL"
+            ) : (
+              "SEND"
+            )}
+          </SendButton>
+        </ButtonWrapper>
       </OrderForm>
     </OrderContainer>
   );

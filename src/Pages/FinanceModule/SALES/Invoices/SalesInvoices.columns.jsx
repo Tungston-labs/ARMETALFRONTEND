@@ -142,16 +142,17 @@ export const getSalesInvoiceColumns = (onDelete) => [
     },
 
     {
-        header: "Action",
-        accessor: "actions",
-        sortable: false,
-        render: (row) => (
-            <InvoiceActions
-                row={row}
-                onDelete={onDelete}
-            />
-        ),
-    },
+    header: "Action",
+    accessor: "actions",
+    sortable: false,
+    render: (row) => (
+        <InvoiceActions
+            row={row}
+            statusKey={getInvoiceStatusMeta(row).key}
+            onDelete={onDelete}
+        />
+    ),
+},
 ];
 
 const STATUS_COLORS = {

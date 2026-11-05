@@ -173,7 +173,7 @@ const CustomerLedger = () => {
                 TABLE 2 - SUMMARY BY CUSTOMER
             ====================================================== */}
 
-            <SummaryHeader>
+            {/* <SummaryHeader>
                 <SummaryTitle>
                     Summary by Customer
                 </SummaryTitle>
@@ -199,7 +199,7 @@ const CustomerLedger = () => {
                 totalPages={customerSummaryTotalPages}
                 totalRecords={customerSummaryTotalItems}
                 onPageChange={setCustomerSummaryCurrentPage}
-            />
+            /> */}
 
             {/* Modal */}
             <AddLedgerModal

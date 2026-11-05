@@ -1,7 +1,5 @@
 import React from "react";
 
-import { FiDownload } from "react-icons/fi";
-
 import ReusableTable from "../../../../Components/ReusableTable/ReusableTable";
 import ReusablePagination from "../../../../Components/Pagination/ReusablePagination";
 import ReusableFilter from "../../../../Components/ReusableTable/ReusableFilter";
@@ -11,14 +9,14 @@ import StatsCards from "../../../../Components/StatsCards/StatsCards";
 import CustomerModal from "./modal/CustomerModal";
 import { useCustomerList } from "./Usecustomerlist ";
 import { getCustomerColumns } from "./Customerlist.columns";
+import TopNotification from "../../../../Components/Topnotification/Topnotification";
+import ReusableConfirmModal from "../../../../Components/modals/ReusableConfirmModal";
 
-import {
-    ExportButton,
-    DateRangeWrapper,
-    DatePickerContainer,
-    DateInput,
-    DateSeparator,
-} from "./CustomerList.styles";
+const STATUS_OPTIONS = [
+    { label: "Active", value: "active" },
+    { label: "Inactive", value: "inactive" },
+    { label: "Archived", value: "archived" },
+];
 
 const CustomerList = () => {
     const {
@@ -34,67 +32,57 @@ const CustomerList = () => {
         handleViewLedger,
         handleViewOverview,
 
+        notification,
+        dismissNotification,
+
         search,
         setSearch,
+        status,
+        setStatus,
         page,
         setPage,
-        startDate,
-        endDate,
 
         isCustomerModalOpen,
         modalMode,
         editingCustomer,
-
+        deleteTarget,
+        cancelDeleteCustomer,
+        confirmDeleteCustomer,
         handleAddCustomer,
         handleEditCustomer,
-        handleDeleteCustomer,
+        handleArchiveCustomer,
+        handleRestoreCustomer,
+        handleDeleteCustomerPermanently,
         handleSaveCustomer,
         handleCloseCustomerModal,
-        handleExport,
-        handleStartDateChange,
-        handleEndDateChange,
     } = useCustomerList();
 
     const customerColumns = getCustomerColumns({
+         status,
         openMenuId,
         toggleActionsMenu,
         handleViewOverview,
         handleCreateInvoice,
         handleViewLedger,
         handleEditCustomer,
-        handleDeleteCustomer,
+        handleArchiveCustomer,
+        handleRestoreCustomer,
+        handleDeleteCustomerPermanently,
     });
 
     return (
         <div style={{ padding: 20 }}>
+            <TopNotification
+                notification={notification}
+                onClose={dismissNotification}
+            />
+
             <ReusableHeader
                 title="Customer List"
                 breadcrumbs={["Sales", "Customer"]}
                 buttonText="+ NEW CUSTOMER"
                 onButtonClick={handleAddCustomer}
-            >
-                <DateRangeWrapper>
-                    <DatePickerContainer>
-                        <DateInput
-                            type="date"
-                            value={startDate}
-                            onChange={handleStartDateChange}
-                            max={endDate || undefined}
-                            aria-label="Start date"
-                        />
-
-                        <DateSeparator>-</DateSeparator>
-
-                        <DateInput
-                            type="date"
-                            value={endDate}
-                            onChange={handleEndDateChange}
-                            min={startDate || undefined}
-                            aria-label="End date"
-                        />
-                    </DatePickerContainer>
-                </DateRangeWrapper>
-            </ReusableHeader>
+            />
 
             <StatsCards cards={cards} loading={loading} />
 
@@ -106,6 +94,13 @@ const CustomerList = () => {
                 }}
                 showSearch
                 searchPlaceholder="Search Customer"
+                showStatus
+                status={status}
+                statuses={STATUS_OPTIONS}
+                onStatus={(value) => {
+                    setStatus(value);
+                    setPage(1);
+                }}
             />
 
             <ReusableTable
@@ -128,6 +123,16 @@ const CustomerList = () => {
                 mode={modalMode}
                 customer={selectedCustomer || editingCustomer}
                 onSave={handleSaveCustomer}
+            />
+              <ReusableConfirmModal
+                show={Boolean(deleteTarget)}
+                title="Delete customer permanently?"
+                message={`"${deleteTarget?.customer_name ?? ""}" will be removed permanently. This cannot be undone.`}
+                confirmText="Delete"
+                loadingText="Deleting..."
+                confirmVariant="danger"
+                onConfirm={confirmDeleteCustomer}
+                onClose={cancelDeleteCustomer}
             />
         </div>
     );

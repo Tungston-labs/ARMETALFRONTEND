@@ -11,7 +11,11 @@ import {
     DateInput,
     DateSeparator,
 } from "./SalesInvoices.styles";
-import useSalesInvoices from "./UseSalesInvoices";
+import { useSalesInvoices,
+    STATUS_LABELS,
+    DOCUMENT_STATUS_OPTIONS,
+    DUE_DATE_OPTIONS,
+} from "./UseSalesInvoices";
 import ReusableConfirmModal from "../../../../Components/modals/ReusableConfirmModal";
 
 const SalesInvoices = () => {
@@ -29,74 +33,53 @@ const SalesInvoices = () => {
 
         search,
         status,
-        customer,
+        documentStatus,
         dueDate,
         startDate,
         endDate,
         currentPage,
         salesOrderStats,
-        customerOptions,
         deleteModal,
         handleSearch,
         handleStatus,
-        handleCustomer,
+        handleDocumentStatus,
         handleDueDate,
         handleStartDateChange,
         handleEndDateChange,
         setCurrentPage,
         handleDeleteCancel,
-        handleDeleteConfirm
+        handleDeleteConfirm,
     } = useSalesInvoices();
 
     return (
         <div style={{ padding: 20 }}>
-
             {/* HEADER */}
 
             <ReusableHeader
                 title="Invoices"
-                breadcrumbs={[
-                    "Sales",
-                    "Invoices",
-                ]}
+                breadcrumbs={["Sales", "Invoices"]}
                 buttonText="+ ADD NEW INVOICE"
-                onButtonClick={() =>
-                    navigate("/sales/invoices/add")
-                }
+                onButtonClick={() => navigate("/sales/invoices/add")}
             >
                 <DateRangeWrapper>
                     <DatePickerContainer>
-
                         <DateInput
                             type="date"
                             value={startDate}
-                            onChange={
-                                handleStartDateChange
-                            }
-                            max={
-                                endDate ||
-                                undefined
-                            }
+                            onChange={handleStartDateChange}
+                            max={endDate || undefined}
                             aria-label="Start date"
                         />
 
-                        <DateSeparator>
-                            -
-                        </DateSeparator>
+                        <DateSeparator>-</DateSeparator>
 
                         <DateInput
                             type="date"
                             value={endDate}
-                            onChange={
-                                handleEndDateChange
-                            }
-                            min={
-                                startDate ||
-                                undefined
-                            }
+                            onChange={handleEndDateChange}
+                            min={startDate || undefined}
                             aria-label="End date"
                         />
-
                     </DatePickerContainer>
                 </DateRangeWrapper>
             </ReusableHeader>
@@ -117,8 +100,8 @@ const SalesInvoices = () => {
                     {typeof error === "string"
                         ? error
                         : error?.message ||
-                        error?.detail ||
-                        "Something went wrong."}
+                          error?.detail ||
+                          "Something went wrong."}
                 </div>
             )}
 
@@ -139,70 +122,35 @@ const SalesInvoices = () => {
 
             {/* STATS */}
 
-            <StatsCards
-                cards={salesOrderStats}
-            />
+            <StatsCards cards={salesOrderStats} />
 
             {/* FILTERS */}
 
             <ReusableFilter
                 search={search}
                 onSearch={handleSearch}
-                searchPlaceholder="Search Invoice"
+                searchPlaceholder="Search Invoice/Customer/Quote"
                 showSearch
 
                 status={status}
-                statuses={[
-                    "Paid",
-                    "Partially Paid",
-                    "Pending",
-                ]}
+                statuses={STATUS_LABELS}
                 onStatus={handleStatus}
                 showStatus
 
                 filters={[
                     {
-                        key: "customer",
-                        value: customer,
-                        onChange:
-                            handleCustomer,
-                        options: customerOptions,
-                        placeholder:
-                            "All Customer",
+                        key: "documentStatus",
+                        value: documentStatus,
+                        onChange: handleDocumentStatus,
+                        options: DOCUMENT_STATUS_OPTIONS,
+                        placeholder: "All Invoice Status",
                     },
                     {
                         key: "dueDate",
                         value: dueDate,
-                        onChange:
-                            handleDueDate,
-                        options: [
-                            {
-                                label:
-                                    "Due Today",
-                                value:
-                                    "due_today",
-                            },
-                            {
-                                label:
-                                    "Due This Week",
-                                value:
-                                    "due_week",
-                            },
-                            {
-                                label:
-                                    "Overdue",
-                                value:
-                                    "overdue",
-                            },
-                            {
-                                label:
-                                    "Due Later",
-                                value:
-                                    "due_later",
-                            },
-                        ],
-                        placeholder:
-                            "All Due Date",
+                        onChange: handleDueDate,
+                        options: DUE_DATE_OPTIONS,
+                        placeholder: "All Due Date",
                     },
                 ]}
             />
@@ -215,9 +163,7 @@ const SalesInvoices = () => {
                 </div>
             ) : (
                 <ReusableTable
-                    columns={
-                        salesInvoiceColumns
-                    }
+                    columns={salesInvoiceColumns}
                     data={paginatedData}
                 />
             )}
@@ -227,29 +173,25 @@ const SalesInvoices = () => {
             <ReusablePagination
                 currentPage={currentPage}
                 totalPages={totalPages}
-                totalRecords={
-                    totalRecords
-                }
-                onPageChange={
-                    setCurrentPage
-                }
+                totalRecords={totalRecords}
+                onPageChange={setCurrentPage}
             />
-                 <ReusableConfirmModal
-    show={deleteModal.isOpen}
-    title="Delete Invoice"
-    message={
-        deleteModal.invoice
-            ? `Are you sure you want to delete invoice ${deleteModal.invoice.invoice_number}?`
-            : "Are you sure you want to delete this invoice?"
-    }
-    confirmText="Delete"
-    cancelText="Cancel"
-    confirmVariant="danger"
-    loadingText="Deleting..."
-    onClose={handleDeleteCancel}
-    onConfirm={handleDeleteConfirm}
-/>
 
+            <ReusableConfirmModal
+                show={deleteModal.isOpen}
+                title="Delete Invoice"
+                message={
+                    deleteModal.invoice
+                        ? `Are you sure you want to delete invoice ${deleteModal.invoice.invoice_number}?`
+                        : "Are you sure you want to delete this invoice?"
+                }
+                confirmText="Delete"
+                cancelText="Cancel"
+                confirmVariant="danger"
+                loadingText="Deleting..."
+                onClose={handleDeleteCancel}
+                onConfirm={handleDeleteConfirm}
+            />
         </div>
     );
 };

@@ -50,7 +50,7 @@ export const ActionButton = styled.button`
 
   background: #fff;
   border: 1px solid #d1d5db;
-  border-radius: 4px;
+  border-radius: 5px;
 
   cursor: pointer;
   white-space: nowrap;
@@ -71,25 +71,37 @@ export const MenuWrapper = styled.div`
 `;
 
 export const KebabButton = styled.button`
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+ width: 25px;
+    height: 25px;
+    padding: 0;
+    margin: 0;
 
-  width: 28px;
-  height: 28px;
-  flex-shrink: 0;
+    border: 1px solid #ccc;
+    border-radius: 5px;
 
-  color: #000;
+    background: #fff;
+    /* color: #374151; */
 
-  background: #fff;
-  border: 1px solid #ccc;
-border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 
-  cursor: pointer;
+    cursor: pointer;
+    flex-shrink: 0;
 
-  &:hover {
-    background: #e5e7eb;
-  }
+    position: relative;
+    z-index: 10;
+
+    transition: all 0.2s ease;
+
+    &:hover {
+        background: #e5e7eb;
+        transform: scale(1.08);
+    }
+
+    svg {
+        display: block;
+    }
 `;
 
 export const CircleIconButton = styled.button`
@@ -225,4 +237,68 @@ export const ExportButton = styled.button`
             display: none;
         }
     }
+`;
+export const ArchivedBalance = styled.span`
+  font-weight: 500;
+  color: ${({ $due }) => ($due ? "#dc2626" : "#16a34a")};
+`;
+
+export const ArchiveActionButton = styled.button`
+  padding: 5px 12px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.2;
+  border-radius: 3px;
+  border: 1px solid;
+  cursor: pointer;
+  white-space: nowrap;
+
+  ${({ $variant }) =>
+    $variant === "restore" &&
+    css`
+      background: #e6f4ea;
+      color: #15803d;
+      border-color: #86c99a;
+
+      &:hover {
+        background: #d3ecda;
+      }
+    `}
+
+  ${({ $variant }) =>
+    $variant === "delete" &&
+    css`
+      background: #fde8e8;
+      color: #dc2626;
+      border-color: #f3b4b4;
+
+      &:hover {
+        background: #fbd3d3;
+      }
+    `}
+`;
+const STATUS_COLORS = {
+  active:   {  color: "#15803d", border: "#86c99a" }, // green
+  inactive: {  color: "#dc2626", border: "#f3b4b4" }, // red
+  archived:    {  color: "#2563eb", border: "#a9c4f5" }, // blue
+};
+
+export const StatusBadge = styled.span`
+  display: inline-block;
+  padding: 3px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.3;
+  border-radius: 999px;
+  border: none;
+  white-space: nowrap;
+
+  ${({ $status }) => {
+    const c = STATUS_COLORS[$status] || STATUS_COLORS.archived;
+    return css`
+      /* background: ${c.bg}; */
+      color: ${c.color};
+      border-color: ${c.border};
+    `;
+  }}
 `;

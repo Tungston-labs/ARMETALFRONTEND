@@ -573,3 +573,125 @@ export const UploadBox = styled.div`
     }
 `;
 
+export const ActionButton = styled.button`
+    min-width: 110px;
+    height: 38px;
+    padding: 0 16px;
+
+    border-radius: 4px;
+    border: 1px solid;
+
+    font-family: "Poppins", sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    white-space: nowrap;
+
+    cursor: pointer;
+
+    &:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
+    ${({ $variant }) =>
+        $variant === "cancel" &&
+        `
+        background: #ffffff;
+        color: #111111;
+        border-color: #3049a3;
+        &:hover:not(:disabled) { background: #f5f7ff; }
+    `}
+
+    ${({ $variant }) =>
+        $variant === "draft" &&
+        `
+        background: #ffffff;
+        color: #6b7280;
+        border-color: #9ca3af;
+        &:hover:not(:disabled) { background: #f3f4f6; }
+    `}
+
+    ${({ $variant }) =>
+        $variant === "preview" &&
+        `
+        background: #ffffff;
+        color: #F48211;
+        border-color: #F48211;
+        &:hover:not(:disabled) { background: #fff6ec; }
+    `}
+
+    ${({ $variant }) =>
+        $variant === "send" &&
+        `
+        background: #3049a3;
+        color: #ffffff;
+        border-color: #3049a3;
+        &:hover:not(:disabled) { background: #263b88; }
+    `}
+`;
+
+/* Preview modal */
+
+export const PreviewOverlay = styled.div`
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    background: rgba(0, 0, 0, 0.45);
+`;
+
+export const PreviewModal = styled.div`
+    width: min(900px, 94vw);
+    max-height: 90vh;
+    overflow-y: auto;
+
+    padding: 24px;
+    box-sizing: border-box;
+
+    background: #ffffff;
+    border-radius: 8px;
+
+    font-family: "Poppins", sans-serif;
+    font-size: 13px;
+    color: #374151;
+
+    h3 {
+        margin: 0 0 16px;
+        font-size: 18px;
+        font-weight: 600;
+        color: #111111;
+    }
+
+    table {
+        width: 100%;
+        margin-top: 16px;
+        border-collapse: collapse;
+        font-size: 12px;
+    }
+
+    th {
+        padding: 8px;
+        text-align: left;
+        color: #ffffff;
+        background: #2C469F;
+    }
+
+    td {
+        padding: 8px;
+        border-bottom: 1px solid #eeeeee;
+    }
+`;
+
+export const PreviewGrid = styled.div`
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px 24px;
+
+    span {
+        color: #6b7280;
+    }
+`;

@@ -101,9 +101,10 @@ export const getSalesOrderColumns = ({ onDelete }) => [
         accessor: "delivery_status",
         render: (row) => formatStatusLabel(row.delivery_status),
     },
-    {
+     {
         header: "Invoice Status",
-        accessor: "customer_name",
+        accessor: "invoice_status",
+        render: (row) => formatStatusLabel(row.invoice_status),
     },
     {
         header: "Action",

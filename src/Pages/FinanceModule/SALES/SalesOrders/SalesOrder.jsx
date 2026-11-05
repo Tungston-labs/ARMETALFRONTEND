@@ -21,18 +21,16 @@ import {
     buildSalesOrderStats,
     ORDER_STATUS_OPTIONS,
 } from "./SalesOrders.columns";
-
 import {
     getSalesOrders,
     getSalesOrderSummary,
-    getCustomers,
     removeSalesOrder,
     selectSalesOrders,
     selectSalesOrderPagination,
     selectSalesOrderKPI,
     selectSalesOrderLoading,
-    selectCustomers,
 } from "../../../../Redux/finance/Sales/Salesorderslice";
+
 const INVOICE_STATUS_OPTIONS = [
     { label: "Draft", value: "draft" },
     { label: "Pending", value: "pending" },
@@ -42,10 +40,8 @@ const INVOICE_STATUS_OPTIONS = [
 ];
 const getCurrentMonthRange = () => {
     const today = new Date(2026, 8, 21);
-
     const year = today.getFullYear();
     const month = today.getMonth();
-
     const firstDay = new Date(year, month, 1);
     const lastDay = new Date(year, month + 1, 0);
 
@@ -74,16 +70,12 @@ const SalesOrder = () => {
     const navigate = useNavigate();
     const dispatch = useDispatch();
     const currentMonth = getCurrentMonthRange();
-
     const salesOrders = useSelector(selectSalesOrders);
     const pagination = useSelector(selectSalesOrderPagination);
     const kpi = useSelector(selectSalesOrderKPI);
     const loading = useSelector(selectSalesOrderLoading);
-    const customers = useSelector(selectCustomers);
-
     const [search, setSearch] = useState("");
     const [orderStatus, setOrderStatus] = useState("");
-    const [customer, setCustomer] = useState("");
     const [startDate, setStartDate] = useState("");
     const [endDate, setEndDate] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
@@ -93,30 +85,17 @@ const SalesOrder = () => {
     const [deleteError, setDeleteError] = useState("");
     const debouncedSearch = useDebouncedValue(search);
 
-    useEffect(() => {
-        dispatch(getCustomers());
-    }, [dispatch]);
-
-    const customerOptions = useMemo(
-        () =>
-            customers.map((c) => ({
-                label: c.name || c.customer_name || `Customer #${c.id}`,
-                value: String(c.id),
-            })),
-        [customers]
-    );
 
     useEffect(() => {
         const params = { page: currentPage };
 
         if (debouncedSearch) params.search = debouncedSearch;
         if (orderStatus) params.order_status = orderStatus;
-        if (customer) params.customer = customer;
         if (startDate) params.order_date_after = startDate;
         if (endDate) params.order_date_before = endDate;
 
         dispatch(getSalesOrders(params));
-    }, [dispatch, debouncedSearch, orderStatus, customer, startDate, endDate, currentPage]);
+    }, [dispatch, debouncedSearch, orderStatus, startDate, endDate, currentPage]);
 
     useEffect(() => {
         dispatch(getSalesOrderSummary());
@@ -216,50 +195,41 @@ const SalesOrder = () => {
 
             <StatsCards cards={stats} />
 
-          <ReusableFilter
-    search={search}
-    onSearch={(value) => {
-        setSearch(value);
-        setCurrentPage(1);
-    }}
-    searchPlaceholder="Search SO Number,Customer,Quote"
-    showSearch
+            <ReusableFilter
+                search={search}
+                onSearch={(value) => {
+                    setSearch(value);
+                    setCurrentPage(1);
+                }}
+                searchPlaceholder="Search SO Number,Customer,Quote"
+                showSearch
 
-    status={orderStatus}
-    statuses={ORDER_STATUS_OPTIONS.map((s) => s.label)}
-    onStatus={(value) => {
-        const match = ORDER_STATUS_OPTIONS.find(
-            (s) => s.label === value
-        );
-        setOrderStatus(match ? match.value : "");
-        setCurrentPage(1);
-    }}
-    statusPlaceholder="Order Status"
-    showStatus
+                status={orderStatus}
+                statuses={ORDER_STATUS_OPTIONS.map((s) => s.label)}
+                onStatus={(value) => {
+                    const match = ORDER_STATUS_OPTIONS.find(
+                        (s) => s.label === value
+                    );
+                    setOrderStatus(match ? match.value : "");
+                    setCurrentPage(1);
+                }}
+                statusPlaceholder="Order Status"
+                showStatus
 
-    filters={[
-        {
-            key: "customer",
-            value: customer,
-            onChange: (value) => {
-                setCustomer(value);
-                setCurrentPage(1);
-            },
-            options: customerOptions,
-            placeholder: "All Customers",
-        },
-        {
-            key: "invoiceStatus",
-            value: invoiceStatus,
-            onChange: (value) => {
-                setInvoiceStatus(value);
-                setCurrentPage(1);
-            },
-            options: INVOICE_STATUS_OPTIONS,
-            placeholder: "All Invoice Statuses",
-        },
-    ]}
-/>
+                filters={[
+                    
+                    {
+                        key: "invoiceStatus",
+                        value: invoiceStatus,
+                        onChange: (value) => {
+                            setInvoiceStatus(value);
+                            setCurrentPage(1);
+                        },
+                        options: INVOICE_STATUS_OPTIONS,
+                        placeholder: "All Invoice Statuses",
+                    },
+                ]}
+            />
 
             <ReusableTable
                 columns={columns}

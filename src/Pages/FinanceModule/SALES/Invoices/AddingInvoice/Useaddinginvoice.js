@@ -265,7 +265,8 @@ export const useAddingInvoice = () => {
     const [payment, setPayment] = useState(emptyForm.payment);
     const [summary, setSummary] = useState(emptyForm.summary);
     const [items, setItems] = useState(emptyForm.items);
-
+    const [showPreview, setShowPreview] = useState(false);
+    const [savingAction, setSavingAction] = useState("");
     const [errors, setErrors] = useState({});
 
     /* ---- initial data loads ---- */
@@ -515,9 +516,9 @@ export const useAddingInvoice = () => {
     };
 
     const buildApiPayload = () => {
+        // invoice_number is NOT sent: the backend auto-generates it
         const payload = {
             sales_order: salesOrderRef || null,
-            invoice_number: invoiceNumber || undefined,
             invoice_date: invoiceDate,
             due_date: dueDate || undefined,
             payment_status: paymentStatus || undefined,
@@ -545,10 +546,6 @@ export const useAddingInvoice = () => {
     };
     const validate = () => {
         const newErrors = {};
-
-        if (!invoiceNumber.trim()) {
-            newErrors.invoiceNumber = "Invoice number is required";
-        }
 
         if (!invoiceDate) {
             newErrors.invoiceDate = "Invoice date is required";

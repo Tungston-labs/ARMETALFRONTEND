@@ -1,9 +1,11 @@
 import API from "../../api";
 
 // GET: /api/finance/invoice/sales-orders/
-export const fetchSalesOrdersForInvoice = async () => {
+// Pass has_invoice=false so only sales orders without an invoice are listed.
+export const fetchSalesOrdersForInvoice = async (params = {}) => {
     const response = await API.get(
-        "/finance/invoice/sales-orders/"
+        "/finance/invoice/sales-orders/",
+        { params: { has_invoice: false, ...params } }
     );
 
     return response.data;

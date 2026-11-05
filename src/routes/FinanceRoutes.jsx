@@ -159,7 +159,8 @@ import Banking from "../Pages/FinanceModule/ACCOUNTS/Bank/Banking.jsx";
 import TrialBalance from "../Pages/FinanceModule/ACCOUNTS/TrialBalance/TrialBalance.jsx";
 import ProfitLoss from "../Pages/FinanceModule/REPORTS/ProfitLoss/ProfitLoss.jsx";
 import CashFlow from "../Pages/FinanceModule/REPORTS/CashFlow/CashFlow.jsx";
-import AddingRecurring from "../Pages/FinanceModule/SALES/Recurring Billing/modal/AddingRecurring.jsx";
+// import AddingRecurring from "../Pages/FinanceModule/SALES/Recurring Billing/modal/AddingRecurring.jsx";
+import RecurringBill from "../Pages/FinanceModule/SALES/Recurring Billing/modal/RecurringBill.jsx";
 
 const FinanceRoutes = () => {
   return (
@@ -240,17 +241,15 @@ const FinanceRoutes = () => {
       ===================================================== */}
 
       <Route path="sales/invoices" element={<SalesInvoices />} />
-
       <Route path="sales/invoices/add" element={<AddingInvoice />} />
-
       <Route path="sales/invoices/edit/:id" element={<AddingInvoice />} />
-
+     <Route path="sales/invoices/view/:id" element={<AddingInvoice />} />
       {/* =====================================================
           SALES - RECURRING BILLING
       ===================================================== */}
 
       <Route path="sales/recurring-billing" element={<RecurringBilling />} />
-      <Route path="sales/recurring-billing/add" element={<AddingRecurring />} />
+      <Route path="sales/recurring-billing/add" element={<RecurringBill />} />
       <Route path="sales/recurring-billing/;id" element={<RecurringBilling />} />
 
       {/* =====================================================

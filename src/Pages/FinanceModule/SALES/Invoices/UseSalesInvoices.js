@@ -1,685 +1,790 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 
 import {
+    addInvoice,
+    updateInvoicePartial,
+    getInvoiceById,
+    getInvoiceSalesOrderById,
+    getInvoiceSalesOrders,
+    getInvoiceCompanyDetails,
+    getInvoiceCustomers,
+    clearInvoiceError,
+    clearSelectedInvoice,
+    clearSelectedSalesOrder,
     getInvoices,
     getInvoiceSummary,
-    getInvoiceCustomers,
     removeInvoice,
-    clearInvoiceError,
-    clearInvoiceMessage,
 } from "../../../../Redux/finance/Sales/InvoiceSlice";
+import { getSalesInvoiceColumns, salesInvoiceStats } from "./SalesInvoices.columns";
 
-import {
-    getSalesInvoiceColumns,
-    salesInvoiceStats,
-} from "./SalesInvoices.columns";
-
-const getCurrentMonthRange = () => {
-    const today = new Date();
-
-    const year = today.getFullYear();
-    const month = today.getMonth();
-
-    const firstDay = new Date(year, month, 1);
-    const lastDay = new Date(year, month + 1, 0);
-
-    const formatDate = (date) => {
-        const y = date.getFullYear();
-        const m = String(date.getMonth() + 1).padStart(2, "0");
-        const d = String(date.getDate()).padStart(2, "0");
-
-        return `${y}-${m}-${d}`;
+// List screen hook. Kept alongside the invoice form hook because both share
+// the invoice module's existing state and API actions.
+export const useSalesInvoices = () => {
+    const dispatch = useDispatch();
+    const invoiceState = useSelector((state) => state.invoice);
+    const [search, setSearch] = useState("");
+    const [status, setStatus] = useState("");
+    const [documentStatus, setDocumentStatus] = useState("");
+    const [dueDate, setDueDate] = useState("");
+    const [startDate, setStartDate] = useState("");
+    const [endDate, setEndDate] = useState("");
+    const [currentPage, setCurrentPage] = useState(1);
+    const [deleteModal, setDeleteModal] = useState({ isOpen: false, invoice: null });
+    const rowsPerPage = 10;
+    const params = useMemo(() => {
+        const result = { page: currentPage, page_size: rowsPerPage, ordering: "-created_at" };
+        if (search.trim()) result.search = search.trim();
+        if (status) result.payment_status = status === "partially_paid" ? status : status === "unpaid" ? status : status.toLowerCase();
+        if (documentStatus) result.document_status = documentStatus;
+        if (dueDate) result.due_date_filter = dueDate;
+        if (startDate) result.invoice_date_after = startDate;
+        if (endDate) result.invoice_date_before = endDate;
+        return result;
+    }, [currentPage, search, status, documentStatus, dueDate, startDate, endDate]);
+    useEffect(() => { dispatch(getInvoices(params)); }, [dispatch, params]);
+    useEffect(() => { dispatch(getInvoiceSummary({})); dispatch(getInvoiceCustomers()); }, [dispatch]);
+    const handleDelete = useCallback((invoice) => setDeleteModal({ isOpen: true, invoice }), []);
+    const handleDeleteCancel = useCallback(() => setDeleteModal({ isOpen: false, invoice: null }), []);
+    const handleDeleteConfirm = useCallback(async () => {
+        if (!deleteModal.invoice?.id) return;
+        try { await dispatch(removeInvoice(deleteModal.invoice.id)).unwrap(); handleDeleteCancel(); }
+        catch (_) { /* Redux exposes the delete error to the page. */ }
+    }, [dispatch, deleteModal.invoice, handleDeleteCancel]);
+    const updateFilter = (setter) => (value) => { setter(value); setCurrentPage(1); };
+    const handleStartDateChange = (event) => { const value = event.target.value; setStartDate(value); setCurrentPage(1); if (value && endDate && endDate < value) setEndDate(value); };
+    const handleEndDateChange = (event) => { const value = event.target.value; if (value && startDate && value < startDate) return; setEndDate(value); setCurrentPage(1); };
+    return {
+        salesInvoiceColumns: useMemo(() => getSalesInvoiceColumns(handleDelete), [handleDelete]),
+        paginatedData: invoiceState.invoices || [], totalRecords: invoiceState.totalItems || 0,
+        totalPages: invoiceState.totalPages || 0, rowsPerPage, loading: invoiceState.loading,
+        error: invoiceState.error, successMessage: invoiceState.successMessage,
+        search, status, documentStatus, dueDate, startDate, endDate, currentPage,
+        salesOrderStats: salesInvoiceStats(invoiceState.summary || {}), deleteModal,
+        handleSearch: updateFilter(setSearch), handleStatus: updateFilter(setStatus),
+        handleDocumentStatus: updateFilter(setDocumentStatus), handleDueDate: updateFilter(setDueDate),
+        handleStartDateChange, handleEndDateChange, setCurrentPage,
+        handleDeleteCancel, handleDeleteConfirm,
     };
+};
+
+export const defaultItem = () => ({
+    id: Date.now(),
+    product: "",
+    slNo: "01",
+    service: "",
+    particular: "",
+    qty: "",
+    hsCode: "",
+    rate: "",
+    vat: "",
+    vatAmount: "",
+    amount: "",
+});
+export const DOCUMENT_STATUS_OPTIONS = [
+    { label: "Draft", value: "draft" },
+    { label: "Sent", value: "sent" },
+    { label: "Overdue", value: "overdue" },
+    { label: "Paid", value: "paid" },
+];
+export const DUE_DATE_OPTIONS = [
+    { label: "All Due Date", value: "" },
+    { label: "Overdue", value: "overdue" },
+    { label: "Due Today", value: "today" },
+    { label: "Due This Week", value: "this_week" },
+    { label: "Due This Month", value: "this_month" },
+];
+export const STATUS_LABELS = [
+    { label: "All Status", value: "" },
+    { label: "Paid", value: "paid" },
+    { label: "Unpaid", value: "unpaid" },
+    { label: "Partially Paid", value: "partially_paid" },
+];
+export const emptyForm = {
+    invoiceNumber: "",
+    salesOrderRef: "",
+    paymentStatus: "",
+    from: { name: "", address: "", phone: "", email: "" },
+    billTo: { client: "", address: "", phone: "", email: "" },
+    payment: { accountHolder: "", accountNumber: "", iban: "" },
+    summary: { subTotal: "", vat: "", discount: "", roundOff: "", total: "" },
+    amountPaid: "",
+    items: [defaultItem()],
+};
+
+/* Backend statuses are: paid, unpaid, partially_paid */
+const normalizePaymentStatus = (status = "") => {
+    const value = String(status).trim().toLowerCase();
+
+    if (
+        value === "partially_paid" ||
+        value === "partial_paid" ||
+        value.includes("partial")
+    ) {
+        return "partially_paid";
+    }
+
+    if (value === "unpaid" || value === "pending") {
+        return "unpaid";
+    }
+
+    if (value === "paid") {
+        return "paid";
+    }
+
+    return value;
+};
+
+const mapInvoiceToFormData = (invoice) => {
+    if (!invoice) return null;
 
     return {
-        start: formatDate(firstDay),
-        end: formatDate(lastDay),
+        invoiceNumber: invoice.invoice_number || "",
+        salesOrderRef:
+            invoice.sales_order_number ||
+            invoice.sales_order ||
+            invoice.sales_order_id ||
+            invoice.so_ref ||
+            invoice.so_number ||
+            "",
+        invoiceDate: invoice.invoice_date || "",
+        dueDate: invoice.due_date || "",
+        paymentStatus: normalizePaymentStatus(invoice.payment_status || ""),
+        from: {
+            name: invoice?.from?.name || invoice.company_name || "",
+            address: invoice?.from?.address || invoice.company_address || "",
+            phone: invoice?.from?.phone || invoice.company_phone || "",
+            email: invoice?.from?.email || invoice.company_email || "",
+        },
+        billTo: {
+            client:
+                invoice?.bill_to?.client ||
+                invoice.customer ||
+                invoice.customer_id ||
+                "",
+            address: invoice?.bill_to?.address || invoice.customer_address || "",
+            phone: invoice?.bill_to?.phone || invoice.customer_phone || "",
+            email: invoice?.bill_to?.email || invoice.customer_email || "",
+        },
+        payment: {
+            accountHolder:
+                invoice?.payment?.account_holder || invoice.account_holder || "",
+            accountNumber:
+                invoice?.payment?.account_number || invoice.account_number || "",
+            iban: invoice?.payment?.iban || invoice.iban || "",
+        },
+        summary: {
+            subTotal: invoice.subtotal ?? invoice.sub_total ?? "",
+            vat: invoice.total_vat ?? invoice.vat ?? "",
+            discount: invoice.discount ?? "",
+            roundOff: invoice.round_off ?? "",
+            total: invoice.total_amount ?? invoice.amount ?? "",
+        },
+        amountPaid: invoice.amount_paid ?? invoice.paid_amount ?? "",
+        items:
+            Array.isArray(invoice.items) && invoice.items.length > 0
+                ? invoice.items.map((item, idx) => ({
+                    id: item.id ?? Date.now() + idx,
+                    product: item.product || "",
+                    slNo: String(idx + 1).padStart(2, "0"),
+                    service: item.product_name || item.service_name || item.service || "",
+                    particular: item.particular || item.description || "",
+                    qty: item.quantity ?? item.qty ?? "",
+                    hsCode: item.hs_code || "",
+                    rate: item.rate || "",
+                    vat: item.vat_percentage ?? item.vat ?? "",
+                    vatAmount: item.vat_sar ?? item.vat_amount ?? "",
+                    amount: item.amount || "",
+                }))
+                : [defaultItem()],
     };
 };
 
-/*
- * UI status labels -> API payment_status values
- *
- * Paid            -> paid
- * Partially Paid  -> partially_paid
- * Pending         -> unpaid
- */
-const STATUS_VALUE_MAP = {
-    Paid: "paid",
-    "Partially Paid": "partially_paid",
-    Pending: "unpaid",
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const PHONE_RE = /^[+]?[\d\s-]{7,20}$/;
+const IBAN_RE = /^[A-Za-z0-9]{5,34}$/;
+
+const PAYMENT_TERMS_DAYS = {
+    due_on_receipt: 0,
+    net_7: 7,
+    net_15: 15,
+    net_30: 30,
+    net_45: 45,
+    net_60: 60,
 };
 
-const formatLocalDate = (date) => {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const day = String(date.getDate()).padStart(2, "0");
-
-    return `${year}-${month}-${day}`;
+const addDaysToDateString = (dateStr, days) => {
+    if (!dateStr) return dateStr;
+    const date = new Date(`${dateStr}T00:00:00`);
+    if (Number.isNaN(date.getTime())) return dateStr;
+    date.setDate(date.getDate() + days);
+    return date.toISOString().split("T")[0];
 };
 
-const useSalesInvoices = () => {
+const capitalize = (str) => str.charAt(0).toUpperCase() + str.slice(1);
+
+const isValidEmail = (value) => EMAIL_RE.test(String(value).trim());
+const isValidPhone = (value) => PHONE_RE.test(String(value).trim());
+
+const BACKEND_FIELD_MAP = {
+    due_date: "dueDate",
+    invoice_date: "invoiceDate",
+    invoice_number: "invoiceNumber",
+    payment_status: "paymentStatus",
+    amount_paid: "amountPaid",
+    sales_order: "salesOrderRef",
+    company_name: "fromName",
+    company_email: "fromEmail",
+    company_phone: "fromPhone",
+    company_address: "fromAddress",
+    customer: "billToClient",
+    customer_email: "billToEmail",
+    customer_phone: "billToPhone",
+    customer_address: "billToAddress",
+    iban: "iban",
+};
+
+const extractMessage = (value) => {
+    if (Array.isArray(value)) return value.join(" ");
+    if (typeof value === "string") return value;
+    return "";
+};
+
+const mapBackendErrors = (payload) => {
+    if (!payload || typeof payload !== "object") return {};
+    const mapped = {};
+    Object.entries(payload).forEach(([key, value]) => {
+        const message = extractMessage(value);
+        if (!message) return;
+        const localKey = BACKEND_FIELD_MAP[key] || key;
+        mapped[localKey] = message;
+    });
+    return mapped;
+};
+
+const validateItems = (items) => {
+    const itemErrors = {};
+    let hasValidItem = false;
+
+    items.forEach((item) => {
+        const rowErrors = {};
+        const hasAnyValue = Boolean(
+            item.service?.trim() || item.particular?.trim() || item.qty !== "" || item.rate !== ""
+        );
+
+        if (!hasAnyValue) return;
+
+        if (!item.service?.trim()) {
+            rowErrors.service = "Service is required";
+        }
+
+        const qtyNum = Number(item.qty);
+        if (item.qty === "" || Number.isNaN(qtyNum) || qtyNum <= 0) {
+            rowErrors.qty = "Enter a valid quantity";
+        }
+
+        const rateNum = Number(item.rate);
+        if (item.rate === "" || Number.isNaN(rateNum) || rateNum < 0) {
+            rowErrors.rate = "Enter a valid rate";
+        }
+
+        if (item.vat !== "" && item.vat !== undefined && item.vat !== null) {
+            const vatNum = Number(item.vat);
+            if (Number.isNaN(vatNum) || vatNum < 0 || vatNum > 100) {
+                rowErrors.vat = "VAT must be 0-100";
+            }
+        }
+
+        if (Object.keys(rowErrors).length === 0) {
+            hasValidItem = true;
+        } else {
+            itemErrors[item.id] = rowErrors;
+        }
+    });
+
+    return { itemErrors, hasValidItem };
+};
+
+
+
+export const useAddingInvoice = () => {
+    const { id } = useParams();
+    const navigate = useNavigate();
+    const location = useLocation();
     const dispatch = useDispatch();
 
-    const currentMonth = useMemo(
-        () => getCurrentMonthRange(),
-        []
-    );
+    // /sales/invoices/edit/:id  and  /sales/invoices/view/:id both have an id
+    const isEditMode = Boolean(id);
+    // /sales/invoices/view/:id  -> everything is read-only
+    const isViewMode = isEditMode && location.pathname.includes("/view/");
 
-    // --------------------------------------------------
-    // REDUX STATE
-    // --------------------------------------------------
+    const today = new Date().toISOString().split("T")[0];
 
-    const invoices = useSelector(
-        (state) => state.invoice.invoices
-    );
+    const {
+        salesOrders,
+        selectedSalesOrder,
+        selectedInvoice,
+        companyDetails,
+        customers,
+        detailLoading,
+        createLoading,
+        updateLoading,
+        error: saveError,
+    } = useSelector((state) => state.invoice);
 
-    const totalItems = useSelector(
-        (state) => state.invoice.totalItems
-    );
+    // The invoice number is generated by the backend (INV001, INV002, ...)
+    const [invoiceNumber, setInvoiceNumber] = useState(emptyForm.invoiceNumber);
+    const [salesOrderRef, setSalesOrderRef] = useState(emptyForm.salesOrderRef);
+    const [invoiceDate, setInvoiceDate] = useState(today);
+    const [dueDate, setDueDate] = useState(today);
+    const [paymentStatus, setPaymentStatus] = useState(emptyForm.paymentStatus);
+    const [amountPaid, setAmountPaid] = useState(emptyForm.amountPaid);
+    const [from, setFrom] = useState(emptyForm.from);
+    const [billTo, setBillTo] = useState(emptyForm.billTo);
+    const [payment, setPayment] = useState(emptyForm.payment);
+    const [summary, setSummary] = useState(emptyForm.summary);
+    const [items, setItems] = useState(emptyForm.items);
 
-    const totalPages = useSelector(
-        (state) => state.invoice.totalPages
-    );
+    const [errors, setErrors] = useState({});
 
-    const loading = useSelector(
-        (state) => state.invoice.loading
-    );
-
-    const summary = useSelector(
-        (state) => state.invoice.summary
-    );
-
-    const summaryLoading = useSelector(
-        (state) => state.invoice.summaryLoading
-    );
-
-    const customers = useSelector(
-        (state) => state.invoice.customers
-    );
-
-    const deleteLoading = useSelector(
-        (state) => state.invoice.deleteLoading
-    );
-
-    const error = useSelector(
-        (state) => state.invoice.error
-    );
-
-    const successMessage = useSelector(
-        (state) => state.invoice.successMessage
-    );
-
-    // --------------------------------------------------
-    // LOCAL FILTER / PAGINATION STATE
-    // --------------------------------------------------
-
-    const [search, setSearch] = useState("");
-
-    const [status, setStatus] = useState("");
-
-    const [customer, setCustomer] = useState("");
-
-    const [dueDate, setDueDate] = useState("");
-
-   const [startDate, setStartDate] = useState("");
-const [endDate, setEndDate] = useState("");
-
-    const [currentPage, setCurrentPage] = useState(1);
-
-    const rowsPerPage = 10;
-
-    // --------------------------------------------------
-    // DELETE MODAL STATE
-    // --------------------------------------------------
-
-    const [deleteModal, setDeleteModal] = useState({
-        isOpen: false,
-        invoice: null,
-        loading: false,
-    });
-
-    // --------------------------------------------------
-    // BUILD API QUERY PARAMS
-    // --------------------------------------------------
-
-    const buildParams = useCallback(() => {
-        const params = {
-            page: currentPage,
-            page_size: rowsPerPage,
-            ordering: "-created_at",
-        };
-
-        // Search
-        if (search.trim()) {
-            params.search = search.trim();
-        }
-
-        // Payment status
-        if (status) {
-            params.payment_status =
-                STATUS_VALUE_MAP[status] || status;
-        }
-
-        // Customer
-        if (customer) {
-            params.customer = customer;
-        }
-
-        // Invoice date range
-        if (startDate) {
-            params.invoice_date_after = startDate;
-        }
-
-        if (endDate) {
-            params.invoice_date_before = endDate;
-        }
-
-        // --------------------------------------------------
-        // Due Date Filters
-        // --------------------------------------------------
-
-        if (dueDate) {
-            const today = new Date();
-
-            today.setHours(0, 0, 0, 0);
-
-            if (dueDate === "due_today") {
-                params.due_date =
-                    formatLocalDate(today);
-            }
-
-            if (dueDate === "due_week") {
-                const weekEnd = new Date(today);
-
-                weekEnd.setDate(
-                    today.getDate() + 7
-                );
-
-                params.due_date_after =
-                    formatLocalDate(today);
-
-                params.due_date_before =
-                    formatLocalDate(weekEnd);
-            }
-
-            if (dueDate === "overdue") {
-                const yesterday = new Date(today);
-
-                yesterday.setDate(
-                    today.getDate() - 1
-                );
-
-                params.due_date_before =
-                    formatLocalDate(yesterday);
-            }
-
-            if (dueDate === "due_later") {
-                const weekEnd = new Date(today);
-
-                weekEnd.setDate(
-                    today.getDate() + 7
-                );
-
-                params.due_date_after =
-                    formatLocalDate(weekEnd);
-            }
-        }
-
-        return params;
-    }, [
-        search,
-        status,
-        customer,
-        dueDate,
-        startDate,
-        endDate,
-        currentPage,
-    ]);
-
-    // --------------------------------------------------
-    // FETCH INVOICES
-    // --------------------------------------------------
-
+    /* ---- initial data loads ---- */
     useEffect(() => {
-        dispatch(
-            getInvoices(buildParams())
-        );
-    }, [
-        dispatch,
-        buildParams,
-    ]);
-
-    // --------------------------------------------------
-    // FETCH SUMMARY
-    // --------------------------------------------------
-
-    useEffect(() => {
-        const params = {};
-
-        if (status) {
-            params.payment_status =
-                STATUS_VALUE_MAP[status] || status;
+        dispatch(clearInvoiceError());
+        dispatch(getInvoiceCompanyDetails());
+        dispatch(getInvoiceCustomers());
+        if (!isEditMode) {
+            dispatch(getInvoiceSalesOrders());
         }
-
-        if (customer) {
-            params.customer = customer;
-        }
-
-        dispatch(
-            getInvoiceSummary(params)
-        );
-    }, [
-        dispatch,
-        status,
-        customer,
-    ]);
-
-    // --------------------------------------------------
-    // FETCH CUSTOMERS
-    // --------------------------------------------------
-
-    useEffect(() => {
-        dispatch(
-            getInvoiceCustomers()
-        );
-    }, [dispatch]);
-
-    // --------------------------------------------------
-    // CLEAR SUCCESS / ERROR MESSAGES
-    // --------------------------------------------------
-
-    useEffect(() => {
-        if (!error && !successMessage) {
-            return undefined;
-        }
-
-        const timer = setTimeout(() => {
-            dispatch(
-                clearInvoiceError()
-            );
-
-            dispatch(
-                clearInvoiceMessage()
-            );
-        }, 4000);
-
         return () => {
-            clearTimeout(timer);
+            dispatch(clearSelectedInvoice());
+            dispatch(clearSelectedSalesOrder());
         };
-    }, [
-        dispatch,
-        error,
-        successMessage,
-    ]);
+    }, [dispatch, isEditMode]);
 
-    // --------------------------------------------------
-    // FILTER HANDLERS
-    // --------------------------------------------------
 
-    const handleSearch = useCallback((value) => {
-        setSearch(value);
-        setCurrentPage(1);
-    }, []);
+    useEffect(() => {
+        if (isEditMode) {
+            dispatch(clearInvoiceError());
+            dispatch(getInvoiceById(id));
+        }
+    }, [dispatch, id, isEditMode]);
 
-    const handleStatus = useCallback((value) => {
-        setStatus(value);
-        setCurrentPage(1);
-    }, []);
 
-    const handleCustomer = useCallback((value) => {
-        setCustomer(value);
-        setCurrentPage(1);
-    }, []);
+    useEffect(() => {
+        if (!companyDetails || isEditMode) return;
 
-    const handleDueDate = useCallback((value) => {
-        setDueDate(value);
-        setCurrentPage(1);
-    }, []);
+        setFrom((prev) => ({
+            name: companyDetails.name || companyDetails.company_name || prev.name,
+            address: companyDetails.address || prev.address,
+            phone: companyDetails.phone || prev.phone,
+            email: companyDetails.email || prev.email,
+        }));
+    }, [companyDetails, isEditMode]);
 
-    // --------------------------------------------------
-    // DATE HANDLERS
-    // --------------------------------------------------
 
-    const handleStartDateChange = useCallback(
-        (e) => {
-            const value = e.target.value;
+    useEffect(() => {
+        if (!selectedInvoice) return;
 
-            if (!value) {
-                setStartDate("");
-                setCurrentPage(1);
-                return;
-            }
+        const mapped = mapInvoiceToFormData(selectedInvoice);
+        setInvoiceNumber(mapped.invoiceNumber);
+        setSalesOrderRef(mapped.salesOrderRef);
+        setInvoiceDate(mapped.invoiceDate || today);
+        setDueDate(mapped.dueDate);
+        setPaymentStatus(mapped.paymentStatus);
+        setAmountPaid(mapped.amountPaid);
+        setFrom(mapped.from);
+        setBillTo(mapped.billTo);
+        setPayment(mapped.payment);
+        setSummary(mapped.summary);
+        setItems(mapped.items);
+        setErrors({});
+    }, [selectedInvoice]);
 
-            setStartDate(value);
-            setCurrentPage(1);
 
-            if (
-                endDate &&
-                value > endDate
-            ) {
-                setEndDate(value);
-            }
-        },
-        [endDate]
-    );
+    useEffect(() => {
+        if (isEditMode || !selectedSalesOrder) return;
 
-    const handleEndDateChange = useCallback(
-        (e) => {
-            const value = e.target.value;
-
-            if (!value) {
-                setEndDate("");
-                setCurrentPage(1);
-                return;
-            }
-
-            if (
-                startDate &&
-                value < startDate
-            ) {
-                return;
-            }
-
-            setEndDate(value);
-            setCurrentPage(1);
-        },
-        [startDate]
-    );
-
-    // --------------------------------------------------
-    // OPEN DELETE MODAL
-    // --------------------------------------------------
-
-const handleDeleteInvoice = useCallback((invoice) => {
-    console.log("DELETE CLICKED:", invoice);
-
-    if (!invoice?.id) {
-        console.error("Invoice ID is missing:", invoice);
-        return;
-    }
-
-    setDeleteModal({
-        isOpen: true,
-        invoice,
-        loading: false,
-    });
-}, []);
-
-const handleDeleteCancel = useCallback(() => {
-    setDeleteModal({
-        isOpen: false,
-        invoice: null,
-        loading: false,
-    });
-}, []);
-
-const handleDeleteConfirm = useCallback(async () => {
-    const invoice = deleteModal.invoice;
-
-    console.log("CONFIRM DELETE:", invoice);
-    console.log("DELETE ID:", invoice?.id);
-
-    if (!invoice?.id) {
-        console.error("Cannot delete invoice: ID missing");
-        return;
-    }
-
-    try {
-        setDeleteModal((prev) => ({
+        setBillTo((prev) => ({
             ...prev,
-            loading: true,
+            client: selectedSalesOrder.customer ?? prev.client,
+            address: selectedSalesOrder.customer_address || prev.address,
+            phone: selectedSalesOrder.customer_phone || prev.phone,
+            email: selectedSalesOrder.customer_email || prev.email,
         }));
 
-        console.log(
-            "Dispatching removeInvoice:",
-            invoice.id
+        if (selectedSalesOrder.payment_terms in PAYMENT_TERMS_DAYS) {
+            const days = PAYMENT_TERMS_DAYS[selectedSalesOrder.payment_terms];
+            setDueDate(addDaysToDateString(invoiceDate, days));
+        } else if (selectedSalesOrder.due_date && selectedSalesOrder.due_date >= invoiceDate) {
+
+            setDueDate(selectedSalesOrder.due_date);
+        }
+
+        if (Array.isArray(selectedSalesOrder.items) && selectedSalesOrder.items.length > 0) {
+            setItems(
+                selectedSalesOrder.items.map((item, idx) => ({
+                    id: item.id ?? Date.now() + idx,
+                    product: item.product || "",
+                    slNo: String(idx + 1).padStart(2, "0"),
+                    service: item.product_name || item.service_name || item.service || "",
+                    particular: item.particular || item.description || "",
+                    qty: item.quantity ?? item.qty ?? "",
+                    hsCode: item.hs_code || "",
+                    rate: item.rate || "",
+                    vat: item.vat_percentage ?? item.vat ?? "",
+                    vatAmount: item.vat_amount || "",
+                    amount: item.amount || "",
+                }))
+            );
+        }
+    }, [selectedSalesOrder, isEditMode]);
+
+    /* ---- error helpers ---- */
+    const clearError = (field) => {
+        setErrors((prev) => {
+            if (!prev[field]) return prev;
+            const next = { ...prev };
+            delete next[field];
+            return next;
+        });
+    };
+
+    const clearItemError = (itemId, field) => {
+        setErrors((prev) => {
+            if (!prev.items || !prev.items[itemId] || !prev.items[itemId][field]) return prev;
+            const nextItems = { ...prev.items };
+            const nextRow = { ...nextItems[itemId] };
+            delete nextRow[field];
+            if (Object.keys(nextRow).length === 0) {
+                delete nextItems[itemId];
+            } else {
+                nextItems[itemId] = nextRow;
+            }
+            const next = { ...prev, items: nextItems };
+            if (Object.keys(nextItems).length === 0) delete next.items;
+            return next;
+        });
+    };
+
+    const handleInvoiceDateChange = (value) => {
+        setInvoiceDate(value);
+        clearError("invoiceDate");
+        clearError("dueDate");
+    };
+
+    const handleDueDateChange = (value) => {
+        setDueDate(value);
+        clearError("dueDate");
+    };
+
+    const handlePaymentStatusChange = (value) => {
+        setPaymentStatus(value);
+        const total = toDecimal(summary.total);
+
+        if (value === "paid" && total !== undefined) {
+            setAmountPaid(String(total));
+        }
+
+        if (value === "unpaid") {
+            setAmountPaid("0");
+        }
+
+        clearError("paymentStatus");
+        clearError("amountPaid");
+    };
+
+    const handleAmountPaidChange = (value) => {
+        setAmountPaid(value);
+        clearError("amountPaid");
+    };
+
+    const updateFrom = (field, value) => {
+        setFrom((prev) => ({ ...prev, [field]: value }));
+        clearError(`from${capitalize(field)}`);
+    };
+
+    const updateBillTo = (field, value) => {
+        setBillTo((prev) => ({ ...prev, [field]: value }));
+        clearError(`billTo${capitalize(field)}`);
+    };
+
+    const updatePayment = (field, value) => {
+        setPayment((prev) => ({ ...prev, [field]: value }));
+        clearError(field);
+    };
+
+    const handleSalesOrderChange = (e) => {
+        const value = e.target.value;
+        setSalesOrderRef(value);
+        clearError("salesOrderRef");
+        if (value) {
+            dispatch(getInvoiceSalesOrderById(value));
+        }
+    };
+
+    const handleCustomerChange = (e) => {
+        const customerId = e.target.value;
+
+        const selectedCustomer = customers.find(
+            (customer) => String(customer.id) === String(customerId)
         );
 
-        await dispatch(
-            removeInvoice(invoice.id)
-        ).unwrap();
+        if (!selectedCustomer) return;
 
-        console.log(
-            "Invoice deleted successfully:",
-            invoice.id
+        setBillTo({
+            client: selectedCustomer.id,
+            address: selectedCustomer.billing_address || "",
+            phone: selectedCustomer.phno || "",
+            email: selectedCustomer.admin_email || "",
+        });
+        clearError("billToClient");
+    };
+
+    const addItem = () => {
+        setItems((prev) => [
+            ...prev,
+            {
+                id: Date.now(),
+                product: "",
+                slNo: String(prev.length + 1).padStart(2, "0"),
+                service: "",
+                particular: "",
+                qty: "",
+                hsCode: "",
+                rate: "",
+                vat: "",
+                vatAmount: "",
+                amount: "",
+            },
+        ]);
+    };
+
+    const removeItem = (itemId) => {
+        setItems((prev) => prev.filter((item) => item.id !== itemId));
+        setErrors((prev) => {
+            if (!prev.items || !prev.items[itemId]) return prev;
+            const nextItems = { ...prev.items };
+            delete nextItems[itemId];
+            const next = { ...prev, items: nextItems };
+            if (Object.keys(nextItems).length === 0) delete next.items;
+            return next;
+        });
+    };
+
+    const updateItem = (itemId, field, value) => {
+        setItems((prev) =>
+            prev.map((item) =>
+                item.id === itemId ? { ...item, [field]: value } : item
+            )
         );
+        clearItemError(itemId, field);
+        if (errors.itemsGeneral) clearError("itemsGeneral");
+    };
 
-        setDeleteModal({
-            isOpen: false,
-            invoice: null,
-            loading: false,
+    const handleCancel = () => navigate("/sales/invoices");
+
+    const toDecimal = (value) => {
+        if (value === "" || value === null || value === undefined) return undefined;
+        const num = Number(value);
+        return Number.isNaN(num) ? undefined : num;
+    };
+
+    const buildApiPayload = () => {
+        // invoice_number is NOT sent: the backend generates it
+        const payload = {
+            sales_order: salesOrderRef || null,
+            invoice_date: invoiceDate,
+            due_date: dueDate || undefined,
+            payment_status: paymentStatus || undefined,
+            company_name: from.name || undefined,
+            company_email: from.email || undefined,
+            company_phone: from.phone || undefined,
+            company_address: from.address || undefined,
+            customer: billTo.client || undefined,
+            customer_email: billTo.email || undefined,
+            customer_phone: billTo.phone || undefined,
+            customer_address: billTo.address || undefined,
+            account_holder: payment.accountHolder || undefined,
+            account_number: payment.accountNumber || undefined,
+            iban: payment.iban || undefined,
+            amount_paid: toDecimal(amountPaid),
+            discount: toDecimal(summary.discount),
+            round_off: toDecimal(summary.roundOff),
+        };
+
+        Object.keys(payload).forEach((key) => {
+            if (payload[key] === undefined) delete payload[key];
         });
 
-        const summaryParams = {};
+        return payload;
+    };
+    const validate = () => {
+        const newErrors = {};
 
-        if (status) {
-            summaryParams.payment_status =
-                STATUS_VALUE_MAP[status] || status;
+        if (!invoiceDate) {
+            newErrors.invoiceDate = "Invoice date is required";
         }
 
-        if (customer) {
-            summaryParams.customer = customer;
+        if (!paymentStatus) {
+            newErrors.paymentStatus = "Select a payment status";
         }
 
-        await dispatch(
-            getInvoiceSummary(summaryParams)
-        ).unwrap();
+        const paidAmount = toDecimal(amountPaid);
+        const totalAmount = toDecimal(summary.total);
 
-    } catch (deleteError) {
-        console.error(
-            "DELETE INVOICE FAILED:",
-            deleteError
-        );
+        if (paymentStatus === "paid" && totalAmount !== undefined) {
+            if (paidAmount === undefined || paidAmount < totalAmount) {
+                newErrors.amountPaid = "Paid invoices must have the full amount paid";
+            }
+        }
 
-        setDeleteModal((prev) => ({
-            ...prev,
-            loading: false,
-        }));
-    }
-}, [
-    dispatch,
-    deleteModal.invoice,
-    status,
-    customer,
-]);
+        if (paymentStatus === "partially_paid") {
+            if (
+                paidAmount === undefined ||
+                paidAmount <= 0 ||
+                (totalAmount !== undefined && paidAmount >= totalAmount)
+            ) {
+                newErrors.amountPaid = "Enter a paid amount less than the invoice total";
+            }
+        }
 
-    // --------------------------------------------------
-    // CONFIRM DELETE
-    // --------------------------------------------------
+        if (dueDate && invoiceDate && dueDate < invoiceDate) {
+            newErrors.dueDate = "Due date cannot be before invoice date";
+        }
 
+        if (!isEditMode) {
+            if (!salesOrderRef && !billTo.client) {
+                newErrors.salesOrderRef = "Select a sales order";
+            }
 
-    // --------------------------------------------------
-    // COLUMNS
-    // --------------------------------------------------
+            if (!from.name.trim()) {
+                newErrors.fromName = "Company name is required";
+            }
 
-    const salesInvoiceColumns = useMemo(
-        () =>
-            getSalesInvoiceColumns(
-                handleDeleteInvoice
-            ),
-        [handleDeleteInvoice]
-    );
+            if (!from.email.trim()) {
+                newErrors.fromEmail = "Email is required";
+            } else if (!isValidEmail(from.email)) {
+                newErrors.fromEmail = "Enter a valid email address";
+            }
 
-    // --------------------------------------------------
-    // EXPORT
-    // --------------------------------------------------
+            if (from.phone.trim() && !isValidPhone(from.phone)) {
+                newErrors.fromPhone = "Enter a valid phone number";
+            }
 
-    const handleExport = useCallback(() => {
-        if (!invoices?.length) {
-            console.log(
-                "No data to export"
-            );
+            if (!billTo.client) {
+                newErrors.billToClient = "Select a client";
+            }
 
+            if (billTo.email.trim() && !isValidEmail(billTo.email)) {
+                newErrors.billToEmail = "Enter a valid email address";
+            }
+
+            if (billTo.phone.trim() && !isValidPhone(billTo.phone)) {
+                newErrors.billToPhone = "Enter a valid phone number";
+            }
+
+            const { itemErrors, hasValidItem } = validateItems(items);
+            if (Object.keys(itemErrors).length > 0) {
+                newErrors.items = itemErrors;
+            }
+            if (!hasValidItem) {
+                newErrors.itemsGeneral = "Add at least one item with a service, quantity and rate";
+            }
+        }
+
+        if (payment.iban.trim() && !IBAN_RE.test(payment.iban.trim())) {
+            newErrors.iban = "Enter a valid IBAN";
+        }
+
+        return newErrors;
+    };
+
+    const handleSave = () => {
+        if (isViewMode) return;
+
+        const validationErrors = validate();
+        setErrors(validationErrors);
+
+        if (Object.keys(validationErrors).length > 0) {
             return;
         }
 
-        const exportableColumns =
-            salesInvoiceColumns.filter(
-                (column) =>
-                    column.accessor !==
-                    "actions"
-            );
+        const payload = buildApiPayload();
+        const action = isEditMode
+            ? updateInvoicePartial({ id, invoiceData: payload })
+            : addInvoice(payload);
 
-        const headers =
-            exportableColumns.map(
-                (column) =>
-                    column.header
-            );
-
-        const accessors =
-            exportableColumns.map(
-                (column) =>
-                    column.accessor
-            );
-
-        const csvRows = [
-            headers.join(","),
-            ...invoices.map((row) =>
-                accessors
-                    .map((accessor) => {
-                        const value =
-                            row[accessor] ??
-                            "";
-
-                        return `"${String(
-                            value
-                        ).replace(
-                            /"/g,
-                            '""'
-                        )}"`;
-                    })
-                    .join(",")
-            ),
-        ];
-
-        const csvContent =
-            csvRows.join("\n");
-
-        const blob = new Blob(
-            [csvContent],
-            {
-                type:
-                    "text/csv;charset=utf-8;",
+        dispatch(action).then((result) => {
+            if (!result.error) {
+                navigate("/sales/invoices");
+                return;
             }
-        );
+            const backendErrors = mapBackendErrors(result.payload);
+            if (Object.keys(backendErrors).length > 0) {
+                setErrors((prev) => ({ ...prev, ...backendErrors }));
+            }
+        });
+    };
 
-        const url =
-            URL.createObjectURL(blob);
+    const isSaving = isEditMode ? updateLoading : createLoading;
+    const notFound = isEditMode && !detailLoading && !selectedInvoice && Boolean(saveError);
 
-        const link =
-            document.createElement("a");
-
-        link.href = url;
-
-        link.download =
-            "sales-invoices.csv";
-
-        document.body.appendChild(link);
-
-        link.click();
-
-        document.body.removeChild(link);
-
-        URL.revokeObjectURL(url);
-    }, [
-        invoices,
-        salesInvoiceColumns,
-    ]);
-
-    // --------------------------------------------------
-    // STATS
-    // --------------------------------------------------
-
-    const salesOrderStats =
-        salesInvoiceStats(
-            summary || {}
-        );
-
-    // --------------------------------------------------
-    // CUSTOMER OPTIONS
-    // --------------------------------------------------
-
-    const customerOptions = useMemo(
-        () =>
-            (customers || []).map(
-                (c) => ({
-                    label:
-                        c.name ||
-                        c.display_name ||
-                        c.customer_name ||
-                        "Unknown Customer",
-
-                    value: String(
-                        c.id
-                    ),
-                })
-            ),
-        [customers]
-    );
-
-    // --------------------------------------------------
-    // RETURN
-    // --------------------------------------------------
-
+    /* ---- everything the UI layer needs ---- */
     return {
-        // Table
-        salesInvoiceColumns,
-        paginatedData: invoices,
+        id,
+        navigate,
+        isEditMode,
+        isViewMode,
 
-        // Pagination
-        totalRecords: totalItems,
-        totalPages,
-        rowsPerPage,
+        // redux-derived data
+        salesOrders,
+        selectedSalesOrder,
+        selectedInvoice,
+        companyDetails,
+        customers,
+        detailLoading,
+        createLoading,
+        updateLoading,
+        saveError,
 
-        // Loading
-        loading,
-        summaryLoading,
-        deleteLoading,
-
-        // Messages
-        error,
-        successMessage,
-
-        // Filters
-        search,
-        status,
-        customer,
+        // form state
+        invoiceNumber,
+        salesOrderRef,
+        invoiceDate,
         dueDate,
+        paymentStatus,
+        amountPaid,
+        from,
+        billTo,
+        payment,
+        summary,
+        items,
 
-        // Date range
-        startDate,
-        endDate,
+        // validation
+        errors,
 
-        // Pagination state
-        currentPage,
+        // derived flags
+        isSaving,
+        notFound,
 
-        // Stats
-        salesOrderStats,
-
-        // Customers
-        customerOptions,
-
-        // Delete modal
-        deleteModal,
-
-        // Handlers
-        handleSearch,
-        handleStatus,
-        handleCustomer,
-        handleDueDate,
-
-        handleStartDateChange,
-        handleEndDateChange,
-
-        handleExport,
-
-        handleDeleteCancel,
-        handleDeleteConfirm,
-
-        setCurrentPage,
+        // handlers
+        handleInvoiceDateChange,
+        handleDueDateChange,
+        handlePaymentStatusChange,
+        handleAmountPaidChange,
+        updateFrom,
+        updateBillTo,
+        updatePayment,
+        handleSalesOrderChange,
+        handleCustomerChange,
+        addItem,
+        removeItem,
+        updateItem,
+        handleCancel,
+        handleSave,
     };
 };
 
-export default useSalesInvoices;
+export default useAddingInvoice;

@@ -74,6 +74,13 @@ export const FloatingAction = styled.button`
         `}
 
     ${({ $position }) =>
+        $position === "download" &&
+        `
+            background: #e6f6ec;
+            color: #16a34a;
+        `}
+
+    ${({ $position }) =>
         $position === "edit" &&
         `
             background: #fef3c7;

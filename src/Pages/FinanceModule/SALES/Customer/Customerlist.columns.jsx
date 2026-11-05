@@ -1,129 +1,192 @@
 import React from "react";
 
-import {
-    FiPlus,
-    FiFileText,
-    FiMoreVertical,
-    FiEdit2,
-    FiTrash2,
-} from "react-icons/fi";
+import { FiEdit2, FiArchive } from "react-icons/fi";
 import { IoEllipsisVerticalCircleOutline } from "react-icons/io5";
+
 import {
     LinkName,
     BalanceAmount,
     ActionsCell,
-    ActionButton,
     MenuWrapper,
     KebabButton,
     CircleIconButton,
+    ArchivedBalance,
+    ArchiveActionButton,
+    StatusBadge,
 } from "./CustomerList.styles";
 
+const money = (v) => `SAR ${Number(v || 0).toLocaleString("en-US")}`;
+
+const formatDate = (v) => {
+    if (!v) return "-";
+    const d = new Date(v);
+    if (isNaN(d)) return v;
+    return d
+        .toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })
+        .replace(/ /g, "-");
+};
+
 export const getCustomerColumns = ({
+    status,
     openMenuId,
     toggleActionsMenu,
     handleViewOverview,
-    handleCreateInvoice,
-    handleViewLedger,
     handleEditCustomer,
-    handleDeleteCustomer,
-}) => [
-    {
-        accessor: "customer_id",
-        header: "Code",
-        priority: 2,
-    },
+    handleArchiveCustomer,
+    handleRestoreCustomer,
+    handleDeleteCustomerPermanently,
+}) => {
+    // ================= ARCHIVED VIEW (screenshot layout) =================
+    if (status === "archived") {
+        return [
+            { accessor: "customer_id", header: "Code" },
+            {
+                accessor: "customer_name",
+                header: "Customer Name",
+                render: (row) => (
+                    <LinkName type="button" onClick={() => handleViewOverview(row)}>
+                        {row.customer_name}
+                    </LinkName>
+                ),
+            },
+            {
+                accessor: "credit_limit",
+                header: "Credit Limit",
+                render: (row) => money(row.credit_limit),
+            },
+            {
+                accessor: "total_invoice",
+                header: "Total Invoices",
+                render: (row) => money(row.total_invoice),
+            },
+            {
+                accessor: "total_payments_received",
+                header: "Payments Received",
+                render: (row) => money(row.total_payments_received),
+            },
+            {
+                accessor: "balance_amount",
+                header: "Balance",
+                render: (row) => (
+                    <ArchivedBalance $due={Number(row.balance_amount) > 0}>
+                        {money(row.balance_amount)}
+                    </ArchivedBalance>
+                ),
+            },
+             {
+                accessor: "archived_at",
+                header: "Archived On",
+                render: (row) => formatDate(row.archived_at),
+            },
+            {
+                accessor: "archived_by_name",
+                header: "Archived By",
+                render: (row) => row.archived_by_name || "-",
+            },
+            {
+                accessor: "actions",
+                header: "Actions",
+                render: (row) => (
+                    <ActionsCell style={{ flexWrap: "nowrap" }}>
+                        <ArchiveActionButton
+                            type="button"
+                            $variant="restore"
+                            onClick={() => handleRestoreCustomer(row)}
+                        >
+                            Restore
+                        </ArchiveActionButton>
+                        <ArchiveActionButton
+                            type="button"
+                            $variant="delete"
+                            onClick={() => handleDeleteCustomerPermanently(row)}
+                        >
+                            Delete
+                        </ArchiveActionButton>
+                    </ActionsCell>
+                ),
+            },
+        ];
+    }
 
-    {
-        accessor: "customer_name",
-        header: "Customer Name",
-        priority: 1,
-        render: (row) => (
-            <LinkName type="button" onClick={() => handleViewOverview(row)}>
-                {row.customer_name}
-            </LinkName>
-        ),
-    },
-    {
-        accessor: "credit_limit",
-        header: "Credit Limit",
-        priority: 4,
-    },
-    {
-        accessor: "total_invoice",
-        header: "Total Invoices",
-        priority: 4,
-    },
-    {
-        accessor: "total_payments_received",
-        header: "Payments Received",
-        priority: 5,
-    },
-    {
-        accessor: "balance_amount",
-        header: "Balance",
-        priority: 2,
-        render: (row) => (
-            <BalanceAmount $negative={Number(row.balance_amount) > 0}>
-                {row.balance_amount}
-            </BalanceAmount>
-        ),
-    },
+    // ================= ACTIVE / INACTIVE VIEW =================
+    return [
+        { accessor: "customer_id", header: "Code" },
+        {
+            accessor: "customer_name",
+            header: "Customer Name",
+            render: (row) => (
+                <LinkName type="button" onClick={() => handleViewOverview(row)}>
+                    {row.customer_name}
+                </LinkName>
+            ),
+        },
+        { accessor: "credit_limit", header: "Credit Limit" },
+        { accessor: "total_invoice", header: "Total Invoices" },
+        { accessor: "total_payments_received", header: "Payments Received" },
+        {
+            accessor: "balance_amount",
+            header: "Balance",
+            render: (row) => (
+                <BalanceAmount $negative={Number(row.balance_amount) > 0}>
+                    {row.balance_amount}
+                </BalanceAmount>
+            ),
+        },
+        { accessor: "outstanding_days", header: "Outstanding Days" },
+        { accessor: "last_payment", header: "Last Payment" },
+ {
+            accessor: "client_status_name",
+            header: "Status",
+            render: (row) => (
+                <StatusBadge $status={row.client_status}>
+                    {row.client_status_name}
+                </StatusBadge>
+            ),
+        },
+        {
+            accessor: "actions",
+            header: "Actions",
+            render: (row) => {
+                const rowId = row.id ?? row.customer_id;
+                const isMenuOpen = openMenuId === rowId;
 
-    {
-        accessor: "outstanding_days",
-        header: "Outstanding Days",
-        priority: 5,
-    },
-
-    {
-        accessor: "last_payment",
-        header: "Last Payment",
-        priority: 3,
-    },
-   {
-    accessor: "actions",
-    header: "Actions",
-    priority: 1,
-    render: (row) => {
-        const rowId = row.id ?? row.customer_id;
-        const isMenuOpen = openMenuId === rowId;
-
-        return (
-            <ActionsCell>
-                <MenuWrapper data-menu-root>
-                    <KebabButton
-                        type="button"
-                        onClick={() => toggleActionsMenu(rowId)}
-                        aria-label="More actions"
-                        aria-expanded={isMenuOpen}
-                    >
-                        <IoEllipsisVerticalCircleOutline size={15} />
-                    </KebabButton>
-
-                    {isMenuOpen && (
-                        <>
-                            <CircleIconButton
+                return (
+                    <ActionsCell>
+                        <MenuWrapper data-menu-root>
+                            <KebabButton
                                 type="button"
-                                $variant="edit"
-                                onClick={() => handleEditCustomer(row)}
-                                aria-label="Edit customer"
+                                onClick={() => toggleActionsMenu(rowId)}
+                                aria-label="More actions"
+                                aria-expanded={isMenuOpen}
                             >
-                                <FiEdit2 size={13} />
-                            </CircleIconButton>
+                                <IoEllipsisVerticalCircleOutline size={14} />
+                            </KebabButton>
 
-                            <CircleIconButton
-                                type="button"
-                                $variant="delete"
-                                onClick={() => handleDeleteCustomer(row)}
-                                aria-label="Delete customer"
-                            >
-                                <FiTrash2 size={13} />
-                            </CircleIconButton>
-                        </>
-                    )}
-                </MenuWrapper>
-            </ActionsCell>
-        );
-    },
-},
-];
+                            {isMenuOpen && (
+                                <>
+                                    <CircleIconButton
+                                        type="button"
+                                        $variant="edit"
+                                        onClick={() => handleEditCustomer(row)}
+                                        aria-label="Edit customer"
+                                    >
+                                        <FiEdit2 size={13} />
+                                    </CircleIconButton>
+
+                                    <CircleIconButton
+                                        type="button"
+                                        $variant="delete"
+                                        onClick={() => handleArchiveCustomer(row)}
+                                        aria-label="Archive customer"
+                                    >
+                                        <FiArchive size={13} />
+                                    </CircleIconButton>
+                                </>
+                            )}
+                        </MenuWrapper>
+                    </ActionsCell>
+                );
+            },
+        },
+    ];
+};
