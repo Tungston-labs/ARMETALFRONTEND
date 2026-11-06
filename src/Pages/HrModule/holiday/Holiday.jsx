@@ -238,7 +238,7 @@ const HolidayManager = () => {
           date={selectedMonth}
           onDate={setSelectedMonth}
         />
-          <ReusableTable columns={columns} data={sortedHolidays} loading={loading} />
+          <ReusableTable columns={columns} data={sortedHolidays} loading={loading} autoLayout />
         <ReusableConfirmModal
           show={showDeleteModal}
           title="Confirm Deletion"

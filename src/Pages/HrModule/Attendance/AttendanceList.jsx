@@ -132,11 +132,12 @@ const AttendanceList = () => {
       <ReusableFilter
         search={search}
         onSearch={setSearch}
+        searchPlaceholder="Search by Name or Employee ID"
         department={department}
         departments={departmentOptions}
         onDepartment={setDepartment}
         status={status}
-        statuses={["Present", "Absent", "On Leave"]}
+        statuses={["Present", "Absent", ]}
         onStatus={setStatus}
         date={date}
         onDate={setDate}
@@ -155,6 +156,7 @@ const AttendanceList = () => {
       columns={attendanceColumns}
       data={visibleRows}
       onRowClick={handleRowClick}
+      autoLayout
     />
 
     <ReusablePagination

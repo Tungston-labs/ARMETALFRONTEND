@@ -2,8 +2,8 @@ import { BiUser } from "react-icons/bi";
 import { CiWallet } from "react-icons/ci";
 import { FaRegBuilding } from "react-icons/fa";
 import { AiOutlineFileText } from "react-icons/ai";
-
-export const getDashboardStats = (data = {}) => [
+import { formatCurrency } from "../../../utils/FormatCurrency";
+export const getDashboardStats = (data = {}, currencyCode) => [
   {
     id: 1,
     title: "Total Employees",
@@ -55,7 +55,7 @@ export const getDashboardStats = (data = {}) => [
   {
     id: 5,
     title: "Monthly Payroll",
-    value: `₹${data.monthly_payroll_amount ?? 0}`,
+   value: formatCurrency(data.monthly_payroll_amount ?? 0, currencyCode),
     icon: <CiWallet />,
     iconBg: "#ECFDF3",
     iconColor: "#10B981",
@@ -200,13 +200,13 @@ export const attendanceData = [
 // GOSI
 // ===============================
 
-export const gosiData = {
+export const getGosiData = (currencyCode) => ({
   totalEmployee: 248,
   eligibleEmployee: 226,
-  contribution: "$22,450",
-  companyShare: "$14,200",
-  employeeShare: "$8,250",
-};
+  contribution: formatCurrency(22450, currencyCode),
+  companyShare: formatCurrency(14200, currencyCode),
+  employeeShare: formatCurrency(8250, currencyCode),
+});
 
 
 // ===============================

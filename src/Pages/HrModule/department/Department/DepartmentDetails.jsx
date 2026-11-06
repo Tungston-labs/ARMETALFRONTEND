@@ -586,13 +586,9 @@ const departmentCards = useMemo(() => {
       ====================================================== */}
 
       <ReusableFilter
-
         search={search}
-
         onSearch={handleSearch}
-
         showSearch
-
         searchPlaceholder="Search by Employee Name"
       />
 
@@ -602,18 +598,15 @@ const departmentCards = useMemo(() => {
       ====================================================== */}
 
       <ReusableTable
-
         columns={
           departmentEmployeeColumns
         }
-
         data={paginatedData}
-
         loading={
           loadingEmployees
         }
-
         loadingMessage="Loading employees..."
+        autoLayout
       />
 
 

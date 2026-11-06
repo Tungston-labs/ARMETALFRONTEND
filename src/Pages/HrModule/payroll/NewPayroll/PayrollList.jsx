@@ -192,7 +192,7 @@ const payrollCards = getPayrollCards(counts, currencyCode);
         onBulkStatusChange={handleBulkStatusUpdate}
       />
 
-      <ReusableTable columns={columns} data={visibleRows} loading={loading} />
+      <ReusableTable columns={columns} data={visibleRows} loading={loading} autoLayout />
 
       <Pagination
         currentPage={page}

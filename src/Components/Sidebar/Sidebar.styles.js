@@ -36,17 +36,17 @@ export const LogoSection = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 15px 20px;
+  padding: 10px 20px;
   flex-shrink: 0;
   margin-top: 10px;
 `;
 
 export const Logo = styled.img`
-  width: 150px;
-  /* height: 70px; */
+  width: 230px;
+  height: 90px;
   object-fit: contain;
+  display: block;
 `;
-
 
 export const Menu = styled.div`
   flex: 1;

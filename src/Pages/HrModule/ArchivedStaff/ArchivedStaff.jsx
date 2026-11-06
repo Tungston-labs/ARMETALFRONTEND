@@ -130,7 +130,11 @@ const ArchivedStaff = () => {
       {loading ? (
         <div>Loading...</div>
       ) : (
-        <ReusableTable columns={employeeColumns(currentPage, rowsPerPage, handleRestore)} data={deletedEmployeeList} />
+        <ReusableTable 
+        columns={employeeColumns(currentPage, rowsPerPage, handleRestore)} 
+        data={deletedEmployeeList} 
+        autoLayout
+        />
       )}
 
       <ReusablePagination

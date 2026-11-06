@@ -25,18 +25,24 @@ const Sidebar = () => {
 
   if (!user) return null;
 
+  const isSuperAdmin = user.is_superadmin || user.is_super_admin;
+
+  const logoSrc = isSuperAdmin
+    ? "/images/logos.png"
+    : user.company?.logo || "/images/logos.png";
+
   const sidebarItems = getSidebarData(user);
 
   return (
     <>
-<MobileButton $open={mobileOpen} onClick={() => setMobileOpen(true)}>        <FaBars />
+      <MobileButton $open={mobileOpen} onClick={() => setMobileOpen(true)}>        <FaBars />
       </MobileButton>
 
       <MobileOverlay $open={mobileOpen} onClick={() => setMobileOpen(false)} />
 
       <SidebarContainer $collapsed={collapsed} $open={mobileOpen}>
         <LogoSection onClick={() => setCollapsed(!collapsed)} style={{ cursor: "pointer" }}>
-          <Logo src={user?.company?.logo || "/logo.png"} alt="logo" />
+          <Logo src={logoSrc} alt="logo" />
         </LogoSection>
 
         <Menu>
@@ -45,10 +51,10 @@ const Sidebar = () => {
           ))}
         </Menu>
 
-       <Footer>
-  <span>POWERED BY</span>
-  <strong>REKORY</strong>
-</Footer>
+        <Footer>
+          <span>POWERED BY</span>
+          <strong>REKORY</strong>
+        </Footer>
       </SidebarContainer>
     </>
   );

@@ -11,6 +11,7 @@ import {
   ChangeText,
   Grid,
 } from "./StatsGrid.styles";
+import { useCurrency } from "../../../../hooks/useCurrency";
 
 const StatsGrid = ({ data }) => {
   return (

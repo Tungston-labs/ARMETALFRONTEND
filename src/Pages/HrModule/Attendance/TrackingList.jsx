@@ -238,18 +238,8 @@ const TrackingList = ({
         <EmployeeHeader employee={employee} editable={false} />
       )}
 
-      {/* <CardWrapper>
-        {computedCardList.map((card, index) => (
-          <Card key={index}>
-            <CardTitle>{card.title}</CardTitle>
-            <CardValue>{card.value}</CardValue>
-          </Card>
-        ))}
-      </CardWrapper> */}
-
       <HistoryTable>
         <div style={{ marginBottom: "15px" }}>
-          {/* <Header>Sessions</Header> */}
           <CalendarWrapper>
             <input
               type="date"
@@ -259,6 +249,8 @@ const TrackingList = ({
                 padding: "6px 10px",
                 borderRadius: "6px",
                 border: "1px solid #ccc",
+             
+                
               }}
             />
           </CalendarWrapper>
@@ -270,6 +262,7 @@ const TrackingList = ({
           columns={eventColumns}
           data={allEvents}
           loading={loadingLocations}
+          autoLayout
         />
       </HistoryTable>
     </PageWrapper>

@@ -3,7 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { getDepartments } from "../../../Redux/departmentSlice";
 import { getGroupedReimbursements } from "../../../services/reimbursement";
-
+import { useCurrency } from "../../../hooks/useCurrency";
+import { formatCurrency } from "../../../utils/FormatCurrency";
 import {
   Container,
   HeaderWrapper,
@@ -24,18 +25,19 @@ import {
   EmptyStateIcon,
   EmptyStateTitle,
   EmptyStateText,
+  EmployeeBadge,
 } from "./ReimbursementCards.Styles";
 import ReusableHeader from "../../../Components/ReusableTable/ReusableHeader";
 import ReusableFilter from "../../../Components/ReusableTable/ReusableFilter";
 import SkeletonCard from "../../../Components/Skeleton/ SkeletonCard";
 import { FiFileText } from "react-icons/fi";
 
-const DEFAULT_AVATAR = "https://i.pravatar.cc/100?img=1";
+const BADGE_COLORS = ["#3154d8", "#16a34a", "#f47c20"];
 
 const ReimbursementCards = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
-
+  const { currencyCode } = useCurrency();
   const [search, setSearch] = useState("");
   const [selectedDeptFilter, setSelectedDeptFilter] = useState("");
   const [selectedMonth, setSelectedMonth] = useState("");
@@ -131,9 +133,9 @@ const ReimbursementCards = () => {
   // Filter reimbursements by selected month if present
   const monthFilteredReimbursements = selectedMonth
     ? allReimbursements.filter((r) => {
-        const rMonth = getReimbursementMonth(r);
-        return rMonth ? rMonth === selectedMonth : false;
-      })
+      const rMonth = getReimbursementMonth(r);
+      return rMonth ? rMonth === selectedMonth : false;
+    })
     : allReimbursements;
 
   // Process department cards - only departments that have requests (>0)
@@ -163,7 +165,7 @@ const ReimbursementCards = () => {
           uniqueEmployees.push({
             id: r.employee_id,
             name: r.employee_name,
-            image: r.profile_pic || DEFAULT_AVATAR,
+            // image: r.profile_pic || DEFAULT_AVATAR,
           });
         }
       });
@@ -257,7 +259,10 @@ const ReimbursementCards = () => {
       {!loading && filteredCards.length > 0 && (
         <CardsGrid>
           {filteredCards.map((card) => (
-            <DeptCard key={card.id}>
+            <DeptCard
+              key={card.id}
+              onClick={() => handleViewReimbursement(card.id)}
+            >
               <CardHeader>
                 <ReimbursementName>{card.name} DEPARTMENT</ReimbursementName>
                 <StatusBadge status="Approved">Active</StatusBadge>
@@ -293,25 +298,27 @@ const ReimbursementCards = () => {
 
               <StatusRow>
                 <ApprovedAmount>
-                  Approved : ₹{card.approvedAmount.toLocaleString("en-IN")}
+                  Approved : {formatCurrency(card.approvedAmount, currencyCode)}
                 </ApprovedAmount>
                 <PendingAmount>
-                  Total AMT : ₹{card.totalAmount.toLocaleString("en-IN")}
+                  Total AMT : {formatCurrency(card.totalAmount, currencyCode)}
                 </PendingAmount>
               </StatusRow>
 
               <CardBottom>
                 <EmployeeCount>
                   {card.employees.map((emp, idx) => (
-                    <EmployeeImage
+                    <EmployeeBadge
                       key={emp.id}
-                      src={emp.image}
-                      alt={emp.name}
+                      title={emp.name}
+                      $bg={BADGE_COLORS[idx % BADGE_COLORS.length]}
                       style={{
                         marginLeft: idx > 0 ? "-8px" : "0",
                         zIndex: 3 - idx,
                       }}
-                    />
+                    >
+                      E{idx + 1}
+                    </EmployeeBadge>
                   ))}
                   {card.employeeCount > 0 && (
                     <ReimbursementNumber>

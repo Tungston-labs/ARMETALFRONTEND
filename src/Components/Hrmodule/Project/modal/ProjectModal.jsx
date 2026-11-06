@@ -1,6 +1,5 @@
 
 import React, { useEffect, useState } from "react";
-
 import {
   Overlay,
   ModalContainer,
@@ -14,12 +13,15 @@ import {
   Input,
   SelectWrapper,
   Select,
-  // SelectArrow,
   ButtonRow,
   CancelButton,
   SubmitButton,
   ModalSubtitle,
+  EmployeeSection,
+  EmployeeTable,
+  EmployeeHead,
   EmployeeRow,
+  CheckLabel,
 } from "./ProjectModal.Styles";
 import { FiSave } from "react-icons/fi";
 
@@ -249,6 +251,7 @@ const ProjectModal = ({
                   placeholder="Enter name of the Project"
                   value={formData.projectName}
                   onChange={handleChange}
+                  autoComplete="off"
                 />
               </FormGroup>
 
@@ -295,6 +298,7 @@ const ProjectModal = ({
                   placeholder="Enter Latitude"
                   value={formData.latitude}
                   onChange={handleChange}
+                   autoComplete="off"
                 />
               </FormGroup>
 
@@ -311,6 +315,7 @@ const ProjectModal = ({
                   placeholder="Enter Longitude"
                   value={formData.longitude}
                   onChange={handleChange}
+                   autoComplete="off"
                 />
               </FormGroup>
 

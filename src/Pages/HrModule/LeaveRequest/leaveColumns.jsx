@@ -79,12 +79,12 @@ export const getLeaveColumns = ({
   },
 },
 
-  {
-    header: "Leave Balance",
-    accessor: "leave_balance",
-    sortable: false,
-    render: (row) => row.employee?.total_leave ?? "0",
-  },
+  // {
+  //   header: "Leave Balance",
+  //   accessor: "leave_balance",
+  //   sortable: false,
+  //   render: (row) => row.employee?.total_leave ?? "0",
+  // },
 
   {
     header: "No Of Days",

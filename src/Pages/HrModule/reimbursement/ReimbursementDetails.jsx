@@ -8,7 +8,8 @@ import ReusablePagination from "../../../Components/Pagination/ReusablePaginatio
 import ReusableFilter from "../../../Components/ReusableTable/ReusableFilter";
 import ReusableHeader from "../../../Components/ReusableTable/ReusableHeader";
 import StatsCards from "../../../Components/StatsCards/StatsCards";
-
+import { useCurrency } from "../../../hooks/useCurrency";
+import { formatCurrency } from "../../../utils/FormatCurrency";
 import {
     fetchReimbursementsByDepartment,
     updateReimbursementStatus,
@@ -48,6 +49,7 @@ const mapRow = (item) => {
    Reimbursement Detail Modal Component
 ================================================= */
 const ReimbursementDetailModal = ({ id, onClose }) => {
+    const { currencyCode } = useCurrency();
     const [reimbursement, setReimbursement] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -144,7 +146,7 @@ const ReimbursementDetailModal = ({ id, onClose }) => {
                 {/* Body */}
                 <div style={{ padding: "20px", flex: 1 }}>
                     {loading && <p style={{ fontFamily: "Poppins, sans-serif", fontSize: "13px" }}>Loading details...</p>}
-                    
+
                     {!loading && error && (
                         <p style={{ color: "red", fontFamily: "Poppins, sans-serif", fontSize: "13px" }}>{error}</p>
                     )}
@@ -197,7 +199,7 @@ const ReimbursementDetailModal = ({ id, onClose }) => {
                                     <div style={{ fontSize: "13px", color: "#444" }}>
                                         <span style={{ fontWeight: "500", color: "#666" }}>Amount: </span>
                                         <span style={{ fontWeight: "600", color: "#2878FF" }}>
-                                            ₹{Number(reimbursement.amount || 0).toLocaleString("en-IN")}
+                                            {formatCurrency(reimbursement.amount, currencyCode)}
                                         </span>
                                     </div>
                                     <div style={{ fontSize: "13px", color: "#444" }}>
@@ -317,7 +319,7 @@ const ReimbursementDetails = () => {
     const { id: departmentId } = useParams();
     const navigate = useNavigate();
     const dispatch = useDispatch();
-
+    const { currencyCode } = useCurrency();
     const [search, setSearch] = useState("");
     const [statusFilter, setStatusFilter] = useState("all");
     const [currentPage, setCurrentPage] = useState(1);
@@ -392,7 +394,7 @@ const ReimbursementDetails = () => {
             console.error("Failed to load reimbursement details:", err);
             setError(
                 err?.message ||
-                    "Something went wrong while loading reimbursement details."
+                "Something went wrong while loading reimbursement details."
             );
         } finally {
             setLoading(false);
@@ -541,21 +543,22 @@ const ReimbursementDetails = () => {
             },
             {
                 title: "Approved",
-                count: `₹ ${approvedAmount.toLocaleString("en-IN")}`,
+                count: formatCurrency(approvedAmount, currencyCode),
                 icon: <FiCheckCircle />,
                 backgroundColor: "#E9F9EF",
                 iconColor: "#16A34A",
             },
+
             {
                 title: "Total Amount",
-                count: `₹ ${totalAmount.toLocaleString("en-IN")}`,
+                count: formatCurrency(totalAmount, currencyCode),
                 icon: <FiFileText />,
                 backgroundColor: "#E8F1FF",
                 iconColor: "#2878FF",
             },
         ];
 
-    }, [filteredData]);
+    }, [filteredData , currencyCode]);
 
     const handleSearch = (value) => {
 
@@ -611,7 +614,7 @@ const ReimbursementDetails = () => {
         {
             header: "Amount",
             accessor: "amount",
-            render: (row) => `₹${Number(row.amount).toLocaleString("en-IN")}`,
+            render: (row) => formatCurrency(row.amount, currencyCode),
         },
         {
             header: "Receipt",

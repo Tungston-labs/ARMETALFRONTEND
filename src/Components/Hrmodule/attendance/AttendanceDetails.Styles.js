@@ -10,8 +10,7 @@ export const AttendanceLayout = styled.div`
   }
 `;
 export const PageWrapper = styled.div`
-  margin-top: 20px;
-padding: 20px;
+  padding: 20px;
 `;
 
 export const Header = styled.h3`
@@ -44,6 +43,7 @@ export const CardValue = styled.h3`
 export const HistoryTable = styled.div`
   background: white;
   border-radius: 12px;
+  margin-top: 20px;
 `;
 
 export const Table = styled.table`
@@ -90,5 +90,31 @@ export const TableScrollWrapper = styled.div`
   &::-webkit-scrollbar-thumb {
     background: #c1c1c1;
     border-radius: 10px;
+  }
+`;
+export const DateFilterWrapper = styled.div`
+  display: flex;
+  justify-content: flex-start;
+  margin-bottom: 15px;
+
+  .date-input {
+    width: 160px;
+    padding: 9px 12px;
+    border: 1px solid #d9d9d9;
+    border-radius: 6px;
+    font-size: 14px;
+    color: #333;
+    background: #fff;
+    outline: none;
+    cursor: pointer;
+    transition: border-color 0.2s ease;
+
+    &:focus {
+      border-color: #1677ff;
+    }
+
+    &::placeholder {
+      color: #999;
+    }
   }
 `;

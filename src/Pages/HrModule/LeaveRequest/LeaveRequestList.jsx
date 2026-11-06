@@ -71,6 +71,7 @@ export default function LeaveRequestList() {
         data={leaveData}
         loading={loading}
         loadingComponent={null}
+     
       />
 
       <ReusablePagination

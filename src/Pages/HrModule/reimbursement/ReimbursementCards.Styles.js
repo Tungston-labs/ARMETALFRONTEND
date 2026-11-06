@@ -68,7 +68,7 @@ export const Card = styled.div`
   min-height: 180px;
 
   padding: 20px 18px;
-
+  cursor: pointer; 
   box-sizing: border-box;
 
   background: #ffffff;
@@ -377,6 +377,36 @@ export const EmployeeImage = styled.img`
   }
 `;
 
+export const EmployeeBadge = styled.div`
+  width: 30px;
+  height: 30px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background: ${({ $bg }) => $bg || "#3154d8"};
+  color: #ffffff;
+
+  border-radius: 50%;
+  border: 2px solid #ffffff;
+  box-sizing: border-box;
+
+  font-family: "Poppins", sans-serif;
+  font-size: 10px;
+  font-weight: 600;
+
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+
+  &:hover {
+    transform: translateY(-3px) scale(1.08);
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
+    position: relative;
+    z-index: 5;
+  }
+`;
 /* =====================================================
    REIMBURSEMENT NUMBER
 ===================================================== */

@@ -19,7 +19,7 @@ import {
   getPayrollData,
   getReimbursementData,
   getResourceAllocationData,
-  gosiData,
+  getGosiData,
   getEngagementData,
 } from "./HrDashboardData";
 
@@ -29,7 +29,7 @@ import ResourceAllocation from "../../../Components/Hrmodule/HrDashboard/Resourc
 import GosiCard from "../../../Components/Hrmodule/HrDashboard/GosiCard/GosiCard";
 import EngagementCard from "../../../Components/Hrmodule/HrDashboard/EngagementCard/EngagementCard";
 import AttendanceTrend from "../../../Components/Hrmodule/HrDashboard/AttendanceTrend/AttendanceTrend";
-
+import { useCurrency } from "../../../hooks/useCurrency";
 import {
   getDashboardCounts,
   getTodayEmployeeStats,
@@ -43,6 +43,7 @@ import {
 
 const HrDashboard = () => {
   const dispatch = useDispatch();
+    const { currencyCode, loading: currencyLoading } = useCurrency();
   const [payrollYear, setPayrollYear] = useState(new Date().getFullYear());
   // =====================================================
   // Dashboard Counts
@@ -174,24 +175,19 @@ const HrDashboard = () => {
   // Dashboard Stats
   // =====================================================
 
-  const dashboardStats = getDashboardStats(
-    dashboardCounts
-  );
+ const dashboardStats = getDashboardStats(dashboardCounts, currencyCode);
 
   // =====================================================
   // Payroll Data
   // =====================================================
 
-  const payrollData = getPayrollData(
-    monthlyPayrollSummary
-  );
+  const payrollData = getPayrollData(monthlyPayrollSummary, currencyCode);
 
   // =====================================================
   // Reimbursement Data
   // =====================================================
 
-  const reimbursementData =
-    getReimbursementData(reimbursementCounts);
+const reimbursementData = getReimbursementData(reimbursementCounts, currencyCode);
 
   // =====================================================
   // Resource Allocation Data
@@ -241,7 +237,7 @@ const HrDashboard = () => {
           ================================================= */}
 
           <StatsSection>
-            {loading ? (
+            {loading || currencyLoading ? (
               <div>Loading dashboard...</div>
             ) : error ? (
               <div>
@@ -263,13 +259,14 @@ const HrDashboard = () => {
                 API Integrated
             ================================================= */}
 
-            {payrollLoading ? (
+           {payrollLoading || currencyLoading ? (
     <div>Loading payroll...</div>
   ) : (
     <PayrollChart
       apiData={monthlyPayrollSummary}
       selectedYear={payrollYear}
       onYearChange={setPayrollYear}
+        currencyCode={currencyCode}
     />
   )}
 
@@ -278,13 +275,13 @@ const HrDashboard = () => {
                 API Integrated
             ================================================= */}
 
-            {reimbursementLoading ? (
+           {reimbursementLoading || currencyLoading ? (
               <div>
                 Loading reimbursement...
               </div>
             ) : (
               <ReimbursementChart
-                data={reimbursementData}
+                data={reimbursementData} currencyCode={currencyCode}
               />
             )}
 
@@ -316,9 +313,7 @@ const HrDashboard = () => {
                 Static
             ================================================= */}
 
-            <GosiCard
-              data={gosiData}
-            />
+            <GosiCard data={getGosiData(currencyCode)} />
 
             {/* =================================================
                 Attendance

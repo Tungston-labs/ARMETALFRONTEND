@@ -43,12 +43,15 @@ export const calculateNetPay = (emp) => {
   return salary + incentive - deduction;
 };
 
-export const getPayrollCards = ({
-  total_payroll = 0,
-  pending_payroll_count = 0,
-  total_incentive_amount = 0,
-  total_deduction_amount = 0,
-} = {}) => [
+export const getPayrollCards = (
+  {
+    total_payroll = 0,
+    pending_payroll_count = 0,
+    total_incentive_amount = 0,
+    total_deduction_amount = 0,
+  } = {},
+  currencyCode = "INR"
+) => [
   {
     title: "Pending Payroll",
     count: pending_payroll_count,
@@ -59,7 +62,7 @@ export const getPayrollCards = ({
 
   {
     title: "Incentive Amount",
-    count: formatCurrency(total_incentive_amount),
+    count: formatCurrency(total_incentive_amount, currencyCode),
     icon: <GoGift />,
     iconColor: "#15aa60",
     backgroundColor: "#E3F7ED",
@@ -67,7 +70,7 @@ export const getPayrollCards = ({
 
   {
     title: "Deduction Amount",
-    count: formatCurrency(total_deduction_amount),
+    count: formatCurrency(total_deduction_amount, currencyCode),
     icon: <HiArrowTrendingDown />,
     iconColor: "#f3214f",
     backgroundColor: "#FFEDED",

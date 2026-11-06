@@ -465,7 +465,7 @@ const visibleRows = useMemo(() => {
      <ReusableFilter
   search={searchTerm}
   onSearch={setSearchTerm}
-  searchPlaceholder="Search Employee Name or Code"
+  searchPlaceholder="Search Employee Name "
 
   department={department}
   departments={departments}
@@ -489,6 +489,7 @@ const visibleRows = useMemo(() => {
           onRowClick={
             handleRowClick
           }
+          autoLayout
         />
 
         {/* PAGINATION */}

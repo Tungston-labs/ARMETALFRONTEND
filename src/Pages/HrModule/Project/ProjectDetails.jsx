@@ -184,18 +184,15 @@ const ProjectDetails = () => {
     // =====================================================
 
     const paginatedData = useMemo(() => {
-        const start =
-            (currentPage - 1) * rowsPerPage;
+    const start = (currentPage - 1) * rowsPerPage;
 
-        return filteredEmployees.slice(
-            start,
-            start + rowsPerPage
-        );
-    }, [
-        filteredEmployees,
-        currentPage,
-        rowsPerPage,
-    ]);
+    return filteredEmployees
+        .slice(start, start + rowsPerPage)
+        .map((employee, index) => ({
+            ...employee,
+            slNo: start + index + 1,
+        }));
+}, [filteredEmployees, currentPage, rowsPerPage]);
 
     // =====================================================
     // OPEN ADD EMPLOYEE
@@ -272,59 +269,59 @@ const ProjectDetails = () => {
     // =====================================================
 
     const handleUpdateProject = async (
-  formData,
-  editData
-) => {
-  if (!editData?.id) return;
+        formData,
+        editData
+    ) => {
+        if (!editData?.id) return;
 
-  try {
-    setIsUpdating(true);
+        try {
+            setIsUpdating(true);
 
-    const projectData = {
-      name: formData.projectName,
-      punch_type: formData.projectType,
+            const projectData = {
+                name: formData.projectName,
+                punch_type: formData.projectType,
 
-      latitude: formData.latitude
-        ? Number(formData.latitude)
-        : null,
+                latitude: formData.latitude
+                    ? Number(formData.latitude)
+                    : null,
 
-      longitude: formData.longitude
-        ? Number(formData.longitude)
-        : null,
+                longitude: formData.longitude
+                    ? Number(formData.longitude)
+                    : null,
 
-      priority: formData.priority,
-      start_date: formData.startDate || null,
-      status: formData.projectStatus,
+                priority: formData.priority,
+                start_date: formData.startDate || null,
+                status: formData.projectStatus,
 
-      // Employees currently selected in Edit modal
-      employees: formData.employeeIds || [],
+                // Employees currently selected in Edit modal
+                employees: formData.employeeIds || [],
 
-      // Employees marked as Team Lead
-      team_leads: formData.teamLeadIds || [],
+                // Employees marked as Team Lead
+                team_leads: formData.teamLeadIds || [],
+            };
+
+            await dispatch(
+                updateProject({
+                    id: editData.id,
+                    projectData,
+                })
+            ).unwrap();
+
+            await dispatch(
+                getProjectById(editData.id)
+            ).unwrap();
+
+            setShowProjectModal(false);
+
+        } catch (error) {
+            console.error(
+                "Failed to update project:",
+                error
+            );
+        } finally {
+            setIsUpdating(false);
+        }
     };
-
-    await dispatch(
-      updateProject({
-        id: editData.id,
-        projectData,
-      })
-    ).unwrap();
-
-    await dispatch(
-      getProjectById(editData.id)
-    ).unwrap();
-
-    setShowProjectModal(false);
-
-  } catch (error) {
-    console.error(
-      "Failed to update project:",
-      error
-    );
-  } finally {
-    setIsUpdating(false);
-  }
-};
 
     // =====================================================
     // DELETE PROJECT
@@ -392,10 +389,10 @@ const ProjectDetails = () => {
 
     const employeeColumns = [
         {
-            accessor: "id",
-            header: "Employee ID",
-            sortable: true,
-        },
+    accessor: "slNo",
+    header: "Sl No",
+    render: (row, index) => (currentPage - 1) * rowsPerPage + index + 1,
+},
         {
             accessor: "name",
             header: "Employee",
@@ -507,7 +504,7 @@ const ProjectDetails = () => {
                 ),
                 icon: <PiCalendarBlank />,
                 iconColor: "#3858C8",
-                
+
                 backgroundColor:
                     "#E8EDFF",
             },
@@ -619,7 +616,7 @@ const ProjectDetails = () => {
                     setCurrentPage(1);
                 }}
                 showSearch
-
+                searchPlaceholder="Search by Employee Name"
 
                 rightAction={
                     <HeaderButton
@@ -643,6 +640,7 @@ const ProjectDetails = () => {
                 data={paginatedData}
                 loading={isLoading}
                 skeletonRows={8}
+                autoLayout
             />
 
             {/* ================================================= */}

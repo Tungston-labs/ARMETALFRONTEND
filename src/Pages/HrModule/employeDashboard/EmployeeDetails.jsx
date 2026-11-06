@@ -269,7 +269,7 @@ const EmployeeDetails = ({ employee, documents = [], onTabChange }) => {
               }}
             />
 
-            {employee.is_active ? "Active" : "Inactive"}
+            {employee.is_active ? "Present" : "Absent"}
           </Status>
         </LeftHeader>
 

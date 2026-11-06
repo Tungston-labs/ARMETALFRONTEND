@@ -76,8 +76,8 @@ export const ViewContainer = styled.div`
 `;
 
 export const DepartmentPanel = styled.div`
-  width: 320px;
-  min-width: 320px;
+  width: 250px;
+  min-width: 280px;
   background-color: ${colors.panelBg};
   padding: 30px 20px;
   transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -122,7 +122,7 @@ export const Title = styled.button`
 `;
 
 export const SearchInput = styled.input`
-  width: 100%;
+  width: 80%;
   padding: 10px 14px;
   margin: 15px 0 20px 0;
 
@@ -196,19 +196,26 @@ export const ToggleArrow = styled.button`
 `;
 
 export const MainContent = styled.div`
-width:100%;
-  flex-grow: 1; 
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
   display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  gap: 20px;
   padding: 30px;
-  min-width: 0; 
-  gap:20px;
+  box-sizing: border-box;
+  overflow: hidden;
 
-     @media (min-width: 768px) and (max-width: 1024px) {
+  @media (max-width: 1220px) {
     flex-direction: column;
-    height: 100vh;     
-    min-height: 0;     
-    padding: 16px;
     gap: 12px;
+    padding: 16px;
+    overflow-y: auto;
+  }
+
+  @media (max-width: 480px) {
+    padding: 10px;
   }
 `;
 export const CardItem = styled.div`
@@ -473,16 +480,16 @@ export const EmployeePanel = styled.div`
 `;
 
 export const PanelContainer = styled.div`
-  flex: 2 1 auto;
-  min-width: 0;        
-  min-height: 0;     
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 0;
+  box-sizing: border-box;
   padding: 15px;
   border-radius: 8px;
   background-color: white;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
   display: flex;
   flex-direction: column;
-  /* width: calc(100% - 300px)'' */
 
   h4 {
     padding-bottom: 10px;
@@ -490,13 +497,10 @@ export const PanelContainer = styled.div`
     color: #555;
   }
 
-  @media (min-width: 768px) and (max-width: 1024px) {
-    flex: 1 1 auto;    
+  @media (max-width: 1220px) {
+    flex: 1 0 auto;
+    min-height: 320px;
     padding: 12px;
-  }
-
- @media (min-width: 1440px)  {
-     width: calc(100% - 300px);
   }
 `;
 
@@ -515,69 +519,95 @@ export const EmployeeSlidePanel = styled.div`
   overflow-y: auto;
 `;
 export const EmployeePanelWrapper = styled.div`
+  flex: 0 0 auto;
   min-width: 0;
-  width: ${(props) => (props.$visible ? "300px" : "0")};
-  opacity: ${(props) => (props.$visible ? 1 : 0)};
-  padding: ${(props) => (props.$visible ? "0 20px 0 0" : "0")};
-  transition: width 0.4s ease, opacity 0.3s ease, padding 0.4s ease;
   overflow: hidden;
-  > ${EmployeeContainer} {
-    height: 100%;
-    width: 300px;
-    padding: 30px;
-    box-shadow: 0 6px 20px ${colors.shadowMedium};
+  width: ${(p) => (p.$visible ? "clamp(220px, 22vw, 320px)" : "0")};
+  opacity: ${(p) => (p.$visible ? 1 : 0)};
+  /* cancels the flex gap while the panel is hidden */
+  margin-right: ${(p) => (p.$visible ? "0" : "-20px")};
+  transition: width 0.4s ease, opacity 0.3s ease, margin 0.4s ease,
+    max-height 0.4s ease;
 
-@media (min-width: 1200px) and (max-width: 1300px) {
-      width: 200px;
+  > ${EmployeeContainer} {
+    box-sizing: border-box;
+    width: 100%;
+    height: 100%;
+    padding: 24px;
+    box-shadow: 0 6px 20px ${colors.shadowMedium};
+  }
+
+  /* tablet and small laptop: stack above the tasks */
+  @media (max-width: 1220px) {
+    width: 100%;
+    margin-right: 0;
+    margin-bottom: ${(p) => (p.$visible ? "0" : "-12px")};
+    max-height: ${(p) => (p.$visible ? "260px" : "0")};
+
+    > ${EmployeeContainer} {
+      height: auto;
+      max-height: 260px;
       padding: 15px;
-      box-shadow: 0 8px 24px ${colors.shadowMedium};
+      overflow-y: auto;
+    }
   }
-    @media (min-width: 768px) and (max-width: 1119px) {
-      width: 100%;
-      padding: 15px;
-      box-shadow: 0 8px 24px ${colors.shadowMedium};
-  }
-  
-  }
- 
-  @media (min-width: 768px) and (max-width: 1024px) {
-    width: ${(props) => (props.$visible ? "100%" : "0")};
-    padding: ${(props) => (props.$visible ? "0 15px 0 0" : "0")};
-  }
+
   @media (max-width: 480px) {
-    width: ${(props) => (props.$visible ? "100%" : "0")};
-    padding: 0;
+    max-height: ${(p) => (p.$visible ? "200px" : "0")};
+
+    > ${EmployeeContainer} {
+      max-height: 200px;
+      padding: 12px;
+    }
   }
 `;
 
-
 export const EmployeeItem = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
   padding: 8px 10px;
   border-radius: 10px;
-  border:1px solid #304EB0;
+  border: 1px solid #304EB0;
   margin-bottom: 5px;
+  margin-top: 10px;
+
   cursor: pointer;
   transition: background-color 0.1s;
   font-size: 1rem;
-  margin-top:10px;
-  background-color: ${(props) =>
-   props.$isActive ? colors.activeBg : "transparent"};
   font-weight: ${(props) => (props.$isActive ? "bold" : "normal")};
-  color: ${(props) => (props.$isActive ? "#3352BA" : colors.text)};
+
+  background-color: ${(props) =>
+    props.$isActive ? colors.activeBg : "transparent"};
+
+  color: ${(props) =>
+    props.$isActive ? "#3352BA" : colors.text};
 
   &:hover {
     background-color: ${colors.hoverBg};
-
   }
- @media (min-width: 1921px) {
+
+  img {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+  }
+
+  svg {
+    flex-shrink: 0;
+  }
+
+  @media (min-width: 1921px) {
     font-size: 1.3rem;
-    margin-bottom: 8px;
   }
 
   @media (min-width: 1600px) and (max-width: 1920px) {
     font-size: 0.9rem;
-    margin-bottom: 8px;
   }
+
   @media (min-width: 1025px) and (max-width: 1599px) {
     font-size: 1.05rem;
   }
@@ -586,7 +616,6 @@ export const EmployeeItem = styled.div`
     font-size: 0.95rem;
   }
 `;
-
 
 
 export const TaskHeader = styled.div`

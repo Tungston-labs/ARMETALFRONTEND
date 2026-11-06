@@ -123,7 +123,7 @@ useEffect(() => {
           showDate
         />
 
-        <ReusableTable columns={columns} data={list} loading={loading} />
+        <ReusableTable columns={columns} data={list} loading={loading} autoLayout/>
 
 
         <Pagination

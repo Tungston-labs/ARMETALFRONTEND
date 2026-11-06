@@ -138,31 +138,32 @@ const EmployeeList = () => {
                     showStatus
                 />
                 <TableWrapper>
-    <ReusableTable
-        columns={columns}
-        data={filteredEmployees}
-        loading={loading}
-        onRowClick={(row) => {
-            setSelectedEmployee(row);
-            setOpenModal(true);
-        }}
-    />
-</TableWrapper>
+                    <ReusableTable
+                        columns={columns}
+                        data={filteredEmployees}
+                        loading={loading}
+                        autoLayout
+                        onRowClick={(row) => {
+                            setSelectedEmployee(row);
+                            setOpenModal(true);
+                        }}
+                   
+                    />
+                </TableWrapper>
 
                 {!loading && pagination?.total_pages > 1 && (
-    <ReusablePagination
-        currentPage={pagination?.current_page || page}
-        totalPages={pagination?.total_pages || 1}
-        totalRecords={pagination?.count ?? pagination?.total_items ?? 0}
-        onPageChange={setPage}
-    />
-)}
+                    <ReusablePagination
+                        currentPage={pagination?.current_page || page}
+                        totalPages={pagination?.total_pages || 1}
+                        totalRecords={pagination?.count ?? pagination?.total_items ?? 0}
+                        onPageChange={setPage}
+                    />
+                )}
                 <ReusableConfirmModal
                     show={showDeleteModal}
                     onClose={cancelDelete}
                     onConfirm={confirmDelete}
-                    message="Are you sure you want to permanently delete this employee from the system?"
-                    confirmText="Delete"
+                    message="Are you sure you want to archive this employee? They will be removed from the active employee list and moved to the archived employees list." confirmText="Delete"
                     cancelText="Cancel"
                     confirmVariant="danger"
                     cancelVariant="cancel"

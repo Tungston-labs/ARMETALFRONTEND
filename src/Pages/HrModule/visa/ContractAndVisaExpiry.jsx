@@ -124,7 +124,7 @@ const ContractAndVisaExpiry = () => {
         <ReusableFilter
           search={searchText}
           onSearch={handleSearch}
-          searchPlaceholder="Search by Employee Name "
+          searchPlaceholder="Search by Name or Employee ID"
           status={expiryFilter}
           statuses={["Contract Within 30 Days", "Visa Within 30 Days"]}
           onStatus={setExpiryFilter}
@@ -135,6 +135,7 @@ const ContractAndVisaExpiry = () => {
           columns={columns}
           data={employeeList || []}
           loading={loading}
+          autoLayout
         />
 
         <Pagination
