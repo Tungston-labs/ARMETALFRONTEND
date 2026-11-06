@@ -251,7 +251,10 @@ const FinanceRoutes = () => {
 
       <Route path="sales/recurring-billing" element={<RecurringBilling />} />
       <Route path="sales/recurring-billing/add" element={<AddingRecurring />} />
-      <Route path="sales/recurring-billing/;id" element={<RecurringBilling />} />
+      <Route
+        path="sales/recurring-billing/;id"
+        element={<RecurringBilling />}
+      />
 
       {/* =====================================================
           SALES - CUSTOMER LEDGER
@@ -372,14 +375,16 @@ const FinanceRoutes = () => {
         element={<NewJournalentry />}
       />
 
-      <Route path="accounts/journal-entries/edit/:id" element={<NewJournalentry />}
+      <Route
+        path="accounts/journal-entries/edit/:id"
+        element={<NewJournalentry />}
       />
       <Route path="accounts/generalledger" element={<GeneralLedger />} />
       <Route path="accounts/expenses" element={<Expenses />} />
       <Route path="accounts/payables" element={<Payables />} />
       <Route path="accounts/recievables" element={<Recievables />} />
       <Route path="accounts/banking" element={<Banking />} />
-            <Route path="accounts/trialbalance" element={<TrialBalance />} />
+      <Route path="accounts/trialbalance" element={<TrialBalance />} />
 
       {/* Report Section */}
       <Route path="reports/sales-report" element={<SalesReports />} />
@@ -387,11 +392,11 @@ const FinanceRoutes = () => {
       <Route path="reports/payment-report" element={<PaymentReports />} />
       <Route path="reports/inventory-report" element={<InventoryReports />} />
       <Route path="reports/tax-report" element={<TaxReport />} />
-         <Route path="reports/customer-report" element={<CustomerReport />} />
-         <Route path="reports/expense-report" element={<ExpenseReport />} />
-         <Route path="reports/vendor-report" element={<VendorReport />} />
-         <Route path="reports/profit-loss" element={<ProfitLoss />} />
-          <Route path="reports/cash-flow" element={<CashFlow />} />
+      <Route path="reports/customer-report" element={<CustomerReport />} />
+      <Route path="reports/expense-report" element={<ExpenseReport />} />
+      <Route path="reports/vendor-report" element={<VendorReport />} />
+      <Route path="reports/profit-loss" element={<ProfitLoss />} />
+      <Route path="reports/cash-flow" element={<CashFlow />} />
     </>
   );
 };
