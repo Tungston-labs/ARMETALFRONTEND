@@ -15,7 +15,7 @@ import companyReducer from "../Redux/companySlice";
 import financeReducer from "./financeSlice";
 import salaryIncrementReducer from "../Redux/salaryIncrementSlice";
 import warehouseReducer from "../Redux/warehouseSlice";
-import quotationReducer from "./quotationSlice";
+// import quotationReducer from "./quotationSlice";
 import deliveryNotesReducer from "../Redux/finance/Sales/deliveryNotesSlice";
 import categoryReducer from "./finance/Product/categorySlice";
 import productReducer from "./finance/Product/ProductSlice";
@@ -53,7 +53,7 @@ import cashFlowReportReducer from "./finance/reports/Cashflowreportslice";
 import taxReportReducer from "./finance/reports/Taxreportslice";
 import purchaseReportReducer from "./finance/reports/PurchaseReportSlice";
 import paymentReportReducer from "./finance/reports/paymentReportSlice";
-
+import quotationReducer from "./finance/Sales/Quotationslice";
 
 
 export const store = configureStore({
@@ -72,7 +72,7 @@ export const store = configureStore({
     projects: projectReducer,
     company: companyReducer,
     finance: financeReducer,
-    quotation: quotationReducer,
+    // quotation: quotationReducer,
     salaryIncrement: salaryIncrementReducer,
 
     category: categoryReducer,
@@ -101,15 +101,16 @@ export const store = configureStore({
     payable: payableReducer,
     trialBalance: trialBalanceReducer,
     journalEntry: journalEntryReducer,
-       expense: expensesReducer,   
-      banking: bankingReducer,
+    expense: expensesReducer,
+    banking: bankingReducer,
     profitLossReport: profitLossReportReducer,
-      cashFlowReport: cashFlowReportReducer,
+    cashFlowReport: cashFlowReportReducer,
     salesReport: salesReportReducer,
     customerReport: customerReportReducer,
     vendorReport: vendorReportReducer,
-       taxReport: taxReportReducer, 
+    taxReport: taxReportReducer,
     purchaseReport: purchaseReportReducer,
     paymentReport: paymentReportReducer,
+    quotation: quotationReducer,
   },
 });

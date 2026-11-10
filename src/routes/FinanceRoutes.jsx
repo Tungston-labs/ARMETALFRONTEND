@@ -161,6 +161,8 @@ import ProfitLoss from "../Pages/FinanceModule/REPORTS/ProfitLoss/ProfitLoss.jsx
 import CashFlow from "../Pages/FinanceModule/REPORTS/CashFlow/CashFlow.jsx";
 // import AddingRecurring from "../Pages/FinanceModule/SALES/Recurring Billing/modal/AddingRecurring.jsx";
 import RecurringBill from "../Pages/FinanceModule/SALES/Recurring Billing/modal/RecurringBill.jsx";
+import AddQuotation from "../Pages/FinanceModule/SALES/Quotations/modal/AddQuotation.jsx";
+import Quotationlist from "../Pages/FinanceModule/SALES/Quotations/Quotationlist.jsx";
 
 const FinanceRoutes = () => {
   return (
@@ -263,6 +265,11 @@ const FinanceRoutes = () => {
       ===================================================== */}
 
       <Route path="Quotation-List" element={<QuotationsList />} />
+      <Route path="sales/add-Quotation" element={<AddQuotation />} />
+
+
+
+      <Route path="sales/Quotationlist" element={<Quotationlist />} />
 
       {/* =====================================================
           SALES - DELIVERY NOTES
