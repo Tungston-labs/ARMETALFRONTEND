@@ -16,6 +16,7 @@ import {
   clearCreateWarehouseError,
 } from "../../../../Redux/finance/Product/warehouseSlice";
 import { FiBox } from "react-icons/fi";
+import { StatusBadge } from "./WarehouseList.style";
 
 const PAGE_SIZE = 20;
 
@@ -28,7 +29,21 @@ const warehouseColumns = [
   { accessor: "total_units", header: "Total Units" },
   { accessor: "stock_value", header: "Stock Value" },
   { accessor: "storage_capacity", header: "Capacity Used" },
-  { accessor: "status", header: "Status" },
+{
+    accessor: "status",
+    header: "Status",
+    render: (row) => {
+      const status = String(row?.status || "").toLowerCase();
+
+      return status ? (
+        <StatusBadge $status={status}>
+          {status.charAt(0).toUpperCase() + status.slice(1)}
+        </StatusBadge>
+      ) : (
+        "-"
+      );
+    },
+  },
 ];
 
 /* Modal form (camelCase) -> API payload (snake_case) */

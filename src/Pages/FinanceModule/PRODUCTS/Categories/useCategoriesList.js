@@ -86,12 +86,20 @@ export const useCategoriesList = () => {
     // ==========================================
     // STATS
     // ==========================================
-
     const totalCount = summary?.total_categories ?? count;
     const activeCount = summary?.active_categories ?? 0;
     const inactiveCount = summary?.inactive_categories ?? 0;
     const parentCount = summary?.parent_categories ?? 0;
     const subCategoryCount = summary?.sub_categories ?? 0;
+
+    const assignedProductCount =
+        summary?.assigned_product_count ?? 0;
+
+    const emptyCategoryProductCount =
+        summary?.empty_category_product_count ?? 0;
+
+    const mostAssignedCategory =
+        summary?.most_assigned_category ?? null;
 
     // ==========================================
     // HANDLERS
@@ -125,11 +133,11 @@ export const useCategoriesList = () => {
         // CategoryModal can surface submitError / field errors.
         const result = editingCategory
             ? await dispatch(
-                  editCategory({
-                      id: editingCategory.id,
-                      categoryData,
-                  })
-              ).unwrap()
+                editCategory({
+                    id: editingCategory.id,
+                    categoryData,
+                })
+            ).unwrap()
             : await dispatch(addCategory(categoryData)).unwrap();
 
         setShowCategoryModal(false);
@@ -206,7 +214,9 @@ export const useCategoriesList = () => {
         inactiveCount,
         parentCount,
         subCategoryCount,
-
+        assignedProductCount,
+        emptyCategoryProductCount,
+        mostAssignedCategory,
         // filter state
         search,
         status,

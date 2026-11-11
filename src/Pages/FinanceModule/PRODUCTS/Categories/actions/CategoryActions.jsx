@@ -1,11 +1,12 @@
 import React, { useState, useRef, useEffect } from "react";
-import { FiMoreVertical, FiEdit2, FiTrash2 } from "react-icons/fi";
+import {  FiEdit2, FiTrash2 } from "react-icons/fi";
 
 import {
     ActionWrapper,
     ActionButton,
     FloatingAction,
 } from "./CategoryActions.styles";
+import { PiDotsThreeCircleVerticalLight } from "react-icons/pi";
 
 const CategoryActions = ({ row, onEdit, onDelete }) => {
     const [open, setOpen] = useState(false);
@@ -35,7 +36,7 @@ const CategoryActions = ({ row, onEdit, onDelete }) => {
                 type="button"
                 onClick={() => setOpen((prev) => !prev)}
             >
-                <FiMoreVertical size={12} />
+                <PiDotsThreeCircleVerticalLight size={14} />
             </ActionButton>
 
             <FloatingAction
