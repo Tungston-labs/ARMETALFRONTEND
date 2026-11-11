@@ -39,43 +39,21 @@ const formatCurrency = (value) => {
 };
 
 // =====================================================
-// FORMAT DATE
-// =====================================================
-
-const formatDate = (value) => {
-  if (!value) {
-    return "-";
-  }
-
-  const date = new Date(value);
-
-  if (Number.isNaN(date.getTime())) {
-    return value;
-  }
-
-  return date.toLocaleDateString("en-GB", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  });
-};
-
-// =====================================================
-// STOCK STATUS CLASS
+// STOCK STATUS
 // =====================================================
 
 const getStockStatusClass = (status) => {
-  if (!status) {
-    return "";
-  }
-
-  const normalizedStatus = status.toString().toLowerCase().replace(/\s+/g, "-");
+  const normalizedStatus = (status || "")
+    .toString()
+    .toLowerCase()
+    .replace(/\s+/g, "-");
 
   return `stock-status stock-status-${normalizedStatus}`;
 };
 
 // =====================================================
 // INVENTORY COLUMNS
+// Matching the provided screenshot
 // =====================================================
 
 export const inventoryColumns = [
@@ -87,7 +65,7 @@ export const inventoryColumns = [
 
   {
     accessor: "product_name",
-    header: "Product",
+    header: "Item",
     render: (row) => row?.product_name || "-",
   },
 

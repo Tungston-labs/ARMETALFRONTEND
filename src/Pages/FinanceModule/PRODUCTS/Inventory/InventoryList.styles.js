@@ -31,6 +31,7 @@ export const StockStatus = styled.span`
 
   font-size: 13px;
   font-weight: 400;
+  white-space: nowrap;
 
   &.in-stock {
     color: #018611;

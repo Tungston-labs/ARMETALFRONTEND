@@ -91,6 +91,25 @@ export const getWarehouseKpi = async () => {
 
   return response.data;
 };
+/* =========================================================
+   DELETE WAREHOUSE
+========================================================= */
+
+export const deleteWarehouse = async (id) => {
+  if (
+    id === null ||
+    id === undefined ||
+    id === ""
+  ) {
+    throw new Error("Warehouse ID is required");
+  }
+
+  const response = await API.delete(
+    `/finance/warehouse/${encodeURIComponent(id)}/`,
+  );
+
+  return response.data;
+};
 
 /* =========================================================
    EXPORT
@@ -101,6 +120,7 @@ export default {
   createWarehouse,
   getWarehouseById,
   updateWarehouse,
+    deleteWarehouse,
   getWarehouseKpi,
 };
 

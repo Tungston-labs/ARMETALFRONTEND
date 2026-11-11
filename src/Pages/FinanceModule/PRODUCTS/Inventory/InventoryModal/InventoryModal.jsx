@@ -28,11 +28,11 @@ import {
 
 const DEFAULT_FORM_DATA = {
   adjustmentNumber: "",
-  adjustmentDate: "",
-  warehouse: "",
   product: "",
   adjustmentType: "Reduce Stock",
   reason: "Damaged Goods",
+  adjustmentDate: "",
+  warehouse: "",
   currentStock: "",
   adjustmentQuantity: "",
   adjustedStock: "",
@@ -41,8 +41,35 @@ const DEFAULT_FORM_DATA = {
 };
 
 /* =======================================================
-   VALIDATION
-   Required: product, adjustmentType, warehouse, adjustmentQuantity
+   HELPERS
+======================================================= */
+
+const calculateAdjustedStock = (
+  currentStock,
+  adjustmentQuantity,
+  adjustmentType,
+) => {
+  if (
+    currentStock === "" ||
+    currentStock === null ||
+    adjustmentQuantity === "" ||
+    adjustmentQuantity === null
+  ) {
+    return "";
+  }
+
+  const current = Number(currentStock);
+  const quantity = Number(adjustmentQuantity);
+
+  if (!Number.isFinite(current) || !Number.isFinite(quantity)) {
+    return "";
+  }
+
+  return adjustmentType === "Add Stock" ? current + quantity : current - quantity;
+};
+
+/* =======================================================
+   VALIDATION (single source of truth)
 ======================================================= */
 
 const validateForm = (data) => {
@@ -60,14 +87,31 @@ const validateForm = (data) => {
     errors.warehouse = "Warehouse is required";
   }
 
+  const current = Number(data.currentStock);
+  const quantity = Number(data.adjustmentQuantity);
+
   if (data.adjustmentQuantity === "" || data.adjustmentQuantity === null) {
     errors.adjustmentQuantity = "Quantity is required";
-  } else if (Number(data.adjustmentQuantity) <= 0) {
+  } else if (!Number.isFinite(quantity) || quantity <= 0) {
     errors.adjustmentQuantity = "Quantity must be greater than 0";
+  } else if (
+    data.adjustmentType === "Reduce Stock" &&
+    Number.isFinite(current) &&
+    quantity > current
+  ) {
+    errors.adjustmentQuantity = "Quantity cannot exceed current stock";
+  }
+
+  if (data.currentStock === "" || !Number.isFinite(current) || current < 0) {
+    errors.currentStock = "Enter a valid current stock";
   }
 
   return errors;
 };
+
+/* =======================================================
+   COMPONENT
+======================================================= */
 
 const StockAdjustmentModal = ({
   isOpen,
@@ -86,14 +130,10 @@ const StockAdjustmentModal = ({
 
   const [errors, setErrors] = useState({});
 
-  /* =======================================================
-     RESET FORM + ERRORS WHEN MODAL OPENS
-  ======================================================= */
-
+  /* Reset form + errors when the modal opens or a different record is edited.
+     Keyed on initialData?.id so an inline object prop doesn't wipe user input. */
   useEffect(() => {
-    if (!isOpen) {
-      return;
-    }
+    if (!isOpen) return;
 
     setFormData({
       ...DEFAULT_FORM_DATA,
@@ -101,16 +141,12 @@ const StockAdjustmentModal = ({
     });
 
     setErrors({});
-  }, [isOpen, initialData]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, initialData?.id]);
 
-  /* =======================================================
-     ESCAPE KEY
-  ======================================================= */
-
+  /* Close with Escape */
   useEffect(() => {
-    if (!isOpen) {
-      return undefined;
-    }
+    if (!isOpen) return undefined;
 
     const handleEscape = (event) => {
       if (event.key === "Escape" && !submitting) {
@@ -125,40 +161,14 @@ const StockAdjustmentModal = ({
     };
   }, [isOpen, onClose, submitting]);
 
-  /* =======================================================
-     CALCULATE ADJUSTED STOCK
-  ======================================================= */
-
-  const calculateAdjustedStock = (
-    currentStock,
-    adjustmentQuantity,
-    adjustmentType,
-  ) => {
-    const current = Number(currentStock) || 0;
-    const quantity = Number(adjustmentQuantity) || 0;
-
-    if (adjustmentType === "Add Stock") {
-      return current + quantity;
-    }
-
-    return current - quantity;
-  };
-
-  /* =======================================================
-     INPUT CHANGE
-  ======================================================= */
-
+  /* Input changes */
   const handleChange = (event) => {
     const { name, value } = event.target;
 
     setFormData((previous) => {
-      const updated = {
-        ...previous,
-        [name]: value,
-      };
+      const updated = { ...previous, [name]: value };
 
       if (name === "product") {
-        // product selected -> fetch its current stock
         const selected = products.find(
           (p) => String(p.id ?? p.value) === String(value),
         );
@@ -167,44 +177,43 @@ const StockAdjustmentModal = ({
           ? Number(selected.currentStock) || 0
           : "";
 
-        updated.adjustedStock = selected
-          ? calculateAdjustedStock(
-              updated.currentStock,
-              previous.adjustmentQuantity,
-              previous.adjustmentType,
-            )
-          : "";
+        updated.adjustedStock = calculateAdjustedStock(
+          updated.currentStock,
+          previous.adjustmentQuantity,
+          previous.adjustmentType,
+        );
       } else if (
         name === "currentStock" ||
         name === "adjustmentQuantity" ||
         name === "adjustmentType"
       ) {
         updated.adjustedStock = calculateAdjustedStock(
-          name === "currentStock" ? value : previous.currentStock,
-
-          name === "adjustmentQuantity" ? value : previous.adjustmentQuantity,
-
-          name === "adjustmentType" ? value : previous.adjustmentType,
+          updated.currentStock,
+          updated.adjustmentQuantity,
+          updated.adjustmentType,
         );
       }
 
       return updated;
     });
 
-    // clear the error of the field being edited
-    if (errors[name]) {
-      setErrors((previous) => {
-        const next = { ...previous };
-        delete next[name];
-        return next;
-      });
-    }
+    /* Clear this field's error. Also clear the quantity error when
+       fields it depends on change ("exceeds current stock" rule). */
+    setErrors((previous) => {
+      if (!previous[name] && !previous.adjustmentQuantity) return previous;
+
+      const next = { ...previous };
+      delete next[name];
+
+      if (["currentStock", "adjustmentType", "product"].includes(name)) {
+        delete next.adjustmentQuantity;
+      }
+
+      return next;
+    });
   };
 
-  /* =======================================================
-     FILE CHANGE
-  ======================================================= */
-
+  /* Attachment */
   const handleFileChange = (event) => {
     const file = event.target.files?.[0] || null;
 
@@ -214,16 +223,11 @@ const StockAdjustmentModal = ({
     }));
   };
 
-  /* =======================================================
-     SUBMIT
-  ======================================================= */
-
+  /* Submit */
   const handleSubmit = (event) => {
     event.preventDefault();
 
-    if (!onSubmit || submitting) {
-      return;
-    }
+    if (!onSubmit || submitting) return;
 
     const validationErrors = validateForm(formData);
 
@@ -235,20 +239,14 @@ const StockAdjustmentModal = ({
     onSubmit(formData);
   };
 
-  /* =======================================================
-     OVERLAY
-  ======================================================= */
-
+  /* Close on overlay click */
   const handleOverlayClick = (event) => {
     if (event.target === event.currentTarget && !submitting) {
       onClose();
     }
   };
 
-  /* =======================================================
-     UNIT OF THE SELECTED PRODUCT
-  ======================================================= */
-
+  /* Unit of the selected product */
   const selectedProduct = products.find(
     (p) => String(p.id ?? p.value) === String(formData.product),
   );
@@ -266,10 +264,6 @@ const StockAdjustmentModal = ({
         aria-modal="true"
         aria-labelledby="stock-adjustment-modal-title"
       >
-        {/* =====================================================
-            HEADER
-        ===================================================== */}
-
         <Header>
           <Title id="stock-adjustment-modal-title">Stock Adjustment</Title>
 
@@ -279,14 +273,9 @@ const StockAdjustmentModal = ({
           </Description>
         </Header>
 
-        {/* =====================================================
-            FORM
-        ===================================================== */}
-
         <Form onSubmit={handleSubmit} noValidate>
           <FormGrid>
             {/* PRODUCT * */}
-
             <Field>
               <Label htmlFor="product">
                 PRODUCT<RequiredStar>*</RequiredStar>
@@ -324,7 +313,6 @@ const StockAdjustmentModal = ({
             </Field>
 
             {/* ADJUSTMENT TYPE * */}
-
             <Field>
               <Label htmlFor="adjustmentType">
                 ADJUSTMENT TYPE<RequiredStar>*</RequiredStar>
@@ -349,7 +337,6 @@ const StockAdjustmentModal = ({
             </Field>
 
             {/* REASON */}
-
             <Field>
               <Label htmlFor="reason">REASON</Label>
 
@@ -369,7 +356,6 @@ const StockAdjustmentModal = ({
             </Field>
 
             {/* ADJUSTMENT DATE */}
-
             <Field>
               <Label htmlFor="adjustmentDate">ADJUSTMENT DATE</Label>
 
@@ -384,7 +370,6 @@ const StockAdjustmentModal = ({
             </Field>
 
             {/* WAREHOUSE * */}
-
             <Field>
               <Label htmlFor="warehouse">
                 WAREHOUSE<RequiredStar>*</RequiredStar>
@@ -422,7 +407,6 @@ const StockAdjustmentModal = ({
             </Field>
 
             {/* CURRENT STOCK */}
-
             <Field>
               <Label htmlFor="currentStock">CURRENT STOCK</Label>
 
@@ -432,18 +416,23 @@ const StockAdjustmentModal = ({
                   name="currentStock"
                   type="number"
                   min="0"
+                  step="any"
                   value={formData.currentStock ?? ""}
                   onChange={handleChange}
                   placeholder="120"
                   disabled={submitting}
+                  $hasError={Boolean(errors.currentStock)}
                 />
 
                 <UnitText>{unit}</UnitText>
               </UnitInput>
+
+              {errors.currentStock && (
+                <ErrorText>{errors.currentStock}</ErrorText>
+              )}
             </Field>
 
             {/* ADJUSTMENT QUANTITY * */}
-
             <Field>
               <Label htmlFor="adjustmentQuantity">
                 ADJUSTMENT QUANTITY<RequiredStar>*</RequiredStar>
@@ -455,6 +444,7 @@ const StockAdjustmentModal = ({
                   name="adjustmentQuantity"
                   type="number"
                   min="0"
+                  step="any"
                   value={formData.adjustmentQuantity ?? ""}
                   onChange={handleChange}
                   placeholder="05"
@@ -470,8 +460,7 @@ const StockAdjustmentModal = ({
               )}
             </Field>
 
-            {/* ADJUSTED STOCK */}
-
+            {/* ADJUSTED STOCK (calculated, read-only) */}
             <Field>
               <Label htmlFor="adjustedStock">ADJUSTED STOCK</Label>
 
@@ -480,11 +469,10 @@ const StockAdjustmentModal = ({
                   id="adjustedStock"
                   name="adjustedStock"
                   type="number"
-                  min="0"
                   value={formData.adjustedStock ?? ""}
-                  onChange={handleChange}
-                  placeholder="Enter adjusted stock"
-                  disabled={submitting}
+                  placeholder="Calculated automatically"
+                  readOnly
+                  disabled
                 />
 
                 <UnitText>{unit}</UnitText>
@@ -492,7 +480,6 @@ const StockAdjustmentModal = ({
             </Field>
 
             {/* NOTE */}
-
             <Field>
               <Label htmlFor="note">NOTE</Label>
 
@@ -513,7 +500,6 @@ const StockAdjustmentModal = ({
             </Field>
 
             {/* ATTACHMENT */}
-
             <Field>
               <Label htmlFor="attachment">ATTACHMENT</Label>
 
@@ -522,10 +508,12 @@ const StockAdjustmentModal = ({
                   type="text"
                   value={
                     formData.attachment?.name ||
-                    (initialData?.attachmentName ?? "-")
+                    initialData?.attachmentName ||
+                    "-"
                   }
                   placeholder="-"
                   readOnly
+                  aria-label="Selected attachment"
                 />
 
                 <UploadLabel htmlFor="attachment">
@@ -543,23 +531,20 @@ const StockAdjustmentModal = ({
             </Field>
           </FormGrid>
 
-          {/* =====================================================
-              BUTTONS
-          ===================================================== */}
-
+          {/* BUTTONS */}
           <ButtonGroup>
             <CancelButton type="button" onClick={onClose} disabled={submitting}>
               CANCEL
             </CancelButton>
 
             <SaveButton type="submit" disabled={submitting}>
-              <FiSave size={14} />
+              <FiSave size={13} />
 
               {submitting
                 ? "SAVING..."
                 : isEdit
                   ? "UPDATE ADJUSTMENT"
-                  : "CONFIRM ADJUSTMENT"}
+                  : "SAVE ADJUSTMENT"}
             </SaveButton>
           </ButtonGroup>
         </Form>

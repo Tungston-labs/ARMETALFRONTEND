@@ -5,6 +5,7 @@ import {
   createWarehouse,
   getWarehouseById,
   updateWarehouse as updateWarehouseApi,
+  deleteWarehouse as deleteWarehouseApi,
   getWarehouseKpi,
 } from "../../../services/warehouseService";
 
@@ -23,8 +24,8 @@ export const fetchWarehouses = createAsyncThunk(
     } catch (error) {
       return rejectWithValue(
         error?.response?.data ||
-        error?.message ||
-        "Failed to fetch warehouses",
+          error?.message ||
+          "Failed to fetch warehouses",
       );
     }
   },
@@ -39,14 +40,8 @@ export const fetchWarehouseById = createAsyncThunk(
 
   async (id, { rejectWithValue }) => {
     try {
-      if (
-        id === null ||
-        id === undefined ||
-        id === ""
-      ) {
-        return rejectWithValue(
-          "Warehouse ID is required",
-        );
+      if (id === null || id === undefined || id === "") {
+        return rejectWithValue("Warehouse ID is required");
       }
 
       const response = await getWarehouseById(id);
@@ -55,8 +50,8 @@ export const fetchWarehouseById = createAsyncThunk(
     } catch (error) {
       return rejectWithValue(
         error?.response?.data ||
-        error?.message ||
-        "Failed to fetch warehouse detail",
+          error?.message ||
+          "Failed to fetch warehouse detail",
       );
     }
   },
@@ -69,32 +64,46 @@ export const fetchWarehouseById = createAsyncThunk(
 export const updateWarehouse = createAsyncThunk(
   "warehouse/updateWarehouse",
 
-  async (
-    { id, warehouseData },
-    { rejectWithValue },
-  ) => {
+  async ({ id, warehouseData }, { rejectWithValue }) => {
     try {
-      if (
-        id === null ||
-        id === undefined ||
-        id === ""
-      ) {
-        return rejectWithValue(
-          "Warehouse ID is required",
-        );
+      if (id === null || id === undefined || id === "") {
+        return rejectWithValue("Warehouse ID is required");
       }
 
-      const response = await updateWarehouseApi(
-        id,
-        warehouseData,
-      );
+      const response = await updateWarehouseApi(id, warehouseData);
 
       return response;
     } catch (error) {
       return rejectWithValue(
         error?.response?.data ||
-        error?.message ||
-        "Failed to update warehouse",
+          error?.message ||
+          "Failed to update warehouse",
+      );
+    }
+  },
+);
+
+/* =========================================================
+   DELETE WAREHOUSE
+========================================================= */
+
+export const deleteWarehouse = createAsyncThunk(
+  "warehouse/deleteWarehouse",
+
+  async (id, { rejectWithValue }) => {
+    try {
+      if (id === null || id === undefined || id === "") {
+        return rejectWithValue("Warehouse ID is required");
+      }
+
+      await deleteWarehouseApi(id);
+
+      return id;
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data ||
+          error?.message ||
+          "Failed to delete warehouse",
       );
     }
   },
@@ -115,8 +124,8 @@ export const fetchWarehouseKpi = createAsyncThunk(
     } catch (error) {
       return rejectWithValue(
         error?.response?.data ||
-        error?.message ||
-        "Failed to fetch warehouse KPI",
+          error?.message ||
+          "Failed to fetch warehouse KPI",
       );
     }
   },
@@ -129,24 +138,32 @@ export const fetchWarehouseKpi = createAsyncThunk(
 export const addWarehouse = createAsyncThunk(
   "warehouse/addWarehouse",
 
-  async (
-    warehouseData,
-    { rejectWithValue },
-  ) => {
+  async (warehouseData, { rejectWithValue }) => {
     try {
-      const response =
-        await createWarehouse(warehouseData);
+      const response = await createWarehouse(warehouseData);
 
       return response;
     } catch (error) {
       return rejectWithValue(
         error?.response?.data ||
-        error?.message ||
-        "Failed to create warehouse",
+          error?.message ||
+          "Failed to create warehouse",
       );
     }
   },
 );
+
+/* =========================================================
+   HELPERS
+========================================================= */
+
+/* Supports both { id, ... } and { data: { id, ... } } responses */
+const unwrapObject = (response) =>
+  response?.data &&
+  typeof response.data === "object" &&
+  !Array.isArray(response.data)
+    ? response.data
+    : response;
 
 /* =========================================================
    INITIAL STATE
@@ -154,62 +171,39 @@ export const addWarehouse = createAsyncThunk(
 
 const initialState = {
   warehouses: [],
-
   total: 0,
-
   activeCount: 0,
-
   inactiveCount: 0,
 
-  /* =======================================================
-     DETAIL STATE
-  ======================================================= */
-
+  /* DETAIL */
   warehouseDetail: null,
-
   detailLoading: false,
-
   detailError: null,
 
-  /* =======================================================
-     KPI STATE
-  ======================================================= */
-
+  /* KPI */
   kpi: {
     total_warehouses: 0,
     active_warehouses: 0,
     inactive_warehouses: 0,
   },
-
   kpiLoading: false,
-
   kpiError: null,
 
-  /* =======================================================
-     PAGINATION
-  ======================================================= */
-
+  /* PAGINATION */
   currentPage: 1,
-
   pageSize: 20,
-
   totalPages: 1,
 
-  /* =======================================================
-     LIST STATE
-  ======================================================= */
-
+  /* LIST / MUTATION STATE */
   loading: false,
-
   creating: false,
-
   updating: false,
+  deleting: false,
 
   error: null,
-
   createError: null,
-
   updateError: null,
+  deleteError: null,
 };
 
 /* =========================================================
@@ -222,441 +216,227 @@ const warehouseSlice = createSlice({
   initialState,
 
   reducers: {
-    /* =====================================================
-       CLEAR LIST ERROR
-    ===================================================== */
-
     clearWarehouseError: (state) => {
       state.error = null;
     },
-
-    /* =====================================================
-       CLEAR CREATE ERROR
-    ===================================================== */
 
     clearCreateWarehouseError: (state) => {
       state.createError = null;
     },
 
-    /* =====================================================
-       CLEAR UPDATE ERROR
-    ===================================================== */
-
     clearUpdateWarehouseError: (state) => {
       state.updateError = null;
     },
 
-    /* =====================================================
-       CLEAR DETAIL
-    ===================================================== */
+    clearDeleteWarehouseError: (state) => {
+      state.deleteError = null;
+    },
 
     clearWarehouseDetail: (state) => {
       state.warehouseDetail = null;
-
       state.detailLoading = false;
-
       state.detailError = null;
     },
 
-    /* =====================================================
-       CLEAR ALL WAREHOUSES
-    ===================================================== */
-
     clearWarehouses: (state) => {
       state.warehouses = [];
-
       state.total = 0;
-
       state.activeCount = 0;
-
       state.inactiveCount = 0;
-
       state.currentPage = 1;
-
       state.totalPages = 1;
     },
   },
 
   extraReducers: (builder) => {
-    /* =====================================================
-       FETCH WAREHOUSES
-    ===================================================== */
+    /* ================= FETCH WAREHOUSES ================= */
 
     builder
-      .addCase(
-        fetchWarehouses.pending,
-        (state) => {
-          state.loading = true;
+      .addCase(fetchWarehouses.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
 
-          state.error = null;
-        },
-      )
+      .addCase(fetchWarehouses.fulfilled, (state, action) => {
+        state.loading = false;
+        state.error = null;
 
-      .addCase(
-        fetchWarehouses.fulfilled,
-        (state, action) => {
-          state.loading = false;
+        const payload = action.payload || {};
 
-          state.error = null;
-
-          const payload =
-            action.payload || {};
-
-          /* -----------------------------------------------
-             PAGINATED RESPONSE
-          ------------------------------------------------ */
-
-          if (Array.isArray(payload.results)) {
-            state.warehouses =
-              payload.results;
-          }
-
-          /* -----------------------------------------------
-             ARRAY RESPONSE
-          ------------------------------------------------ */
-
-          else if (Array.isArray(payload)) {
-            state.warehouses = payload;
-          }
-
-          /* -----------------------------------------------
-             EMPTY RESPONSE
-          ------------------------------------------------ */
-
-          else {
-            state.warehouses = [];
-          }
-
-          /* -----------------------------------------------
-             TOTAL
-          ------------------------------------------------ */
-
-          state.total =
-            typeof payload.count ===
-              "number"
-              ? payload.count
-              : state.warehouses.length;
-
-          /* -----------------------------------------------
-             PAGINATION
-          ------------------------------------------------ */
-
-          state.currentPage =
-            action.meta?.arg?.page || 1;
-
-          state.pageSize =
-            action.meta?.arg?.page_size ||
-            20;
-
-          state.totalPages =
-            Math.ceil(
-              state.total /
-              state.pageSize,
-            ) || 1;
-
-          /* -----------------------------------------------
-             ACTIVE COUNT
-          ------------------------------------------------ */
-
-          state.activeCount =
-            typeof payload.active_count ===
-              "number"
-              ? payload.active_count
-              : state.warehouses.filter(
-                (warehouse) =>
-                  String(
-                    warehouse?.status ||
-                    "",
-                  ).toLowerCase() ===
-                  "active",
-              ).length;
-
-          /* -----------------------------------------------
-             INACTIVE COUNT
-          ------------------------------------------------ */
-
-          state.inactiveCount =
-            typeof payload.inactive_count ===
-              "number"
-              ? payload.inactive_count
-              : state.warehouses.filter(
-                (warehouse) =>
-                  String(
-                    warehouse?.status ||
-                    "",
-                  ).toLowerCase() ===
-                  "inactive",
-              ).length;
-        },
-      )
-
-      .addCase(
-        fetchWarehouses.rejected,
-        (state, action) => {
-          state.loading = false;
-
-          state.error =
-            action.payload ||
-            "Failed to fetch warehouses";
-
+        if (Array.isArray(payload.results)) {
+          state.warehouses = payload.results;
+        } else if (Array.isArray(payload)) {
+          state.warehouses = payload;
+        } else {
           state.warehouses = [];
-        },
-      );
+        }
 
-    /* =====================================================
-       FETCH WAREHOUSE DETAIL
-    ===================================================== */
+        state.total =
+          typeof payload.count === "number"
+            ? payload.count
+            : state.warehouses.length;
 
-    builder
-      .addCase(
-        fetchWarehouseById.pending,
-        (state) => {
-          state.detailLoading = true;
+        state.currentPage = action.meta?.arg?.page || 1;
+        state.pageSize = action.meta?.arg?.page_size || 20;
+        state.totalPages = Math.ceil(state.total / state.pageSize) || 1;
 
-          state.detailError = null;
+        state.activeCount =
+          typeof payload.active_count === "number"
+            ? payload.active_count
+            : state.warehouses.filter(
+                (w) => String(w?.status || "").toLowerCase() === "active",
+              ).length;
 
-          state.warehouseDetail = null;
-        },
-      )
+        state.inactiveCount =
+          typeof payload.inactive_count === "number"
+            ? payload.inactive_count
+            : state.warehouses.filter(
+                (w) => String(w?.status || "").toLowerCase() === "inactive",
+              ).length;
+      })
 
-      .addCase(
-        fetchWarehouseById.fulfilled,
-        (state, action) => {
-          state.detailLoading = false;
+      .addCase(fetchWarehouses.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload || "Failed to fetch warehouses";
+        state.warehouses = [];
+      });
 
-          state.detailError = null;
-
-          const response =
-            action.payload;
-
-          /*
-           * Support both:
-           *
-           * {
-           *   id: 1,
-           *   warehouse_name: "Main Warehouse"
-           * }
-           *
-           * and:
-           *
-           * {
-           *   data: {
-           *     id: 1,
-           *     warehouse_name: "Main Warehouse"
-           *   }
-           * }
-           */
-
-          state.warehouseDetail =
-            response?.data &&
-              typeof response.data ===
-              "object" &&
-              !Array.isArray(
-                response.data,
-              )
-              ? response.data
-              : response || null;
-        },
-      )
-
-      .addCase(
-        fetchWarehouseById.rejected,
-        (state, action) => {
-          state.detailLoading = false;
-
-          state.detailError =
-            action.payload ||
-            "Failed to fetch warehouse detail";
-
-          state.warehouseDetail = null;
-        },
-      );
-
-    /* =====================================================
-       UPDATE WAREHOUSE
-    ===================================================== */
+    /* ================= FETCH DETAIL ================= */
 
     builder
-      .addCase(
-        updateWarehouse.pending,
-        (state) => {
-          state.updating = true;
+      .addCase(fetchWarehouseById.pending, (state) => {
+        state.detailLoading = true;
+        state.detailError = null;
+        state.warehouseDetail = null;
+      })
 
-          state.updateError = null;
-        },
-      )
+      .addCase(fetchWarehouseById.fulfilled, (state, action) => {
+        state.detailLoading = false;
+        state.detailError = null;
+        state.warehouseDetail = unwrapObject(action.payload) || null;
+      })
 
-      .addCase(
-        updateWarehouse.fulfilled,
-        (state, action) => {
-          state.updating = false;
+      .addCase(fetchWarehouseById.rejected, (state, action) => {
+        state.detailLoading = false;
+        state.detailError =
+          action.payload || "Failed to fetch warehouse detail";
+        state.warehouseDetail = null;
+      });
 
-          state.updateError = null;
+    /* ================= UPDATE ================= */
 
-          const response =
-            action.payload;
+    builder
+      .addCase(updateWarehouse.pending, (state) => {
+        state.updating = true;
+        state.updateError = null;
+      })
 
-          const updatedWarehouse =
-            response?.data &&
-              typeof response.data ===
-              "object" &&
-              !Array.isArray(
-                response.data,
-              )
-              ? response.data
-              : response;
+      .addCase(updateWarehouse.fulfilled, (state, action) => {
+        state.updating = false;
+        state.updateError = null;
 
-          /*
-           * Update the corresponding row
-           * immediately when the API returns
-           * the updated warehouse.
-           */
+        const updated = unwrapObject(action.payload);
 
-          if (
-            updatedWarehouse?.id !==
-            undefined
-          ) {
-            const index =
-              state.warehouses.findIndex(
-                (warehouse) =>
-                  String(
-                    warehouse?.id,
-                  ) ===
-                  String(
-                    updatedWarehouse.id,
-                  ),
-              );
+        if (updated?.id !== undefined) {
+          const index = state.warehouses.findIndex(
+            (w) => String(w?.id) === String(updated.id),
+          );
 
-            if (index !== -1) {
-              state.warehouses[index] =
-                updatedWarehouse;
-            }
+          if (index !== -1) {
+            state.warehouses[index] = updated;
           }
 
-          /*
-           * Also update detail state if
-           * it represents the same warehouse.
-           */
-
           if (
-            updatedWarehouse?.id !==
-            undefined &&
-            state.warehouseDetail?.id !==
-            undefined &&
-            String(
-              state.warehouseDetail.id,
-            ) ===
-            String(
-              updatedWarehouse.id,
-            )
+            state.warehouseDetail?.id !== undefined &&
+            String(state.warehouseDetail.id) === String(updated.id)
           ) {
-            state.warehouseDetail =
-              updatedWarehouse;
+            state.warehouseDetail = updated;
           }
-        },
-      )
+        }
+      })
 
-      .addCase(
-        updateWarehouse.rejected,
-        (state, action) => {
-          state.updating = false;
+      .addCase(updateWarehouse.rejected, (state, action) => {
+        state.updating = false;
+        state.updateError = action.payload || "Failed to update warehouse";
+      });
 
-          state.updateError =
-            action.payload ||
-            "Failed to update warehouse";
-        },
-      );
-
-    /* =====================================================
-       FETCH KPI
-    ===================================================== */
+    /* ================= DELETE ================= */
 
     builder
-      .addCase(
-        fetchWarehouseKpi.pending,
-        (state) => {
-          state.kpiLoading = true;
+      .addCase(deleteWarehouse.pending, (state) => {
+        state.deleting = true;
+        state.deleteError = null;
+      })
 
-          state.kpiError = null;
-        },
-      )
+      .addCase(deleteWarehouse.fulfilled, (state, action) => {
+        state.deleting = false;
+        state.deleteError = null;
 
-      .addCase(
-        fetchWarehouseKpi.fulfilled,
-        (state, action) => {
-          state.kpiLoading = false;
+        state.warehouses = state.warehouses.filter(
+          (w) => String(w?.id) !== String(action.payload),
+        );
 
-          state.kpiError = null;
+        state.total = Math.max(0, state.total - 1);
+        state.warehouseDetail = null;
+      })
 
-          const payload =
-            action.payload || {};
+      .addCase(deleteWarehouse.rejected, (state, action) => {
+        state.deleting = false;
+        state.deleteError = action.payload || "Failed to delete warehouse";
+      });
 
-          state.kpi = {
-            total_warehouses:
-              typeof payload.total_warehouses ===
-                "number"
-                ? payload.total_warehouses
-                : 0,
-
-            active_warehouses:
-              typeof payload.active_warehouses ===
-                "number"
-                ? payload.active_warehouses
-                : 0,
-
-            inactive_warehouses:
-              typeof payload.inactive_warehouses ===
-                "number"
-                ? payload.inactive_warehouses
-                : 0,
-          };
-        },
-      )
-
-      .addCase(
-        fetchWarehouseKpi.rejected,
-        (state, action) => {
-          state.kpiLoading = false;
-
-          state.kpiError =
-            action.payload ||
-            "Failed to fetch warehouse KPI";
-        },
-      );
-
-    /* =====================================================
-       ADD WAREHOUSE
-    ===================================================== */
+    /* ================= FETCH KPI ================= */
 
     builder
-      .addCase(
-        addWarehouse.pending,
-        (state) => {
-          state.creating = true;
+      .addCase(fetchWarehouseKpi.pending, (state) => {
+        state.kpiLoading = true;
+        state.kpiError = null;
+      })
 
-          state.createError = null;
-        },
-      )
+      .addCase(fetchWarehouseKpi.fulfilled, (state, action) => {
+        state.kpiLoading = false;
+        state.kpiError = null;
 
-      .addCase(
-        addWarehouse.fulfilled,
-        (state) => {
-          state.creating = false;
+        const payload = action.payload || {};
 
-          state.createError = null;
-        },
-      )
+        state.kpi = {
+          total_warehouses:
+            typeof payload.total_warehouses === "number"
+              ? payload.total_warehouses
+              : 0,
+          active_warehouses:
+            typeof payload.active_warehouses === "number"
+              ? payload.active_warehouses
+              : 0,
+          inactive_warehouses:
+            typeof payload.inactive_warehouses === "number"
+              ? payload.inactive_warehouses
+              : 0,
+        };
+      })
 
-      .addCase(
-        addWarehouse.rejected,
-        (state, action) => {
-          state.creating = false;
+      .addCase(fetchWarehouseKpi.rejected, (state, action) => {
+        state.kpiLoading = false;
+        state.kpiError = action.payload || "Failed to fetch warehouse KPI";
+      });
 
-          state.createError =
-            action.payload ||
-            "Failed to create warehouse";
-        },
-      );
+    /* ================= ADD ================= */
+
+    builder
+      .addCase(addWarehouse.pending, (state) => {
+        state.creating = true;
+        state.createError = null;
+      })
+
+      .addCase(addWarehouse.fulfilled, (state) => {
+        state.creating = false;
+        state.createError = null;
+      })
+
+      .addCase(addWarehouse.rejected, (state, action) => {
+        state.creating = false;
+        state.createError = action.payload || "Failed to create warehouse";
+      });
   },
 });
 
@@ -668,6 +448,7 @@ export const {
   clearWarehouseError,
   clearCreateWarehouseError,
   clearUpdateWarehouseError,
+  clearDeleteWarehouseError,
   clearWarehouseDetail,
   clearWarehouses,
 } = warehouseSlice.actions;
@@ -677,4 +458,3 @@ export const {
 ========================================================= */
 
 export default warehouseSlice.reducer;
-

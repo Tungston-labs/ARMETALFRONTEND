@@ -1,317 +1,259 @@
-import React, { useEffect, useMemo } from "react";
-
+import React, { useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-
-import { useParams } from "react-router-dom";
-
+import { useNavigate, useParams } from "react-router-dom";
 import {
-  FiEdit2,
-  FiTrash2,
-  FiBox,
-  FiArchive,
-  FiPackage,
-  FiAlertTriangle,
+  FiEdit2, FiTrash2, FiBox, FiArchive, FiPackage, FiAlertTriangle,
+  FiUser, FiPhone, FiMail, FiLayers,
 } from "react-icons/fi";
 
-import WarehouseInfoCard from "../../../../Components/WarehouseDetails/WarehouseInfoCard";
-
-import WarehouseContactCard from "../../../../Components/WarehouseDetails/WarehouseContactCard";
-
-import ReusableHeader from "../../../../Components/ReusableTable/ReusableHeader";
-
-import { HeaderButton } from "../../../../Components/ReusableTable/ReusableHeader.styles";
-
 import StatsCards from "../../../../Components/StatsCards/StatsCards";
+import ReusableHeader from "../../../../Components/ReusableTable/ReusableHeader";
+import WarehouseModal from "./modal/WarehouseModal";
+
+import {
+  buildWarehousePayload,
+  mapWarehouseToForm,
+  formatApiError,
+} from "./modal/warehouseMapper";
 
 import {
   fetchWarehouseById,
+  updateWarehouse,
+  deleteWarehouse,
   clearWarehouseDetail,
+  clearUpdateWarehouseError,
+  clearDeleteWarehouseError,
 } from "../../../../Redux/finance/Product/warehouseSlice";
 
-import { Page, DetailsGrid } from "./WarehouseDetails.styles";
+import {
+  Page, Header, HeaderActions, EditButton, DeleteButton,
+  HeaderWrapper, TopSection, CompanyCard, CompanyDetails, CompanyName,
+  CompanyText, ContactCard, ContactItem, ContactTitle, ContactValue,
+} from "./WarehouseDetails.styles";
+import ReusableConfirmModal from "../../../../Components/modals/ReusableConfirmModal";
+
+const capitalize = (v) =>
+  v ? String(v).charAt(0).toUpperCase() + String(v).slice(1) : "-";
+
+const formatDate = (value) => {
+  if (!value) return "-";
+  const d = new Date(value);
+  return Number.isNaN(d.getTime())
+    ? String(value)
+    : d.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
+};
 
 const WarehouseDetails = () => {
   const dispatch = useDispatch();
-
+  const navigate = useNavigate();
   const { id } = useParams();
 
-  console.log("=================================");
-  console.log("WarehouseDetails URL:", window.location.href);
-  console.log("WarehouseDetails ID:", id);
-  console.log("=================================");
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
 
-  const { warehouseDetail, detailLoading, detailError } = useSelector(
-    (state) => state.warehouse,
-  );
-
-  /* =====================================================
-       FETCH WAREHOUSE DETAILS
-    ===================================================== */
+  const {
+    warehouseDetail,
+    detailLoading,
+    detailError,
+    updating,
+    updateError,
+    deleteError,
+  } = useSelector((state) => state.warehouse);
 
   useEffect(() => {
-    if (id === undefined || id === null || id === "") {
-      return;
-    }
-
+    if (!id) return undefined;
     dispatch(fetchWarehouseById(id));
-
     return () => {
       dispatch(clearWarehouseDetail());
+      dispatch(clearUpdateWarehouseError());
+      dispatch(clearDeleteWarehouseError());
     };
   }, [dispatch, id]);
 
-  /* =====================================================
-       API DATA
-    ===================================================== */
-
   const warehouse = useMemo(() => {
-    const data = warehouseDetail || {};
-
-    const manager =
-      data?.manager_name ||
-      data?.manager?.name ||
-      data?.manager?.full_name ||
-      data?.manager?.username ||
-      (typeof data?.manager === "string" ? data.manager : "-");
-
+    const d = warehouseDetail || {};
     return {
-      name: data?.warehouse_name || "Warehouse",
-
-      date: data?.operating_since || data?.created_at || "-",
-
-      type: data?.warehouse_type || "-",
-
-      totalProducts: data?.total_products ?? 0,
-
-      stockQuantity: data?.stock_quantity ?? 0,
-
-      lowStockProducts: data?.low_stock_products ?? 0,
-
-      outOfStockProducts: data?.out_of_stock_products ?? 0,
-
-      manager,
-
-      phoneNumber: data?.phone_number || "-",
-
-      email: data?.email || "-",
-
-      storageCapacity: data?.storage_capacity ?? "-",
-
-      companyName: data?.company_name || data?.company?.name || "-",
-
-      addressLine1: data?.address_line_1 || data?.address || "-",
-
-      addressLine2: data?.address_line_2 || "-",
-
-      city: data?.city || "-",
+      name: d.warehouse_name || "Warehouse",
+      type: d.warehouse_type || "-",
+      status: capitalize(d.status),
+      operatingSince: formatDate(d.operating_since || d.created_at),
+      manager:
+        d.manager_name || d.manager?.name || d.manager?.full_name ||
+        (typeof d.manager === "string" ? d.manager : "-"),
+      phoneNumber: d.phone_number || "-",
+      email: d.email || "-",
+      storageCapacity: d.storage_capacity ?? "-",
+      companyName: d.company_name || d.company?.name || "-",
+      addressLine1: d.address_line_1 || d.address_line1 || d.address || "-",
+      addressLine2: d.address_line_2 || d.address_line2 || "-",
+      city: d.city || "-",
+      totalProducts: d.total_products ?? 0,
+      stockQuantity: d.stock_quantity ?? 0,
+      lowStock: d.low_stock_products ?? 0,
+      outOfStock: d.out_of_stock_products ?? 0,
     };
   }, [warehouseDetail]);
 
-  /* =====================================================
-       KPI CARDS
-    ===================================================== */
-
-  const warehouseCards = useMemo(
+  const cards = useMemo(
     () => [
-      {
-        count: String(warehouse.type || "-"),
-
-        title: "Warehouses Type",
-
-        icon: <FiBox size={20} />,
-
-        backgroundColor: "#E8EDFF",
-
-        iconColor: "#3454B9",
-      },
-
-      {
-        count: String(warehouse.totalProducts ?? 0),
-
-        title: "Total Products",
-
-        icon: <FiArchive size={20} />,
-
-        backgroundColor: "#E4F7FB",
-
-        iconColor: "#22A6C7",
-      },
-
-      {
-        count: String(warehouse.stockQuantity ?? 0),
-
-        title: "Total Stock Quantity",
-
-        icon: <FiPackage size={20} />,
-
-        backgroundColor: "#E9F8ED",
-
-        iconColor: "#16A34A",
-      },
-
-      {
-        count: String(warehouse.lowStockProducts ?? 0),
-
-        title: "Low Stock Products",
-
-        icon: <FiPackage size={20} />,
-
-        backgroundColor: "#FFF2E5",
-
-        iconColor: "#FF8500",
-      },
-
-      {
-        count: String(warehouse.outOfStockProducts ?? 0),
-
-        title: "Out of Stock Products",
-
-        icon: <FiAlertTriangle size={20} />,
-
-        backgroundColor: "#FFECEC",
-
-        iconColor: "#FF2D2D",
-      },
+      { count: String(warehouse.type), title: "Warehouse Type", icon: <FiBox size={20} />, backgroundColor: "#E8EDFF", iconColor: "#3454B9" },
+      { count: String(warehouse.totalProducts), title: "Total Products", icon: <FiArchive size={20} />, backgroundColor: "#E4F7FB", iconColor: "#22A6C7" },
+      { count: String(warehouse.stockQuantity), title: "Total Stock Quantity", icon: <FiPackage size={20} />, backgroundColor: "#E9F8ED", iconColor: "#16A34A" },
+      { count: String(warehouse.lowStock), title: "Low Stock Products", icon: <FiPackage size={20} />, backgroundColor: "#FFF2E5", iconColor: "#FF8500" },
+      { count: String(warehouse.outOfStock), title: "Out of Stock Products", icon: <FiAlertTriangle size={20} />, backgroundColor: "#FFECEC", iconColor: "#FF2D2D" },
     ],
     [warehouse],
   );
 
-  /* =====================================================
-       EDIT
-    ===================================================== */
+  const contacts = [
+    { icon: FiUser, label: "Manager", value: warehouse.manager },
+    { icon: FiPhone, label: "Phone Number", value: warehouse.phoneNumber },
+    { icon: FiMail, label: "Email", value: warehouse.email },
+    { icon: FiLayers, label: "Storage Capacity", value: warehouse.storageCapacity },
+  ];
 
-  const handleEditWarehouse = () => {
-    console.log("Edit warehouse:", warehouseDetail);
+  /* Edit form values, built from the loaded record */
+  const editInitialData = useMemo(
+    () => (warehouseDetail ? mapWarehouseToForm(warehouseDetail) : undefined),
+    [warehouseDetail],
+  );
+
+  /* ---------------- EDIT ---------------- */
+
+  const openEdit = () => {
+    dispatch(clearUpdateWarehouseError());
+    setIsEditOpen(true);
   };
 
-  /* =====================================================
-       DELETE
-    ===================================================== */
+  const closeEdit = () => {
+    if (updating) return;
+    setIsEditOpen(false);
+    dispatch(clearUpdateWarehouseError());
+  };
 
-  const handleDeleteWarehouse = () => {
-    const confirmed = window.confirm(
-      `Are you sure you want to delete "${warehouse.name}"?`,
-    );
+  const handleUpdate = async (formData) => {
+    try {
+      await dispatch(
+        updateWarehouse({ id, warehouseData: buildWarehousePayload(formData) }),
+      ).unwrap();
 
-    if (!confirmed) {
-      return;
+      setIsEditOpen(false);
+      dispatch(fetchWarehouseById(id)); // refresh with the full record
+    } catch (err) {
+      /* updateError is in the store; the modal shows it */
     }
-
-    console.log("Delete warehouse:", warehouseDetail);
   };
 
-  /* =====================================================
-       INVALID ID
-    ===================================================== */
+  /* ---------------- DELETE ---------------- */
 
-  if (id === undefined || id === null || id === "") {
-    return (
-      <Page>
-        <ReusableHeader
-          title="Warehouse"
-          breadcrumbs={["Dashboard", "Products", "Warehouse"]}
-        />
+  const openDelete = () => {
+    dispatch(clearDeleteWarehouseError());
+    setIsDeleteOpen(true);
+  };
 
-        <div
-          style={{
-            color: "#c0392b",
-            marginTop: 20,
-          }}
-        >
-          Invalid warehouse ID.
-        </div>
-      </Page>
-    );
-  }
+  const handleConfirmDelete = async () => {
+    try {
+      await dispatch(deleteWarehouse(id)).unwrap();
+      setIsDeleteOpen(false);
+      navigate(-1); // back to the list; or navigate("/your/list/path")
+    } catch (err) {
+      setIsDeleteOpen(false); // deleteError is shown on the page
+    }
+  };
 
-  /* =====================================================
-       API ERROR / 404
-    ===================================================== */
+  const errorMessage = formatApiError(detailError) || "Warehouse not found.";
+
+  const renderHeader = (showActions = false) => (
+    <Header>
+      <ReusableHeader title="Warehouses" breadcrumbs={["Product", "Warehouses"]} />
+
+      {showActions && (
+        <HeaderActions>
+          <EditButton type="button" onClick={openEdit} disabled={!warehouseDetail}>
+            <FiEdit2 size={12} /> EDIT
+          </EditButton>
+          <DeleteButton type="button" onClick={openDelete} disabled={!warehouseDetail}>
+            <FiTrash2 size={12} /> DELETE
+          </DeleteButton>
+        </HeaderActions>
+      )}
+    </Header>
+  );
 
   if (!detailLoading && detailError && !warehouseDetail) {
-    const errorMessage =
-      typeof detailError === "string"
-        ? detailError
-        : detailError?.detail || detailError?.message || "Warehouse not found.";
-
     return (
       <Page>
-        <ReusableHeader
-          title="Warehouse"
-          breadcrumbs={["Dashboard", "Products", "Warehouse"]}
-        />
-
-        <div
-          style={{
-            marginTop: 20,
-            padding: 15,
-            borderRadius: 6,
-            background: "#FDEAEA",
-            color: "#D64545",
-            fontSize: 13,
-          }}
-        >
+        {renderHeader(false)}
+        <div style={{ marginTop: 20, padding: 15, borderRadius: 6, background: "#FDEAEA", color: "#D64545", fontSize: 13 }}>
           {errorMessage}
         </div>
       </Page>
     );
   }
 
-  /* =====================================================
-       RENDER
-    ===================================================== */
-
   return (
     <Page>
-      <ReusableHeader
-        title={`${warehouse.name} - ${warehouse.date}`}
-        breadcrumbs={["Dashboard", "Products", "Warehouse"]}
-      >
-        <HeaderButton onClick={handleEditWarehouse}>
-          <FiEdit2 />
-          EDIT
-        </HeaderButton>
+      {renderHeader(true)}
 
-        <HeaderButton $variant="delete" onClick={handleDeleteWarehouse}>
-          <FiTrash2 />
-          DELETE
-        </HeaderButton>
-      </ReusableHeader>
-
-      {detailError && (
-        <div
-          style={{
-            color: "#c0392b",
-            margin: "14px 0",
-          }}
-        >
-          {typeof detailError === "string"
-            ? detailError
-            : detailError?.detail ||
-              detailError?.message ||
-              "Failed to fetch warehouse detail"}
+      {deleteError && (
+        <div style={{ margin: "12px 0", padding: 12, borderRadius: 6, background: "#FDEAEA", color: "#D64545", fontSize: 13 }}>
+          {formatApiError(deleteError)}
         </div>
       )}
 
-      <StatsCards cards={warehouseCards} loading={detailLoading} />
+      <StatsCards cards={cards} loading={detailLoading} />
 
-      <DetailsGrid>
-        <WarehouseInfoCard
-          image="/warehouse-logo.png"
-          warehouseName={warehouse.name}
-          companyName={warehouse.companyName}
-          addressLine1={warehouse.addressLine1}
-          addressLine2={warehouse.addressLine2}
-          city={warehouse.city}
-        />
+      <HeaderWrapper style={{ marginTop: 16 }}>
+        <TopSection>
+          <CompanyCard>
+            <CompanyDetails>
+              <CompanyName title={warehouse.name}>{warehouse.name}</CompanyName>
+              <CompanyText>{warehouse.companyName}</CompanyText>
+              <CompanyText>{warehouse.addressLine1}</CompanyText>
+              <CompanyText>{warehouse.addressLine2}</CompanyText>
+              <CompanyText>{warehouse.city}</CompanyText>
+            </CompanyDetails>
+          </CompanyCard>
 
-        <WarehouseContactCard
-          manager={warehouse.manager}
-          phoneNumber={warehouse.phoneNumber}
-          email={warehouse.email}
-          storageCapacity={warehouse.storageCapacity}
+          <ContactCard>
+            {contacts.map(({ icon: Icon, label, value }) => (
+              <ContactItem key={label}>
+                <ContactTitle>
+                  <Icon size={15} strokeWidth={1.5} />
+                  <span>{label}</span>
+                </ContactTitle>
+                <ContactValue title={String(value)}>{value}</ContactValue>
+              </ContactItem>
+            ))}
+          </ContactCard>
+        </TopSection>
+      </HeaderWrapper>
+
+      {/* EDIT MODAL: mounted only while open, so it always starts from fresh data */}
+      {isEditOpen && editInitialData && (
+        <WarehouseModal
+          isOpen
+          isEdit
+          initialData={editInitialData}
+          onClose={closeEdit}
+          onSave={handleUpdate}
+          submitting={updating}
+          error={formatApiError(updateError)}
         />
-      </DetailsGrid>
+      )}
+
+      {/* DELETE CONFIRMATION */}
+      <ReusableConfirmModal
+        show={isDeleteOpen}
+        title="Delete Warehouse"
+        message={`Are you sure you want to delete "${warehouse.name}"? This action cannot be undone.`}
+        confirmText="Delete"
+        cancelText="Cancel"
+        confirmVariant="danger"
+        loadingText="Deleting..."
+        onConfirm={handleConfirmDelete}
+        onClose={() => setIsDeleteOpen(false)}
+      />
     </Page>
   );
 };

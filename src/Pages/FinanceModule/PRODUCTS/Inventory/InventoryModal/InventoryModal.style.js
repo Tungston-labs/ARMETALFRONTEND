@@ -107,6 +107,9 @@ export const FormGrid = styled.div`
 
   @media (max-width: 768px) {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+
+    column-gap: 16px;
+    row-gap: 16px;
   }
 
   @media (max-width: 650px) {
@@ -196,6 +199,10 @@ export const Input = styled.input`
     cursor: pointer;
     opacity: 0.65;
   }
+
+  &[type="number"] {
+    padding-right: 42px;
+  }
 `;
 
 export const Select = styled.select`
@@ -241,6 +248,39 @@ export const UnitText = styled.span`
   font-weight: 400;
 
   color: #777777;
+
+  pointer-events: none;
+`;
+
+/* =========================================================
+   NOTE
+========================================================= */
+
+export const NoteWrapper = styled.div`
+  position: relative;
+
+  width: 100%;
+`;
+
+export const NoteInput = styled.input`
+  ${fieldStyles}
+
+  padding-right: 32px;
+`;
+
+export const NoteChevron = styled.span`
+  position: absolute;
+
+  top: 50%;
+  right: 10px;
+
+  transform: translateY(-50%);
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  color: #333333;
 
   pointer-events: none;
 `;

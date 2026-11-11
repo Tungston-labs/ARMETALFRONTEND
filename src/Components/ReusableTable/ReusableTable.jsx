@@ -22,17 +22,30 @@ import {
 const getColumnKey = (column, index) =>
   column.accessor ?? column.key ?? column.id ?? `column-${index}`;
 
+const getAccessor = (column) =>
+  column.accessor ?? column.key ?? column.id;
+
 const getColumnLabel = (column) =>
   column.header ?? column.label ?? column.title ?? "";
 
 const getCellValue = (row, column) => {
-  const accessor = column.accessor ?? column.key ?? column.id;
+  const accessor = getAccessor(column);
+  if (!accessor) return undefined;
 
-  if (!accessor) return "";
-
-  // Support nested accessors such as "bank.name".
-  return accessor.split(".").reduce((value, key) => value?.[key], row);
+  return String(accessor)
+    .split(".")
+    .reduce((value, key) => value?.[key], row);
 };
+
+const getRowKey = (row, index) =>
+  row?.id ??
+  row?.pk ??
+  row?.uuid ??
+  row?.account_number ??
+  row?.transaction_id ??
+  row?.payment_id ??
+  row?.invoice_id ??
+  `row-${index}`;
 
 const ReusableTable = ({
   columns = [],
@@ -55,7 +68,9 @@ const ReusableTable = ({
     if (!key) return;
 
     if (sortKey === key) {
-      setSortDirection((previous) => (previous === "asc" ? "desc" : "asc"));
+      setSortDirection((previous) =>
+        previous === "asc" ? "desc" : "asc"
+      );
     } else {
       setSortKey(key);
       setSortDirection("asc");
@@ -73,22 +88,18 @@ const ReusableTable = ({
       if (first == null) return 1;
       if (second == null) return -1;
 
+      let result;
+
       if (typeof first === "number" && typeof second === "number") {
-        return sortDirection === "asc" ? first - second : second - first;
+        result = first - second;
+      } else {
+        result = String(first).localeCompare(String(second), undefined, {
+          numeric: true,
+          sensitivity: "base",
+        });
       }
 
-      const firstValue = String(first);
-      const secondValue = String(second);
-
-      return sortDirection === "asc"
-        ? firstValue.localeCompare(secondValue, undefined, {
-            numeric: true,
-            sensitivity: "base",
-          })
-        : secondValue.localeCompare(firstValue, undefined, {
-            numeric: true,
-            sensitivity: "base",
-          });
+      return sortDirection === "asc" ? result : -result;
     });
   }, [safeData, sortKey, sortDirection]);
 
@@ -102,7 +113,6 @@ const ReusableTable = ({
     }
 
     const value = getCellValue(row, column);
-
     return value == null || value === "" ? "—" : String(value);
   };
 
@@ -123,18 +133,16 @@ const ReusableTable = ({
           <Thead>
             <Tr>
               {safeColumns.map((column, index) => {
-                const columnKey = getColumnKey(column, index);
-                const accessor = column.accessor ?? column.key ?? column.id;
-                const sortable = column.sortable !== false && Boolean(accessor);
+                const accessor = getAccessor(column);
+                const sortable =
+                  column.sortable !== false && Boolean(accessor);
 
                 return (
                   <Th
-                    key={columnKey}
+                    key={getColumnKey(column, index)}
                     data-priority={column.priority ?? 1}
                     onClick={() => sortable && handleSort(accessor)}
-                    style={{
-                      cursor: sortable ? "pointer" : "default",
-                    }}
+                    style={{ cursor: sortable ? "pointer" : "default" }}
                   >
                     {getColumnLabel(column)}
                     {sortable &&

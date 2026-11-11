@@ -53,8 +53,9 @@ import cashFlowReportReducer from "./finance/reports/Cashflowreportslice";
 import taxReportReducer from "./finance/reports/Taxreportslice";
 import purchaseReportReducer from "./finance/reports/PurchaseReportSlice";
 import paymentReportReducer from "./finance/reports/paymentReportSlice";
-
-
+import inventoryReportReducer from "./finance/reports/InventoryReportSlice";
+import balanceSheetReducer from "./finance/reports/BalanceSheetSlice";
+import changesInEquityReportReducer from "./finance/reports/ChangesInEquitySlice";
 
 export const store = configureStore({
   reducer: {
@@ -101,15 +102,19 @@ export const store = configureStore({
     payable: payableReducer,
     trialBalance: trialBalanceReducer,
     journalEntry: journalEntryReducer,
-       expense: expensesReducer,   
-      banking: bankingReducer,
+    expenses: expensesReducer,
+    expense: expensesReducer,
+    banking: bankingReducer,
     profitLossReport: profitLossReportReducer,
-      cashFlowReport: cashFlowReportReducer,
+    cashFlowReport: cashFlowReportReducer,
     salesReport: salesReportReducer,
     customerReport: customerReportReducer,
     vendorReport: vendorReportReducer,
-       taxReport: taxReportReducer, 
+    taxReport: taxReportReducer,
     purchaseReport: purchaseReportReducer,
     paymentReport: paymentReportReducer,
+    inventoryReport: inventoryReportReducer,
+    balanceSheet: balanceSheetReducer,
+    changesInEquityReport: changesInEquityReportReducer,
   },
 });
