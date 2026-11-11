@@ -1,13 +1,11 @@
 
 import API from "./api";
 
-/* =========================================================
-   GET WAREHOUSES
-========================================================= */
-
 export const getWarehouses = async ({
   search = "",
   ordering = "",
+  status = "",
+  warehouse_type = "",
   page = 1,
   page_size = 20,
 } = {}) => {
@@ -15,6 +13,8 @@ export const getWarehouses = async ({
     params: {
       ...(search ? { search } : {}),
       ...(ordering ? { ordering } : {}),
+      ...(status ? { status } : {}),
+      ...(warehouse_type ? { warehouse_type } : {}),
       page,
       page_size,
     },

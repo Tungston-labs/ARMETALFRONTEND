@@ -15,22 +15,19 @@ import {
 
 export const fetchWarehouses = createAsyncThunk(
   "warehouse/fetchWarehouses",
-
   async (params = {}, { rejectWithValue }) => {
     try {
       const response = await getWarehouses(params);
-
       return response;
     } catch (error) {
       return rejectWithValue(
         error?.response?.data ||
-          error?.message ||
-          "Failed to fetch warehouses",
+        error?.message ||
+        "Failed to fetch warehouses"
       );
     }
-  },
+  }
 );
-
 /* =========================================================
    FETCH WAREHOUSE DETAIL
 ========================================================= */
