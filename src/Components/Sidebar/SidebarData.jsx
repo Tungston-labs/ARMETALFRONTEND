@@ -94,10 +94,10 @@ const getSidebarData = (user) => {
         title: "PRODUCT",
         icon: <PiUsersThreeLight />,
         children: [
-          { title: "Product List", path: "/Product-List" },
-          { title: "Categories", path: "/Categories-List" },
-          { title: "Inventory", path: "/Inventory-List" },
-          { title: "Warehouses", path: "/Warehouse-List" },
+          { title: "Product List", path: "/product/Product-List" },
+          { title: "Categories", path: "/product/Categories-List" },
+          { title: "Inventory", path: "/product/Inventory-List" },
+          { title: "Warehouses", path: "/product/warehouse" },
           
         ],
       });
