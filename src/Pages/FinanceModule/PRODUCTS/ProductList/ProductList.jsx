@@ -237,7 +237,7 @@ const ProductList = () => {
                         "Products",
                         "Product List",
                     ]}
-                    buttonText="ADD NEW PRODUCT"
+                    buttonText="+ADD NEW PRODUCT"
                     onButtonClick={handleOpenAddModal}
                 />
 

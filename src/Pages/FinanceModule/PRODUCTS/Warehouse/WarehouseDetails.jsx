@@ -26,7 +26,7 @@ import StatsCards from "../../../../Components/StatsCards/StatsCards";
 import {
   fetchWarehouseById,
   clearWarehouseDetail,
-} from "../../../../Redux/warehouseSlice";
+} from "../../../../Redux/finance/Product/warehouseSlice";
 
 import { Page, DetailsGrid } from "./WarehouseDetails.styles";
 

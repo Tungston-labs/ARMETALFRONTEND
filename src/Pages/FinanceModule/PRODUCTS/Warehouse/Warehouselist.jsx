@@ -28,7 +28,7 @@ import {
   fetchWarehouseById,
   updateWarehouse,
   fetchWarehouseKpi,
-} from "../../../../Redux/warehouseSlice";
+} from "../../../../Redux/finance/Product/warehouseSlice";
 
 /* =========================================================
    COMMON COMPONENTS

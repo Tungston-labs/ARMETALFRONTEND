@@ -25,18 +25,22 @@ export const InventoryInfoButton = styled.button`
 `;
 
 export const StockStatus = styled.span`
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
   font-size: 13px;
   font-weight: 400;
 
   &.in-stock {
-    color: #333333;
+    color: #018611;
   }
 
   &.low-stock {
-    color: #333333;
+    color: #F48211;
   }
 
   &.out-of-stock {
-    color: #333333;
+    color: #DB0F12;
   }
 `;

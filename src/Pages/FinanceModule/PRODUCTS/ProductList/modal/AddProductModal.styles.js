@@ -24,7 +24,7 @@ export const Modal = styled.div`
 
   border-radius: 4px;
 
-  padding: 28px 32px 24px;
+  padding: 28px 32px 30px;
 
   box-sizing: border-box;
 

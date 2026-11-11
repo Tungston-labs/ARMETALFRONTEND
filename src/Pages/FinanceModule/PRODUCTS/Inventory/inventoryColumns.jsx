@@ -1,5 +1,6 @@
 import React from "react";
 import { FiInfo } from "react-icons/fi";
+import { StockStatus } from "./InventoryList.styles";
 
 // =====================================================
 // FORMAT NUMBER
@@ -104,7 +105,7 @@ export const inventoryColumns = [
 
   {
     accessor: "available_qty",
-    header: "Available Qty",
+    header: "In Stock ",
     render: (row) => formatNumber(row?.available_qty),
   },
 
@@ -125,43 +126,43 @@ export const inventoryColumns = [
     header: "Reorder Level",
     render: (row) => formatNumber(row?.reorder_level),
   },
-
+ {
+    accessor: "inventory_value",
+    header: "Stock Value",
+    render: (row) => formatCurrency(row?.inventory_value),
+  },
   {
     accessor: "stock_status",
     header: "Stock Status",
     render: (row) => (
-      <span className={getStockStatusClass(row?.stock_status)}>
-        {row?.stock_status || "-"}
-      </span>
+     <StockStatus className={row?.stock_status?.toLowerCase().replace(/\s+/g, "-")}>
+  {row?.stock_status || "-"}
+</StockStatus>
     ),
   },
 
-  {
-    accessor: "inventory_value",
-    header: "Inventory Value",
-    render: (row) => formatCurrency(row?.inventory_value),
-  },
+ 
 
-  {
-    accessor: "updated_at",
-    header: "Last Updated",
-    render: (row) => formatDate(row?.updated_at),
-  },
+  // {
+  //   accessor: "updated_at",
+  //   header: "Last Updated",
+  //   render: (row) => formatDate(row?.updated_at),
+  // },
 
-  {
-    accessor: "action",
-    header: "Action",
-    render: (row) => (
-      <button
-        type="button"
-        className="inventory-info-button"
-        title={`View ${row?.product_name || "inventory"} details`}
-        onClick={() => {
-          console.log("Inventory details:", row);
-        }}
-      >
-        <FiInfo size={15} />
-      </button>
-    ),
-  },
+  // {
+  //   accessor: "action",
+  //   header: "Action",
+  //   render: (row) => (
+  //     <button
+  //       type="button"
+  //       className="inventory-info-button"
+  //       title={`View ${row?.product_name || "inventory"} details`}
+  //       onClick={() => {
+  //         console.log("Inventory details:", row);
+  //       }}
+  //     >
+  //       <FiInfo size={15} />
+  //     </button>
+  //   ),
+  // },
 ];

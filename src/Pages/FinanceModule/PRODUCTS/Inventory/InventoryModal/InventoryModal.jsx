@@ -11,6 +11,8 @@ import {
   FormGrid,
   Field,
   Label,
+  RequiredStar,
+  ErrorText,
   Input,
   Select,
   UnitInput,
@@ -34,7 +36,37 @@ const DEFAULT_FORM_DATA = {
   currentStock: "",
   adjustmentQuantity: "",
   adjustedStock: "",
+  note: "",
   attachment: null,
+};
+
+/* =======================================================
+   VALIDATION
+   Required: product, adjustmentType, warehouse, adjustmentQuantity
+======================================================= */
+
+const validateForm = (data) => {
+  const errors = {};
+
+  if (!data.product) {
+    errors.product = "Product is required";
+  }
+
+  if (!data.adjustmentType) {
+    errors.adjustmentType = "Adjustment type is required";
+  }
+
+  if (!data.warehouse) {
+    errors.warehouse = "Warehouse is required";
+  }
+
+  if (data.adjustmentQuantity === "" || data.adjustmentQuantity === null) {
+    errors.adjustmentQuantity = "Quantity is required";
+  } else if (Number(data.adjustmentQuantity) <= 0) {
+    errors.adjustmentQuantity = "Quantity must be greater than 0";
+  }
+
+  return errors;
 };
 
 const StockAdjustmentModal = ({
@@ -52,8 +84,10 @@ const StockAdjustmentModal = ({
     ...(initialData || {}),
   });
 
+  const [errors, setErrors] = useState({});
+
   /* =======================================================
-     RESET FORM WHEN MODAL OPENS
+     RESET FORM + ERRORS WHEN MODAL OPENS
   ======================================================= */
 
   useEffect(() => {
@@ -65,6 +99,8 @@ const StockAdjustmentModal = ({
       ...DEFAULT_FORM_DATA,
       ...(initialData || {}),
     });
+
+    setErrors({});
   }, [isOpen, initialData]);
 
   /* =======================================================
@@ -121,7 +157,24 @@ const StockAdjustmentModal = ({
         [name]: value,
       };
 
-      if (
+      if (name === "product") {
+        // product selected -> fetch its current stock
+        const selected = products.find(
+          (p) => String(p.id ?? p.value) === String(value),
+        );
+
+        updated.currentStock = selected
+          ? Number(selected.currentStock) || 0
+          : "";
+
+        updated.adjustedStock = selected
+          ? calculateAdjustedStock(
+              updated.currentStock,
+              previous.adjustmentQuantity,
+              previous.adjustmentType,
+            )
+          : "";
+      } else if (
         name === "currentStock" ||
         name === "adjustmentQuantity" ||
         name === "adjustmentType"
@@ -137,6 +190,15 @@ const StockAdjustmentModal = ({
 
       return updated;
     });
+
+    // clear the error of the field being edited
+    if (errors[name]) {
+      setErrors((previous) => {
+        const next = { ...previous };
+        delete next[name];
+        return next;
+      });
+    }
   };
 
   /* =======================================================
@@ -163,6 +225,13 @@ const StockAdjustmentModal = ({
       return;
     }
 
+    const validationErrors = validateForm(formData);
+
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+      return;
+    }
+
     onSubmit(formData);
   };
 
@@ -175,6 +244,16 @@ const StockAdjustmentModal = ({
       onClose();
     }
   };
+
+  /* =======================================================
+     UNIT OF THE SELECTED PRODUCT
+  ======================================================= */
+
+  const selectedProduct = products.find(
+    (p) => String(p.id ?? p.value) === String(formData.product),
+  );
+
+  const unit = selectedProduct?.unit || "PCS";
 
   if (!isOpen) {
     return null;
@@ -204,26 +283,89 @@ const StockAdjustmentModal = ({
             FORM
         ===================================================== */}
 
-        <Form onSubmit={handleSubmit}>
+        <Form onSubmit={handleSubmit} noValidate>
           <FormGrid>
-            {/* =================================================
-                ROW 1
-            ================================================= */}
-
-            {/* ADJUSTMENT NUMBER */}
+            {/* PRODUCT * */}
 
             <Field>
-              <Label htmlFor="adjustmentNumber">ADJUSTMENT NUMBER</Label>
+              <Label htmlFor="product">
+                PRODUCT<RequiredStar>*</RequiredStar>
+              </Label>
 
-              <Input
-                id="adjustmentNumber"
-                name="adjustmentNumber"
-                value={formData.adjustmentNumber ?? ""}
+              <Select
+                id="product"
+                name="product"
+                value={formData.product ?? ""}
                 onChange={handleChange}
-                placeholder="SA20260008"
-                readOnly={isEdit}
                 disabled={submitting}
-              />
+                $hasError={Boolean(errors.product)}
+              >
+                <option value="">Select</option>
+
+                {products.length > 0 ? (
+                  products.map((product) => (
+                    <option
+                      key={product.id ?? product.value}
+                      value={product.id ?? product.value}
+                    >
+                      {product.name ?? product.label}
+                    </option>
+                  ))
+                ) : (
+                  <>
+                    <option value="Fiber Cable">Fiber Cable</option>
+                    <option value="Steel Cable">Steel Cable</option>
+                    <option value="Copper Wire">Copper Wire</option>
+                  </>
+                )}
+              </Select>
+
+              {errors.product && <ErrorText>{errors.product}</ErrorText>}
+            </Field>
+
+            {/* ADJUSTMENT TYPE * */}
+
+            <Field>
+              <Label htmlFor="adjustmentType">
+                ADJUSTMENT TYPE<RequiredStar>*</RequiredStar>
+              </Label>
+
+              <Select
+                id="adjustmentType"
+                name="adjustmentType"
+                value={formData.adjustmentType ?? ""}
+                onChange={handleChange}
+                disabled={submitting}
+                $hasError={Boolean(errors.adjustmentType)}
+              >
+                <option value="">Select</option>
+                <option value="Reduce Stock">Reduce Stock</option>
+                <option value="Add Stock">Add Stock</option>
+              </Select>
+
+              {errors.adjustmentType && (
+                <ErrorText>{errors.adjustmentType}</ErrorText>
+              )}
+            </Field>
+
+            {/* REASON */}
+
+            <Field>
+              <Label htmlFor="reason">REASON</Label>
+
+              <Select
+                id="reason"
+                name="reason"
+                value={formData.reason ?? ""}
+                onChange={handleChange}
+                disabled={submitting}
+              >
+                <option value="Damaged Goods">Damaged Goods</option>
+                <option value="Expired Goods">Expired Goods</option>
+                <option value="Stock Correction">Stock Correction</option>
+                <option value="Physical Count">Physical Count</option>
+                <option value="Other">Other</option>
+              </Select>
             </Field>
 
             {/* ADJUSTMENT DATE */}
@@ -241,10 +383,12 @@ const StockAdjustmentModal = ({
               />
             </Field>
 
-            {/* WAREHOUSE */}
+            {/* WAREHOUSE * */}
 
             <Field>
-              <Label htmlFor="warehouse">WAREHOUSE</Label>
+              <Label htmlFor="warehouse">
+                WAREHOUSE<RequiredStar>*</RequiredStar>
+              </Label>
 
               <Select
                 id="warehouse"
@@ -252,6 +396,7 @@ const StockAdjustmentModal = ({
                 value={formData.warehouse ?? ""}
                 onChange={handleChange}
                 disabled={submitting}
+                $hasError={Boolean(errors.warehouse)}
               >
                 <option value="">Select</option>
 
@@ -272,87 +417,8 @@ const StockAdjustmentModal = ({
                   </>
                 )}
               </Select>
-            </Field>
 
-            {/* PRODUCT */}
-
-            <Field>
-              <Label htmlFor="product">PRODUCT</Label>
-
-              <Select
-                id="product"
-                name="product"
-                value={formData.product ?? ""}
-                onChange={handleChange}
-                disabled={submitting}
-              >
-                <option value="">Select</option>
-
-                {products.length > 0 ? (
-                  products.map((product) => (
-                    <option
-                      key={product.id ?? product.value}
-                      value={product.id ?? product.value}
-                    >
-                      {product.name ?? product.label}
-                    </option>
-                  ))
-                ) : (
-                  <>
-                    <option value="Fiber Cable">Fiber Cable</option>
-
-                    <option value="Steel Cable">Steel Cable</option>
-
-                    <option value="Copper Wire">Copper Wire</option>
-                  </>
-                )}
-              </Select>
-            </Field>
-
-            {/* ADJUSTMENT TYPE */}
-
-            <Field>
-              <Label htmlFor="adjustmentType">ADJUSTMENT TYPE</Label>
-
-              <Select
-                id="adjustmentType"
-                name="adjustmentType"
-                value={formData.adjustmentType ?? ""}
-                onChange={handleChange}
-                disabled={submitting}
-              >
-                <option value="Reduce Stock">Reduce Stock</option>
-
-                <option value="Add Stock">Add Stock</option>
-              </Select>
-            </Field>
-
-            {/* =================================================
-                ROW 2
-            ================================================= */}
-
-            {/* REASON */}
-
-            <Field>
-              <Label htmlFor="reason">REASON</Label>
-
-              <Select
-                id="reason"
-                name="reason"
-                value={formData.reason ?? ""}
-                onChange={handleChange}
-                disabled={submitting}
-              >
-                <option value="Damaged Goods">Damaged Goods</option>
-
-                <option value="Expired Goods">Expired Goods</option>
-
-                <option value="Stock Correction">Stock Correction</option>
-
-                <option value="Physical Count">Physical Count</option>
-
-                <option value="Other">Other</option>
-              </Select>
+              {errors.warehouse && <ErrorText>{errors.warehouse}</ErrorText>}
             </Field>
 
             {/* CURRENT STOCK */}
@@ -372,14 +438,16 @@ const StockAdjustmentModal = ({
                   disabled={submitting}
                 />
 
-                <UnitText>PCS</UnitText>
+                <UnitText>{unit}</UnitText>
               </UnitInput>
             </Field>
 
-            {/* ADJUSTMENT QUANTITY */}
+            {/* ADJUSTMENT QUANTITY * */}
 
             <Field>
-              <Label htmlFor="adjustmentQuantity">ADJUSTMENT QUANTITY</Label>
+              <Label htmlFor="adjustmentQuantity">
+                ADJUSTMENT QUANTITY<RequiredStar>*</RequiredStar>
+              </Label>
 
               <UnitInput>
                 <Input
@@ -391,10 +459,15 @@ const StockAdjustmentModal = ({
                   onChange={handleChange}
                   placeholder="05"
                   disabled={submitting}
+                  $hasError={Boolean(errors.adjustmentQuantity)}
                 />
 
-                <UnitText>PCS</UnitText>
+                <UnitText>{unit}</UnitText>
               </UnitInput>
+
+              {errors.adjustmentQuantity && (
+                <ErrorText>{errors.adjustmentQuantity}</ErrorText>
+              )}
             </Field>
 
             {/* ADJUSTED STOCK */}
@@ -407,12 +480,36 @@ const StockAdjustmentModal = ({
                   id="adjustedStock"
                   name="adjustedStock"
                   type="number"
+                  min="0"
                   value={formData.adjustedStock ?? ""}
-                  readOnly
+                  onChange={handleChange}
+                  placeholder="Enter adjusted stock"
+                  disabled={submitting}
                 />
 
-                <UnitText>PCS</UnitText>
+                <UnitText>{unit}</UnitText>
               </UnitInput>
+            </Field>
+
+            {/* NOTE */}
+
+            <Field>
+              <Label htmlFor="note">NOTE</Label>
+
+              <Select
+                id="note"
+                name="note"
+                value={formData.note ?? ""}
+                onChange={handleChange}
+                disabled={submitting}
+              >
+                <option value="">Select Note</option>
+                <option value="Damaged Goods">Damaged Goods</option>
+                <option value="Returned Stock">Returned Stock</option>
+                <option value="Lost/Missing">Lost/Missing</option>
+                <option value="New Stock Received">New Stock Received</option>
+                <option value="Others">Others</option>
+              </Select>
             </Field>
 
             {/* ATTACHMENT */}

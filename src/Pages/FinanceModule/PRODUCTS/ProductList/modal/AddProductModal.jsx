@@ -22,6 +22,11 @@ import {
 
 import { getCategories } from "../../../../../Redux/finance/Product/categorySlice";
 import { getWarehouses } from "../../../../../services/warehouseService";
+import {
+    getVendors,
+    selectVendors,
+    selectVendorLoading,
+} from "../../../../../Redux/finance/purchases/vendorsSlice";
 
 /* =====================================================
    CONSTANTS
@@ -40,7 +45,6 @@ const initialFormData = {
     unit: "",
     quantity: "0",
     description: "",
-    tax_type: "",
     tax_rate: "",
     hsn_sac_code: "",
     cost_price: "",
@@ -65,11 +69,6 @@ const UNIT_OPTIONS = [
     { value: "Other", label: "Other" },
 ];
 
-const TAX_TYPE_OPTIONS = [
-    { value: "inclusive", label: "Inclusive" },
-    { value: "exclusive", label: "Exclusive" },
-];
-
 const TAX_RATE_OPTIONS = ["0", "5", "10", "15", "18", "20"].map((rate) => ({
     value: rate,
     label: `${rate}%`,
@@ -88,74 +87,74 @@ const isBlank = (v) => v === null || v === undefined || String(v).trim() === "";
 
 const validateForm = (data) => {
     const errors = {};
+    const isService = data.product_type === "service";
+    const itemLabel = isService ? "Service" : "Product";
 
     // TYPE *
     if (!PRODUCT_TYPE_OPTIONS.some((o) => o.value === data.product_type)) {
         errors.product_type = "Select a type.";
     }
 
-    // PRODUCT NAME *
+    // PRODUCT / SERVICE NAME *
     const name = data.product_name.trim();
-    if (!name) errors.product_name = "Product name is required.";
+    if (!name) errors.product_name = `${itemLabel} name is required.`;
     else if (name.length < 2)
         errors.product_name = "Name must be at least 2 characters.";
     else if (name.length > 150)
         errors.product_name = "Name must be 150 characters or fewer.";
 
-    // SKU (optional)
+    // PRODUCT / SERVICE CODE (optional)
     if (!isBlank(data.sku)) {
         if (!/^[A-Za-z0-9\-_/.]+$/.test(data.sku.trim()))
             errors.sku = "Use only letters, numbers, - _ / .";
         else if (data.sku.trim().length > 50)
-            errors.sku = "SKU must be 50 characters or fewer.";
+            errors.sku = "Code must be 50 characters or fewer.";
     }
 
     // CATEGORY *
     if (isBlank(data.category)) errors.category = "Select a category.";
 
-    // BRAND (optional)
-    if (data.brand.trim().length > 100)
-        errors.brand = "Brand must be 100 characters or fewer.";
+    // Fields that only exist for products (hidden for services)
+    if (!isService) {
+        // BRAND (optional)
+        if (data.brand.trim().length > 100)
+            errors.brand = "Brand must be 100 characters or fewer.";
 
-    // SUPPLIER (optional)
-    if (data.supplier.trim().length > 100)
-        errors.supplier = "Supplier must be 100 characters or fewer.";
+        // SUPPLIER (optional)
+        if (data.supplier.trim().length > 100)
+            errors.supplier = "Supplier must be 100 characters or fewer.";
 
-    // WAREHOUSE *
-    if (isBlank(data.warehouse)) errors.warehouse = "Select a warehouse.";
+        // WAREHOUSE *
+        if (isBlank(data.warehouse)) errors.warehouse = "Select a warehouse.";
 
-    // OPENING STOCK QTY *
-    if (isBlank(data.opening_stock_qty))
-        errors.opening_stock_qty = "Opening stock is required.";
-    else if (Number.isNaN(Number(data.opening_stock_qty)))
-        errors.opening_stock_qty = "Enter a valid number.";
-    else if (Number(data.opening_stock_qty) < 0)
-        errors.opening_stock_qty = "Opening stock cannot be negative.";
+        // OPENING STOCK QTY *
+        if (isBlank(data.opening_stock_qty))
+            errors.opening_stock_qty = "Opening stock is required.";
+        else if (Number.isNaN(Number(data.opening_stock_qty)))
+            errors.opening_stock_qty = "Enter a valid number.";
+        else if (Number(data.opening_stock_qty) < 0)
+            errors.opening_stock_qty = "Opening stock cannot be negative.";
 
-    // REORDER LEVEL *
-    if (isBlank(data.reorder_level))
-        errors.reorder_level = "Reorder level is required.";
-    else if (!/^\d+$/.test(String(data.reorder_level).trim()))
-        errors.reorder_level = "Enter a whole number (0 or more).";
+        // REORDER LEVEL *
+        if (isBlank(data.reorder_level))
+            errors.reorder_level = "Reorder level is required.";
+        else if (!/^\d+$/.test(String(data.reorder_level).trim()))
+            errors.reorder_level = "Enter a whole number (0 or more).";
 
-    // UNIT *
-    if (isBlank(data.unit)) errors.unit = "Select a unit.";
+        // UNIT *
+        if (isBlank(data.unit)) errors.unit = "Select a unit.";
 
-    // QUANTITY *
-    if (isBlank(data.quantity)) errors.quantity = "Quantity is required.";
-    else if (Number.isNaN(Number(data.quantity)))
-        errors.quantity = "Enter a valid number.";
-    else if (Number(data.quantity) < 0)
-        errors.quantity = "Quantity cannot be negative.";
+        // QUANTITY *
+        if (isBlank(data.quantity)) errors.quantity = "Quantity is required.";
+        else if (Number.isNaN(Number(data.quantity)))
+            errors.quantity = "Enter a valid number.";
+        else if (Number(data.quantity) < 0)
+            errors.quantity = "Quantity cannot be negative.";
+    }
 
     // DESCRIPTION (optional)
     if (data.description.trim().length > 500)
         errors.description = "Description must be 500 characters or fewer.";
-
-     // TAX TYPE *
-    if (isBlank(data.tax_type)) errors.tax_type = "Tax type is required.";
-
-    // TAX RATE (optional)
 
     // HSN / SAC CODE *
     if (isBlank(data.hsn_sac_code))
@@ -163,12 +162,12 @@ const validateForm = (data) => {
     else if (!/^\d{4,8}$/.test(data.hsn_sac_code.trim()))
         errors.hsn_sac_code = "Enter 4 to 8 digits.";
 
-    // PURCHASE PRICE (optional)
+    // COST / PURCHASE PRICE (optional)
     if (!isBlank(data.cost_price)) {
         if (Number.isNaN(Number(data.cost_price)))
             errors.cost_price = "Enter a valid amount.";
         else if (Number(data.cost_price) < 0)
-            errors.cost_price = "Purchase price cannot be negative.";
+            errors.cost_price = "Price cannot be negative.";
     }
 
     // SELLING PRICE *
@@ -196,6 +195,9 @@ const getWarehouseName = (warehouse) =>
     warehouse?.warehouseName ||
     "Warehouse";
 
+const getVendorName = (vendor) =>
+    vendor?.vendor_name || vendor?.company_name || vendor?.name || "Vendor";
+
 // Accepts [..], { results: [..] } or { data: [..] } / { data: { results: [..] } }
 const toList = (response) => {
     const list = Array.isArray(response)
@@ -217,7 +219,11 @@ const mapProductToFormData = (product) => {
         sku: product.sku || "",
         category: product.category?.id ?? product.category ?? "",
         brand: product.brand || "",
-        supplier: product.supplier || "",
+        supplier:
+            product.supplier?.vendor_name ??
+            product.supplier?.name ??
+            product.supplier ??
+            "",
         warehouse: product.warehouse?.id ?? product.warehouse ?? "",
         opening_stock_qty: String(
             product.opening_stock_qty ?? product.current_stock ?? "0"
@@ -226,7 +232,6 @@ const mapProductToFormData = (product) => {
         unit: product.unit || "",
         quantity: String(product.quantity ?? product.current_stock ?? "0"),
         description: product.description || "",
-        tax_type: product.tax_type || "",
         tax_rate: String(product.tax_rate ?? ""),
         hsn_sac_code: product.hsn_sac_code || "",
         cost_price: String(product.cost_price ?? ""),
@@ -235,27 +240,36 @@ const mapProductToFormData = (product) => {
     };
 };
 
-const buildPayload = (formData) => ({
-    ...formData,
-    product_name: formData.product_name.trim(),
-    sku: formData.sku.trim(),
-    brand: formData.brand.trim(),
-    supplier: formData.supplier.trim(),
-    description: formData.description.trim(),
-    hsn_sac_code: formData.hsn_sac_code.trim(),
+const buildPayload = (formData) => {
+    const isService = formData.product_type === "service";
 
-    category: formData.category || null,
-    warehouse: formData.warehouse || null,
+    return {
+        ...formData,
+        product_name: formData.product_name.trim(),
+        sku: formData.sku.trim(),
+        description: formData.description.trim(),
+        hsn_sac_code: formData.hsn_sac_code.trim(),
 
+        category: formData.category || null,
 
-    quantity: Number(formData.quantity) || 0,
-    opening_stock_qty: Number(formData.opening_stock_qty) || 0,
-    reorder_level: Number(formData.reorder_level) || 0,
+        // Stock-related fields do not apply to services
+        brand: isService ? "" : formData.brand.trim(),
+        supplier: isService ? "" : formData.supplier.trim(),
+        warehouse: isService ? null : formData.warehouse || null,
+        quantity: isService ? 0 : Number(formData.quantity) || 0,
+        opening_stock_qty: isService
+            ? 0
+            : Number(formData.opening_stock_qty) || 0,
+        reorder_level: isService ? 0 : Number(formData.reorder_level) || 0,
 
-    cost_price: formData.cost_price || "0",
-    selling_price: formData.selling_price || "0",
-    tax_rate: formData.tax_rate || "0",
-});
+        // unit is a choice field and can't be empty, so services get a default
+        unit: isService ? "Project" : formData.unit,
+
+        cost_price: formData.cost_price || "0",
+        selling_price: formData.selling_price || "0",
+        tax_rate: formData.tax_rate || "0",
+    };
+};
 
 /* =====================================================
    SMALL RENDER HELPERS
@@ -298,11 +312,15 @@ const AddProductModal = ({
     const { categories = [], loading: categoryLoading } = useSelector(
         (state) => state.category
     );
+    const vendors = useSelector(selectVendors);
+    const vendorLoading = useSelector(selectVendorLoading);
 
     const [formData, setFormData] = useState(initialFormData);
     const [touched, setTouched] = useState({});
     const [submitted, setSubmitted] = useState(false);
     const [fetchedWarehouses, setFetchedWarehouses] = useState([]);
+
+    const isService = formData.product_type === "service";
 
     /* ---------- warehouse options: prop first, API as fallback ---------- */
 
@@ -340,6 +358,14 @@ const AddProductModal = ({
         dispatch(getCategories({ page: 1, page_size: 100 }));
     }, [isOpen, dispatch]);
 
+    /* ---------- load vendors (suppliers) for products ---------- */
+
+    useEffect(() => {
+        if (!isOpen || isService) return;
+
+        dispatch(getVendors({ page: 1, page_size: 100 }));
+    }, [isOpen, isService, dispatch]);
+
     /* ---------- prefill (edit) or reset (add) when the modal opens ---------- */
 
     useEffect(() => {
@@ -353,7 +379,8 @@ const AddProductModal = ({
     /* ---------- load warehouses only if none were passed in ---------- */
 
     useEffect(() => {
-        if (!isOpen || hasWarehouseProp) return;
+        // services have no warehouse, so skip the request for them
+        if (!isOpen || hasWarehouseProp || isService) return;
 
         let cancelled = false;
 
@@ -369,7 +396,7 @@ const AddProductModal = ({
         return () => {
             cancelled = true;
         };
-    }, [isOpen, hasWarehouseProp]);
+    }, [isOpen, hasWarehouseProp, isService]);
 
     /* ---------- handlers ---------- */
 
@@ -396,10 +423,9 @@ const AddProductModal = ({
             return;
         }
 
+        // No reset here: the parent closes the modal after a successful save,
+        // and the form resets itself the next time the modal opens.
         onSave(buildPayload(formData));
-        setFormData({ ...initialFormData });
-        setTouched({});
-        setSubmitted(false);
     };
 
     const handleClose = () => {
@@ -413,12 +439,115 @@ const AddProductModal = ({
 
     if (!isOpen) return null;
 
+    /* ---------- reusable field blocks (shared by product and service) ---------- */
+
+    const categoryField = (label) => (
+        <FormGroup>
+            <FieldLabel required>{label}</FieldLabel>
+            <Select {...fieldProps("category")}>
+                <option value="">
+                    {categoryLoading ? "Loading Categories..." : "Select Category"}
+                </option>
+
+                {!categoryLoading &&
+                    categories.map((category) => (
+                        <option key={category.id} value={category.id}>
+                            {category.category_name}
+                        </option>
+                    ))}
+            </Select>
+            <FieldError message={getError("category")} />
+        </FormGroup>
+    );
+
+    const statusField = (
+        <FormGroup>
+            <FieldLabel required>STATUS</FieldLabel>
+            <Select {...fieldProps("status")}>{renderOptions(STATUS_OPTIONS)}</Select>
+            <FieldError message={getError("status")} />
+        </FormGroup>
+    );
+
+    const taxRateField = (
+        <FormGroup>
+            <FieldLabel required>TAX RATE (%)</FieldLabel>
+            <Select {...fieldProps("tax_rate")}>
+                <option value="">Select</option>
+                {renderOptions(TAX_RATE_OPTIONS)}
+            </Select>
+            <FieldError message={getError("tax_rate")} />
+        </FormGroup>
+    );
+
+    const hsnField = (
+        <FormGroup>
+            <FieldLabel required>HSN / SAC CODE</FieldLabel>
+            <Input
+                {...fieldProps("hsn_sac_code")}
+                placeholder="Enter Code"
+                maxLength={8}
+                inputMode="numeric"
+                autoComplete="off"
+            />
+            <FieldError message={getError("hsn_sac_code")} />
+        </FormGroup>
+    );
+
+    const costPriceField = (label) => (
+        <FormGroup>
+            <FieldLabel>{label}</FieldLabel>
+            <Input
+                {...fieldProps("cost_price")}
+                type="number"
+                min="0"
+                step="0.01"
+                placeholder="0.00"
+                autoComplete="off"
+            />
+            <FieldError message={getError("cost_price")} />
+        </FormGroup>
+    );
+
+    const sellingPriceField = (
+        <FormGroup>
+            <FieldLabel required>SELLING PRICE</FieldLabel>
+            <Input
+                {...fieldProps("selling_price")}
+                type="number"
+                min="0"
+                step="0.01"
+                placeholder="0.00"
+                autoComplete="off"
+            />
+            <FieldError message={getError("selling_price")} />
+        </FormGroup>
+    );
+
+    const descriptionField = (
+        <FormGroup>
+            <FieldLabel>DESCRIPTION / SPECIFICATION</FieldLabel>
+            <Input
+                {...fieldProps("description")}
+                placeholder="Enter Note..."
+                maxLength={500}
+                autoComplete="off"
+            />
+            <FieldError message={getError("description")} />
+        </FormGroup>
+    );
+
     return (
         <Overlay onClick={handleClose}>
             <Modal onClick={(e) => e.stopPropagation()}>
                 <Header>
                     <Title>
-                        {isEditMode ? "Edit Product" : "Add New Product"}
+                        {isEditMode
+                            ? isService
+                                ? "Edit Service"
+                                : "Edit Product"
+                            : isService
+                                ? "Add New Service"
+                                : "Add New Product"}
                     </Title>
 
                     <Subtitle>
@@ -438,223 +567,185 @@ const AddProductModal = ({
                         <FieldError message={getError("product_type")} />
                     </FormGroup>
 
-                    {/* PRODUCT NAME */}
-                    <FormGroup>
-                        <FieldLabel required>PRODUCT NAME</FieldLabel>
-                        <Input
-                            {...fieldProps("product_name")}
-                            placeholder="Enter name"
-                            maxLength={150}
-                            autoComplete="off"
-                        />
-                        <FieldError message={getError("product_name")} />
-                    </FormGroup>
+                    {isService ? (
+                        <>
+                            {/* SERVICE NAME */}
+                            <FormGroup>
+                                <FieldLabel required>SERVICE NAME</FieldLabel>
+                                <Input
+                                    {...fieldProps("product_name")}
+                                    placeholder="Enter service name"
+                                    maxLength={150}
+                                    autoComplete="off"
+                                />
+                                <FieldError message={getError("product_name")} />
+                            </FormGroup>
 
-                    {/* SKU */}
-                    <FormGroup>
-                        <FieldLabel>SKU</FieldLabel>
-                        <Input
-                            {...fieldProps("sku")}
-                            placeholder="1253698"
-                            maxLength={50}
-                            autoComplete="off"
-                        />
-                        <FieldError message={getError("sku")} />
-                    </FormGroup>
+                            {/* SERVICE CODE */}
+                            <FormGroup>
+                                <FieldLabel>SERVICE CODE</FieldLabel>
+                                <Input
+                                    {...fieldProps("sku")}
+                                    placeholder="Enter service code"
+                                    maxLength={50}
+                                    autoComplete="off"
+                                />
+                                <FieldError message={getError("sku")} />
+                            </FormGroup>
 
-                    {/* CATEGORY */}
-                    <FormGroup>
-                        <FieldLabel required>CATEGORY</FieldLabel>
-                        <Select {...fieldProps("category")}>
-                            <option value="">
-                                {categoryLoading
-                                    ? "Loading Categories..."
-                                    : "Select Category"}
-                            </option>
+                            {categoryField("SERVICE CATEGORY")}
+                            {statusField}
+                            {taxRateField}
+                            {hsnField}
+                            {costPriceField("COST PRICE")}
+                            {sellingPriceField}
+                            {descriptionField}
+                        </>
+                    ) : (
+                        <>
+                            {/* PRODUCT NAME */}
+                            <FormGroup>
+                                <FieldLabel required>PRODUCT NAME</FieldLabel>
+                                <Input
+                                    {...fieldProps("product_name")}
+                                    placeholder="Enter name"
+                                    maxLength={150}
+                                    autoComplete="off"
+                                />
+                                <FieldError message={getError("product_name")} />
+                            </FormGroup>
 
-                            {!categoryLoading &&
-                                categories.map((category) => (
-                                    <option
-                                        key={category.id}
-                                        value={category.id}
-                                    >
-                                        {category.category_name}
+                            {/* PRODUCT CODE */}
+                            <FormGroup>
+                                <FieldLabel>PRODUCT CODE</FieldLabel>
+                                <Input
+                                    {...fieldProps("sku")}
+                                    placeholder="1253698"
+                                    maxLength={50}
+                                    autoComplete="off"
+                                />
+                                <FieldError message={getError("sku")} />
+                            </FormGroup>
+
+                            {categoryField("CATEGORY")}
+
+                            {/* BRAND */}
+                            <FormGroup>
+                                <FieldLabel>BRAND</FieldLabel>
+                                <Input
+                                    {...fieldProps("brand")}
+                                    placeholder="Enter Brand"
+                                    maxLength={100}
+                                    autoComplete="off"
+                                />
+                                <FieldError message={getError("brand")} />
+                            </FormGroup>
+
+                            {/* SUPPLIER (vendor list) */}
+                            <FormGroup>
+                                <FieldLabel>SUPPLIER</FieldLabel>
+                                <Select {...fieldProps("supplier")}>
+                                    <option value="">
+                                        {vendorLoading
+                                            ? "Loading Vendors..."
+                                            : "Select Supplier"}
                                     </option>
-                                ))}
-                        </Select>
-                        <FieldError message={getError("category")} />
-                    </FormGroup>
 
-                    {/* BRAND */}
-                    <FormGroup>
-                        <FieldLabel>BRAND</FieldLabel>
-                        <Input
-                            {...fieldProps("brand")}
-                            placeholder="Enter Brand"
-                            maxLength={100}
-                            autoComplete="off"
-                        />
-                        <FieldError message={getError("brand")} />
-                    </FormGroup>
+                                    {/* keeps an old supplier visible when editing */}
+                                    {formData.supplier &&
+                                        !vendors.some(
+                                            (v) => getVendorName(v) === formData.supplier
+                                        ) && (
+                                            <option value={formData.supplier}>
+                                                {formData.supplier}
+                                            </option>
+                                        )}
 
-                    {/* SUPPLIER */}
-                    <FormGroup>
-                        <FieldLabel>SUPPLIER</FieldLabel>
-                        <Input
-                            {...fieldProps("supplier")}
-                            placeholder="Enter Supplier"
-                            maxLength={100}
-                            autoComplete="off"
-                        />
-                        <FieldError message={getError("supplier")} />
-                    </FormGroup>
+                                    {vendors.map((vendor) => (
+                                        <option
+                                            key={vendor.id}
+                                            value={getVendorName(vendor)}
+                                        >
+                                            {getVendorName(vendor)}
+                                        </option>
+                                    ))}
+                                </Select>
+                                <FieldError message={getError("supplier")} />
+                            </FormGroup>
 
-                    {/* WAREHOUSE */}
-                    <FormGroup>
-                        <FieldLabel required>WAREHOUSE</FieldLabel>
-                        <Select {...fieldProps("warehouse")}>
-                            <option value="">SELECT WAREHOUSE</option>
+                            {/* WAREHOUSE */}
+                            <FormGroup>
+                                <FieldLabel required>WAREHOUSE</FieldLabel>
+                                <Select {...fieldProps("warehouse")}>
+                                    <option value="">SELECT WAREHOUSE</option>
 
-                            {warehouseOptions.map((warehouse) => (
-                                <option
-                                    key={warehouse.id}
-                                    value={warehouse.id}
-                                >
-                                    {getWarehouseName(warehouse)}
-                                </option>
-                            ))}
-                        </Select>
-                        <FieldError message={getError("warehouse")} />
-                    </FormGroup>
+                                    {warehouseOptions.map((warehouse) => (
+                                        <option
+                                            key={warehouse.id}
+                                            value={warehouse.id}
+                                        >
+                                            {getWarehouseName(warehouse)}
+                                        </option>
+                                    ))}
+                                </Select>
+                                <FieldError message={getError("warehouse")} />
+                            </FormGroup>
 
-                    {/* OPENING STOCK */}
-                    <FormGroup>
-                        <FieldLabel required>OPENING STOCK QTY</FieldLabel>
-                        <Input
-                            {...fieldProps("opening_stock_qty")}
-                            type="number"
-                            min="0"
-                            autoComplete="off"
-                        />
-                        <FieldError message={getError("opening_stock_qty")} />
-                    </FormGroup>
+                            {/* OPENING STOCK */}
+                            <FormGroup>
+                                <FieldLabel required>OPENING STOCK QTY</FieldLabel>
+                                <Input
+                                    {...fieldProps("opening_stock_qty")}
+                                    type="number"
+                                    min="0"
+                                    autoComplete="off"
+                                />
+                                <FieldError message={getError("opening_stock_qty")} />
+                            </FormGroup>
 
-                    {/* REORDER LEVEL */}
-                    <FormGroup>
-                        <FieldLabel required>REORDER LEVEL</FieldLabel>
-                        <Input
-                            {...fieldProps("reorder_level")}
-                            type="number"
-                            min="0"
-                            step="1"
-                            autoComplete="off"
-                        />
-                        <FieldError message={getError("reorder_level")} />
-                    </FormGroup>
+                            {/* REORDER LEVEL */}
+                            <FormGroup>
+                                <FieldLabel required>REORDER LEVEL</FieldLabel>
+                                <Input
+                                    {...fieldProps("reorder_level")}
+                                    type="number"
+                                    min="0"
+                                    step="1"
+                                    autoComplete="off"
+                                />
+                                <FieldError message={getError("reorder_level")} />
+                            </FormGroup>
 
-                    {/* UNIT */}
-                    <FormGroup>
-                        <FieldLabel required>UNIT</FieldLabel>
-                        <Select {...fieldProps("unit")}>
-                            <option value="">Select Unit</option>
-                            {renderOptions(UNIT_OPTIONS)}
-                        </Select>
-                        <FieldError message={getError("unit")} />
-                    </FormGroup>
+                            {/* UNIT */}
+                            <FormGroup>
+                                <FieldLabel required>UNIT</FieldLabel>
+                                <Select {...fieldProps("unit")}>
+                                    <option value="">Select Unit</option>
+                                    {renderOptions(UNIT_OPTIONS)}
+                                </Select>
+                                <FieldError message={getError("unit")} />
+                            </FormGroup>
 
-                    {/* QUANTITY */}
-                    <FormGroup>
-                        <FieldLabel required>QUANTITY</FieldLabel>
-                        <Input
-                            {...fieldProps("quantity")}
-                            type="number"
-                            min="0"
-                            autoComplete="off"
-                        />
-                        <FieldError message={getError("quantity")} />
-                    </FormGroup>
+                            {/* QUANTITY */}
+                            <FormGroup>
+                                <FieldLabel required>QUANTITY</FieldLabel>
+                                <Input
+                                    {...fieldProps("quantity")}
+                                    type="number"
+                                    min="0"
+                                    autoComplete="off"
+                                />
+                                <FieldError message={getError("quantity")} />
+                            </FormGroup>
 
-                    {/* DESCRIPTION */}
-                    <FormGroup>
-                        <FieldLabel>DESCRIPTION / SPECIFICATION</FieldLabel>
-                        <Input
-                            {...fieldProps("description")}
-                            placeholder="Enter Note..."
-                            maxLength={500}
-                            autoComplete="off"
-                        />
-                        <FieldError message={getError("description")} />
-                    </FormGroup>
-
-                    {/* TAX TYPE */}
-                    <FormGroup>
-                        <FieldLabel>TAX TYPE</FieldLabel>
-                        <Select {...fieldProps("tax_type")}>
-                            <option value="">Select</option>
-                            {renderOptions(TAX_TYPE_OPTIONS)}
-                        </Select>
-                        <FieldError message={getError("tax_type")} />
-                    </FormGroup>
-
-                    {/* TAX RATE */}
-                    <FormGroup>
-                        <FieldLabel>TAX RATE (%)</FieldLabel>
-                        <Select {...fieldProps("tax_rate")}>
-                            <option value="">Select</option>
-                            {renderOptions(TAX_RATE_OPTIONS)}
-                        </Select>
-                        <FieldError message={getError("tax_rate")} />
-                    </FormGroup>
-
-                    {/* HSN / SAC */}
-                    <FormGroup>
-                        <FieldLabel required>HSN / SAC CODE</FieldLabel>
-                        <Input
-                            {...fieldProps("hsn_sac_code")}
-                            placeholder="Enter Code"
-                            maxLength={8}
-                            inputMode="numeric"
-                            autoComplete="off"
-                        />
-                        <FieldError message={getError("hsn_sac_code")} />
-                    </FormGroup>
-
-                    {/* PURCHASE PRICE */}
-                    <FormGroup>
-                        <FieldLabel>PURCHASE PRICE</FieldLabel>
-                        <Input
-                            {...fieldProps("cost_price")}
-                            type="number"
-                            min="0"
-                            step="0.01"
-                            placeholder="0.00"
-                            autoComplete="off"
-                        />
-                        <FieldError message={getError("cost_price")} />
-                    </FormGroup>
-
-                    {/* SELLING PRICE */}
-                    <FormGroup>
-                        <FieldLabel required>SELLING PRICE</FieldLabel>
-                        <Input
-                            {...fieldProps("selling_price")}
-                            type="number"
-                            min="0"
-                            step="0.01"
-                            placeholder="0.00"
-                            autoComplete="off"
-                        />
-                        <FieldError message={getError("selling_price")} />
-                    </FormGroup>
-
-                    {/* STATUS */}
-                    <FormGroup>
-                        <FieldLabel required>STATUS</FieldLabel>
-                        <Select {...fieldProps("status")}>
-                            {renderOptions(STATUS_OPTIONS)}
-                        </Select>
-                        <FieldError message={getError("status")} />
-                    </FormGroup>
+                            {descriptionField}
+                            {taxRateField}
+                            {hsnField}
+                            {costPriceField("PURCHASE PRICE")}
+                            {sellingPriceField}
+                            {statusField}
+                        </>
+                    )}
 
                     <ButtonRow>
                         <CancelButton
@@ -673,8 +764,12 @@ const AddProductModal = ({
                                     ? "UPDATING..."
                                     : "SAVING..."
                                 : isEditMode
-                                    ? "UPDATE PRODUCT"
-                                    : "SAVE PRODUCT"}
+                                    ? isService
+                                        ? "UPDATE SERVICE"
+                                        : "UPDATE PRODUCT"
+                                    : isService
+                                        ? "SAVE SERVICE"
+                                        : "SAVE PRODUCT"}
                         </SaveButton>
                     </ButtonRow>
                 </Form>

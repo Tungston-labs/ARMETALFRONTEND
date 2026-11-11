@@ -14,7 +14,7 @@ import projectReducer from "../Redux/fieldShiftSlice";
 import companyReducer from "../Redux/companySlice";
 import financeReducer from "./financeSlice";
 import salaryIncrementReducer from "../Redux/salaryIncrementSlice";
-import warehouseReducer from "../Redux/warehouseSlice";
+import warehouseReducer from "./finance/Product/warehouseSlice";
 import quotationReducer from "./quotationSlice";
 import deliveryNotesReducer from "../Redux/finance/Sales/deliveryNotesSlice";
 import categoryReducer from "./finance/Product/categorySlice";

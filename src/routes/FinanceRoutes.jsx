@@ -160,6 +160,7 @@ import TrialBalance from "../Pages/FinanceModule/ACCOUNTS/TrialBalance/TrialBala
 import ProfitLoss from "../Pages/FinanceModule/REPORTS/ProfitLoss/ProfitLoss.jsx";
 import CashFlow from "../Pages/FinanceModule/REPORTS/CashFlow/CashFlow.jsx";
 import AddingRecurring from "../Pages/FinanceModule/SALES/Recurring Billing/modal/AddingRecurring.jsx";
+import WarehouseList from "../Pages/FinanceModule/PRODUCTS/Warehouse/WarehouseList.jsx";
 
 const FinanceRoutes = () => {
   return (
@@ -171,6 +172,7 @@ const FinanceRoutes = () => {
       <Route path="Categories-List" element={<CategoriesList />} />
       <Route path="Product-List" element={<ProductList />} />
       <Route path="Warehouse-List" element={<Warehouse />} />
+           <Route path="sales/warehouse" element={<WarehouseList />} />
       <Route path="warehouse/:id" element={<WarehouseDetails />} />
       <Route path="Inventory-List" element={<InventoryList />} />
 
