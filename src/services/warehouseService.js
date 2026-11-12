@@ -1,10 +1,6 @@
 
 import API from "./api";
 
-/* =========================================================
-   GET WAREHOUSES
-========================================================= */
-
 export const getWarehouses = async ({
   search = "",
   status = "",

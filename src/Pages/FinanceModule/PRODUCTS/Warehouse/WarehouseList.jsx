@@ -1,3 +1,4 @@
+
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
@@ -83,6 +84,7 @@ const WarehouseList = () => {
     createError,
   } = useSelector((state) => state.warehouse);
 
+  // Filters
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [status, setStatus] = useState("");
@@ -91,15 +93,21 @@ const WarehouseList = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [exporting, setExporting] = useState(false);
 
+  // Debounce search
   useEffect(() => {
-    const t = setTimeout(() => setDebouncedSearch(search.trim()), 400);
-    return () => clearTimeout(t);
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search.trim());
+    }, 400);
+
+    return () => clearTimeout(timer);
   }, [search]);
 
+  // Reset pagination when filters change
   useEffect(() => {
     setCurrentPage(1);
   }, [debouncedSearch, status, nearFull]);
 
+  // Fetch warehouses with all filters
   const loadWarehouses = useCallback(
     (page = currentPage) => {
       const params = { page, page_size: PAGE_SIZE };
@@ -111,14 +119,17 @@ const WarehouseList = () => {
     [dispatch, currentPage, debouncedSearch, status, nearFull],
   );
 
+  // Fetch list whenever filters or page changes
   useEffect(() => {
     loadWarehouses();
   }, [loadWarehouses]);
 
+  // Fetch KPI
   useEffect(() => {
     dispatch(fetchWarehouseKpi());
   }, [dispatch]);
 
+  // Clear errors on unmount
   useEffect(() => {
     return () => {
       dispatch(clearWarehouseError());
@@ -133,6 +144,7 @@ const WarehouseList = () => {
 
   const closeModal = () => {
     if (creating) return;
+
     setIsModalOpen(false);
     dispatch(clearCreateWarehouseError());
   };
@@ -155,6 +167,8 @@ const WarehouseList = () => {
       } else {
         loadWarehouses(1);
       }
+
+      // Refresh KPI
       dispatch(fetchWarehouseKpi());
     } catch {
       /* createError is stored in Redux and displayed in the modal */
@@ -301,7 +315,7 @@ const WarehouseList = () => {
         onClick: () => setNearFull((prev) => !prev),
       },
     ],
-    [kpi],
+    [kpi]
   );
 
   const createErrorMessage = useMemo(
@@ -375,6 +389,7 @@ const WarehouseList = () => {
         autoLayout
       />
 
+      {/* Pagination */}
       <ReusablePagination
         currentPage={currentPage}
         totalPages={totalPages}

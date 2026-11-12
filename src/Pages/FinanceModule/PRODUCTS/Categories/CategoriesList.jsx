@@ -1,15 +1,13 @@
 import React, { useMemo } from "react";
 import { FiCheckCircle, FiDownload } from "react-icons/fi";
-
 import ReusableTable from "../../../../Components/ReusableTable/ReusableTable";
 import ReusablePagination from "../../../../Components/Pagination/ReusablePagination";
 import ReusableFilter from "../../../../Components/ReusableTable/ReusableFilter";
 import ReusableHeader from "../../../../Components/ReusableTable/ReusableHeader";
 import { HeaderButton } from "../../../../Components/ReusableTable/ReusableHeader.styles";
 import StatsCards from "../../../../Components/StatsCards/StatsCards";
-
 import CategoryModal from "./modal/CategoryModal";
-import DeleteConfirmModal from "./modal/DeleteConfirmModal"; // adjust path if you keep a shared one
+import DeleteConfirmModal from "./modal/DeleteConfirmModal";
 import { getCategoryColumns } from "./columns";
 import { useCategoriesList } from "./useCategoriesList";
 import { PiPackage } from "react-icons/pi";
@@ -46,45 +44,51 @@ const CategoriesList = () => {
     inactiveCount,
     parentCount,
     subCategoryCount,
+    assignedProductCount,
+  emptyCategoryProductCount,
+  mostAssignedCategory,
   } = useCategoriesList();
 
-  const statsCards = [
-    {
-      icon: <PiPackage size={20} />,
-      title: "Total Categories",
-      count,
-      backgroundColor: "#EEF2FF",
-      iconColor: "#4F46E5",
-    },
-    {
-      icon: <FiCheckCircle size={20} />,
-      title: "Active Categories",
-      count: activeCount,
-      backgroundColor: "#ECFDF5",
-      iconColor: "#10B981",
-    },
-    {
-      icon: <PiPackage size={20} />,
-      title: "Products Assigned",
-      count: inactiveCount,
-      backgroundColor: "#FEF2F2",
-      iconColor: "#EF4444",
-    },
-    {
-      icon: <PiPackage size={20} />,
-      title: "Empty Categories",
-      count: parentCount,
-      backgroundColor: "#FFF7ED",
-      iconColor: "#F97316",
-    },
-    {
-      icon: <PiPackage size={20} />,
-      title: "Largest Category",
-      count: subCategoryCount,
-      backgroundColor: "#F5F3FF",
-      iconColor: "#8B5CF6",
-    },
-  ];
+ 
+const statsCards = [
+  {
+    icon: <PiPackage size={20} />,
+    title: "Total Categories",
+    count: count,
+    backgroundColor: "#EEF2FF",
+    iconColor: "#4F46E5",
+  },
+  {
+    icon: <FiCheckCircle size={20} />,
+    title: "Active Categories",
+    count: activeCount,
+    backgroundColor: "#ECFDF5",
+    iconColor: "#10B981",
+  },
+  {
+    icon: <PiPackage size={20} />,
+    title: "Products Assigned",
+    count: assignedProductCount,
+    backgroundColor: "#FEF2F2",
+    iconColor: "#EF4444",
+  },
+  {
+    icon: <PiPackage size={20} />,
+    title: "Empty Categories",
+    count: emptyCategoryProductCount,
+    backgroundColor: "#FFF7ED",
+    iconColor: "#F97316",
+  },
+  {
+    icon: <PiPackage size={20} />,
+    title: "Largest Category",
+    count: mostAssignedCategory
+      ? `${mostAssignedCategory.category_name} (${mostAssignedCategory.product_count})`
+      : "-",
+    backgroundColor: "#F5F3FF",
+    iconColor: "#8B5CF6",
+  },
+];
 
   const columns = useMemo(
     () =>

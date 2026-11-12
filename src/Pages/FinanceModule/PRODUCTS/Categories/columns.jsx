@@ -1,12 +1,12 @@
 import CategoryActions from "./actions/CategoryActions";
+import { StatusBadge } from "./CategoriesList.styles";
 
 const MONTHS = [
     "Jan", "Feb", "Mar", "Apr", "May", "Jun",
     "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
 ];
 
-// Formats an ISO timestamp (e.g. "2026-09-08T07:55:09.180195Z")
-// as "08/Sep/2026".
+
 const formatDate = (value) => {
     if (!value) return "-";
 
@@ -28,7 +28,21 @@ export const getCategoryColumns = ({ onView, onEdit, onDelete }) => [
     { accessor: "category_type", header: "Category Type" },
     { accessor: "category_type", header: "Items Count" },
     { accessor: "category_type", header: "Inventory Value" },
-    { accessor: "status", header: "Status" },
+ {
+    accessor: "status",
+    header: "Status",
+    render: (row) => {
+      const status = String(row?.status || "").toLowerCase();
+
+      return status ? (
+        <StatusBadge $status={status}>
+          {status.charAt(0).toUpperCase() + status.slice(1)}
+        </StatusBadge>
+      ) : (
+        "-"
+      );
+    },
+  },
     
     {
         accessor: "actions",

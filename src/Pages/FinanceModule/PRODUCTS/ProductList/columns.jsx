@@ -5,8 +5,8 @@ import ProductActions from "./actions/ProductActions";
 
 const TONES = {
     success: { bg: "#E1F6EB", color: "#127923" }, // In Stock, Active
-    warning: { bg: "#FFF4E5", color: "#050505" }, // Low Stock
-    danger: { bg: "#FDE8EA", color: "#000000" },  // Out of Stock
+    warning: { bg: "#FFF4E5", color: "#db9a0f" }, // Low Stock
+    danger: { bg: "#FDE8EA", color: "#DB0F12" },  // Out of Stock
     neutral: { bg: "#F3F4F6", color: "#6B7280" }, // Inactive / unknown
 };
 
@@ -25,7 +25,7 @@ const Badge = styled.span`
     box-sizing: border-box;
     text-align: center;
     border-radius: 6px;
-    background: ${({ $tone }) => TONES[$tone].bg};
+    /* background: ${({ $tone }) => TONES[$tone].bg}; */
     color: ${({ $tone }) => TONES[$tone].color};
     font-family: "Poppins", sans-serif;
     font-size: 13px;
