@@ -33,7 +33,20 @@ import {
 import ReusableConfirmModal from "../../../../Components/modals/ReusableConfirmModal";
 
 const capitalize = (v) =>
-  v ? String(v).charAt(0).toUpperCase() + String(v).slice(1) : "-";
+  v
+    ? String(v)
+        .replace(/_/g, " ")
+        .replace(/\b\w/g, (c) => c.toUpperCase())
+    : "-";
+
+const formatSar = (value) => {
+  const num = Number(value ?? 0);
+  const safe = Number.isFinite(num) ? num : 0;
+  return `SAR ${safe.toLocaleString("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
+};
 
 const formatDate = (value) => {
   if (!value) return "-";
@@ -74,33 +87,35 @@ const WarehouseDetails = () => {
     const d = warehouseDetail || {};
     return {
       name: d.warehouse_name || "Warehouse",
-      type: d.warehouse_type || "-",
+      type: capitalize(d.warehouse_type),
       status: capitalize(d.status),
       operatingSince: formatDate(d.operating_since || d.created_at),
       manager:
-        d.manager_name || d.manager?.name || d.manager?.full_name ||
-        (typeof d.manager === "string" ? d.manager : "-"),
+        (typeof d.manager === "string" ? d.manager : "") ||
+        d.manager_name ||
+        d.manager?.name ||
+        d.manager?.full_name ||
+        "-",
       phoneNumber: d.phone_number || "-",
       email: d.email || "-",
-      storageCapacity: d.storage_capacity ?? "-",
+      storageCapacity: d.storage_capacity || "-",
+      capacityUsed: d.capacity_used || d.storage_capacity || "-",
       companyName: d.company_name || d.company?.name || "-",
       addressLine1: d.address_line_1 || d.address_line1 || d.address || "-",
       addressLine2: d.address_line_2 || d.address_line2 || "-",
-      city: d.city || "-",
-      totalProducts: d.total_products ?? 0,
-      stockQuantity: d.stock_quantity ?? 0,
-      lowStock: d.low_stock_products ?? 0,
-      outOfStock: d.out_of_stock_products ?? 0,
+      city: d.location || d.city || d.country || "-",
+      totalUnits: d.total_units ?? d.stock_quantity ?? 0,
+      stockValue: formatSar(d.stock_value ?? 0),
     };
   }, [warehouseDetail]);
 
   const cards = useMemo(
     () => [
       { count: String(warehouse.type), title: "Warehouse Type", icon: <FiBox size={20} />, backgroundColor: "#E8EDFF", iconColor: "#3454B9" },
-      { count: String(warehouse.totalProducts), title: "Total Products", icon: <FiArchive size={20} />, backgroundColor: "#E4F7FB", iconColor: "#22A6C7" },
-      { count: String(warehouse.stockQuantity), title: "Total Stock Quantity", icon: <FiPackage size={20} />, backgroundColor: "#E9F8ED", iconColor: "#16A34A" },
-      { count: String(warehouse.lowStock), title: "Low Stock Products", icon: <FiPackage size={20} />, backgroundColor: "#FFF2E5", iconColor: "#FF8500" },
-      { count: String(warehouse.outOfStock), title: "Out of Stock Products", icon: <FiAlertTriangle size={20} />, backgroundColor: "#FFECEC", iconColor: "#FF2D2D" },
+      { count: String(Number(warehouse.totalUnits) || 0), title: "Total Units", icon: <FiArchive size={20} />, backgroundColor: "#E4F7FB", iconColor: "#22A6C7" },
+      { count: warehouse.stockValue, title: "Stock Value", icon: <FiPackage size={20} />, backgroundColor: "#E9F8ED", iconColor: "#16A34A" },
+      { count: String(warehouse.capacityUsed), title: "Capacity Used", icon: <FiPackage size={20} />, backgroundColor: "#FFF2E5", iconColor: "#FF8500" },
+      { count: String(warehouse.status), title: "Status", icon: <FiAlertTriangle size={20} />, backgroundColor: "#EEF2FF", iconColor: "#4F46E5" },
     ],
     [warehouse],
   );

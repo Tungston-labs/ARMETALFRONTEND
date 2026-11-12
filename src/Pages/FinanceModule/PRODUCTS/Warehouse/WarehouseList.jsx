@@ -1,13 +1,22 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { MdWarehouse, MdCheckCircle, MdCancel } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
+import {
+  FiBox,
+  FiCreditCard,
+  FiInfo,
+  FiPackage,
+  FiUpload,
+} from "react-icons/fi";
+
 import ReusableHeader from "../../../../Components/ReusableTable/ReusableHeader";
 import ReusableTable from "../../../../Components/ReusableTable/ReusableTable";
 import ReusablePagination from "../../../../Components/Pagination/ReusablePagination";
 import ReusableFilter from "../../../../Components/ReusableTable/ReusableFilter";
 import StatsCards from "../../../../Components/StatsCards/StatsCards";
-import WarehouseModal from "./modal/WarehouseModal"; 
+import WarehouseModal from "./modal/WarehouseModal";
+import { buildWarehousePayload, formatApiError } from "./modal/warehouseMapper";
+import { exportWarehouses } from "../../../../services/warehouseService";
 import {
   fetchWarehouses,
   fetchWarehouseKpi,
@@ -15,45 +24,53 @@ import {
   clearWarehouseError,
   clearCreateWarehouseError,
 } from "../../../../Redux/finance/Product/warehouseSlice";
-import { FiBox } from "react-icons/fi";
+import {
+  ActionIconButton,
+  ExportButton,
+  FilterTag,
+  FilterTagBar,
+  PageContainer,
+} from "./WarehouseList.styles";
 
 const PAGE_SIZE = 20;
 
-/* Each column needs a unique accessor. Adjust the field names to your API. */
-const warehouseColumns = [
-  { accessor: "code", header: "Code" },
-  { accessor: "warehouse_name", header: "Warehouse Name" },
-  { accessor: "city", header: "Location" },
-  { accessor: "manager_name", header: "Manager" },
-  { accessor: "total_units", header: "Total Units" },
-  { accessor: "stock_value", header: "Stock Value" },
-  { accessor: "storage_capacity", header: "Capacity Used" },
-  { accessor: "status", header: "Status" },
-];
+const formatTwoDigits = (value) => {
+  const num = Number(value ?? 0);
+  if (!Number.isFinite(num) || num < 0) return "00";
+  return num < 10 ? `0${Math.trunc(num)}` : String(Math.trunc(num));
+};
 
-/* Modal form (camelCase) -> API payload (snake_case) */
-const buildPayload = (form) => ({
-  warehouse_code: form.warehouseCode,
-  warehouse_name: form.warehouseName,
-  warehouse_type: form.warehouseType,
-  manager_name: form.manager,
-  status: String(form.status || "").toLowerCase(),
-  operating_since: form.operatingSince || null,
-  country: form.country,
-  city: form.city,
-  address_line1: form.addressLine1,
-  address_line2: form.addressLine2,
-  postal_code: form.postalCode,
-  phone_number: form.phoneNumber,
-  email: form.email,
-  storage_capacity:
-    form.storageCapacity === "" ? null : Number(form.storageCapacity),
-  notes: form.notes,
-});
+const formatUnits = (value) => {
+  const num = Number(value ?? 0);
+  if (!Number.isFinite(num)) return "0";
+  if (Number.isInteger(num)) {
+    return num > 0 && num < 10 ? `0${num}` : String(num);
+  }
+  return num.toLocaleString("en-US", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  });
+};
+
+const formatSarAmount = (value) => {
+  const num = Number(value ?? 0);
+  const safe = Number.isFinite(num) ? num : 0;
+  return `SAR ${safe.toLocaleString("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
+};
+
+const formatStatusLabel = (value) => {
+  if (!value) return "—";
+  const text = String(value).trim();
+  return text.charAt(0).toUpperCase() + text.slice(1).toLowerCase();
+};
 
 const WarehouseList = () => {
   const dispatch = useDispatch();
-const navigate = useNavigate();
+  const navigate = useNavigate();
+
   const {
     warehouses,
     totalPages,
@@ -68,8 +85,10 @@ const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [status, setStatus] = useState("");
+  const [nearFull, setNearFull] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(search.trim()), 400);
@@ -78,16 +97,17 @@ const navigate = useNavigate();
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [debouncedSearch, status]);
+  }, [debouncedSearch, status, nearFull]);
 
   const loadWarehouses = useCallback(
     (page = currentPage) => {
       const params = { page, page_size: PAGE_SIZE };
       if (debouncedSearch) params.search = debouncedSearch;
       if (status) params.status = status.toLowerCase();
+      if (nearFull) params.near_full = "true";
       return dispatch(fetchWarehouses(params));
     },
-    [dispatch, currentPage, debouncedSearch, status],
+    [dispatch, currentPage, debouncedSearch, status, nearFull],
   );
 
   useEffect(() => {
@@ -105,7 +125,6 @@ const navigate = useNavigate();
     };
   }, [dispatch]);
 
-  /* Modal handlers */
   const openModal = () => {
     dispatch(clearCreateWarehouseError());
     setIsModalOpen(true);
@@ -116,112 +135,202 @@ const navigate = useNavigate();
     setIsModalOpen(false);
     dispatch(clearCreateWarehouseError());
   };
-const handleRowClick = useCallback(
-  (row) => {
-    if (row?.id === undefined || row?.id === null) return;
-    navigate(`/warehouse/${row.id}`); // adjust to the full path of your route
-  },
-  [navigate],
-);
+
+  const handleRowClick = useCallback(
+    (row) => {
+      if (row?.id === undefined || row?.id === null) return;
+      navigate(`/warehouse/${row.id}`);
+    },
+    [navigate],
+  );
+
   const handleSaveWarehouse = async (formData) => {
     try {
-      await dispatch(addWarehouse(buildPayload(formData))).unwrap();
-
+      await dispatch(addWarehouse(buildWarehousePayload(formData))).unwrap();
       setIsModalOpen(false);
 
-      /* Show the new record on page 1 and refresh the KPI cards */
       if (currentPage !== 1) {
-        setCurrentPage(1); // the effect reloads the list
+        setCurrentPage(1);
       } else {
         loadWarehouses(1);
       }
       dispatch(fetchWarehouseKpi());
-    } catch (err) {
-      /* createError is already in the store; the modal shows it */
+    } catch {
+      /* createError is stored in Redux and displayed in the modal */
     }
   };
+
+  const handleExport = async () => {
+    if (exporting) return;
+    setExporting(true);
+    try {
+      const blob = await exportWarehouses({
+        search: debouncedSearch,
+        status: status ? status.toLowerCase() : "",
+        near_full: nearFull ? "true" : "",
+        exportFormat: "csv",
+      });
+
+      const url = window.URL.createObjectURL(new Blob([blob]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", "warehouses.csv");
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("Failed to export warehouses:", err);
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const warehouseColumns = useMemo(
+    () => [
+      { accessor: "code", header: "Code" },
+      { accessor: "warehouse_name", header: "Warehouse" },
+      {
+        accessor: "location",
+        header: "Location",
+        render: (row) => row.location || row.city || row.country || "—",
+      },
+      {
+        accessor: "manager",
+        header: "Manager",
+        render: (row) => row.manager || row.manager_name || "—",
+      },
+      {
+        accessor: "total_units",
+        header: "Total units",
+        render: (row) => formatUnits(row.total_units),
+      },
+      {
+        accessor: "stock_value",
+        header: "Stock value",
+        render: (row) => formatSarAmount(row.stock_value),
+      },
+      {
+        accessor: "capacity_used",
+        header: "Capacity used",
+        render: (row) => {
+          const text =
+            row.capacity_used ||
+            (row.storage_capacity ? String(row.storage_capacity) : "—");
+          if (row.near_full_capacity) {
+            return (
+              <span style={{ color: "#dc2626", fontWeight: 500 }}>{text}</span>
+            );
+          }
+          return text;
+        },
+      },
+      {
+        accessor: "status",
+        header: "Status",
+        render: (row) => formatStatusLabel(row.status),
+      },
+      {
+        accessor: "action",
+        header: "Action",
+        sortable: false,
+        render: (row) => (
+          <ActionIconButton
+            type="button"
+            title="View Warehouse Details"
+            aria-label={`View ${row.warehouse_name || "warehouse"} details`}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleRowClick(row);
+            }}
+          >
+            <FiInfo size={14} />
+          </ActionIconButton>
+        ),
+      },
+    ],
+    [handleRowClick],
+  );
 
   const statsCards = useMemo(
     () => [
       {
         title: "Total Warehouses",
-        count: kpi.total_warehouses,
+        count: formatTwoDigits(kpi?.total_warehouses),
         icon: <FiBox size={22} />,
         backgroundColor: "#eff6ff",
         iconColor: "#2563eb",
-        onClick: () => setStatus(""),
+        onClick: () => {
+          setStatus("");
+          setNearFull(false);
+        },
       },
-       {
-        title: "Total Stock value",
-        count: kpi.total_warehouses,
-        icon: <FiBox size={22} />,
-        backgroundColor: "#eff6ff",
-        iconColor: "#2563eb",
-        onClick: () => setStatus(""),
+      {
+        title: "Total stock value",
+        count: formatSarAmount(kpi?.total_stock_value),
+        icon: <FiPackage size={22} />,
+        backgroundColor: "#ecfdf5",
+        iconColor: "#16a34a",
       },
       {
         title: "Active Warehouses",
-        count: kpi.active_warehouses,
-        icon: <MdCheckCircle size={22} />,
-        backgroundColor: "#ecfdf5",
-        iconColor: "#059669",
-        onClick: () => setStatus("Active"),
+        count: formatTwoDigits(kpi?.active_warehouses),
+        icon: <FiCreditCard size={22} />,
+        backgroundColor: "#ecfeff",
+        iconColor: "#0891b2",
+        onClick: () => {
+          setNearFull(false);
+          setStatus("Active");
+        },
       },
       {
         title: "Average capacity used",
-        count: kpi.active_warehouses,
+        count: `${Math.round(Number(kpi?.average_capacity_used ?? 0))} %`,
         icon: <FiBox size={22} />,
-        backgroundColor: "#fdfaec",
-        iconColor: "#e0c217",
-        onClick: () => setStatus("Active"),
+        backgroundColor: "#fff7ed",
+        iconColor: "#ea580c",
       },
       {
         title: "Near full capacity",
-        count: kpi.inactive_warehouses,
+        count: formatTwoDigits(kpi?.near_full_capacity),
         icon: <FiBox size={22} />,
         backgroundColor: "#fef2f2",
         iconColor: "#dc2626",
-        onClick: () => setStatus("Inactive"),
+        onClick: () => setNearFull((prev) => !prev),
       },
     ],
     [kpi],
   );
 
-  const tableData = useMemo(
-    () =>
-      warehouses.map((w) => ({
-        ...w,
-        status: w?.status
-          ? w.status.charAt(0).toUpperCase() + w.status.slice(1)
-          : "-",
-      })),
-    [warehouses],
+  const createErrorMessage = useMemo(
+    () => formatApiError(createError),
+    [createError],
   );
 
-  /* Turn the API error (string or DRF object) into one readable string */
-  const createErrorMessage = useMemo(() => {
-    if (!createError) return "";
-    if (typeof createError === "string") return createError;
-    if (createError.detail) return createError.detail;
-    return Object.entries(createError)
-      .map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join(", ") : v}`)
-      .join(" | ");
-  }, [createError]);
-
   return (
-    <div style={{ padding: 20 }}>
+    <PageContainer>
       <ReusableHeader
-        title="Warehouses"
-        breadcrumbs={["Dashboard", "Warehouses"]}
-        buttonText="ADD NEW WAREHOUSE"
+        title="Warehouse"
+        breadcrumbs={["Products", "Warehouse"]}
+        buttonText="+ ADD WAREHOUSE"
         onButtonClick={openModal}
-      />
+      >
+        <ExportButton
+          type="button"
+          onClick={handleExport}
+          disabled={exporting}
+        >
+          <FiUpload size={14} />
+          {exporting ? "EXPORTING..." : "EXPORT"}
+        </ExportButton>
+      </ReusableHeader>
 
       <StatsCards cards={statsCards} loading={kpiLoading} />
 
       <ReusableFilter
         search={search}
         onSearch={setSearch}
+        searchPlaceholder="Search Warehouse"
         status={status}
         statuses={["Active", "Inactive"]}
         onStatus={setStatus}
@@ -231,19 +340,38 @@ const handleRowClick = useCallback(
         showDate={false}
       />
 
+      {nearFull && (
+        <FilterTagBar>
+          <FilterTag>
+            Near full capacity (&ge; 80%)
+            <button
+              type="button"
+              onClick={() => setNearFull(false)}
+              aria-label="Clear near full capacity filter"
+            >
+              ×
+            </button>
+          </FilterTag>
+        </FilterTagBar>
+      )}
+
       {error && (
-        <div style={{ color: "#b91c1c", margin: "12px 0" }}>
+        <div style={{ color: "#b91c1c", margin: "12px 0", fontSize: 13 }}>
           {typeof error === "string"
             ? error
             : error?.detail || "Something went wrong"}
         </div>
       )}
 
-      {loading ? (
-        <div style={{ padding: 24 }}>Loading warehouses…</div>
-      ) : (
-        <ReusableTable columns={warehouseColumns} data={tableData}   onRowClick={handleRowClick}/>
-      )}
+      <ReusableTable
+        columns={warehouseColumns}
+        data={warehouses}
+        loading={loading}
+        loadingMessage="Loading warehouses…"
+        emptyMessage="No warehouses found"
+        onRowClick={handleRowClick}
+        autoLayout
+      />
 
       <ReusablePagination
         currentPage={currentPage}
@@ -251,7 +379,6 @@ const handleRowClick = useCallback(
         onPageChange={setCurrentPage}
       />
 
-      {/* Rendered only while open, so the form resets every time */}
       {isModalOpen && (
         <WarehouseModal
           isOpen={isModalOpen}
@@ -261,7 +388,7 @@ const handleRowClick = useCallback(
           error={createErrorMessage}
         />
       )}
-    </div>
+    </PageContainer>
   );
 };
 
