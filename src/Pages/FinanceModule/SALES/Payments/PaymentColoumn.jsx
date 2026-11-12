@@ -1,5 +1,6 @@
 import React from "react";
 import { FiEye } from "react-icons/fi";
+import Paymentactions from "./action/Paymentaction";
 
 /* =========================================================
    FORMAT STATUS LABEL
@@ -342,31 +343,9 @@ export const getPaymentColumns = ({ onInfo }) => [
   },
 
   {
-    header: "Action",
-    accessor: "actions",
-    sortable: false,
-
-    render: (row) => (
-      <button
-        type="button"
-        onClick={() => onInfo?.(row)}
-        style={{
-          width: "25px",
-          height: "25px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          padding: 0,
-          border: "1px solid #e5e7eb",
-          borderRadius: "5px",
-          background: "#ffffff",
-          color: "#111827",
-          cursor: "pointer",
-        }}
-        aria-label={`View payment ${getPaymentNumber(row)}`}
-      >
-        <FiEye size={13} />
-      </button>
-    ),
-  },
+  header: "Action",
+  accessor: "actions",
+  sortable: false,
+  render: (row) => <Paymentactions row={row} onInfo={onInfo} />,
+},
 ];

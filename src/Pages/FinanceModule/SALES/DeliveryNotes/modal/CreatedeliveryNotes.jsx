@@ -22,6 +22,11 @@ import {
   CreateButton,
 } from "./CreatedeliveryNotes.style";
 
+import { fetchWarehouses } from "../../../../../Redux/finance/Product/warehouseSlice";
+import {
+  getSalesOrders,
+  selectSalesOrders,
+} from "../../../../../Redux/finance/Sales/Salesorderslice";
 import ReusableHeader from "../../../../../Components/ReusableTable/ReusableHeader";
 import {
   fetchDeliveryNoteById,
@@ -163,12 +168,19 @@ const Createdeliverynotes = () => {
   const dispatch = useDispatch();
   const isEditMode = Boolean(id);
 
+  /* ---------- Redux state ---------- */
+
   const customerState = useSelector(
     (state) => state?.customer?.customers ?? [],
   );
   const productState = useSelector((state) => state?.product?.products ?? []);
   const { selectedDeliveryNote, detailsLoading, submitting, submitError } =
     useSelector((state) => state?.deliveryNotes ?? {});
+  // The key "warehouse" must match how the reducer is registered in your store
+  const warehouseList = useSelector(
+    (state) => state?.warehouse?.warehouses ?? [],
+  );
+  const salesOrders = useSelector(selectSalesOrders);
 
   const customers = useMemo(() => {
     const list =
@@ -184,20 +196,34 @@ const Createdeliverynotes = () => {
     return Array.isArray(list) ? list : [];
   }, [productState]);
 
+  /* ---------- Form state ---------- */
+
   const [deliveryNoteNumber, setDeliveryNoteNumber] = useState("");
   const [dispatchDate, setDispatchDate] = useState(today());
   const [expectedDeliveryDate, setExpectedDeliveryDate] = useState(today());
   const [status, setStatus] = useState("Draft");
   const [customerId, setCustomerId] = useState("");
   const [orderReference, setOrderReference] = useState("");
-  const [warehouse, setWarehouse] = useState("Jeddah");
+  const [warehouse, setWarehouse] = useState(""); // holds the warehouse id
   const [items, setItems] = useState([createItem(1)]);
   const [notes, setNotes] = useState("");
   const [formError, setFormError] = useState("");
 
+  // Must come after the customerId state, because it depends on it
+  const orderOptions = useMemo(() => {
+    const list = Array.isArray(salesOrders) ? salesOrders : [];
+    return customerId
+      ? list.filter((o) => String(o.customer) === String(customerId))
+      : list;
+  }, [salesOrders, customerId]);
+
+  /* ---------- Load data ---------- */
+
   useEffect(() => {
     dispatch(getCustomerList());
     dispatch(getProducts({ page_size: 200 }));
+    dispatch(fetchWarehouses({ page_size: 200 }));
+    dispatch(getSalesOrders({ page_size: 200 }));
   }, [dispatch]);
 
   useEffect(() => {
@@ -246,9 +272,9 @@ const Createdeliverynotes = () => {
     );
     const warehouseValue =
       row.warehouse && typeof row.warehouse === "object"
-        ? row.warehouse.name
-        : (row.warehouse_name ?? row.warehouse ?? row.dispatch_location);
-    setWarehouse(String(warehouseValue || "Jeddah"));
+        ? (row.warehouse.id ?? row.warehouse.pk)
+        : (row.warehouse_id ?? row.warehouse);
+    setWarehouse(warehouseValue == null ? "" : String(warehouseValue));
     setItems(
       Array.isArray(row.items) && row.items.length
         ? row.items.map(mapApiItem)
@@ -256,6 +282,8 @@ const Createdeliverynotes = () => {
     );
     setNotes(first(row, ["notes", "instructions"], ""));
   }, [isEditMode, selectedDeliveryNote, routeData]);
+
+  /* ---------- Item helpers ---------- */
 
   const updateItem = (idToUpdate, field, value) => {
     setItems((previous) =>
@@ -284,6 +312,8 @@ const Createdeliverynotes = () => {
     if (deliveredAfterThis > 0) return "Partial";
     return "Pending";
   };
+
+  /* ---------- Submit ---------- */
 
   const handleCreate = async () => {
     setFormError("");
@@ -328,6 +358,12 @@ const Createdeliverynotes = () => {
       status: getItemStatus(item).toLowerCase().replace(/\s+/g, "_"),
     }));
 
+    const selectedWarehouse = warehouseList.find(
+      (w) => String(w.id) === String(warehouse),
+    );
+    const warehouseName =
+      selectedWarehouse?.warehouse_name || selectedWarehouse?.name || "";
+
     const payload = {
       delivery_note_number: deliveryNoteNumber.trim(),
       dispatch_date: dispatchDate,
@@ -337,8 +373,8 @@ const Createdeliverynotes = () => {
       delivery_status: apiStatus(status),
       customer: normalizeId(customerId),
       sales_order_reference: orderReference.trim(),
-      warehouse,
-      dispatch_location: warehouse,
+      warehouse: normalizeId(warehouse),
+      dispatch_location: warehouseName,
       notes: notes.trim(),
       items: payloadItems,
     };
@@ -386,15 +422,39 @@ const Createdeliverynotes = () => {
 
       <DeliveryNoteForm>
         <FormGrid>
-          <FormGroup>
-            <Label>DELIVERY NOTE NUMBER</Label>
-            <Input
-              value={deliveryNoteNumber}
-              onChange={(e) => setDeliveryNoteNumber(e.target.value)}
-              placeholder="DN 0123"
-            />
-          </FormGroup>
+        <FormGroup>
+    <Label>DELIVERY NOTE NUMBER</Label>
+    <Input
+        value={deliveryNoteNumber || ""}
+        readOnly
+        placeholder="Auto-generated"
+    />
+</FormGroup>
 
+          <FormGroup>
+            <Label>ORDER REFERENCE</Label>
+            <SelectWrapper>
+              <Select
+                value={orderReference}
+                onChange={(e) => setOrderReference(e.target.value)}
+              >
+                <option value="">Select Order Reference</option>
+                {orderOptions.map((order) => {
+                  const ref = order.so_number || order.order_number;
+                  return (
+                    <option key={order.id} value={ref}>
+                      {ref}
+                    </option>
+                  );
+                })}
+                {orderReference &&
+                  !orderOptions.some(
+                    (o) => (o.so_number || o.order_number) === orderReference,
+                  ) && <option value={orderReference}>{orderReference}</option>}
+              </Select>
+              <FiChevronDown />
+            </SelectWrapper>
+          </FormGroup>
           <FormGroup>
             <Label>DISPATCH DATE</Label>
             <Input
@@ -438,12 +498,15 @@ const Createdeliverynotes = () => {
             </SelectWrapper>
           </FormGroup>
 
-          <FormGroup>
+          {/* <FormGroup>
             <Label>CUSTOMER</Label>
             <SelectWrapper>
               <Select
                 value={customerId}
-                onChange={(e) => setCustomerId(e.target.value)}
+                onChange={(e) => {
+                  setCustomerId(e.target.value);
+                  setOrderReference(""); // orders are filtered by customer
+                }}
               >
                 <option value="">Select Customer</option>
                 {customers.map((customer, index) => {
@@ -466,25 +529,10 @@ const Createdeliverynotes = () => {
               </Select>
               <FiChevronDown />
             </SelectWrapper>
-          </FormGroup>
+          </FormGroup> */}
+
 
           <FormGroup>
-            <Label>ORDER REFERENCE</Label>
-            <SelectWrapper>
-              <Select
-                value={orderReference}
-                onChange={(e) => setOrderReference(e.target.value)}
-              >
-                <option value="">Select Order Reference</option>
-                {orderReference && (
-                  <option value={orderReference}>{orderReference}</option>
-                )}
-              </Select>
-              <FiChevronDown />
-            </SelectWrapper>
-          </FormGroup>
-
-          <FormGroup className="warehouse-field">
             <Label>WAREHOUSE / DISPATCH LOCATION</Label>
             <SelectWrapper>
               <Select
@@ -492,9 +540,9 @@ const Createdeliverynotes = () => {
                 onChange={(e) => setWarehouse(e.target.value)}
               >
                 <option value="">Select Warehouse</option>
-                {["Jeddah", "Riyadh", "Dammam"].map((location) => (
-                  <option key={location} value={location}>
-                    {location}
+                {warehouseList.map((w) => (
+                  <option key={w.id} value={w.id}>
+                    {w.warehouse_name || w.name || `Warehouse #${w.id}`}
                   </option>
                 ))}
               </Select>
@@ -602,13 +650,12 @@ const Createdeliverynotes = () => {
         </datalist>
 
         <NotesSection>
-          <Label>Notes &amp; instructions</Label>
-          <NotesTextarea
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            placeholder="Enter notes and delivery instructions"
-          />
-        </NotesSection>
+    <Label>Notes &amp; instructions</Label>
+    <NotesTextarea
+        value="Remaining packing units to be dispatched with next batch from Jeddah DC - awaiting stock replenishment."
+        readOnly
+    />
+</NotesSection>
 
         <ButtonWrapper>
           <CancelButton

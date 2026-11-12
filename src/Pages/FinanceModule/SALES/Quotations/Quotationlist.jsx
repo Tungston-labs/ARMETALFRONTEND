@@ -1,13 +1,22 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import { FiDownload, FiEye } from "react-icons/fi";
-import { LuEraser } from "react-icons/lu"; // if this fails, use FiSlash from "react-icons/fi"
+import {
+    FiDownload,
+    FiEye,
+    FiFileText,
+    FiClock,
+    FiCheckCircle,
+    FiXCircle,
+    FiRepeat,
+} from "react-icons/fi";
+import { LuEraser } from "react-icons/lu";
 
 import ReusableHeader from "../../../../Components/ReusableTable/ReusableHeader";
 import ReusableFilter from "../../../../Components/ReusableTable/ReusableFilter";
 import ReusableTable from "../../../../Components/ReusableTable/ReusableTable";
 import ReusablePagination from "../../../../Components/Pagination/ReusablePagination";
+import StatsCards from "../../../../Components/StatsCards/StatsCards";
 import {
     DateInput,
     DatePickerContainer,
@@ -185,12 +194,87 @@ const Quotationlist = () => {
     const totalPages = useSelector((s) => s.quotation?.totalPages || 1);
     const currentPage = useSelector((s) => s.quotation?.currentPage || 1);
 
+    // Prefer backend summary counts if your slice has them (state.quotation.stats)
+    const apiStats = useSelector((s) => s.quotation?.stats);
+    const totalCount = useSelector((s) => s.quotation?.count);
+
     const [search, setSearch] = useState("");
     const [status, setStatus] = useState("");
     const [page, setPage] = useState(1);
     const [startDate, setStartDate] = useState("");
     const [endDate, setEndDate] = useState("");
 
+    const stats = useMemo(() => {
+        if (apiStats) return apiStats;
+        // Fallback: counts from the currently loaded page only
+        const counts = {
+            total: totalCount ?? quotations.length,
+            pending: 0,
+            approved: 0,
+            rejected: 0,
+            converted: 0,
+        };
+        quotations.forEach((q) => {
+            const k = String(q.status || "").toLowerCase();
+            if (k in counts) counts[k] += 1;
+        });
+        return counts;
+    }, [apiStats, totalCount, quotations]);
+
+    const statCards = useMemo(
+        () => [
+            {
+                title: "Total Quotations",
+                count: stats.total ?? 0,
+                icon: <FiFileText size={20} />,
+                backgroundColor: "#F2F4F7",
+                iconColor: "#344054",
+                onClick: () => setStatus(""),
+            },
+            {
+                title: "Pending Quotations",
+                count: stats.pending ?? 0,
+                icon: <FiClock size={20} />,
+                backgroundColor: "#FEF0E1",
+                iconColor: STATUS_COLORS.pending,
+                onClick: () => setStatus("pending"),
+            },
+            {
+                title: "Approved Quotations",
+                count: stats.approved ?? 0,
+                icon: <FiCheckCircle size={20} />,
+                backgroundColor: "#E6F4EA",
+                iconColor: STATUS_COLORS.approved,
+                onClick: () => setStatus("approved"),
+            },
+            {
+                title: "Rejected Quotations",
+                count: stats.rejected ?? 0,
+                icon: <FiXCircle size={20} />,
+                backgroundColor: "#FDECEA",
+                iconColor: STATUS_COLORS.rejected,
+                onClick: () => setStatus("rejected"),
+            },
+            {
+                title: "Negotiation amount",
+                count: stats.converted ?? 0,
+                icon: <FiRepeat size={20} />,
+                backgroundColor: "#E5EDFD",
+                iconColor: STATUS_COLORS.converted,
+                onClick: () => setStatus("converted"),
+            },
+        ],
+        [stats]
+    );
+// top of file, next to STATUS_COLORS
+const SEND_STATUS_OPTIONS = [
+    { label: "Sent", value: "sent" },
+    { label: "Draft", value: "draft" },
+     { label: "Sent for Approval", value: "sent_for_approval" },
+];
+
+// inside Quotationlist, with the other useState lines
+const [sendStatus, setSendStatus] = useState("");
     const handleStartDateChange = (e) => {
         setStartDate(e.target.value);
         setPage(1);
@@ -219,16 +303,14 @@ const Quotationlist = () => {
                 onDownload: handleDownload,
                 onClear: handleClear,
             }),
-        // eslint-disable-next-line react-hooks/exhaustive-deps
         [navigate]
     );
 
-    // Reset to page 1 when search/status change
     useEffect(() => {
         setPage(1);
     }, [search, status]);
 
-    // Fetch from API whenever filters or page change
+
     useEffect(() => {
         const timer = setTimeout(() => {
             dispatch(
@@ -237,12 +319,9 @@ const Quotationlist = () => {
                     search: search || undefined,
                     status: status || undefined,
                     ordering: "-created_at",
-                    // Date range: enable once your backend supports range filters
-                    // issue_date_after: startDate || undefined,
-                    // issue_date_before: endDate || undefined,
                 })
             );
-        }, 400); // debounce typing in search
+        }, 400);
 
         return () => clearTimeout(timer);
     }, [dispatch, page, search, status, startDate, endDate]);
@@ -281,6 +360,8 @@ const Quotationlist = () => {
                 </DateRangeWrapper>
             </ReusableHeader>
 
+            <StatsCards cards={statCards} loading={loading && !quotations.length} />
+
             <ReusableFilter
                 search={search}
                 onSearch={setSearch}
@@ -289,6 +370,18 @@ const Quotationlist = () => {
                 onStatus={setStatus}
                 showSearch
                 showStatus
+                 filters={[
+    {
+        key: "sendStatus",
+        value: sendStatus,
+        onChange: (value) => {
+            setSendStatus(value);
+            setPage(1);
+        },
+        options: SEND_STATUS_OPTIONS,
+        placeholder: "Sent",
+    },
+]}
             />
 
             <ReusableTable columns={columns} data={quotations} loading={loading} />

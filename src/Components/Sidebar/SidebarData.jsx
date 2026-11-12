@@ -95,7 +95,7 @@ const getSidebarData = (user) => {
         icon: <PiUsersThreeLight />,
         children: [
           { title: "Customers", path: "/sales/customers" },
-          { title: "Quotations", path: "/Quotation-List" },
+          { title: "Quotations", path: "/sales/Quotationlist" },
           { title: "Sales Orders", path: "/sales/orders" },
           { title: "Delivery Notes", path: "/delivery/notes" },
           { title: "Invoices", path: "/sales/invoices" },

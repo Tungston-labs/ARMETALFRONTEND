@@ -3,90 +3,100 @@ import styled from "styled-components";
 export const DeliveryNoteContainer = styled.div`
   width: 100%;
   min-height: 100%;
-  padding: 20px 24px 28px;
+  padding: 24px;
   box-sizing: border-box;
-  background: #fff;
-  border: 1px solid #eee;
+
+  background: #ffffff;
+  border: 1px solid #eeeeee;
   border-radius: 6px;
 
   .form-error {
-    margin: 14px 24px 0;
-    padding: 11px 13px;
-    color: #b42318;
-    background: #fef3f2;
-    border: 1px solid #fecdca;
-    border-radius: 5px;
-    font-size: 12px;
+    margin: 0 0 16px;
+    padding: 12px 16px;
+    border-radius: 6px;
+    background: #fff1f0;
+    border: 1px solid #ffccc7;
+    color: #c0392b;
+    font-family: "Poppins", sans-serif;
+    font-size: 14px;
   }
 `;
 
 export const DeliveryNoteForm = styled.div`
   width: 100%;
   margin-top: 22px;
-  padding: 0 24px 20px;
-  box-sizing: border-box;
 `;
 
+/* =========================
+   FORM
+========================= */
+
 export const FormGrid = styled.div`
+  width: 100%;
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   column-gap: 24px;
-  row-gap: 13px;
+  row-gap: 10px;
 
-  .warehouse-field {
-    grid-column: span 2;
-  }
 
   @media (max-width: 900px) {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    .warehouse-field {
-      grid-column: span 2;
-    }
   }
 
   @media (max-width: 560px) {
     grid-template-columns: 1fr;
-    .warehouse-field {
-      grid-column: span 1;
-    }
+
+  
   }
 `;
 
 export const FormGroup = styled.div`
+  width: 100%;
   min-width: 0;
   display: flex;
   flex-direction: column;
 `;
 
 export const Label = styled.label`
-  margin: 0 0 7px;
-  color: #171717;
+  margin-bottom: 7px;
+
   font-family: "Poppins", sans-serif;
-  font-size: 11px;
-  font-weight: 500;
-  line-height: 15px;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 18px;
 `;
 
 export const Input = styled.input`
   width: 100%;
-  height: 36px;
-  padding: 0 12px;
+  height: 38px;
   box-sizing: border-box;
-  border: 1px solid #e5e7eb;
+
+  border: 1px solid #e2e5ea;
   border-radius: 5px;
-  outline: none;
-  background: #fff;
-  color: #4b5563;
+  padding: 0 12px;
+
+  background: #ffffff;
+  color: #333333;
+
   font-family: "Poppins", sans-serif;
-  font-size: 12px;
+  font-size: 13px;
+  font-weight: 400;
+
+  outline: none;
+  transition: border-color 0.2s ease;
 
   &::placeholder {
     color: #9ca3af;
   }
+
   &:focus {
     border-color: #3049a3;
   }
 `;
+
+/* =========================
+   SELECT
+========================= */
 
 export const SelectWrapper = styled.div`
   position: relative;
@@ -94,29 +104,34 @@ export const SelectWrapper = styled.div`
 
   svg {
     position: absolute;
+    right: 13px;
     top: 50%;
-    right: 12px;
-    width: 15px;
-    height: 15px;
     transform: translateY(-50%);
+    width: 16px;
+    height: 16px;
+    color: #4b5563;
     pointer-events: none;
-    color: #111827;
   }
 `;
 
 export const Select = styled.select`
   width: 100%;
-  height: 36px;
-  padding: 0 36px 0 12px;
+  height: 40px;
   box-sizing: border-box;
-  appearance: none;
-  border: 1px solid #e5e7eb;
+
+  border: 1px solid #e2e5ea;
   border-radius: 5px;
-  outline: none;
-  background: #fff;
+  padding: 0 40px 0 12px;
+
+  background: #ffffff;
   color: #4b5563;
+
   font-family: "Poppins", sans-serif;
-  font-size: 12px;
+  font-size: 13px;
+  font-weight: 400;
+
+  appearance: none;
+  outline: none;
   cursor: pointer;
 
   &:focus {
@@ -124,51 +139,69 @@ export const Select = styled.select`
   }
 `;
 
+/* =========================
+   ITEMS
+========================= */
+
 export const ItemsTitle = styled.h3`
-  margin: 25px 0 13px 4px;
-  color: #111;
+  margin: 30px 0 12px;
+
   font-family: "Poppins", sans-serif;
-  font-size: 12px;
-  font-weight: 600;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 20px;
+  color: #111111;
 `;
 
 export const ItemsTableWrapper = styled.div`
   width: 100%;
   overflow-x: auto;
+
+  border: 1px solid #e5e7eb;
+  border-radius: 5px;
+
+  scrollbar-width: thin;
 `;
 
 export const ItemsTable = styled.table`
   width: 100%;
-  min-width: 900px;
+  min-width: 1050px;
+
   border-collapse: collapse;
   table-layout: fixed;
-  font-family: "Poppins", sans-serif;
 
   thead {
-    background: #304db3;
+    background: #2c469f;
   }
 
   th {
-    height: 35px;
-    padding: 0 8px;
-    color: #fff;
-    font-size: 11px;
+    height: 42px;
+    padding: 0 9px;
+
+    color: #ffffff;
+    font-family: "Poppins", sans-serif;
+    font-size: 14px;
     font-weight: 600;
+    line-height: 100%;
     text-align: center;
     white-space: nowrap;
   }
 
   td {
-    height: 39px;
-    padding: 4px 8px;
-    color: #555;
-    font-size: 10px;
+    height: 48px;
+    padding: 5px 8px;
+
+    border-bottom: 1px solid #eeeeee;
+
+    color: #555555;
+    font-family: "Poppins", sans-serif;
+    font-size: 11px;
     text-align: center;
-    border-bottom: 1px solid #f0f0f0;
+    vertical-align: middle;
   }
 
   tbody tr:last-child td {
-    border-bottom: 0;
+    border-bottom: none;
   }
 
   th:nth-child(1),
@@ -177,7 +210,7 @@ export const ItemsTable = styled.table`
   }
   th:nth-child(2),
   td:nth-child(2) {
-    width: 17%;
+    width: 18%;
   }
   th:nth-child(3),
   td:nth-child(3) {
@@ -197,7 +230,7 @@ export const ItemsTable = styled.table`
   }
   th:nth-child(7),
   td:nth-child(7) {
-    width: 14%;
+    width: 13%;
   }
   th:nth-child(8),
   td:nth-child(8) {
@@ -206,32 +239,39 @@ export const ItemsTable = styled.table`
 
   input {
     width: 100%;
-    max-width: 112px;
-    height: 27px;
-    padding: 0 6px;
+    height: 32px;
     box-sizing: border-box;
-    border: 1px solid #e5e7eb;
+
+    padding: 0 8px;
+
+    border: 1px solid #e3e5e8;
     border-radius: 3px;
-    outline: none;
-    background: #fff;
-    color: #555;
+
+    background: #ffffff;
+    color: #4b5563;
+
     font-family: "Poppins", sans-serif;
-    font-size: 10px;
-    text-align: center;
+    font-size: 11px;
+
+    outline: none;
 
     &:focus {
       border-color: #3049a3;
     }
+
+    &::placeholder {
+      color: #9ca3af;
+    }
+
     &:read-only {
-      background: #fff;
+      background: #ffffff;
     }
   }
 
-  td:nth-child(2) input {
-    max-width: 130px;
-  }
   .item-status {
-    font-size: 10px;
+    font-family: "Poppins", sans-serif;
+    font-size: 11px;
+    font-weight: 500;
     white-space: nowrap;
   }
   .item-status.fully-delivered {
@@ -245,12 +285,27 @@ export const ItemsTable = styled.table`
   }
 `;
 
-export const NotesSection = styled.div`
-  width: 52%;
-  min-width: 320px;
-  margin-top: 15px;
+/* =========================
+   NOTES
+========================= */
 
-  @media (max-width: 700px) {
+export const NotesSection = styled.div`
+  width: 50%;
+  min-width: 320px;
+  margin-top: 28px;
+
+  label {
+    display: block;
+    margin: 0 0 10px;
+
+    font-family: "Poppins", sans-serif;
+    font-size: 16px;
+    font-weight: 500;
+    line-height: 100%;
+    color: #111111;
+  }
+
+  @media (max-width: 768px) {
     width: 100%;
     min-width: 0;
   }
@@ -258,43 +313,53 @@ export const NotesSection = styled.div`
 
 export const NotesTextarea = styled.textarea`
   width: 100%;
-  min-height: 41px;
-  margin-top: 7px;
-  padding: 11px;
   box-sizing: border-box;
+  padding: 10px 12px;
   resize: vertical;
-  border: 1px solid #e5e7eb;
+
+  border: 1px solid #e2e5ea;
   border-radius: 5px;
   outline: none;
-  color: #4b5563;
+
+  color: #333333;
   font-family: "Poppins", sans-serif;
-  font-size: 10px;
+  font-size: 13px;
 
   &::placeholder {
     color: #9ca3af;
   }
+
   &:focus {
     border-color: #3049a3;
   }
 `;
 
+/* =========================
+   BUTTONS
+========================= */
+
 export const ButtonWrapper = styled.div`
+  width: 100%;
   display: flex;
   justify-content: flex-end;
   align-items: center;
+  flex-wrap: wrap;
   gap: 12px;
-  margin-top: 18px;
+  margin-top: 30px;
 `;
 
 export const CancelButton = styled.button`
-  width: 96px;
-  height: 36px;
+  min-width: 100px;
+  height: 38px;
+  padding: 0 14px;
+
   border: 1px solid #3049a3;
   border-radius: 4px;
-  background: #fff;
-  color: #111;
+  background: #ffffff;
+  color: #111111;
+
   font-family: "Poppins", sans-serif;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 500;
   cursor: pointer;
 
@@ -304,22 +369,26 @@ export const CancelButton = styled.button`
 `;
 
 export const CreateButton = styled.button`
-  width: 96px;
-  height: 36px;
-  border: 1px solid #3049a3;
+  min-width: 120px;
+  height: 38px;
+  padding: 0 14px;
+
+  border: 1px solid #3250b5;
   border-radius: 4px;
-  background: #3049a3;
-  color: #fff;
+  background: #3250b5;
+  color: #ffffff;
+
   font-family: "Poppins", sans-serif;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 500;
   cursor: pointer;
 
   &:hover {
     background: #263b88;
   }
+
   &:disabled {
-    opacity: 0.65;
+    opacity: 0.6;
     cursor: not-allowed;
   }
 `;

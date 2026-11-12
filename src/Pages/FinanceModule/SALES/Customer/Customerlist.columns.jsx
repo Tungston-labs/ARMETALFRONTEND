@@ -14,17 +14,11 @@ import {
     ArchiveActionButton,
     StatusBadge,
 } from "./CustomerList.styles";
+import { formatDate } from "../../../../utils/Formatdate";
 
 const money = (v) => `SAR ${Number(v || 0).toLocaleString("en-US")}`;
 
-const formatDate = (v) => {
-    if (!v) return "-";
-    const d = new Date(v);
-    if (isNaN(d)) return v;
-    return d
-        .toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })
-        .replace(/ /g, "-");
-};
+
 
 export const getCustomerColumns = ({
     status,
@@ -73,7 +67,7 @@ export const getCustomerColumns = ({
                     </ArchivedBalance>
                 ),
             },
-             {
+            {
                 accessor: "archived_at",
                 header: "Archived On",
                 render: (row) => formatDate(row.archived_at),
@@ -133,8 +127,12 @@ export const getCustomerColumns = ({
             ),
         },
         { accessor: "outstanding_days", header: "Outstanding Days" },
-        { accessor: "last_payment", header: "Last Payment" },
- {
+        {
+            accessor: "last_payment",
+            header: "Last Payment",
+            render: (row) => formatDate(row.last_payment),
+        },
+        {
             accessor: "client_status_name",
             header: "Status",
             render: (row) => (

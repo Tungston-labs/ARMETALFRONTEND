@@ -278,27 +278,54 @@ export const ArchiveActionButton = styled.button`
     `}
 `;
 const STATUS_COLORS = {
-  active:   {  color: "#15803d", border: "#86c99a" }, // green
-  inactive: {  color: "#dc2626", border: "#f3b4b4" }, // red
-  archived:    {  color: "#2563eb", border: "#a9c4f5" }, // blue
+  active: {
+    color: "#059669",
+    background: "#ecfdf5",
+    border: "#a7f3d0",
+  },
+  inactive: {
+    color: "#dc2626",
+    background: "#fef2f2",
+    border: "#fecaca",
+  },
+  archived: {
+    color: "#7c3aed",
+    background: "#f5f3ff",
+    border: "#ddd6fe",
+  },
 };
 
+const getColors = (status) =>
+  STATUS_COLORS[String(status || "").toLowerCase()] || {
+    color: "#6b7280",
+    background: "#f3f4f6",
+    border: "#e5e7eb",
+  };
+
 export const StatusBadge = styled.span`
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+
   padding: 3px 10px;
-  font-size: 12px;
-  font-weight: 600;
-  line-height: 1.3;
+
   border-radius: 999px;
-  border: none;
+  border: 1px solid ${({ $status }) => getColors($status).border};
+
+  background: ${({ $status }) => getColors($status).background};
+  color: ${({ $status }) => getColors($status).color};
+
+  font-family: "Poppins", sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.4;
   white-space: nowrap;
 
-  ${({ $status }) => {
-    const c = STATUS_COLORS[$status] || STATUS_COLORS.archived;
-    return css`
-      /* background: ${c.bg}; */
-      color: ${c.color};
-      border-color: ${c.border};
-    `;
-  }}
+  &::before {
+    content: "";
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: ${({ $status }) => getColors($status).color};
+  }
 `;

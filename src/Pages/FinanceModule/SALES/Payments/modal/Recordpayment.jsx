@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 
 import {
   ModalOverlay,
@@ -16,7 +16,12 @@ import {
   SaveButton,
 } from "./Recordpayment.style";
 
+const CATEGORY_INVOICE = "INVOICE REF";
+const CATEGORY_OPENING = "OPENING BALANCE";
+
 const initialFormData = {
+  paymentCategory: "",
+  invoiceId: "",
   invoiceNo: "",
   customerId: "",
   customer: "",
@@ -31,6 +36,41 @@ const initialFormData = {
   notes: "",
 };
 
+const money = (value) =>
+  Number(value || 0).toLocaleString("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+
+// Opening balance stored on the customer record.
+// Check the field name your customer API returns.
+const getOpeningBalance = (customer) =>
+  customer?.opening_balance ?? customer?.opening_balance_amount ?? "";
+
+// Does this invoice row belong to the selected customer?
+const invoiceBelongsToCustomer = (invoice, customerId, customerName) => {
+  const invoiceCustomerId =
+    invoice?.customer?.id ??
+    invoice?.customer_id ??
+    (typeof invoice?.customer === "number" ||
+    /^\d+$/.test(String(invoice?.customer ?? ""))
+      ? invoice.customer
+      : null);
+
+  if (invoiceCustomerId != null && customerId) {
+    return String(invoiceCustomerId) === String(customerId);
+  }
+
+  if (customerName && invoice?.customer_name) {
+    return (
+      String(invoice.customer_name).trim().toLowerCase() ===
+      String(customerName).trim().toLowerCase()
+    );
+  }
+
+  return false;
+};
+
 const PaymentModal = ({
   isOpen,
   onClose,
@@ -39,6 +79,8 @@ const PaymentModal = ({
   initialData = null,
   error = null,
   customers = [],
+  invoices = [],
+  onCustomerChange,
 }) => {
   const [formData, setFormData] = useState(initialFormData);
   const [validationError, setValidationError] = useState("");
@@ -48,13 +90,22 @@ const PaymentModal = ({
     if (!isOpen) return;
 
     if (initialData) {
-      const invoiceAmount = initialData.invoice_amount ?? "";
-
-      const alreadyPaid =
-        initialData.already_paid ?? initialData.amount_paid ?? "";
+      const invoiceNo = initialData.invoice_no || initialData.invoice_ref || "";
 
       setFormData({
-        invoiceNo: initialData.invoice_no || initialData.invoice_ref || "",
+        paymentCategory:
+          initialData.payment_category === "opening_balance"
+            ? CATEGORY_OPENING
+            : invoiceNo
+              ? CATEGORY_INVOICE
+              : "",
+
+        invoiceId:
+          initialData.invoice_id ??
+          initialData.invoice?.id ??
+          (typeof initialData.invoice === "number" ? initialData.invoice : ""),
+
+        invoiceNo,
 
         customerId:
           initialData.customer_id ??
@@ -68,9 +119,9 @@ const PaymentModal = ({
           initialData.customer ||
           "",
 
-        invoiceAmount,
+        invoiceAmount: initialData.invoice_amount ?? "",
 
-        alreadyPaid,
+        alreadyPaid: initialData.already_paid ?? initialData.amount_paid ?? "",
 
         outstandingAmount:
           initialData.outstanding_amount ?? initialData.balance_due ?? "",
@@ -97,7 +148,32 @@ const PaymentModal = ({
     setValidationError("");
   }, [isOpen, initialData]);
 
+  // Invoices of the selected customer that still have a balance.
+  // Must stay above the `if (!isOpen) return null` line (hooks rule).
+  const customerInvoices = useMemo(() => {
+    const list = Array.isArray(invoices) ? invoices : [];
+
+    return list.filter((invoice) => {
+      if (
+        !invoiceBelongsToCustomer(invoice, formData.customerId, formData.customer)
+      ) {
+        return false;
+      }
+
+      const status = String(invoice.payment_status || invoice.status || "")
+        .trim()
+        .toLowerCase();
+      const balance = Number(invoice.balance ?? 0);
+
+      return status !== "paid" && balance > 0;
+    });
+  }, [invoices, formData.customerId, formData.customer]);
+
   if (!isOpen) return null;
+
+  const isInvoiceCategory = formData.paymentCategory === CATEGORY_INVOICE;
+  const isOpeningCategory = formData.paymentCategory === CATEGORY_OPENING;
+  const isCash = formData.paymentMethod === "Cash";
 
   // Input change handler
   const handleChange = (e) => {
@@ -109,6 +185,11 @@ const PaymentModal = ({
         [name]: value,
       };
 
+      // Cash payments have no transaction id
+      if (name === "paymentMethod" && value === "Cash") {
+        next.referenceNumber = "";
+      }
+
       if (name === "customerId") {
         const selectedCustomer = customers.find(
           (customer) => String(customer.id) === String(value),
@@ -116,23 +197,58 @@ const PaymentModal = ({
 
         next.customer =
           selectedCustomer?.name || selectedCustomer?.customer_name || "";
+
+        // A different customer means the old invoice no longer applies
+        next.invoiceId = "";
+        next.invoiceNo = "";
+        next.invoiceAmount = "";
+        next.alreadyPaid = "";
+        next.outstandingAmount =
+          prev.paymentCategory === CATEGORY_OPENING
+            ? getOpeningBalance(selectedCustomer)
+            : "";
       }
 
-      // Calculate balance due automatically
-      if (name === "invoiceAmount" || name === "alreadyPaid") {
-        const invoiceTotal =
-          Number(name === "invoiceAmount" ? value : prev.invoiceAmount) || 0;
+      if (name === "paymentCategory") {
+        next.invoiceId = "";
+        next.invoiceNo = "";
+        next.invoiceAmount = "";
+        next.alreadyPaid = "";
 
-        const paidAmount =
-          Number(name === "alreadyPaid" ? value : prev.alreadyPaid) || 0;
-
-        next.outstandingAmount = Math.max(invoiceTotal - paidAmount, 0).toFixed(
-          2,
+        const selectedCustomer = customers.find(
+          (customer) => String(customer.id) === String(prev.customerId),
         );
+
+        next.outstandingAmount =
+          value === CATEGORY_OPENING ? getOpeningBalance(selectedCustomer) : "";
       }
 
       return next;
     });
+
+    if (name === "customerId") {
+      onCustomerChange?.(value);
+    }
+
+    setValidationError("");
+  };
+
+  // Picking an invoice fills total / paid / balance automatically
+  const handleInvoiceSelect = (e) => {
+    const invoiceId = e.target.value;
+
+    const invoice = customerInvoices.find(
+      (item) => String(item.id) === String(invoiceId),
+    );
+
+    setFormData((prev) => ({
+      ...prev,
+      invoiceId,
+      invoiceNo: invoice?.invoice_number || "",
+      invoiceAmount: invoice?.amount_to_be_paid ?? "",
+      alreadyPaid: invoice?.paid_amount ?? "",
+      outstandingAmount: invoice?.balance ?? "",
+    }));
 
     setValidationError("");
   };
@@ -141,13 +257,18 @@ const PaymentModal = ({
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!formData.invoiceNo.trim()) {
+    if (!formData.paymentCategory) {
       setValidationError("Payment Category is required.");
       return;
     }
 
     if (!formData.customerId && !formData.customer.trim()) {
       setValidationError("Customer is required.");
+      return;
+    }
+
+    if (isInvoiceCategory && !formData.invoiceId) {
+      setValidationError("Please select an invoice.");
       return;
     }
 
@@ -166,7 +287,15 @@ const PaymentModal = ({
       return;
     }
 
-    if (!formData.referenceNumber.trim()) {
+    if (
+      formData.outstandingAmount !== "" &&
+      Number(formData.amountReceived) > Number(formData.outstandingAmount)
+    ) {
+      setValidationError("Amount Received cannot exceed the balance due.");
+      return;
+    }
+
+    if (!isCash && !formData.referenceNumber.trim()) {
       setValidationError("Transaction ID is required.");
       return;
     }
@@ -177,6 +306,10 @@ const PaymentModal = ({
       await onSave(formData);
     }
   };
+
+  const hasInvoiceInList = customerInvoices.some(
+    (invoice) => String(invoice.id) === String(formData.invoiceId),
+  );
 
   return (
     <ModalOverlay onClick={onClose}>
@@ -234,89 +367,107 @@ const PaymentModal = ({
               </Label>
 
               <Select
-                name="invoiceNo"
-                value={formData.invoiceNo}
+                name="paymentCategory"
+                value={formData.paymentCategory}
                 onChange={handleChange}
                 required
               >
-                <option value="">INVOICE REF</option>
-
-                {formData.invoiceNo &&
-                  !["INVOICE REF"].includes(formData.invoiceNo) && (
-                    <option value={formData.invoiceNo}>
-                      {formData.invoiceNo}
-                    </option>
-                  )}
-
-                <option value="INVOICE REF">INVOICE REF</option>
+                <option value="">Select Payment Category</option>
+                <option value={CATEGORY_INVOICE}>Invoice Ref</option>
+                <option value={CATEGORY_OPENING}>Opening Balance</option>
               </Select>
             </FormGroup>
 
-            {/* Invoice Total */}
-            <FormGroup>
-              <Label>INVOICE TOTAL</Label>
+            {/* Invoice (only for Invoice Ref) */}
+            {isInvoiceCategory && (
+              <FormGroup>
+                <Label>
+                  INVOICE <span>*</span>
+                </Label>
 
-              <Input
-                type="text"
-                name="invoiceAmount"
-                placeholder="SAR 0.00"
-                value={
-                  formData.invoiceAmount === ""
-                    ? ""
-                    : `SAR ${Number(formData.invoiceAmount).toLocaleString(
-                        "en-US",
-                        {
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 2,
-                        },
-                      )}`
-                }
-                readOnly
-              />
-            </FormGroup>
+                <Select
+                  name="invoiceId"
+                  value={formData.invoiceId}
+                  onChange={handleInvoiceSelect}
+                  required
+                >
+                  <option value="">
+                    {formData.customerId || formData.customer
+                      ? customerInvoices.length
+                        ? "Select Invoice"
+                        : "No pending invoices"
+                      : "Select a customer first"}
+                  </option>
 
-            {/* Already Paid */}
-            <FormGroup>
-              <Label>ALREADY PAID</Label>
+                  {formData.invoiceId && !hasInvoiceInList && (
+                    <option value={formData.invoiceId}>
+                      {formData.invoiceNo || `Invoice #${formData.invoiceId}`}
+                    </option>
+                  )}
 
-              <Input
-                type="text"
-                name="alreadyPaid"
-                placeholder="00.00 SAR"
-                value={
-                  formData.alreadyPaid === ""
-                    ? "00.00 SAR"
-                    : `${Number(formData.alreadyPaid).toLocaleString("en-US", {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2,
-                      })} SAR`
-                }
-                readOnly
-              />
-            </FormGroup>
+                  {customerInvoices.map((invoice) => (
+                    <option key={invoice.id} value={invoice.id}>
+                      {invoice.invoice_number} (balance SAR{" "}
+                      {money(invoice.balance)})
+                    </option>
+                  ))}
+                </Select>
+              </FormGroup>
+            )}
 
-            {/* Balance Due */}
-            <FormGroup>
-              <Label>BALANCE DUE</Label>
+            {/* Invoice Total + Already Paid (Invoice Ref only) */}
+            {isInvoiceCategory && (
+              <>
+                <FormGroup>
+                  <Label>INVOICE TOTAL</Label>
 
-              <Input
-                type="text"
-                name="outstandingAmount"
-                value={
-                  formData.outstandingAmount === ""
-                    ? "SAR 0.00"
-                    : `SAR ${Number(formData.outstandingAmount).toLocaleString(
-                        "en-US",
-                        {
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 2,
-                        },
-                      )}`
-                }
-                readOnly
-                $isBalance
-              />
-            </FormGroup>
+                  <Input
+                    type="text"
+                    placeholder="SAR 0.00"
+                    value={
+                      formData.invoiceAmount === ""
+                        ? ""
+                        : `SAR ${money(formData.invoiceAmount)}`
+                    }
+                    readOnly
+                  />
+                </FormGroup>
+
+                <FormGroup>
+                  <Label>ALREADY PAID</Label>
+
+                  <Input
+                    type="text"
+                    placeholder="SAR 0.00"
+                    value={
+                      formData.alreadyPaid === ""
+                        ? ""
+                        : `SAR ${money(formData.alreadyPaid)}`
+                    }
+                    readOnly
+                  />
+                </FormGroup>
+              </>
+            )}
+
+            {/* Balance Due / Opening Balance (both categories) */}
+            {(isInvoiceCategory || isOpeningCategory) && (
+              <FormGroup>
+                <Label>{isInvoiceCategory ? "BALANCE DUE" : "OPENING BALANCE"}</Label>
+
+                <Input
+                  type="text"
+                  placeholder="SAR 0.00"
+                  value={
+                    formData.outstandingAmount === ""
+                      ? ""
+                      : `SAR ${money(formData.outstandingAmount)}`
+                  }
+                  readOnly
+                  $isBalance
+                />
+              </FormGroup>
+            )}
 
             {/* Payment Date */}
             <FormGroup>
@@ -346,9 +497,7 @@ const PaymentModal = ({
                 required
               >
                 <option value="Full Payment">Full Payment</option>
-
                 <option value="Partial Payment">Partial Payment</option>
-
                 <option value="Advance Payment">Advance Payment</option>
               </Select>
             </FormGroup>
@@ -366,11 +515,8 @@ const PaymentModal = ({
                 required
               >
                 <option value="Bank Transfer">Bank Transfer</option>
-
                 <option value="Cheque">Cheque</option>
-
                 <option value="Online Payment">Online Payment</option>
-
                 <option value="Cash">Cash</option>
               </Select>
             </FormGroup>
@@ -393,19 +539,33 @@ const PaymentModal = ({
               />
             </FormGroup>
 
-            {/* Transaction ID */}
+            {/* Transaction ID (not for cash) */}
+            {!isCash && (
+              <FormGroup>
+                <Label>
+                  TRANSACTION ID <span>*</span>
+                </Label>
+
+                <Input
+                  type="text"
+                  name="referenceNumber"
+                  placeholder="enter transaction id"
+                  value={formData.referenceNumber}
+                  onChange={handleChange}
+                  required
+                />
+              </FormGroup>
+            )}
+
+            {/* Notes */}
             <FormGroup>
-              <Label>
-                TRANSACTION ID <span>*</span>
-              </Label>
+              <Label>NOTES</Label>
 
               <Input
-                type="text"
-                name="referenceNumber"
-                placeholder="enter transaction id"
-                value={formData.referenceNumber}
+                name="notes"
+                placeholder="Enter notes"
+                value={formData.notes}
                 onChange={handleChange}
-                required
               />
             </FormGroup>
           </FormGrid>

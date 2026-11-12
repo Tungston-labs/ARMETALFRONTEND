@@ -14,7 +14,7 @@ import CategoriesList from "../Pages/FinanceModule/PRODUCTS/Categories/Categorie
    SALES - QUOTATIONS
 ========================================================= */
 
-import QuotationsList from "../Pages/FinanceModule/SALES/Quotations/QuotationsList.jsx";
+// import QuotationsList from "../Pages/FinanceModule/SALES/Quotations/QuotationsList.jsx";
 
 /* =========================================================
    SALES - CUSTOMERS
@@ -264,7 +264,7 @@ const FinanceRoutes = () => {
           SALES - QUOTATIONS
       ===================================================== */}
 
-      <Route path="Quotation-List" element={<QuotationsList />} />
+      {/* <Route path="Quotation-List" element={<QuotationsList />} /> */}
       <Route path="sales/add-Quotation" element={<AddQuotation />} />
 
 

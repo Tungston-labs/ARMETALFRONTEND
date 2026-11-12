@@ -26,6 +26,7 @@ import {
   fetchDeliveryNoteKpi,
   removeDeliveryNote,
 } from "../../../../Redux/finance/Sales/deliveryNotesSlice";
+import { fetchWarehouses } from "../../../../Redux/finance/Product/warehouseSlice";
 
 const getCurrentMonthRange = () => {
   const now = new Date();
@@ -67,12 +68,16 @@ const DeliveryNotes = () => {
     error,
   } = useSelector((state) => state.deliveryNotes || {});
 
+  // Must live INSIDE the component (hooks can't run at module level)
+  const { warehouses = [] } = useSelector((state) => state.warehouse || {});
+
   const currentMonth = useMemo(getCurrentMonthRange, []);
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
   const [customer, setCustomer] = useState("");
-  const [startDate, setStartDate] = useState(currentMonth.start);
-  const [endDate, setEndDate] = useState(currentMonth.end);
+  const [warehouse, setWarehouse] = useState("");
+  const [startDate, setStartDate] = useState();
+  const [endDate, setEndDate] = useState();
   const [dateFilterChanged, setDateFilterChanged] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const rowsPerPage = 10;
@@ -82,6 +87,7 @@ const DeliveryNotes = () => {
     if (search.trim()) params.search = search.trim();
     if (status) params.status = status;
     if (customer) params.customer = customer;
+    if (warehouse) params.warehouse = warehouse;
     if (dateFilterChanged && startDate) params.start_date = startDate;
     if (dateFilterChanged && endDate) params.end_date = endDate;
     return params;
@@ -90,6 +96,7 @@ const DeliveryNotes = () => {
     search,
     status,
     customer,
+    warehouse,
     startDate,
     endDate,
     dateFilterChanged,
@@ -106,6 +113,20 @@ const DeliveryNotes = () => {
   useEffect(() => {
     dispatch(fetchDeliveryNoteKpi());
   }, [dispatch]);
+
+  // Load warehouses once for the filter dropdown
+  useEffect(() => {
+    dispatch(fetchWarehouses({ page: 1, page_size: 100 }));
+  }, [dispatch]);
+
+  const warehouseOptions = useMemo(
+    () =>
+      (Array.isArray(warehouses) ? warehouses : []).map((w) => ({
+        label: w.warehouse_name || w.name || `Warehouse ${w.id}`,
+        value: w.id,
+      })),
+    [warehouses],
+  );
 
   const handleDelete = useCallback(
     async (row) => {
@@ -246,6 +267,7 @@ const DeliveryNotes = () => {
     setSearch("");
     setStatus("");
     setCustomer("");
+    setWarehouse("");
     setDateFilterChanged(false);
     setStartDate(currentMonth.start);
     setEndDate(currentMonth.end);
@@ -318,25 +340,19 @@ const DeliveryNotes = () => {
         }}
         showStatus
         filters={[
+          
           {
-            key: "customer",
-            value: customer,
+            key: "warehouse",
+            value: warehouse,
             onChange: (value) => {
-              setCustomer(value);
+              setWarehouse(value);
               setCurrentPage(1);
             },
-            options: [
-              { label: "ABC Trading", value: "ABC Trading" },
-              { label: "Riyadh Tech", value: "Riyadh Tech" },
-              { label: "Al Noor Company", value: "Al Noor Company" },
-              { label: "Saudi Solutions", value: "Saudi Solutions" },
-            ],
-            placeholder: "All Customer",
+            options: warehouseOptions,
+            placeholder: "All Warehouse",
           },
         ]}
-        showFilterButton
-        filterButtonText="Clear Filter"
-        onFilterClick={clearFilters}
+        
       />
 
       {loading && <div style={{ padding: 20 }}>Loading delivery notes...</div>}

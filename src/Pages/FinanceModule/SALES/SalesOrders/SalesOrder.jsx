@@ -213,7 +213,7 @@ const SalesOrder = () => {
                     setOrderStatus(match ? match.value : "");
                     setCurrentPage(1);
                 }}
-                statusPlaceholder="Order Status"
+                Placeholder="Order Status"
                 showStatus
 
                 filters={[
@@ -226,7 +226,7 @@ const SalesOrder = () => {
                             setCurrentPage(1);
                         },
                         options: INVOICE_STATUS_OPTIONS,
-                        placeholder: "All Invoice Statuses",
+                        placeholder: "All Invoice Status",
                     },
                 ]}
             />

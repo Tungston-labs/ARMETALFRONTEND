@@ -84,54 +84,45 @@ export const getSalesInvoiceColumns = (onDelete) => [
         header: "Invoice No",
         accessor: "invoice_number",
     },
-
     {
         header: "SO Ref",
         accessor: "sales_order_number",
     },
-
     {
         header: "Customer",
-        accessor: "customer_display_name",
-        render: (row) =>
-            row.customer_display_name ||
-            row.customer_name ||
-            "—",
+        accessor: "customer_name",
+        render: (row) => row.customer_name || "—",
     },
-{
-    header: "Invoice Date",
-    accessor: "invoice_date",
-    render: (row) => formatDate(row.invoice_date),
-},
-
-{
-    header: "Due Date",
-    accessor: "due_date",
-    render: (row) => formatDate(row.due_date),
-},
-
+    {
+        header: "Invoice Date",
+        accessor: "invoice_date",
+        render: (row) => formatDate(row.invoice_date),
+    },
+    {
+        header: "Due Date",
+        accessor: "due_date",
+        render: (row) => formatDate(row.due_date),
+    },
     {
         header: "Amount",
-        accessor: "total_amount",
-        render: (row) =>
-            row.total_amount ?? "0.00",
+        accessor: "amount_to_be_paid",
+        render: (row) => row.amount_to_be_paid ?? "0.00",
     },
-
     {
         header: "Paid",
-        accessor: "amount_paid",
-        render: (row) =>
-            row.amount_paid ?? "0.00",
+        accessor: "paid_amount",
+        render: (row) => row.paid_amount ?? "0.00",
     },
-
+    {
+        header: "Balance",
+        accessor: "balance",
+        render: (row) => row.balance ?? "0.00",
+    },
     {
         header: "Payment Status",
-        accessor: "payment_status",
+        accessor: "status",
         render: (row) => {
-            const {
-                label,
-                key,
-            } = getInvoiceStatusMeta(row);
+            const { label, key } = getInvoiceStatusMeta(row);
 
             return (
                 <StatusBadge status={key}>
@@ -140,19 +131,18 @@ export const getSalesInvoiceColumns = (onDelete) => [
             );
         },
     },
-
     {
-    header: "Action",
-    accessor: "actions",
-    sortable: false,
-    render: (row) => (
-        <InvoiceActions
-            row={row}
-            statusKey={getInvoiceStatusMeta(row).key}
-            onDelete={onDelete}
-        />
-    ),
-},
+        header: "Action",
+        accessor: "actions",
+        sortable: false,
+        render: (row) => (
+            <InvoiceActions
+                row={row}
+                statusKey={getInvoiceStatusMeta(row).key}
+                onDelete={onDelete}
+            />
+        ),
+    },
 ];
 
 const STATUS_COLORS = {

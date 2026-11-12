@@ -11,6 +11,8 @@ import { useCustomerList } from "./Usecustomerlist ";
 import { getCustomerColumns } from "./Customerlist.columns";
 import TopNotification from "../../../../Components/Topnotification/Topnotification";
 import ReusableConfirmModal from "../../../../Components/modals/ReusableConfirmModal";
+import { ExportButton } from "./CustomerList.styles";
+import { FiDownload } from "react-icons/fi";
 
 const STATUS_OPTIONS = [
     { label: "Active", value: "active" },
@@ -82,8 +84,13 @@ const CustomerList = () => {
                 breadcrumbs={["Sales", "Customer"]}
                 buttonText="+ NEW CUSTOMER"
                 onButtonClick={handleAddCustomer}
-            />
-
+                >
+            <ExportButton type="button">
+                    <FiDownload />
+                    Export
+                </ExportButton>
+            </ReusableHeader>
+ 
             <StatsCards cards={cards} loading={loading} />
 
             <ReusableFilter

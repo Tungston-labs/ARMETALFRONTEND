@@ -15,11 +15,11 @@ export const ActionButton = styled.button`
     padding: 0;
     margin: 0;
 
-    border: none;
-    border-radius: 50%;
+    border: 1px solid #ccc;
+    border-radius: 5px;
 
-    background: #f3f4f6;
-    color: #374151;
+    background: #fff;
+    /* color: #374151; */
 
     display: flex;
     align-items: center;
@@ -71,13 +71,6 @@ export const FloatingAction = styled.button`
         `
             background: #e8f1ff;
             color: #3478f6;
-        `}
-
-    ${({ $position }) =>
-        $position === "download" &&
-        `
-            background: #e6f6ec;
-            color: #16a34a;
         `}
 
     ${({ $position }) =>
