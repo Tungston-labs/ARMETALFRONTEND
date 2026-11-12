@@ -182,6 +182,7 @@ const initialState = {
 
   /* KPI */
   kpi: {
+    currency: "SAR",
     total_warehouses: 0,
     total_stock_value: "0.00",
     active_warehouses: 0,
@@ -299,6 +300,7 @@ const warehouseSlice = createSlice({
 
         if (typeof payload.total_warehouses === "number") {
           state.kpi = {
+            currency: payload.currency || state.kpi.currency || "SAR",
             total_warehouses: payload.total_warehouses ?? 0,
             total_stock_value: payload.total_stock_value ?? "0.00",
             active_warehouses: payload.active_warehouses ?? 0,
@@ -414,6 +416,7 @@ const warehouseSlice = createSlice({
         const payload = action.payload || {};
 
         state.kpi = {
+          currency: payload.currency || state.kpi.currency || "SAR",
           total_warehouses:
             typeof payload.total_warehouses === "number"
               ? payload.total_warehouses

@@ -52,10 +52,11 @@ const formatUnits = (value) => {
   });
 };
 
-const formatSarAmount = (value) => {
+const formatCurrencyAmount = (value, currency = "SAR") => {
   const num = Number(value ?? 0);
   const safe = Number.isFinite(num) ? num : 0;
-  return `SAR ${safe.toLocaleString("en-US", {
+  const code = String(currency || "SAR").trim() || "SAR";
+  return `${code} ${safe.toLocaleString("en-US", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   })}`;
@@ -208,7 +209,8 @@ const WarehouseList = () => {
       {
         accessor: "stock_value",
         header: "Stock value",
-        render: (row) => formatSarAmount(row.stock_value),
+        render: (row) =>
+          formatCurrencyAmount(row.stock_value, row.currency || kpi?.currency),
       },
       {
         accessor: "capacity_used",
@@ -249,7 +251,7 @@ const WarehouseList = () => {
         ),
       },
     ],
-    [handleRowClick],
+    [handleRowClick, kpi?.currency],
   );
 
   const statsCards = useMemo(
@@ -267,7 +269,7 @@ const WarehouseList = () => {
       },
       {
         title: "Total stock value",
-        count: formatSarAmount(kpi?.total_stock_value),
+        count: formatCurrencyAmount(kpi?.total_stock_value, kpi?.currency),
         icon: <FiPackage size={22} />,
         backgroundColor: "#ecfdf5",
         iconColor: "#16a34a",

@@ -84,8 +84,8 @@ export const Content = styled.div`
 `;
 
 export const Count = styled.div`
-  font-size: clamp(18px, 1.8vw, 24px);
-  font-weight: 700;
+  font-size: clamp(14px, 1.8vw, 24px);
+  font-weight: 500;
   line-height: 1.2;
 
   max-width: 100%;
