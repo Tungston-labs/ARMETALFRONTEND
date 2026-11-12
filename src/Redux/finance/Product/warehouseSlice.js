@@ -179,9 +179,13 @@ const initialState = {
 
   /* KPI */
   kpi: {
+    currency: "SAR",
     total_warehouses: 0,
+    total_stock_value: "0.00",
     active_warehouses: 0,
     inactive_warehouses: 0,
+    average_capacity_used: 0,
+    near_full_capacity: 0,
   },
   kpiLoading: false,
   kpiError: null,
@@ -290,6 +294,18 @@ const warehouseSlice = createSlice({
             : state.warehouses.filter(
                 (w) => String(w?.status || "").toLowerCase() === "inactive",
               ).length;
+
+        if (typeof payload.total_warehouses === "number") {
+          state.kpi = {
+            currency: payload.currency || state.kpi.currency || "SAR",
+            total_warehouses: payload.total_warehouses ?? 0,
+            total_stock_value: payload.total_stock_value ?? "0.00",
+            active_warehouses: payload.active_warehouses ?? 0,
+            inactive_warehouses: payload.inactive_warehouses ?? 0,
+            average_capacity_used: payload.average_capacity_used ?? 0,
+            near_full_capacity: payload.near_full_capacity ?? 0,
+          };
+        }
       })
 
       .addCase(fetchWarehouses.rejected, (state, action) => {
@@ -397,10 +413,12 @@ const warehouseSlice = createSlice({
         const payload = action.payload || {};
 
         state.kpi = {
+          currency: payload.currency || state.kpi.currency || "SAR",
           total_warehouses:
             typeof payload.total_warehouses === "number"
               ? payload.total_warehouses
               : 0,
+          total_stock_value: payload.total_stock_value ?? "0.00",
           active_warehouses:
             typeof payload.active_warehouses === "number"
               ? payload.active_warehouses
@@ -408,6 +426,14 @@ const warehouseSlice = createSlice({
           inactive_warehouses:
             typeof payload.inactive_warehouses === "number"
               ? payload.inactive_warehouses
+              : 0,
+          average_capacity_used:
+            typeof payload.average_capacity_used === "number"
+              ? payload.average_capacity_used
+              : 0,
+          near_full_capacity:
+            typeof payload.near_full_capacity === "number"
+              ? payload.near_full_capacity
               : 0,
         };
       })

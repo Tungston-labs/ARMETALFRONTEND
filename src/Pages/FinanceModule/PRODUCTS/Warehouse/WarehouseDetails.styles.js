@@ -24,19 +24,19 @@ export const TopSection = styled.div`
   min-width: 0;
 
   display: grid;
-  grid-template-columns: minmax(0, 30fr) minmax(0, 70fr);
+  grid-template-columns: minmax(0, 34fr) minmax(0, 66fr);
 
-  gap: 8px;
+  gap: 14px;
 
   margin-bottom: 15px;
 
   box-sizing: border-box;
 
   @media (max-width: 1100px) {
-    grid-template-columns: minmax(0, 35fr) minmax(0, 65fr);
+    grid-template-columns: minmax(0, 38fr) minmax(0, 62fr);
   }
 
-  @media (max-width: 900px) {
+  @media (max-width: 960px) {
     grid-template-columns: 1fr;
 
     gap: 12px;
@@ -60,26 +60,46 @@ export const CompanyCard = styled.div`
   min-width: 0;
   background: #ffffff;
   border: 1px solid #0000001A;
-  border-radius: 5px;
-  min-height: 100px;
+  border-radius: 6px;
+  min-height: 112px;
 
-  padding: 18px 15px;
+  padding: 18px 20px;
 
   display: flex;
   align-items: center;
+  gap: 14px;
 
   box-sizing: border-box;
 
   overflow: hidden;
 
   @media (max-width: 1100px) {
-    padding: 16px 14px;
+    padding: 16px;
   }
 
   @media (max-width: 576px) {
     min-height: 90px;
+    gap: 12px;
+    padding: 14px;
+  }
+`;
 
-    padding: 14px 12px;
+export const WarehouseAvatar = styled.div`
+  width: 54px;
+  height: 54px;
+  min-width: 54px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 60%, #312e81 100%);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+
+  @media (max-width: 576px) {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
   }
 `;
 
@@ -103,19 +123,19 @@ export const CompanyDetails = styled.div`
 ========================================================= */
 
 export const CompanyName = styled.h2`
-  margin: 0 0 6px;
+  margin: 0 0 4px;
 
   color: #202020;
 
   font-family: "Poppins", sans-serif;
 
-  font-weight: 400;
+  font-weight: 500;
 
   font-style: normal;
 
-  font-size: 18px;
+  font-size: clamp(15px, 1.3vw, 18px);
 
-  line-height: 22px;
+  line-height: 1.3;
 
   letter-spacing: 0;
 
@@ -124,18 +144,6 @@ export const CompanyName = styled.h2`
   text-overflow: ellipsis;
 
   white-space: nowrap;
-
-  @media (max-width: 1100px) {
-    font-size: 16px;
-
-    line-height: 20px;
-  }
-
-  @media (max-width: 576px) {
-    font-size: 14px;
-
-    line-height: 18px;
-  }
 `;
 
 
@@ -150,13 +158,13 @@ export const CompanyText = styled.p`
 
   font-family: "Poppins", sans-serif;
 
-  font-weight: 300;
+  font-weight: 400;
 
   font-style: normal;
 
   font-size: 13px;
 
-  line-height: 19px;
+  line-height: 1.45;
 
   letter-spacing: 0;
 
@@ -166,16 +174,8 @@ export const CompanyText = styled.p`
 
   white-space: nowrap;
 
-  @media (max-width: 1100px) {
-    font-size: 12px;
-
-    line-height: 18px;
-  }
-
   @media (max-width: 576px) {
-    font-size: 10px;
-
-    line-height: 16px;
+    font-size: 12px;
   }
 `;
 
@@ -901,11 +901,21 @@ export const UploadButton = styled.button`
 `;
 export const Page = styled.div`
   box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
   padding: 20px;
 
   background: #f5f8ff;
 
   font-family: "Poppins", sans-serif;
+
+  @media (max-width: 768px) {
+    padding: 14px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 10px;
+  }
 `;
 
 export const Header = styled.div`
@@ -915,25 +925,77 @@ export const Header = styled.div`
   align-items: center;
   justify-content: space-between;
 
-  gap: 20px;
+  gap: 16px;
+  margin-bottom: 20px;
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    align-items: stretch;
+    padding-top: 50px;
+    gap: 12px;
+  }
+`;
+
+export const HeaderBrand = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+`;
+
+export const BackChevronButton = styled.button`
+  background: transparent;
+  border: none;
+  padding: 4px 2px;
+  margin: 0;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  color: #111827;
+  cursor: pointer;
+  flex-shrink: 0;
+  border-radius: 4px;
+  transition: color 0.2s ease, background-color 0.2s ease;
+
+  &:hover {
+    color: #3250bc;
+    background: rgba(50, 80, 188, 0.08);
+  }
 `;
 
 export const HeaderLeft = styled.div`
   display: flex;
   flex-direction: column;
+  min-width: 0;
 
-  gap: 4px;
+  gap: 2px;
 `;
 
 export const Title = styled.h1`
   margin: 0;
 
-  font-size: 19px;
+  font-size: clamp(19px, 1.8vw, 24px);
   font-weight: 500;
 
-  line-height: 1.4;
+  line-height: 1.3;
 
-  color: #3454b9;
+  color: #3250bc;
+  overflow-wrap: anywhere;
+`;
+
+export const HeaderSubtitle = styled.p`
+  margin: 0;
+
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.4;
+  color: #374151;
+
+  @media (max-width: 576px) {
+    font-size: 12px;
+  }
 `;
 
 export const Breadcrumb = styled.div`
@@ -955,42 +1017,75 @@ export const BreadcrumbItem = styled.span`
 export const HeaderActions = styled.div`
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
 
   gap: 8px;
+
+  @media (max-width: 480px) {
+    width: 100%;
+  }
 `;
 
 export const EditButton = styled.button`
-  height: 32px;
-  padding: 0 13px;
+  height: 38px;
+  padding: 0 16px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
-  border: 1px solid #e1e1e1;
-  border-radius: 4px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
   background: #ffffff;
   font-family: "Poppins", sans-serif;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 500;
-  color: #111111;
+  color: #111827;
   cursor: pointer;
+  white-space: nowrap;
+
+  &:hover:not(:disabled) {
+    background: #f9fafb;
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  @media (max-width: 480px) {
+    width: 100%;
+  }
 `;
 
 export const DeleteButton = styled.button`
-  height: 32px;
-  padding: 0 14px;
+  height: 38px;
+  padding: 0 16px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
   border: none;
-  border-radius: 4px;
-  background: #3454b9;
+  border-radius: 6px;
+  background: #3857b9;
   font-family: "Poppins", sans-serif;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 500;
   color: #ffffff;
   cursor: pointer;
+  white-space: nowrap;
+
+  &:hover:not(:disabled) {
+    background: #2e49a5;
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  @media (max-width: 480px) {
+    width: 100%;
+  }
 `;
 
 export const DetailsGrid = styled.div`

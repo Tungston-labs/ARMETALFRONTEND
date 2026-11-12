@@ -1,27 +1,46 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Save } from "lucide-react";
 
-import {
-  COUNTRY_OPTIONS,
-  getCountryByCode,
-  getStatesByCountry,
-  getCitiesByState,
-} from "../../../../../utils/countryData";
+import { COUNTRY_OPTIONS, getCountryByCode } from "../../../../../utils/countryData";
 
 import {
-  Overlay, Modal, Header, Title, Subtitle, Form, FormGroup, Label,
-  Input, Select, ButtonRow, CancelButton, SaveButton,
+  Overlay,
+  Modal,
+  Header,
+  Title,
+  Subtitle,
+  Form,
+  FormGroup,
+  Label,
+  Input,
+  Select,
+  ButtonRow,
+  CancelButton,
+  SaveButton,
 } from "./WarehouseModal.styles";
+
+const WAREHOUSE_TYPE_OPTIONS = [
+  { value: "main", label: "Main" },
+  { value: "distribution", label: "Distribution" },
+  { value: "regional", label: "Regional" },
+  { value: "service", label: "Service" },
+  { value: "spare_parts", label: "Spare Parts" },
+  { value: "other", label: "Other" },
+];
+
+const STATUS_OPTIONS = [
+  { value: "active", label: "Active" },
+  { value: "inactive", label: "Inactive" },
+];
 
 const getInitialFormData = () => ({
   warehouseCode: "",
   warehouseName: "",
-  warehouseType: "Main",
+  warehouseType: "main",
   manager: "",
-  status: "Active",
-  operatingSince: new Date().toISOString().slice(0, 10),
+  status: "active",
+  operatingSince: "",
   country: "",
-  state: "",
   city: "",
   addressLine1: "",
   addressLine2: "",
@@ -46,18 +65,33 @@ const WarehouseModal = ({
     ...initialData,
   });
 
+  useEffect(() => {
+    setFormData({
+      ...getInitialFormData(),
+      ...initialData,
+    });
+  }, [initialData, isOpen]);
+
   const selectedCountry = useMemo(
     () => getCountryByCode(formData.country),
     [formData.country],
   );
-  const states = useMemo(
-    () => getStatesByCountry(formData.country),
-    [formData.country],
-  );
-  const cities = useMemo(
-    () => getCitiesByState(formData.country, formData.state),
-    [formData.country, formData.state],
-  );
+
+  const countrySelectOptions = useMemo(() => {
+    const base = COUNTRY_OPTIONS.map((c) => ({ value: c.code, label: c.name }));
+    const current = String(formData.country || "").trim();
+    if (
+      current &&
+      !base.some(
+        (c) =>
+          c.value.toLowerCase() === current.toLowerCase() ||
+          c.label.toLowerCase() === current.toLowerCase(),
+      )
+    ) {
+      return [{ value: current, label: current }, ...base];
+    }
+    return base;
+  }, [formData.country]);
 
   useEffect(() => {
     if (!isOpen) return undefined;
@@ -72,30 +106,17 @@ const WarehouseModal = ({
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => {
-      const updated = { ...prev, [name]: value };
-      if (name === "country") {
-        updated.state = "";
-        updated.city = "";
-      } else if (name === "state") {
-        updated.city = "";
-      }
-      return updated;
-    });
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (submitting) return;
 
-    const stateObj = states.find((s) => s.code === formData.state);
-
     onSave?.({
       ...formData,
-      country: selectedCountry?.name || "",
-      countryCode: formData.country,
-      state: stateObj?.name || formData.state,
-      stateCode: stateObj?.code || "",
+      country: selectedCountry?.name || formData.country || "",
+      countryCode: selectedCountry?.code || "",
     });
   };
 
@@ -103,9 +124,9 @@ const WarehouseModal = ({
     if (!submitting) onClose?.();
   };
 
-  const renderInput = (name, placeholder = "", required = false) => (
+  const renderInput = (name, placeholder = "", required = false, type = "text") => (
     <Input
-      type="text"
+      type={type}
       id={name}
       name={name}
       placeholder={placeholder}
@@ -116,9 +137,8 @@ const WarehouseModal = ({
     />
   );
 
-  const renderSelect = (name, options, placeholder, required = false) => {
+  const renderSelect = (name, options, placeholder = "", required = false) => {
     const current = formData[name];
-    /* keep a saved value visible even if it's not in the fixed list */
     const list =
       current && !options.some((o) => String(o.value) === String(current))
         ? [{ value: current, label: current }, ...options]
@@ -143,6 +163,9 @@ const WarehouseModal = ({
     );
   };
 
+  const capacityValue = String(formData.storageCapacity ?? "").trim();
+  const isNumericCapacity = capacityValue === "" || /^\d+(\.\d+)?$/.test(capacityValue);
+
   return (
     <Overlay onClick={handleOverlayClick}>
       <Modal onClick={(e) => e.stopPropagation()}>
@@ -156,48 +179,33 @@ const WarehouseModal = ({
         </Header>
 
         <Form onSubmit={handleSubmit}>
+          {/* Row 1 */}
           <FormGroup>
             <Label htmlFor="warehouseCode">Warehouse Code</Label>
-            {renderInput("warehouseCode", "1253698", true)}
+            {renderInput("warehouseCode", "1253698")}
           </FormGroup>
 
           <FormGroup>
             <Label htmlFor="warehouseName">Warehouse Name</Label>
-            {renderSelect(
-              "warehouseName",
-              [
-                { value: "Central Warehouse", label: "Central Warehouse" },
-                { value: "Main Warehouse", label: "Main Warehouse" },
-                { value: "Branch Warehouse", label: "Branch Warehouse" },
-              ],
-              "Select warehouse name",
-              true,
-            )}
+            {renderInput("warehouseName", "Enter warehouse name", true)}
           </FormGroup>
 
           <FormGroup>
             <Label htmlFor="warehouseType">Warehouse Type</Label>
-            {renderSelect("warehouseType", [
-              { value: "Main", label: "Main" },
-              { value: "Branch", label: "Branch" },
-              { value: "Distribution", label: "Distribution" },
-              { value: "Regional", label: "Regional" },
-            ])}
+            {renderSelect("warehouseType", WAREHOUSE_TYPE_OPTIONS)}
           </FormGroup>
 
           <FormGroup>
             <Label htmlFor="manager">Manager</Label>
-            {renderInput("manager", "Enter Name", true)}
+            {renderInput("manager", "Enter Name")}
           </FormGroup>
 
           <FormGroup>
             <Label htmlFor="status">Status</Label>
-            {renderSelect("status", [
-              { value: "Active", label: "Active" },
-              { value: "Inactive", label: "Inactive" },
-            ])}
+            {renderSelect("status", STATUS_OPTIONS)}
           </FormGroup>
 
+          {/* Row 2 */}
           <FormGroup>
             <Label htmlFor="operatingSince">Operating Since</Label>
             <Input
@@ -212,86 +220,25 @@ const WarehouseModal = ({
 
           <FormGroup>
             <Label htmlFor="country">Country</Label>
-            {renderSelect(
-              "country",
-              COUNTRY_OPTIONS.map((c) => ({ value: c.code, label: c.name })),
-              "Select country",
-              true,
-            )}
+            {renderSelect("country", countrySelectOptions, "Select country")}
           </FormGroup>
 
-          {/* STATE: dropdown when data exists, otherwise free text */}
-          <FormGroup>
-            <Label htmlFor="state">State / Province</Label>
-            {states.length > 0 ? (
-              renderSelect(
-                "state",
-                states.map((s) => ({ value: s.code, label: s.name })),
-                "Select state",
-              )
-            ) : (
-              <Input
-                type="text"
-                id="state"
-                name="state"
-                placeholder={
-                  formData.country ? "Enter state" : "Select country first"
-                }
-                value={formData.state ?? ""}
-                onChange={handleChange}
-                disabled={submitting || !formData.country}
-              />
-            )}
-          </FormGroup>
-
-          {/* CITY */}
           <FormGroup>
             <Label htmlFor="city">City</Label>
-            {cities.length > 0 ? (
-              renderSelect(
-                "city",
-                cities.map((c) => ({ value: c.name, label: c.name })),
-                "Select city",
-              )
-            ) : (
-              <Input
-                type="text"
-                id="city"
-                name="city"
-                placeholder={
-                  states.length > 0 && !formData.state
-                    ? "Select state first"
-                    : "Enter city"
-                }
-                value={formData.city ?? ""}
-                onChange={handleChange}
-                disabled={
-                  submitting ||
-                  !formData.country ||
-                  (states.length > 0 && !formData.state)
-                }
-              />
-            )}
+            {renderInput("city", "Enter City")}
           </FormGroup>
 
           <FormGroup>
             <Label htmlFor="addressLine1">Address Line 1</Label>
-            {renderInput("addressLine1")}
+            {renderInput("addressLine1", "Enter Address Line 1")}
           </FormGroup>
 
           <FormGroup>
             <Label htmlFor="addressLine2">Address Line 2</Label>
-            {renderSelect(
-              "addressLine2",
-              [
-                { value: "Building", label: "Building" },
-                { value: "Street", label: "Street" },
-                { value: "Area", label: "Area" },
-              ],
-              "Select",
-            )}
+            {renderInput("addressLine2", "Enter Address Line 2")}
           </FormGroup>
 
+          {/* Row 3 */}
           <FormGroup>
             <Label htmlFor="postalCode">Postal Code</Label>
             {renderInput("postalCode", "Enter Postal Code")}
@@ -309,25 +256,18 @@ const WarehouseModal = ({
 
           <FormGroup>
             <Label htmlFor="email">Email</Label>
-            <Input
-              type="email"
-              id="email"
-              name="email"
-              placeholder="Enter Email"
-              value={formData.email ?? ""}
-              onChange={handleChange}
-              disabled={submitting}
-            />
+            {renderInput("email", "Enter Email", false, "email")}
           </FormGroup>
 
           <FormGroup>
             <Label htmlFor="storageCapacity">Storage Capacity</Label>
             <Input
-              type="number"
-              min="0"
-              step="any"
+              type={isNumericCapacity ? "number" : "text"}
+              min={isNumericCapacity ? "0" : undefined}
+              step={isNumericCapacity ? "any" : undefined}
               id="storageCapacity"
               name="storageCapacity"
+              placeholder="Enter Storage Capacity"
               value={formData.storageCapacity ?? ""}
               onChange={handleChange}
               disabled={submitting}
@@ -336,7 +276,7 @@ const WarehouseModal = ({
 
           <FormGroup>
             <Label htmlFor="notes">Notes</Label>
-            {renderInput("notes")}
+            {renderInput("notes", "Enter Notes")}
           </FormGroup>
 
           {error && (

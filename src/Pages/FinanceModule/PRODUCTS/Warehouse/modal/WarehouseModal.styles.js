@@ -84,7 +84,13 @@ export const Form = styled.form`
     column-gap: 18px;
   }
 
-  @media (max-width: 650px) {
+  @media (max-width: 820px) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 14px;
+    row-gap: 16px;
+  }
+
+  @media (max-width: 540px) {
     grid-template-columns: repeat(1, minmax(0, 1fr));
   }
 `;
@@ -179,10 +185,21 @@ export const ButtonRow = styled.div`
 
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
 
   gap: 13px;
 
   margin-top: 1px;
+
+  @media (max-width: 540px) {
+    flex-direction: column-reverse;
+    align-items: stretch;
+
+    & > button {
+      width: 100%;
+      min-width: 0;
+    }
+  }
 `;
 
 export const CancelButton = styled.button`

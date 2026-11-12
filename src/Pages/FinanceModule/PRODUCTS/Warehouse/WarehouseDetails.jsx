@@ -2,12 +2,19 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, useParams } from "react-router-dom";
 import {
-  FiEdit2, FiTrash2, FiBox, FiArchive, FiPackage, FiAlertTriangle,
-  FiUser, FiPhone, FiMail, FiLayers,
+  FiChevronLeft,
+  FiEdit2,
+  FiTrash2,
+  FiBox,
+  FiCreditCard,
+  FiPackage,
+  FiUser,
+  FiPhone,
+  FiMail,
+  FiLayers,
 } from "react-icons/fi";
 
 import StatsCards from "../../../../Components/StatsCards/StatsCards";
-import ReusableHeader from "../../../../Components/ReusableTable/ReusableHeader";
 import WarehouseModal from "./modal/WarehouseModal";
 
 import {
@@ -26,21 +33,73 @@ import {
 } from "../../../../Redux/finance/Product/warehouseSlice";
 
 import {
-  Page, Header, HeaderActions, EditButton, DeleteButton,
-  HeaderWrapper, TopSection, CompanyCard, CompanyDetails, CompanyName,
-  CompanyText, ContactCard, ContactItem, ContactTitle, ContactValue,
+  Page,
+  Header,
+  HeaderBrand,
+  BackChevronButton,
+  HeaderLeft,
+  Title,
+  HeaderSubtitle,
+  HeaderActions,
+  EditButton,
+  DeleteButton,
+  HeaderWrapper,
+  TopSection,
+  CompanyCard,
+  WarehouseAvatar,
+  CompanyDetails,
+  CompanyName,
+  CompanyText,
+  ContactCard,
+  ContactItem,
+  ContactTitle,
+  ContactValue,
 } from "./WarehouseDetails.styles";
 import ReusableConfirmModal from "../../../../Components/modals/ReusableConfirmModal";
 
 const capitalize = (v) =>
-  v ? String(v).charAt(0).toUpperCase() + String(v).slice(1) : "-";
+  v
+    ? String(v)
+        .replace(/_/g, " ")
+        .replace(/\b\w/g, (c) => c.toUpperCase())
+    : "-";
 
 const formatDate = (value) => {
-  if (!value) return "-";
+  if (!value) return "";
   const d = new Date(value);
   return Number.isNaN(d.getTime())
     ? String(value)
-    : d.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
+    : d.toLocaleDateString("en-GB", {
+        day: "2-digit",
+        month: "long",
+        year: "numeric",
+      });
+};
+
+const formatCount = (value, padBelowTen = false) => {
+  const num = Number(value ?? 0);
+  if (!Number.isFinite(num) || num < 0) return padBelowTen ? "00" : "0";
+  const whole = Math.trunc(num);
+  if (padBelowTen && whole < 10) return `0${whole}`;
+  return whole.toLocaleString("en-US");
+};
+
+const formatUnitsValue = (value) => {
+  const num = Number(value ?? 0);
+  if (!Number.isFinite(num)) return "0";
+  return num.toLocaleString("en-US", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  });
+};
+
+const formatCapacityValue = (value) => {
+  if (value === null || value === undefined || value === "") return "-";
+  const str = String(value).trim();
+  if (/^\d+(\.\d+)?$/.test(str)) {
+    return Number(str).toLocaleString("en-US");
+  }
+  return str;
 };
 
 const WarehouseDetails = () => {
@@ -72,35 +131,88 @@ const WarehouseDetails = () => {
 
   const warehouse = useMemo(() => {
     const d = warehouseDetail || {};
+    const addressParts = [
+      d.postal_code ? `PO Box ${d.postal_code}` : "",
+      d.address_line_1 || d.address_line1 || d.address || "",
+      d.address_line_2 || d.address_line2 || "",
+    ].filter(Boolean);
+
+    const cityCountry = [d.city || "", d.country || ""].filter(Boolean).join(", ");
+
     return {
+      code: d.code || "",
       name: d.warehouse_name || "Warehouse",
-      type: d.warehouse_type || "-",
+      type: capitalize(d.warehouse_type),
       status: capitalize(d.status),
       operatingSince: formatDate(d.operating_since || d.created_at),
       manager:
-        d.manager_name || d.manager?.name || d.manager?.full_name ||
-        (typeof d.manager === "string" ? d.manager : "-"),
+        (typeof d.manager === "string" ? d.manager : "") ||
+        d.manager_name ||
+        d.manager?.name ||
+        d.manager?.full_name ||
+        "-",
       phoneNumber: d.phone_number || "-",
       email: d.email || "-",
-      storageCapacity: d.storage_capacity ?? "-",
+      storageCapacity: formatCapacityValue(d.storage_capacity),
       companyName: d.company_name || d.company?.name || "-",
-      addressLine1: d.address_line_1 || d.address_line1 || d.address || "-",
-      addressLine2: d.address_line_2 || d.address_line2 || "-",
-      city: d.city || "-",
+      addressLine: addressParts.join(", ") || "-",
+      cityCountry: cityCountry || d.location || "-",
       totalProducts: d.total_products ?? 0,
-      stockQuantity: d.stock_quantity ?? 0,
+      stockQuantity: d.stock_quantity ?? d.total_units ?? 0,
       lowStock: d.low_stock_products ?? 0,
       outOfStock: d.out_of_stock_products ?? 0,
     };
   }, [warehouseDetail]);
 
+  const headerSubtitle = [
+    warehouse.code,
+    warehouse.operatingSince ? `Created On : ${warehouse.operatingSince}` : "",
+  ]
+    .filter(Boolean)
+    .join(" , ");
+
   const cards = useMemo(
     () => [
-      { count: String(warehouse.type), title: "Warehouse Type", icon: <FiBox size={20} />, backgroundColor: "#E8EDFF", iconColor: "#3454B9" },
-      { count: String(warehouse.totalProducts), title: "Total Products", icon: <FiArchive size={20} />, backgroundColor: "#E4F7FB", iconColor: "#22A6C7" },
-      { count: String(warehouse.stockQuantity), title: "Total Stock Quantity", icon: <FiPackage size={20} />, backgroundColor: "#E9F8ED", iconColor: "#16A34A" },
-      { count: String(warehouse.lowStock), title: "Low Stock Products", icon: <FiPackage size={20} />, backgroundColor: "#FFF2E5", iconColor: "#FF8500" },
-      { count: String(warehouse.outOfStock), title: "Out of Stock Products", icon: <FiAlertTriangle size={20} />, backgroundColor: "#FFECEC", iconColor: "#FF2D2D" },
+      {
+        count: String(warehouse.type),
+        title: "Warehouse Type",
+        icon: <FiBox size={20} />,
+        backgroundColor: "#E8EDFF",
+        iconColor: "#3454B9",
+      },
+      {
+        count: formatCount(warehouse.totalProducts),
+        title: "Total Products",
+        icon: <FiCreditCard size={20} />,
+        backgroundColor: "#E4F7FB",
+        iconColor: "#22A6C7",
+      },
+      {
+        count: (
+          <span>
+            {formatUnitsValue(warehouse.stockQuantity)}{" "}
+            <small style={{ fontSize: "0.55em", fontWeight: 500 }}>Units</small>
+          </span>
+        ),
+        title: "Total Stock Quantity",
+        icon: <FiPackage size={20} />,
+        backgroundColor: "#E9F8ED",
+        iconColor: "#16A34A",
+      },
+      {
+        count: formatCount(warehouse.lowStock, true),
+        title: "Low Stock Products",
+        icon: <FiBox size={20} />,
+        backgroundColor: "#FFF2E5",
+        iconColor: "#FF8500",
+      },
+      {
+        count: formatCount(warehouse.outOfStock, true),
+        title: "Out of Stock Products",
+        icon: <FiBox size={20} />,
+        backgroundColor: "#FFECEC",
+        iconColor: "#FF2D2D",
+      },
     ],
     [warehouse],
   );
@@ -108,17 +220,14 @@ const WarehouseDetails = () => {
   const contacts = [
     { icon: FiUser, label: "Manager", value: warehouse.manager },
     { icon: FiPhone, label: "Phone Number", value: warehouse.phoneNumber },
-    { icon: FiMail, label: "Email", value: warehouse.email },
+    { icon: FiMail, label: "Email ID", value: warehouse.email },
     { icon: FiLayers, label: "Storage Capacity", value: warehouse.storageCapacity },
   ];
 
-  /* Edit form values, built from the loaded record */
   const editInitialData = useMemo(
     () => (warehouseDetail ? mapWarehouseToForm(warehouseDetail) : undefined),
     [warehouseDetail],
   );
-
-  /* ---------------- EDIT ---------------- */
 
   const openEdit = () => {
     dispatch(clearUpdateWarehouseError());
@@ -138,13 +247,11 @@ const WarehouseDetails = () => {
       ).unwrap();
 
       setIsEditOpen(false);
-      dispatch(fetchWarehouseById(id)); // refresh with the full record
-    } catch (err) {
-      /* updateError is in the store; the modal shows it */
+      dispatch(fetchWarehouseById(id));
+    } catch {
+      /* updateError is stored in Redux and displayed in the modal */
     }
   };
-
-  /* ---------------- DELETE ---------------- */
 
   const openDelete = () => {
     dispatch(clearDeleteWarehouseError());
@@ -155,9 +262,9 @@ const WarehouseDetails = () => {
     try {
       await dispatch(deleteWarehouse(id)).unwrap();
       setIsDeleteOpen(false);
-      navigate(-1); // back to the list; or navigate("/your/list/path")
-    } catch (err) {
-      setIsDeleteOpen(false); // deleteError is shown on the page
+      navigate("/product/warehouse");
+    } catch {
+      setIsDeleteOpen(false);
     }
   };
 
@@ -165,15 +272,34 @@ const WarehouseDetails = () => {
 
   const renderHeader = (showActions = false) => (
     <Header>
-      <ReusableHeader title="Warehouses" breadcrumbs={["Product", "Warehouses"]} />
+      <HeaderBrand>
+        <BackChevronButton
+          type="button"
+          onClick={() => navigate("/product/warehouse")}
+          aria-label="Back to warehouses"
+        >
+          <FiChevronLeft size={24} strokeWidth={2.2} />
+        </BackChevronButton>
+
+        <HeaderLeft>
+          <Title>{showActions ? warehouse.name : "Warehouse"}</Title>
+          {showActions && headerSubtitle && (
+            <HeaderSubtitle>{headerSubtitle}</HeaderSubtitle>
+          )}
+        </HeaderLeft>
+      </HeaderBrand>
 
       {showActions && (
         <HeaderActions>
           <EditButton type="button" onClick={openEdit} disabled={!warehouseDetail}>
-            <FiEdit2 size={12} /> EDIT
+            <FiEdit2 size={14} /> EDIT
           </EditButton>
-          <DeleteButton type="button" onClick={openDelete} disabled={!warehouseDetail}>
-            <FiTrash2 size={12} /> DELETE
+          <DeleteButton
+            type="button"
+            onClick={openDelete}
+            disabled={!warehouseDetail}
+          >
+            <FiTrash2 size={14} /> DELETE
           </DeleteButton>
         </HeaderActions>
       )}
@@ -184,7 +310,16 @@ const WarehouseDetails = () => {
     return (
       <Page>
         {renderHeader(false)}
-        <div style={{ marginTop: 20, padding: 15, borderRadius: 6, background: "#FDEAEA", color: "#D64545", fontSize: 13 }}>
+        <div
+          style={{
+            marginTop: 20,
+            padding: 15,
+            borderRadius: 6,
+            background: "#FDEAEA",
+            color: "#D64545",
+            fontSize: 13,
+          }}
+        >
           {errorMessage}
         </div>
       </Page>
@@ -196,7 +331,16 @@ const WarehouseDetails = () => {
       {renderHeader(true)}
 
       {deleteError && (
-        <div style={{ margin: "12px 0", padding: 12, borderRadius: 6, background: "#FDEAEA", color: "#D64545", fontSize: 13 }}>
+        <div
+          style={{
+            margin: "12px 0",
+            padding: 12,
+            borderRadius: 6,
+            background: "#FDEAEA",
+            color: "#D64545",
+            fontSize: 13,
+          }}
+        >
           {formatApiError(deleteError)}
         </div>
       )}
@@ -206,12 +350,21 @@ const WarehouseDetails = () => {
       <HeaderWrapper style={{ marginTop: 16 }}>
         <TopSection>
           <CompanyCard>
+            <WarehouseAvatar aria-hidden="true">
+              <FiBox size={24} />
+            </WarehouseAvatar>
+
             <CompanyDetails>
               <CompanyName title={warehouse.name}>{warehouse.name}</CompanyName>
-              <CompanyText>{warehouse.companyName}</CompanyText>
-              <CompanyText>{warehouse.addressLine1}</CompanyText>
-              <CompanyText>{warehouse.addressLine2}</CompanyText>
-              <CompanyText>{warehouse.city}</CompanyText>
+              <CompanyText title={warehouse.companyName}>
+                {warehouse.companyName}
+              </CompanyText>
+              <CompanyText title={warehouse.addressLine}>
+                {warehouse.addressLine}
+              </CompanyText>
+              <CompanyText title={warehouse.cityCountry}>
+                {warehouse.cityCountry}
+              </CompanyText>
             </CompanyDetails>
           </CompanyCard>
 
@@ -229,7 +382,6 @@ const WarehouseDetails = () => {
         </TopSection>
       </HeaderWrapper>
 
-      {/* EDIT MODAL: mounted only while open, so it always starts from fresh data */}
       {isEditOpen && editInitialData && (
         <WarehouseModal
           isOpen
@@ -242,7 +394,6 @@ const WarehouseDetails = () => {
         />
       )}
 
-      {/* DELETE CONFIRMATION */}
       <ReusableConfirmModal
         show={isDeleteOpen}
         title="Delete Warehouse"
