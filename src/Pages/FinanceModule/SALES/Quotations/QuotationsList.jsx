@@ -19,7 +19,7 @@ import StatsCards from "../../../../Components/StatsCards/StatsCards";
 
 import AddQuotation from "./modal/AddQuotation";
 import { quotationColumns } from "./quotationColumns";
-import { exportQuotationsService } from "../../../../services/quotationService";
+import { exportQuotationsService } from "../../../../services/finance/Sales/quotationService";
 import {
   convertQuotation,
   createQuotation,
@@ -29,7 +29,7 @@ import {
   fetchQuotationList,
   patchQuotation,
   updateQuotation,
-} from "../../../../Redux/quotationThunks";
+} from "../../../../Redux/finance/Sales/quotationThunks";
 import {
   CompactStatsWrapper,
   CompactTableWrapper,
@@ -114,7 +114,7 @@ const toInvoicePreviewData = (q = {}) => {
 const QuotationsList = () => {
   const dispatch = useDispatch();
 
-  const { list, pagination, kpi, loading, saving, error } = useSelector(
+  const { list,   pagination = { totalPages: 1, totalItems: 0 }, kpi, loading, saving, error } = useSelector(
     (state) => state.quotation,
   );
 
@@ -468,7 +468,7 @@ const QuotationsList = () => {
         currentPage={currentPage}
         totalPages={Math.max(1, pagination.totalPages || 1)}
         onPageChange={setCurrentPage}
-        totalRecords={pagination.totalItems}
+        totalRecords={pagination?.totalItems ?? 0}
       />
 
       <ReusableConfirmModal

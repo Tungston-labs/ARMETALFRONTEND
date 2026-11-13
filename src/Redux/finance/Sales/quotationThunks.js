@@ -8,7 +8,7 @@ import {
   listQuotationService,
   patchQuotationService,
   updateQuotationService,
-} from "../services/quotationService";
+} from "../../../services/finance/Sales/quotationService";
 
 const apiError = (error) => error.response?.data || error.message;
 

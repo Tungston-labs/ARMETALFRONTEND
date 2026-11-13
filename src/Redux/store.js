@@ -57,7 +57,7 @@ import paymentReportReducer from "./finance/reports/paymentReportSlice";
 import inventoryReportReducer from "./finance/reports/InventoryReportSlice";
 import balanceSheetReducer from "./finance/reports/BalanceSheetSlice";
 import changesInEquityReportReducer from "./finance/reports/ChangesInEquitySlice";
-import quotationReducer from "./finance/Sales/Quotationslice";
+import quotationReducer from "./finance/Sales/quotationSlice";
 
 
 export const store = configureStore({

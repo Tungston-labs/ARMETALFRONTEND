@@ -27,7 +27,7 @@ import {
   fetchQuotationDetails,
   patchQuotation,
   updateQuotation,
-} from "../../../../../Redux/quotationThunks";
+} from "../../../../../Redux/finance/Sales/quotationThunks";
 import {
   CompactCustomerTableWrapper,
   GenerateCustomerQuoteButton,
