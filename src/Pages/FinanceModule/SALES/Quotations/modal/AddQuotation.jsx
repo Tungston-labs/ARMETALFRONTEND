@@ -1,778 +1,793 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { useDispatch, useSelector } from "react-redux";
-import { FiChevronDown, FiPlus, FiX, FiLock } from "react-icons/fi";
+import { FiChevronLeft, FiPlus, FiX } from "react-icons/fi";
+import { IoHomeOutline } from "react-icons/io5";
+import styled from "styled-components";
 
-import ReusableHeader from "../../../../../Components/ReusableTable/ReusableHeader";
-import { createQuotation } from "../../../../../Redux/quotationThunks";
+import API from "../../../../../services/api";
 
-import {
-  getCustomers,
-  selectCustomers,
-} from "../../../../../Redux/finance/Sales/CustomerSlice";
+const Container = styled.div`
+  width: 100%;
+  max-width: 100%;
+  min-height: 100vh;
+  background: #f5f6fa;
+  padding: 20px;
+  box-sizing: border-box;
 
-import {
-  getProducts,
-  selectProducts,
-} from "../../../../../Redux/finance/Product/ProductSlice";
+  @media (max-width: 768px) {
+    padding: 14px;
+  }
+`;
 
-// Adjust this import path to your actual companySlice location.
-import { getCompanySelf } from "../../../../../Redux/companySlice";
+const HeaderBar = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 18px;
+  min-width: 0;
 
-import {
-  PageWrapper,
-  FormBody,
-  SectionTitle,
-  FormGrid,
-  FormGroup,
-  Label,
-  Input,
-  SelectWrap,
-  Select,
-  ItemsHeader,
-  AddItemButton,
-  TableWrap,
-  ItemsTable,
-  DeleteButton,
-  BottomSection,
-  NotesBlock,
-  Summary,
-  SummaryRow,
-  DiscountInput,
-  TotalBar,
-  Footer,
-  LockNote,
-  Actions,
-  OutlineButton,
-  PrimaryButton,
-  ErrorMessage,
-  Required,
-} from "./AddQuotation.style";
+  @media (max-width: 768px) {
+    padding-top: 50px;
+  }
+`;
 
-// Where to go after a successful save.
-const QUOTATIONS_LIST_PATH = "/sales/quotations";
+const BackChevronButton = styled.button`
+  background: transparent;
+  border: none;
+  padding: 4px 2px;
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #111827;
+  cursor: pointer;
+  flex-shrink: 0;
+  border-radius: 4px;
+  transition: color 0.2s ease, background-color 0.2s ease;
 
-const todayLocal = () => {
-  const now = new Date();
-  const offset = now.getTimezoneOffset();
+  &:hover {
+    color: #3250bc;
+    background: rgba(50, 80, 188, 0.08);
+  }
+`;
 
-  return new Date(now.getTime() - offset * 60000)
-    .toISOString()
-    .slice(0, 10);
-};
+const HeaderTitleGroup = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+`;
 
-const makeItem = () => ({
-  id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-  productId: "",
-  service: "",
+const HeaderTitle = styled.h2`
+  margin: 0;
+  font-size: clamp(19px, 1.8vw, 24px);
+  font-weight: 500;
+  line-height: 1.3;
+  color: #3250bc;
+`;
+
+const HeaderBreadcrumb = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #374151;
+  flex-wrap: wrap;
+
+  span.active {
+    color: #3250bc;
+  }
+`;
+
+const Card = styled.form`
+  background: #ffffff;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  padding: 24px;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    padding: 16px;
+  }
+`;
+
+const Grid4 = styled.div`
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 18px;
+
+  @media (max-width: 1024px) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  @media (max-width: 576px) {
+    grid-template-columns: 1fr;
+  }
+`;
+
+const FieldGroup = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+`;
+
+const Label = styled.label`
+  font-size: 12px;
+  font-weight: 500;
+  color: #374151;
+  text-transform: uppercase;
+
+  span {
+    color: #dc2626;
+    margin-left: 2px;
+  }
+`;
+
+const Input = styled.input`
+  height: 38px;
+  padding: 0 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  font-size: 13px;
+  color: #111827;
+  background: #ffffff;
+  width: 100%;
+  box-sizing: border-box;
+  outline: none;
+
+  &:focus {
+    border-color: #3857b9;
+  }
+`;
+
+const Select = styled.select`
+  height: 38px;
+  padding: 0 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  font-size: 13px;
+  color: #111827;
+  background: #ffffff;
+  width: 100%;
+  box-sizing: border-box;
+  outline: none;
+
+  &:focus {
+    border-color: #3857b9;
+  }
+`;
+
+const ItemsHeader = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 22px 0 12px;
+  gap: 12px;
+  flex-wrap: wrap;
+`;
+
+const SectionHeading = styled.h3`
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #111827;
+  text-transform: uppercase;
+`;
+
+const AddItemBtn = styled.button`
+  height: 36px;
+  padding: 0 14px;
+  background: #f58220;
+  color: #ffffff;
+  border: none;
+  border-radius: 4px;
+  font-size: 12.5px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+
+  &:hover {
+    background: #df7113;
+  }
+`;
+
+const TableWrap = styled.div`
+  width: 100%;
+  overflow-x: auto;
+  border: 1px dashed #d1d5db;
+  border-radius: 4px;
+`;
+
+const ItemsTable = styled.table`
+  width: 100%;
+  border-collapse: collapse;
+
+  th {
+    background: #233c8b;
+    color: #ffffff;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 10px 8px;
+    text-align: left;
+    white-space: nowrap;
+  }
+
+  td {
+    padding: 8px 6px;
+    border-bottom: 1px solid #e5e7eb;
+    font-size: 12.5px;
+    vertical-align: middle;
+  }
+
+  input,
+  select {
+    height: 34px;
+    padding: 0 8px;
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+    font-size: 12.5px;
+    width: 100%;
+    min-width: 72px;
+    box-sizing: border-box;
+    background: #ffffff;
+  }
+`;
+
+const RemoveBtn = styled.button`
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 1px solid #ef4444;
+  background: #ffffff;
+  color: #ef4444;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+
+  &:hover {
+    background: #fef2f2;
+  }
+`;
+
+const BottomGrid = styled.div`
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 0.9fr);
+  gap: 24px;
+  margin-top: 22px;
+  align-items: start;
+
+  @media (max-width: 900px) {
+    grid-template-columns: 1fr;
+  }
+`;
+
+const TextArea = styled.textarea`
+  width: 100%;
+  min-height: 90px;
+  padding: 10px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  font-size: 13px;
+  font-family: inherit;
+  box-sizing: border-box;
+  resize: vertical;
+`;
+
+const SummaryCard = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+`;
+
+const SummaryRow = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 13px;
+  color: #374151;
+
+  strong {
+    font-weight: 600;
+    color: #111827;
+  }
+`;
+
+const TotalBanner = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #f58220;
+  color: #ffffff;
+  padding: 11px 14px;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 600;
+  margin-top: 4px;
+`;
+
+const ActionsBar = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 24px;
+  flex-wrap: wrap;
+`;
+
+const ButtonGroup = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+`;
+
+const OutlineBtn = styled.button`
+  height: 38px;
+  padding: 0 18px;
+  background: #ffffff;
+  color: #111827;
+  border: 1px solid #111827;
+  border-radius: 4px;
+  font-size: 12.5px;
+  font-weight: 500;
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    background: #f3f4f6;
+  }
+`;
+
+const PrimaryBtn = styled.button`
+  height: 38px;
+  padding: 0 20px;
+  background: #3857b9;
+  color: #ffffff;
+  border: none;
+  border-radius: 4px;
+  font-size: 12.5px;
+  font-weight: 500;
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    background: #2e49a5;
+  }
+`;
+
+const createEmptyItem = () => ({
+  product: "",
+  service_name: "",
   description: "",
   quantity: "1",
-  hsCode: "",
-  rate: "",
-  vatRate: "",
+  hs_code: "",
+  rate: "0",
+  vat_percentage: "15",
 });
 
-const STATUS_API = {
-  Draft: "draft",
-  Pending: "pending",
-  Approved: "approved",
-  Rejected: "rejected",
+const toNum = (v) => {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : 0;
 };
 
-const money = (value) =>
-  `SAR ${Number(value || 0).toLocaleString("en-US", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })}`;
+const AddQuotation = ({
+  isOpen = true,
+  initialData = null,
+  defaultCustomerId = "",
+  submitting = false,
+  error = "",
+  onCancel,
+  onSave,
+}) => {
+  const isEdit = Boolean(initialData?.id);
+  const today = new Date().toISOString().slice(0, 10);
 
-const getErrorMessage = (err) => {
-  if (!err) return "";
+  const [customers, setCustomers] = useState([]);
+  const [products, setProducts] = useState([]);
+  const [formError, setFormError] = useState("");
 
-  if (typeof err === "string") return err;
-
-  if (err.detail || err.message) {
-    return err.detail || err.message;
-  }
-
-  if (typeof err === "object") {
-    const errorText = Object.values(err)
-      .flat()
-      .filter((value) => typeof value === "string")
-      .join(" ");
-
-    if (errorText) return errorText;
-  }
-
-  return "Something went wrong saving this quotation.";
-};
-
-// Customer field readers
-const customerName = (customer) =>
-  customer?.name ||
-  customer?.customer_name ||
-  customer?.company_name ||
-  `Customer #${customer?.id}`;
-
-const customerAddress = (customer) =>
-  customer?.address ||
-  customer?.billing_address ||
-  customer?.customer_address ||
-  "";
-
-const customerPhone = (customer) =>
-  customer?.phno ||
-  customer?.phone ||
-  customer?.phone_number ||
-  customer?.mobile ||
-  customer?.contact_number ||
-  "";
-
-const customerEmail = (customer) =>
-  customer?.financial_email ||
-  customer?.finance_email ||
-  customer?.finance_contact_email ||
-  customer?.email ||
-  "";
-
-// Product field readers
-const productName = (product) =>
-  product?.name ||
-  product?.product_name ||
-  product?.title ||
-  `Product #${product?.id}`;
-
-const productDescription = (product) =>
-  product?.description || "";
-
-const productHsCode = (product) =>
-  product?.hs_code ||
-  product?.hsn_code ||
-  product?.hsn ||
-  "";
-
-const productRate = (product) =>
-  product?.selling_price ??
-  product?.sale_price ??
-  product?.unit_price ??
-  product?.price ??
-  product?.rate ??
-  "";
-
-const productVat = (product) =>
-  product?.vat_rate ??
-  product?.vat ??
-  product?.tax_rate ??
-  product?.gst ??
-  "";
-
-const AddQuotation = ({ onCancel, onClose }) => {
-  const navigate = useNavigate();
-  const dispatch = useDispatch();
-
-  const today = todayLocal();
-
-  // Redux data
-  const customers = useSelector(selectCustomers);
-  const products = useSelector(selectProducts);
-
-  // Company details from company-self API
-  const company = useSelector((state) => state.company.company);
-
-  const handleCancel =
-    onCancel || onClose || (() => navigate(-1));
-
-  const [quotationDate, setQuotationDate] = useState(today);
-  const [dueDate, setDueDate] = useState(today);
-  const [paymentStatus, setPaymentStatus] = useState("Draft");
-
-  // FROM details will be populated from company-self API
-  const [from, setFrom] = useState({
-    name: "",
-    address: "",
-    phone: "",
-    email: "",
-  });
-
-  const [billTo, setBillTo] = useState({
-    customerId: "",
-    client: "",
-    address: "",
-    phno: "",
-    financial_email: "",
-  });
-
-  const [items, setItems] = useState([
-    makeItem(),
-    makeItem(),
-  ]);
-
-  const [discount, setDiscount] = useState("0");
-
-  const [notes, setNotes] = useState(
-    "Above information is not an invoice and only an estimate of services.\nPLEASE CONFIRM YOUR ACCEPTANCE OF THIS QUOTE"
-  );
-
-  const [error, setError] = useState("");
-  const [isSaving, setIsSaving] = useState(false);
-
-  // Load company, customer and product data
-  useEffect(() => {
-    dispatch(getCompanySelf());
-    dispatch(getCustomers({ page_size: 1000 }));
-    dispatch(getProducts({ page_size: 1000 }));
-  }, [dispatch]);
-
-  // Populate FROM details when company API returns
-  useEffect(() => {
-    if (company) {
-      setFrom({
-        name: company.name || "",
-        address: company.address || "",
-        phone: company.contact_number || "",
-        email: company.email || "",
-      });
-    }
-  }, [company]);
-
-  // Calculate totals
-  const totals = useMemo(() => {
-    const subtotal = items.reduce(
-      (sum, item) =>
-        sum +
-        (Number(item.quantity) || 0) *
-          (Number(item.rate) || 0),
-      0
-    );
-
-    const vat = items.reduce((sum, item) => {
-      const amount =
-        (Number(item.quantity) || 0) *
-        (Number(item.rate) || 0);
-
-      return (
-        sum +
-        (amount * (Number(item.vatRate) || 0)) / 100
-      );
-    }, 0);
-
-    const discountValue = Math.max(
-      0,
-      Number(discount) || 0
-    );
-
-    const total = Math.max(
-      0,
-      subtotal + vat - discountValue
-    );
-
-    return {
-      subtotal,
-      vat,
-      discount: discountValue,
-      total,
-    };
-  }, [items, discount]);
-
-  // Update quotation item
-  const updateItem = (id, field, value) => {
-    setItems((current) =>
-      current.map((item) =>
-        item.id === id
-          ? { ...item, [field]: value }
-          : item
-      )
-    );
-  };
-
-  // Add new item
-  const addItem = () => {
-    setItems((current) => [
-      ...current,
-      makeItem(),
-    ]);
-  };
-
-  // Remove item
-  const removeItem = (id) => {
-    setItems((current) =>
-      current.length === 1
-        ? current
-        : current.filter((item) => item.id !== id)
-    );
-  };
-
-  // Selecting a customer fills BILL TO details
-  const handleCustomerChange = (e) => {
-    const customerId = e.target.value;
-
-    const selected = customers.find(
-      (customer) =>
-        String(customer.id) === String(customerId)
-    );
-
-    setBillTo({
-      customerId: selected?.id ?? "",
-      client: selected ? customerName(selected) : "",
-      address: selected ? customerAddress(selected) : "",
-      phno: selected ? customerPhone(selected) : "",
-      financial_email: selected
-        ? customerEmail(selected)
+  const [form, setForm] = useState({
+    quote_number: initialData?.quote_number || "",
+    issue_date: String(initialData?.issue_date || today).slice(0, 10),
+    valid_till: String(initialData?.valid_till || today).slice(0, 10),
+    status: String(initialData?.status || "draft").toLowerCase(),
+    from_company_name: initialData?.from_company_name || "Tungston Labs",
+    from_address: initialData?.from_address || "",
+    from_phone_number: initialData?.from_phone_number || "",
+    from_email: initialData?.from_email || "",
+    customer: initialData?.customer || defaultCustomerId || "",
+    bill_to_name: initialData?.bill_to_name || initialData?.customer_name || "",
+    bill_to_address: initialData?.bill_to_address || "",
+    bill_to_phone: initialData?.bill_to_phone || "",
+    finance_contact_email: initialData?.finance_contact_email || "",
+    discount: String(initialData?.discount ?? "0"),
+    round_off: String(initialData?.round_off ?? "0"),
+    negotiation_amount:
+      initialData?.negotiation_amount !== undefined &&
+      initialData?.negotiation_amount !== null
+        ? String(initialData.negotiation_amount)
         : "",
+    notes: initialData?.notes || "",
+    items:
+      Array.isArray(initialData?.items) && initialData.items.length > 0
+        ? initialData.items.map((it) => ({
+            product: it.product || "",
+            service_name: it.service_name || it.product_name || "",
+            description: it.description || "",
+            quantity: String(it.quantity ?? "1"),
+            hs_code: it.hs_code || "",
+            rate: String(it.rate ?? "0"),
+            vat_percentage: String(it.vat_percentage ?? "15"),
+          }))
+        : [createEmptyItem()],
+  });
+
+  useEffect(() => {
+    if (!isOpen) return;
+    API.get("/finance/customer/", { params: { page_size: 100 } })
+      .then((res) => {
+        const rows = res.data?.results || res.data || [];
+        setCustomers(Array.isArray(rows) ? rows : []);
+      })
+      .catch(() => setCustomers([]));
+
+    API.get("/finance/product/", { params: { page_size: 100 } })
+      .then((res) => {
+        const rows = res.data?.results || res.data || [];
+        setProducts(Array.isArray(rows) ? rows : []);
+      })
+      .catch(() => setProducts([]));
+  }, [isOpen]);
+
+  // Auto-fill Bill To fields when customer list loads for defaultCustomerId
+  useEffect(() => {
+    if (!form.customer || customers.length === 0) return;
+    const selected = customers.find(
+      (c) => String(c.id) === String(form.customer),
+    );
+    if (selected && !form.bill_to_name) {
+      setForm((prev) => ({
+        ...prev,
+        bill_to_name: selected.customer_name || prev.bill_to_name,
+        bill_to_address:
+          selected.address || selected.city || prev.bill_to_address,
+        bill_to_phone: selected.phone_number || prev.bill_to_phone,
+        finance_contact_email: selected.email || prev.finance_contact_email,
+      }));
+    }
+  }, [customers, form.customer, form.bill_to_name]);
+
+  const selectedCustomerObj = useMemo(
+    () => customers.find((c) => String(c.id) === String(form.customer)),
+    [customers, form.customer],
+  );
+  const currency =
+    selectedCustomerObj?.currency || initialData?.currency || "SAR";
+
+  const totals = useMemo(() => {
+    let subTotal = 0;
+    let totalVat = 0;
+    const lines = form.items.map((item) => {
+      const qty = toNum(item.quantity);
+      const rate = toNum(item.rate);
+      const vatPct = toNum(item.vat_percentage);
+      const base = qty * rate;
+      const vatAmt = (base * vatPct) / 100;
+      subTotal += base;
+      totalVat += vatAmt;
+      return { vatAmt, amount: base };
+    });
+    const discount = toNum(form.discount);
+    const roundOff = toNum(form.round_off);
+    const grandTotal = Math.max(0, subTotal + totalVat - discount + roundOff);
+    return { lines, subTotal, totalVat, discount, roundOff, grandTotal };
+  }, [form.items, form.discount, form.round_off]);
+
+  if (!isOpen) return null;
+
+  const handleField = (name, value) => {
+    setForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleCustomerChange = (customerId) => {
+    const selected = customers.find(
+      (c) => String(c.id) === String(customerId),
+    );
+    setForm((prev) => ({
+      ...prev,
+      customer: customerId,
+      bill_to_name: selected?.customer_name || prev.bill_to_name,
+      bill_to_address:
+        selected?.address || selected?.city || prev.bill_to_address,
+      bill_to_phone: selected?.phone_number || prev.bill_to_phone,
+      finance_contact_email: selected?.email || prev.finance_contact_email,
+    }));
+  };
+
+  const handleItemChange = (index, field, value) => {
+    setForm((prev) => {
+      const next = [...prev.items];
+      next[index] = { ...next[index], [field]: value };
+      return { ...prev, items: next };
     });
   };
 
-  // Selecting a product fills the item row
-  const handleProductChange = (itemId, productId) => {
-    const selected = products.find(
-      (product) =>
-        String(product.id) === String(productId)
-    );
-
-    setItems((current) =>
-      current.map((item) => {
-        if (item.id !== itemId) return item;
-
-        if (!selected) {
-          return {
-            ...item,
-            productId: "",
-            service: "",
-            description: "",
-            hsCode: "",
-            rate: "",
-          };
-        }
-
-        const vat = productVat(selected);
-        const rate = productRate(selected);
-
-        return {
-          ...item,
-          productId: selected.id,
-          service: productName(selected),
-          description: productDescription(selected),
-          hsCode: productHsCode(selected),
-          rate: rate === "" ? "" : String(rate),
-          vatRate:
-            vat === "" ? item.vatRate : String(vat),
-        };
-      })
-    );
+  const handleProductSelect = (index, productId) => {
+    const prod = products.find((p) => String(p.id) === String(productId));
+    setForm((prev) => {
+      const next = [...prev.items];
+      next[index] = {
+        ...next[index],
+        product: productId,
+        service_name: prod?.product_name || next[index].service_name,
+        description: prod?.description || prod?.product_name || next[index].description,
+        hs_code: prod?.hsn_sac_code || next[index].hs_code,
+        rate: prod?.selling_price ?? next[index].rate,
+        vat_percentage: prod?.tax_rate ?? next[index].vat_percentage,
+      };
+      return { ...prev, items: next };
+    });
   };
 
-  // Validate quotation form
-  const validate = () => {
-    const validItems = items.filter(
-      (item) =>
-        item.service.trim() ||
-        item.description.trim() ||
-        (
-          Number(item.quantity) > 0 &&
-          Number(item.rate) >= 0 &&
-          item.rate !== ""
-        )
-    );
-
-    if (!billTo.customerId) {
-      setError("Please select a customer.");
-      return null;
-    }
-
-    if (!validItems.length) {
-      setError("Please add at least one quotation item.");
-      return null;
-    }
-
-    if (
-      !quotationDate ||
-      !dueDate ||
-      dueDate < quotationDate
-    ) {
-      setError(
-        "Please select a valid quotation date and valid-till date."
-      );
-      return null;
-    }
-
-    setError("");
-    return validItems;
+  const addItemRow = () => {
+    setForm((prev) => ({ ...prev, items: [...prev.items, createEmptyItem()] }));
   };
 
-  // Build API payload
-  const buildPayload = (validItems, status) => ({
-    customer: billTo.customerId,
-
-    issue_date: quotationDate,
-    valid_till: dueDate,
-
-    status:
-      STATUS_API[status] ||
-      String(status).toLowerCase(),
-
-    // Company details from company-self API
-    from_company_name: from.name,
-    from_address: from.address,
-    from_phone_number: from.phone,
-    from_email: from.email,
-
-    // Customer details
-    bill_to_name: billTo.client,
-    bill_to_address: billTo.address,
-    bill_to_phone: billTo.phno,
-    finance_contact_email: billTo.financial_email,
-
-    discount: totals.discount,
-    round_off: 0,
-    notes,
-
-    items: validItems.map((item) => ({
-      ...(item.productId
-        ? { product: item.productId }
-        : {}),
-
-      service_name:
-        item.service || item.description,
-
-      description:
-        item.description || item.service,
-
-      quantity: Number(item.quantity) || 1,
-      hs_code: item.hsCode || "",
-      rate: Number(item.rate) || 0,
-      vat_percentage: Number(item.vatRate) || 0,
-    })),
-  });
-
-  // Save quotation
-  const saveQuotation = async (status) => {
-    if (isSaving) return;
-
-    const validItems = validate();
-
-    if (!validItems) return;
-
-    setIsSaving(true);
-
-    try {
-      await dispatch(
-        createQuotation(
-          buildPayload(validItems, status)
-        )
-      ).unwrap();
-
-      navigate(QUOTATIONS_LIST_PATH);
-    } catch (err) {
-      setError(getErrorMessage(err));
-    } finally {
-      setIsSaving(false);
-    }
+  const removeItemRow = (index) => {
+    setForm((prev) => {
+      if (prev.items.length <= 1) return prev;
+      return { ...prev, items: prev.items.filter((_, idx) => idx !== index) };
+    });
   };
 
-  const handleSaveDraft = () =>
-    saveQuotation("Draft");
+  const submitWithStatus = (statusOverride = null) => {
+    if (submitting) return;
+    setFormError("");
 
-  const handleSend = () =>
-    saveQuotation("Pending");
+    if (!form.customer) {
+      setFormError("Please select a Bill To customer.");
+      return;
+    }
+    if (!form.issue_date) {
+      setFormError("Quotation date is required.");
+      return;
+    }
 
-  // Download quotation as CSV
-  const handleDownload = () => {
-    const validItems = validate();
-
-    if (!validItems) return;
-
-    const rows = [
-      ["Quotation Number", "Auto-generated on save"],
-      ["Quotation Date", quotationDate],
-      ["Valid Till", dueDate],
-      ["From", from.name],
-      ["Bill To", billTo.client],
-      [],
-      [
-        "SL No",
-        "Product",
-        "Description",
-        "Qty",
-        "HS Code",
-        "Rate",
-        "VAT %",
-        "VAT",
-        "Amount",
-      ],
-      ...validItems.map((item, index) => {
-        const amount =
-          (Number(item.quantity) || 0) *
-          (Number(item.rate) || 0);
-
-        const vatAmount =
-          (amount * (Number(item.vatRate) || 0)) / 100;
-
-        return [
-          index + 1,
-          item.service,
-          item.description,
-          item.quantity,
-          item.hsCode,
-          item.rate,
-          item.vatRate,
-          vatAmount.toFixed(2),
-          amount.toFixed(2),
-        ];
-      }),
-      [],
-      ["Sub Total", totals.subtotal.toFixed(2)],
-      ["Total VAT", totals.vat.toFixed(2)],
-      ["Discount", totals.discount.toFixed(2)],
-      ["Total Amount", totals.total.toFixed(2)],
-    ];
-
-    const csv = rows
-      .map((row) =>
-        row
-          .map(
-            (value) =>
-              `"${String(value ?? "").replace(/"/g, '""')}"`
-          )
-          .join(",")
+    const cleanItems = form.items
+      .filter(
+        (it) =>
+          it.product ||
+          String(it.service_name || "").trim() ||
+          String(it.description || "").trim() ||
+          toNum(it.rate) > 0,
       )
-      .join("\n");
+      .map((it) => ({
+        ...(it.product ? { product: Number(it.product) } : {}),
+        service_name: it.service_name || it.description || "Item",
+        description: it.description || it.service_name || "",
+        quantity: toNum(it.quantity) || 1,
+        hs_code: it.hs_code || "",
+        rate: toNum(it.rate),
+        vat_percentage: toNum(it.vat_percentage),
+      }));
 
-    const url = URL.createObjectURL(
-      new Blob([csv], {
-        type: "text/csv;charset=utf-8;",
-      })
-    );
+    if (cleanItems.length === 0) {
+      setFormError("Please add at least one quotation item.");
+      return;
+    }
 
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = "quotation.csv";
-    link.click();
+    const payload = {
+      ...(form.quote_number.trim()
+        ? { quote_number: form.quote_number.trim() }
+        : {}),
+      customer: Number(form.customer),
+      issue_date: form.issue_date,
+      valid_till: form.valid_till || null,
+      status: statusOverride || form.status || "pending",
+      from_company_name: form.from_company_name,
+      from_address: form.from_address,
+      from_phone_number: form.from_phone_number,
+      from_email: form.from_email,
+      bill_to_name: form.bill_to_name,
+      bill_to_address: form.bill_to_address,
+      bill_to_phone: form.bill_to_phone,
+      finance_contact_email: form.finance_contact_email,
+      sub_total: totals.subTotal.toFixed(2),
+      total_vat: totals.totalVat.toFixed(2),
+      discount: totals.discount.toFixed(2),
+      round_off: totals.roundOff.toFixed(2),
+      quote_amount: totals.grandTotal.toFixed(2),
+      ...(form.negotiation_amount !== ""
+        ? { negotiation_amount: toNum(form.negotiation_amount).toFixed(2) }
+        : {}),
+      notes: form.notes,
+      items: cleanItems,
+    };
 
-    URL.revokeObjectURL(url);
+    onSave?.(payload);
   };
 
   return (
-    <PageWrapper>
-      <ReusableHeader
-        title="Generate New Quotation"
-        breadcrumbs={["Sales", "Quotations"]}
-        showBack
-        onBack={handleCancel}
-      />
+    <Container>
+      <HeaderBar>
+        <BackChevronButton
+          type="button"
+          onClick={onCancel}
+          aria-label="Back to quotations"
+        >
+          <FiChevronLeft size={24} strokeWidth={2.2} />
+        </BackChevronButton>
 
-      <FormBody>
-        <FormGrid>
-          {/* QUOTATION NUMBER */}
-          <FormGroup>
-            <Label>QUOTATION NUMBER</Label>
+        <HeaderTitleGroup>
+          <HeaderTitle>
+            {isEdit ? "Edit Quotation" : "Generate New Quotation"}
+          </HeaderTitle>
+          <HeaderBreadcrumb>
+            <IoHomeOutline size={13} />
+            <span>Dashboard</span>
+            <span>›</span>
+            <span>Sales</span>
+            <span>›</span>
+            <span className="active">Quotations</span>
+          </HeaderBreadcrumb>
+        </HeaderTitleGroup>
+      </HeaderBar>
 
+      <Card
+        onSubmit={(e) => {
+          e.preventDefault();
+          submitWithStatus();
+        }}
+      >
+        <Grid4>
+          <FieldGroup>
+            <Label>Quotation Number</Label>
             <Input
-              placeholder="Auto-generated"
-              value=""
-              readOnly
-              style={{
-                background: "#f5f5f5",
-                cursor: "not-allowed",
-              }}
+              placeholder="Auto-generated if blank"
+              value={form.quote_number}
+              onChange={(e) => handleField("quote_number", e.target.value)}
             />
-          </FormGroup>
+          </FieldGroup>
 
-          {/* QUOTATION DATE */}
-          <FormGroup>
-            <Label>QUOTATION DATE</Label>
-
-            <Input
-              type="date"
-              value={quotationDate}
-              onChange={(e) =>
-                setQuotationDate(e.target.value)
-              }
-            />
-          </FormGroup>
-
-          {/* VALID TILL */}
-          <FormGroup>
+          <FieldGroup>
             <Label>
-              VALID TILL <Required>*</Required>
+              Quotation Date<span>*</span>
             </Label>
-
             <Input
               type="date"
-              min={quotationDate}
-              value={dueDate}
-              onChange={(e) =>
-                setDueDate(e.target.value)
-              }
+              value={form.issue_date}
+              onChange={(e) => handleField("issue_date", e.target.value)}
+              required
             />
-          </FormGroup>
+          </FieldGroup>
 
-          {/* STATUS */}
-          <FormGroup>
-            <Label>STATUS</Label>
-
-            <SelectWrap>
-              <Select
-                value={paymentStatus}
-                onChange={(e) =>
-                  setPaymentStatus(e.target.value)
-                }
-              >
-                <option value="Draft">Draft</option>
-                <option value="Pending">Pending</option>
-                <option value="Approved">Approved</option>
-                <option value="Rejected">Rejected</option>
-              </Select>
-
-              <FiChevronDown />
-            </SelectWrap>
-          </FormGroup>
-
-          {/* FROM - COMPANY DETAILS */}
-          <FormGroup>
-            <Label>FROM</Label>
-
+          <FieldGroup>
+            <Label>
+              Valid Till<span>*</span>
+            </Label>
             <Input
-              placeholder="Company Name"
-              value={from.name}
-              onChange={(e) =>
-                setFrom({
-                  ...from,
-                  name: e.target.value,
-                })
-              }
+              type="date"
+              value={form.valid_till}
+              onChange={(e) => handleField("valid_till", e.target.value)}
             />
-          </FormGroup>
+          </FieldGroup>
 
-          <FormGroup>
-            <Label>ADDRESS</Label>
+          <FieldGroup>
+            <Label>Status</Label>
+            <Select
+              value={form.status}
+              onChange={(e) => handleField("status", e.target.value)}
+            >
+              <option value="draft">Draft</option>
+              <option value="pending">Pending</option>
+              <option value="sent">Sent</option>
+              <option value="approved">Approved</option>
+              <option value="rejected">Rejected</option>
+            </Select>
+          </FieldGroup>
+        </Grid4>
 
+        <Grid4>
+          <FieldGroup>
+            <Label>From</Label>
+            <Input
+              value={form.from_company_name}
+              onChange={(e) => handleField("from_company_name", e.target.value)}
+            />
+          </FieldGroup>
+
+          <FieldGroup>
+            <Label>Address</Label>
             <Input
               placeholder="Company Address"
-              value={from.address}
-              onChange={(e) =>
-                setFrom({
-                  ...from,
-                  address: e.target.value,
-                })
-              }
+              value={form.from_address}
+              onChange={(e) => handleField("from_address", e.target.value)}
             />
-          </FormGroup>
+          </FieldGroup>
 
-          <FormGroup>
-            <Label>PHONE NUMBER</Label>
-
+          <FieldGroup>
+            <Label>Phone Number</Label>
             <Input
-              placeholder="Company Phone Number"
-              value={from.phone}
-              onChange={(e) =>
-                setFrom({
-                  ...from,
-                  phone: e.target.value,
-                })
-              }
+              placeholder="+966 ..."
+              value={form.from_phone_number}
+              onChange={(e) => handleField("from_phone_number", e.target.value)}
             />
-          </FormGroup>
+          </FieldGroup>
 
-          <FormGroup>
-            <Label>EMAIL ID</Label>
-
+          <FieldGroup>
+            <Label>Email ID</Label>
             <Input
               type="email"
-              placeholder="Company Email"
-              value={from.email}
-              onChange={(e) =>
-                setFrom({
-                  ...from,
-                  email: e.target.value,
-                })
-              }
+              placeholder="info@company.com"
+              value={form.from_email}
+              onChange={(e) => handleField("from_email", e.target.value)}
             />
-          </FormGroup>
+          </FieldGroup>
+        </Grid4>
 
-          {/* BILL TO */}
-          <FormGroup>
+        <Grid4>
+          <FieldGroup>
             <Label>
-              BILL TO <Required>*</Required>
+              Bill To<span>*</span>
             </Label>
+            <Select
+              value={form.customer}
+              onChange={(e) => handleCustomerChange(e.target.value)}
+              required
+            >
+              <option value="">Select company/client</option>
+              {customers.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.customer_name}
+                </option>
+              ))}
+            </Select>
+          </FieldGroup>
 
-            <SelectWrap>
-              <Select
-                value={billTo.customerId}
-                onChange={handleCustomerChange}
-              >
-                <option value="">Select Customer</option>
-
-                {customers.map((customer) => (
-                  <option
-                    key={customer.id}
-                    value={customer.id}
-                  >
-                    {customerName(customer)}
-                  </option>
-                ))}
-              </Select>
-
-              <FiChevronDown />
-            </SelectWrap>
-          </FormGroup>
-
-          <FormGroup>
-            <Label>ADDRESS</Label>
-
+          <FieldGroup>
+            <Label>
+              Address<span>*</span>
+            </Label>
             <Input
-              value={billTo.address}
-              onChange={(e) =>
-                setBillTo({
-                  ...billTo,
-                  address: e.target.value,
-                })
-              }
-              placeholder="Company/Client ADDRESS"
+              placeholder="Filled from the client"
+              value={form.bill_to_address}
+              onChange={(e) => handleField("bill_to_address", e.target.value)}
             />
-          </FormGroup>
+          </FieldGroup>
 
-          <FormGroup>
-            <Label>PHONE NUMBER</Label>
-
+          <FieldGroup>
+            <Label>
+              Phone Number<span>*</span>
+            </Label>
             <Input
-              value={billTo.phno || ""}
-              onChange={(e) =>
-                setBillTo({
-                  ...billTo,
-                  phno: e.target.value,
-                })
-              }
-              placeholder="Company/Client Phone Number"
+              placeholder="Filled from the client"
+              value={form.bill_to_phone}
+              onChange={(e) => handleField("bill_to_phone", e.target.value)}
             />
-          </FormGroup>
+          </FieldGroup>
 
-          <FormGroup>
-            <Label>FINANCE CONTACT EMAIL</Label>
-
+          <FieldGroup>
+            <Label>
+              Finance Contact Email<span>*</span>
+            </Label>
             <Input
               type="email"
-              value={billTo.financial_email || ""}
+              placeholder="Filled from the client"
+              value={form.finance_contact_email}
               onChange={(e) =>
-                setBillTo({
-                  ...billTo,
-                  financial_email: e.target.value,
-                })
+                handleField("finance_contact_email", e.target.value)
               }
-              placeholder="Company/Client Email ID"
             />
-          </FormGroup>
-        </FormGrid>
+          </FieldGroup>
+        </Grid4>
 
-        {/* QUOTATION ITEMS */}
         <ItemsHeader>
-          <SectionTitle>QUOTATION ITEMS</SectionTitle>
-
-          <AddItemButton
-            type="button"
-            onClick={addItem}
-          >
-            <FiPlus />
-            ADD ITEM
-          </AddItemButton>
+          <SectionHeading>Quotation Items</SectionHeading>
+          <AddItemBtn type="button" onClick={addItemRow}>
+            <FiPlus size={14} /> ADD ITEM
+          </AddItemBtn>
         </ItemsHeader>
 
         <TableWrap>
@@ -786,154 +801,107 @@ const AddQuotation = ({ onCancel, onClose }) => {
                 <th>HS Code</th>
                 <th>Rate</th>
                 <th>VAT (%)</th>
-                <th>VAT (SAR)</th>
+                <th>VAT ({currency})</th>
                 <th>Amount</th>
                 <th>Action</th>
               </tr>
             </thead>
-
             <tbody>
-              {items.map((item, index) => {
-                const amount =
-                  (Number(item.quantity) || 0) *
-                  (Number(item.rate) || 0);
-
-                const vatAmount =
-                  (amount *
-                    (Number(item.vatRate) || 0)) /
-                  100;
-
+              {form.items.map((item, idx) => {
+                const line = totals.lines[idx] || { vatAmt: 0, amount: 0 };
                 return (
-                  <tr key={item.id}>
-                    <td>
-                      {String(index + 1).padStart(2, "0")}
+                  <tr key={idx}>
+                    <td>{String(idx + 1).padStart(2, "0")}</td>
+                    <td style={{ minWidth: 140 }}>
+                      {products.length > 0 ? (
+                        <select
+                          value={item.product}
+                          onChange={(e) =>
+                            handleProductSelect(idx, e.target.value)
+                          }
+                        >
+                          <option value="">Select Product</option>
+                          {products.map((p) => (
+                            <option key={p.id} value={p.id}>
+                              {p.product_name}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        <input
+                          placeholder="Product/Service"
+                          value={item.service_name}
+                          onChange={(e) =>
+                            handleItemChange(idx, "service_name", e.target.value)
+                          }
+                        />
+                      )}
                     </td>
-
-                    <td>
-                      <select
-                        aria-label="Product"
-                        value={item.productId}
-                        onChange={(e) =>
-                          handleProductChange(
-                            item.id,
-                            e.target.value
-                          )
-                        }
-                      >
-                        <option value="">
-                          Select product
-                        </option>
-
-                        {products.map((product) => (
-                          <option
-                            key={product.id}
-                            value={product.id}
-                          >
-                            {productName(product)}
-                          </option>
-                        ))}
-                      </select>
-                    </td>
-
-                    <td>
+                    <td style={{ minWidth: 150 }}>
                       <input
-                        aria-label="Description"
-                        placeholder="Item description"
+                        placeholder="Description"
                         value={item.description}
                         onChange={(e) =>
-                          updateItem(
-                            item.id,
-                            "description",
-                            e.target.value
-                          )
+                          handleItemChange(idx, "description", e.target.value)
                         }
                       />
                     </td>
-
-                    <td>
+                    <td style={{ width: 70 }}>
                       <input
-                        aria-label="Quantity"
                         type="number"
                         min="0"
+                        step="any"
                         value={item.quantity}
                         onChange={(e) =>
-                          updateItem(
-                            item.id,
-                            "quantity",
-                            e.target.value
-                          )
+                          handleItemChange(idx, "quantity", e.target.value)
                         }
                       />
                     </td>
-
-                    <td>
+                    <td style={{ width: 90 }}>
                       <input
-                        aria-label="HS Code"
-                        value={item.hsCode}
+                        placeholder="HS Code"
+                        value={item.hs_code}
                         onChange={(e) =>
-                          updateItem(
-                            item.id,
-                            "hsCode",
-                            e.target.value
-                          )
+                          handleItemChange(idx, "hs_code", e.target.value)
                         }
                       />
                     </td>
-
-                    <td>
+                    <td style={{ width: 95 }}>
                       <input
-                        aria-label="Rate"
                         type="number"
                         min="0"
-                        step="0.01"
-                        placeholder="SAR"
+                        step="any"
                         value={item.rate}
                         onChange={(e) =>
-                          updateItem(
-                            item.id,
-                            "rate",
-                            e.target.value
-                          )
+                          handleItemChange(idx, "rate", e.target.value)
                         }
                       />
                     </td>
-
-                    <td>
+                    <td style={{ width: 75 }}>
                       <input
-                        aria-label="VAT percentage"
                         type="number"
                         min="0"
-                        max="100"
-                        value={item.vatRate}
+                        step="any"
+                        value={item.vat_percentage}
                         onChange={(e) =>
-                          updateItem(
-                            item.id,
-                            "vatRate",
-                            e.target.value
-                          )
+                          handleItemChange(idx, "vat_percentage", e.target.value)
                         }
                       />
                     </td>
-
-                    <td className="calculated">
-                      {money(vatAmount)}
+                    <td style={{ whiteSpace: "nowrap" }}>
+                      {currency} {line.vatAmt.toFixed(2)}
                     </td>
-
-                    <td className="calculated">
-                      {money(amount)}
+                    <td style={{ whiteSpace: "nowrap", fontWeight: 500 }}>
+                      {currency} {line.amount.toFixed(2)}
                     </td>
-
                     <td>
-                      <DeleteButton
+                      <RemoveBtn
                         type="button"
-                        aria-label="Remove item"
-                        onClick={() =>
-                          removeItem(item.id)
-                        }
-                        disabled={items.length === 1}
+                        onClick={() => removeItemRow(idx)}
+                        title="Remove item"
                       >
-                        <FiX />
-                      </DeleteButton>
+                        <FiX size={13} />
+                      </RemoveBtn>
                     </td>
                   </tr>
                 );
@@ -942,104 +910,111 @@ const AddQuotation = ({ onCancel, onClose }) => {
           </ItemsTable>
         </TableWrap>
 
-        {/* NOTES AND SUMMARY */}
-        <BottomSection>
-          <NotesBlock>
-            <SectionTitle>NOTES</SectionTitle>
+        <BottomGrid>
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            <FieldGroup>
+              <Label>Notes</Label>
+              <TextArea
+                placeholder="Above information is not an invoice and only an estimate of services."
+                value={form.notes}
+                onChange={(e) => handleField("notes", e.target.value)}
+              />
+            </FieldGroup>
 
-            <textarea
-              value={notes}
-              onChange={(e) =>
-                setNotes(e.target.value)
-              }
-            />
-          </NotesBlock>
-
-          <Summary>
-            <SummaryRow>
-              <span>Sub Total</span>
-              <strong>{money(totals.subtotal)}</strong>
-            </SummaryRow>
-
-            <SummaryRow>
-              <span>Total VAT</span>
-              <strong>{money(totals.vat)}</strong>
-            </SummaryRow>
-
-            <SummaryRow>
-              <span>Discount (SAR)</span>
-
-              <DiscountInput
+            <FieldGroup style={{ maxWidth: 260 }}>
+              <Label>Negotiation Amount ({currency})</Label>
+              <Input
                 type="number"
                 min="0"
-                step="0.01"
-                value={discount}
+                step="any"
+                placeholder="Optional negotiated amount"
+                value={form.negotiation_amount}
                 onChange={(e) =>
-                  setDiscount(e.target.value)
+                  handleField("negotiation_amount", e.target.value)
                 }
               />
-            </SummaryRow>
+            </FieldGroup>
+          </div>
 
+          <SummaryCard>
             <SummaryRow>
-              <span>Round Off</span>
-              <strong>{money(0)}</strong>
+              <span>Sub Total</span>
+              <strong>
+                {currency} {totals.subTotal.toFixed(2)}
+              </strong>
             </SummaryRow>
-
-            <TotalBar>
+            <SummaryRow>
+              <span>Total VAT</span>
+              <strong>
+                {currency} {totals.totalVat.toFixed(2)}
+              </strong>
+            </SummaryRow>
+            <SummaryRow>
+              <span>Discount ({currency})</span>
+              <Input
+                type="number"
+                min="0"
+                step="any"
+                style={{ width: 110, height: 32, textAlign: "right" }}
+                value={form.discount}
+                onChange={(e) => handleField("discount", e.target.value)}
+              />
+            </SummaryRow>
+            <SummaryRow>
+              <span>Round Off ({currency})</span>
+              <Input
+                type="number"
+                step="any"
+                style={{ width: 110, height: 32, textAlign: "right" }}
+                value={form.round_off}
+                onChange={(e) => handleField("round_off", e.target.value)}
+              />
+            </SummaryRow>
+            <TotalBanner>
               <span>TOTAL AMOUNT</span>
-              <strong>{money(totals.total)}</strong>
-            </TotalBar>
-          </Summary>
-        </BottomSection>
+              <span>
+                {currency} {totals.grandTotal.toFixed(2)}
+              </span>
+            </TotalBanner>
+          </SummaryCard>
+        </BottomGrid>
 
-        {/* ERROR */}
-        {error && (
-          <ErrorMessage role="alert">
-            {error}
-          </ErrorMessage>
+        {(formError || error) && (
+          <div
+            role="alert"
+            style={{ marginTop: 14, color: "#dc2626", fontSize: 13 }}
+          >
+            {formError || error}
+          </div>
         )}
 
-        {/* FOOTER */}
-        <Footer>
-          <LockNote>
-            <FiLock />
+        <ActionsBar>
+          <span style={{ fontSize: 12, color: "#6b7280" }}>
             Sent is locked until an admin approves this quote
-          </LockNote>
+          </span>
 
-          <Actions>
-            <OutlineButton
-              type="button"
-              onClick={handleCancel}
-            >
+          <ButtonGroup>
+            <OutlineBtn type="button" onClick={onCancel} disabled={submitting}>
               CANCEL
-            </OutlineButton>
-
-            <OutlineButton
+            </OutlineBtn>
+            <OutlineBtn
               type="button"
-              onClick={handleDownload}
+              onClick={() => submitWithStatus("draft")}
+              disabled={submitting}
             >
-              DOWNLOAD
-            </OutlineButton>
-
-            <OutlineButton
-              type="button"
-              onClick={handleSaveDraft}
-              disabled={isSaving}
-            >
-              {isSaving ? "SAVING..." : "SAVE AS DRAFT"}
-            </OutlineButton>
-
-            <PrimaryButton
-              type="button"
-              onClick={handleSend}
-              disabled={isSaving}
-            >
-              SEND
-            </PrimaryButton>
-          </Actions>
-        </Footer>
-      </FormBody>
-    </PageWrapper>
+              SAVE DRAFT
+            </OutlineBtn>
+            <PrimaryBtn type="submit" disabled={submitting}>
+              {submitting
+                ? "SAVING..."
+                : isEdit
+                  ? "UPDATE QUOTATION"
+                  : "SENT FOR APPROVAL"}
+            </PrimaryBtn>
+          </ButtonGroup>
+        </ActionsBar>
+      </Card>
+    </Container>
   );
 };
 

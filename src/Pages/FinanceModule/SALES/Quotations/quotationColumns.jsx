@@ -1,235 +1,171 @@
 import React from "react";
-import { FiEye, FiDownload, FiXCircle } from "react-icons/fi";
+import { FiDownload, FiEdit2, FiEye, FiTrash2 } from "react-icons/fi";
+import {
+  ActionGroup,
+  ConvertSOButton,
+  InlineStatusSelect,
+  SmallIconButton,
+  StatusText,
+} from "./QuotationsList.styles";
 
-const getStatusStyle = (status = "") => {
-    const clean = String(status).toLowerCase();
-
-    if (clean === "approved") {
-        return {
-            background: "#e8f7ee",
-            color: "#1f9d61",
-            border: "1px solid #aee7c2",
-            padding: "4px 10px",
-            borderRadius: "999px",
-            fontSize: "12px",
-            fontWeight: 600,
-            display: "inline-flex",
-            alignItems: "center",
-            justifyContent: "center",
-            minWidth: "74px",
-        };
-    }
-
-    if (clean === "pending") {
-        return {
-            background: "#fff0ec",
-            color: "#cf6a43",
-            border: "1px solid #f7c7b4",
-            padding: "4px 10px",
-            borderRadius: "999px",
-            fontSize: "12px",
-            fontWeight: 600,
-            display: "inline-flex",
-            alignItems: "center",
-            justifyContent: "center",
-            minWidth: "74px",
-        };
-    }
-
-    if (clean === "rejected") {
-        return {
-            background: "#fdebea",
-            color: "#d9534f",
-            border: "1px solid #f4b7b2",
-            padding: "4px 10px",
-            borderRadius: "999px",
-            fontSize: "12px",
-            fontWeight: 600,
-            display: "inline-flex",
-            alignItems: "center",
-            justifyContent: "center",
-            minWidth: "74px",
-        };
-    }
-
-    return {
-        background: "#f5f7fb",
-        color: "#4b5563",
-        border: "1px solid #dfe3ea",
-        padding: "4px 10px",
-        borderRadius: "999px",
-        fontSize: "12px",
-        fontWeight: 600,
-        display: "inline-flex",
-        alignItems: "center",
-        justifyContent: "center",
-        minWidth: "74px",
-    };
+const formatDisplayDate = (dateStr) => {
+  if (!dateStr || dateStr === "-") return "—";
+  const d = new Date(dateStr);
+  if (Number.isNaN(d.getTime())) return String(dateStr);
+  return d.toLocaleDateString("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
 };
 
 export const quotationColumns = ({
-    dispatch,
-    currentPage,
-    rowsPerPage,
-    convertQuotation,
-    fetchQuotationList,
-    fetchQuotationKpi,
-    fetchQuotationDetails,
-    showQuotation,
-    formatCurrency,
+  onConvertSO,
+  onView,
+  onDownload,
+  onEdit,
+  onDelete,
+  onStatusChange,
+  formatCurrency,
+  currency = "SAR",
 }) => [
-    {
-        header: "Quote No.",
-        accessor: "quoteNumber",
-        render: (row) => (
-            <span style={{ fontWeight: 600, color: "#1e2f68" }}>
-                {row.quoteNumber}
-            </span>
-        ),
-        width: "12%",
+  {
+    header: "Quote No.",
+    accessor: "quoteNumber",
+    render: (row) => (
+      <span style={{ fontWeight: 500, color: "#1e293b" }}>
+        {row.quoteNumber || "—"}
+      </span>
+    ),
+  },
+  {
+    header: "Customer",
+    accessor: "customerName",
+    render: (row) => row.customerName || "—",
+  },
+  {
+    header: "Issue Date",
+    accessor: "issueDate",
+    render: (row) => formatDisplayDate(row.issueDate),
+  },
+  {
+    header: "Valid Till",
+    accessor: "validTill",
+    render: (row) => formatDisplayDate(row.validTill),
+  },
+  {
+    header: "Old Quote Amt",
+    accessor: "oldQuoteAmount",
+    render: (row) =>
+      row.oldQuoteAmount !== null &&
+      row.oldQuoteAmount !== undefined &&
+      Number(row.oldQuoteAmount) > 0
+        ? formatCurrency(row.oldQuoteAmount, row.currency || currency)
+        : "------",
+  },
+  {
+    header: "Negotiation Amount",
+    accessor: "negotiationAmount",
+    render: (row) =>
+      row.negotiationAmount !== null &&
+      row.negotiationAmount !== undefined &&
+      Number(row.negotiationAmount) > 0
+        ? formatCurrency(row.negotiationAmount, row.currency || currency)
+        : "------",
+  },
+  {
+    header: "Quote Value",
+    accessor: "quoteAmount",
+    render: (row) => formatCurrency(row.quoteAmount, row.currency || currency),
+  },
+  {
+    header: "Status",
+    accessor: "status",
+    render: (row) => {
+      const normalized = String(row.status || "pending").toLowerCase();
+      if (normalized === "converted") {
+        return <StatusText $status={normalized}>Converted</StatusText>;
+      }
+      return (
+        <InlineStatusSelect
+          $status={normalized}
+          value={normalized}
+          aria-label={`Change status for ${row.quoteNumber}`}
+          onClick={(e) => e.stopPropagation()}
+          onChange={(e) => onStatusChange?.(row, e.target.value)}
+        >
+          <option value="draft">Draft</option>
+          <option value="sent">Sent</option>
+          <option value="pending">Pending</option>
+          <option value="approved">Approved</option>
+          <option value="rejected">Rejected</option>
+        </InlineStatusSelect>
+      );
     },
-    {
-        header: "Customer",
-        accessor: "customer",
-        width: "14%",
-    },
-    {
-        header: "Issue Date",
-        accessor: "issueDate",
-        width: "13%",
-    },
-    {
-        header: "Valid Till",
-        accessor: "validTill",
-        width: "13%",
-    },
-    {
-        header: "Quote Amount",
-        accessor: "quoteAmount",
-        render: (row) => formatCurrency(row.quoteAmount),
-        width: "13%",
-    },
-    {
-        header: "Negotiation Amount",
-        accessor: "negotiationAmount",
-        render: (row) => formatCurrency(row.negotiationAmount),
-        width: "14%",
-    },
-    {
-        header: "Status",
-        accessor: "status",
-        render: (row) => (
-            <span style={getStatusStyle(row.status)}>
-                {row.status}
-            </span>
-        ),
-        width: "12%",
-    },
-    {
-        header: "Action",
-        accessor: "action",
-        render: (row) => (
-            <div
-                style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: 8,
-                    flexWrap: "wrap",
-                }}
+  },
+  {
+    header: "Action",
+    accessor: "action",
+    sortable: false,
+    render: (row) => {
+      const normalized = String(row.status || "").toLowerCase();
+      const canConvert = normalized === "approved";
+      const canEdit =
+        normalized === "draft" ||
+        normalized === "pending" ||
+        normalized === "rejected" ||
+        normalized === "sent";
+      const canDelete =
+        normalized === "draft" ||
+        normalized === "pending" ||
+        normalized === "rejected";
+
+      return (
+        <ActionGroup onClick={(e) => e.stopPropagation()}>
+          {canConvert && (
+            <ConvertSOButton type="button" onClick={() => onConvertSO?.(row)}>
+              Convert SO
+            </ConvertSOButton>
+          )}
+
+          <SmallIconButton
+            type="button"
+            title="View quotation"
+            onClick={() => onView?.(row)}
+          >
+            <FiEye size={13} />
+          </SmallIconButton>
+
+          <SmallIconButton
+            type="button"
+            title="Download quotation"
+            onClick={() => onDownload?.(row)}
+          >
+            <FiDownload size={13} />
+          </SmallIconButton>
+
+          {canEdit && (
+            <SmallIconButton
+              type="button"
+              title="Edit quotation"
+              onClick={() => onEdit?.(row)}
             >
-                <button
-                    type="button"
-                    onClick={() =>
-                        dispatch(convertQuotation(row.id))
-                            .unwrap()
-                            .then(() => {
-                                dispatch(
-                                    fetchQuotationList({
-                                        page: currentPage,
-                                        page_size: rowsPerPage,
-                                    })
-                                );
-                                dispatch(fetchQuotationKpi());
-                            })
-                            .catch(() => undefined)
-                    }
-                    style={{
-                        border: "1px solid #dfe3ea",
-                        background: "#fff",
-                        color: "#253b8c",
-                        borderRadius: 6,
-                        padding: "6px 12px",
-                        fontSize: 12,
-                        fontWeight: 600,
-                        cursor: "pointer",
-                        whiteSpace: "nowrap",
-                    }}
-                >
-                    Convert SO
-                </button>
+              <FiEdit2 size={13} />
+            </SmallIconButton>
+          )}
 
-                <button
-                    type="button"
-                    title="View quotation"
-                    onClick={() =>
-                        dispatch(fetchQuotationDetails(row.id))
-                            .unwrap()
-                            .then(showQuotation)
-                            .catch(() => undefined)
-                    }
-                    style={{
-                        border: "1px solid #dfe3ea",
-                        background: "#fff",
-                        borderRadius: 6,
-                        width: 28,
-                        height: 28,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        cursor: "pointer",
-                    }}
-                >
-                    <FiEye size={14} />
-                </button>
-
-                <button
-                    type="button"
-                    title="Download quotation"
-                    style={{
-                        border: "1px solid #dfe3ea",
-                        background: "#fff",
-                        borderRadius: 6,
-                        width: 28,
-                        height: 28,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        cursor: "pointer",
-                    }}
-                >
-                    <FiDownload size={14} />
-                </button>
-
-                <button
-                    type="button"
-                    title="Delete quotation"
-                    style={{
-                        border: "1px solid #dfe3ea",
-                        background: "#fff",
-                        borderRadius: 6,
-                        width: 28,
-                        height: 28,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        cursor: "pointer",
-                    }}
-                >
-                    <FiXCircle size={14} />
-                </button>
-            </div>
-        ),
-        width: "18%",
+          {canDelete && (
+            <SmallIconButton
+              type="button"
+              title="Delete quotation"
+              $danger
+              onClick={() => onDelete?.(row)}
+            >
+              <FiTrash2 size={13} />
+            </SmallIconButton>
+          )}
+        </ActionGroup>
+      );
     },
+  },
 ];
