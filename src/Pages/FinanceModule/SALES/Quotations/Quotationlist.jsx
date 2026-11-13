@@ -28,7 +28,7 @@ import {
     getQuotations,
     selectQuotations,
     selectQuotationLoading,
-} from "../../../../Redux/finance/Sales/";
+} from "../../../../Redux/finance/Sales/Quotationslice";
 
 const EMPTY = "------";
 

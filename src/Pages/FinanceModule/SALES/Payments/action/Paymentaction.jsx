@@ -1,76 +1,71 @@
-import React, { useEffect, useRef, useState } from "react";
-import { FiMoreVertical, FiEdit2, FiTrash2 } from "react-icons/fi";
+import React, { useState } from "react";
+import { FiDownload, FiEdit2, FiLoader, FiX } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
-import {
-    ActionWrapper,
-    ActionButton,
-    FloatingAction,
-} from "./Paymentaction.style";
+import { ActionWrapper, IconButton } from "./Paymentaction.style";
 
-const OrderActions = ({ row, onDelete }) => {
-    const [open, setOpen] = useState(false);
+const Paymentactions = ({ row, onDelete, onDownload }) => {
     const navigate = useNavigate();
-    const wrapperRef = useRef(null);
+    const [isDownloading, setIsDownloading] = useState(false);
 
-    useEffect(() => {
-        const handleClickOutside = (e) => {
-            if (wrapperRef.current && !wrapperRef.current.contains(e.target)) {
-                setOpen(false);
-            }
-        };
+    const handleDownload = async (e) => {
+        e.stopPropagation();
+        if (isDownloading || !row?.id) return;
 
-        document.addEventListener("mousedown", handleClickOutside);
-        return () => document.removeEventListener("mousedown", handleClickOutside);
-    }, []);
+        setIsDownloading(true);
+        try {
+            await onDownload?.(row);
+        } catch (err) {
+            console.error("Failed to download payment:", err);
+        } finally {
+            setIsDownloading(false);
+        }
+    };
 
-    const handleEdit = (order) => {
-        navigate(`/sales/orders/edit/${order.id}`, {
-            state: { orderData: order },
+    const handleEdit = (e) => {
+        e.stopPropagation();
+        navigate(`/sales/orders/edit/${row.id}`, {
+            state: { orderData: row },
         });
     };
 
+    const handleDelete = (e) => {
+        e.stopPropagation();
+        onDelete?.(row);
+    };
+
     return (
-        <ActionWrapper ref={wrapperRef}>
-            <ActionButton
+        <ActionWrapper>
+            <IconButton
                 type="button"
-                onClick={(e) => {
-                    e.stopPropagation();
-                    setOpen((prev) => !prev);
-                }}
-                title="Actions"
+                title="Download Payment"
+                onClick={handleDownload}
+                disabled={isDownloading}
             >
-                <FiMoreVertical size={12} />
-            </ActionButton>
+                {isDownloading ? (
+                    <FiLoader size={14} className="spin" />
+                ) : (
+                    <FiDownload size={14} />
+                )}
+            </IconButton>
 
-            <FloatingAction
+            <IconButton
                 type="button"
-                $open={open}
-                $position="edit"
                 title="Edit Order"
-                onClick={(e) => {
-                    e.stopPropagation();
-                    handleEdit(row);
-                    setOpen(false);
-                }}
+                onClick={handleEdit}
             >
-                <FiEdit2 size={12} />
-            </FloatingAction>
+                <FiEdit2 size={14} />
+            </IconButton>
 
-            <FloatingAction
+            <IconButton
                 type="button"
-                $open={open}
-                $position="delete"
+                $danger
                 title="Delete Order"
-                onClick={(e) => {
-                    e.stopPropagation();
-                    onDelete?.(row);
-                    setOpen(false);
-                }}
+                onClick={handleDelete}
             >
-                <FiTrash2 size={12} />
-            </FloatingAction>
+                <FiX size={14} />
+            </IconButton>
         </ActionWrapper>
     );
 };
 
-export default OrderActions;
+export default Paymentactions;

@@ -1,142 +1,181 @@
 import React from "react";
-
 import {
-  FiShoppingCart,
-  FiDollarSign,
+  FiFileText,
+  FiTruck,
   FiCheckCircle,
   FiClock,
+  FiXCircle,
 } from "react-icons/fi";
-
 import DeliveryAction from "./Action/DeliveryAction";
 
-const formatDeliveryDate = (date) => {
-  if (!date) {
-    return "-";
+const value = (row, ...keys) => {
+  for (const key of keys) {
+    if (row?.[key] !== undefined && row?.[key] !== null && row?.[key] !== "")
+      return row[key];
   }
+  return "-";
+};
 
-  const parsedDate = new Date(date);
-
-  if (Number.isNaN(parsedDate.getTime())) {
-    return date;
-  }
-
-  return parsedDate.toLocaleDateString("en-US", {
+const dateLabel = (raw) => {
+  if (!raw || raw === "-") return "-";
+  const date = new Date(raw);
+  if (Number.isNaN(date.getTime())) return raw;
+  return date.toLocaleDateString("en-US", {
     month: "long",
     day: "numeric",
     year: "numeric",
   });
 };
 
-export const salesOrderColumns = (onDelete) => [
+const customerLabel = (row) => {
+  const customer = row?.customer;
+  if (customer && typeof customer === "object") {
+    return value(customer, "name", "customer_name", "company_name");
+  }
+  return value(row, "customer_name", "customer");
+};
+
+const itemSummary = (row) => {
+  const delivered = value(
+    row,
+    "delivered_quantity",
+    "total_delivered",
+    "already_delivered",
+    "delivered_qty",
+  );
+  const ordered = value(
+    row,
+    "ordered_quantity",
+    "total_ordered",
+    "ordered_qty",
+    "total_qty",
+  );
+  if (delivered === "-" && ordered === "-") {
+    const items = Array.isArray(row?.items) ? row.items : [];
+    const totals = items.reduce(
+      (acc, item) => {
+        acc.delivered +=
+          Number(item?.already_delivered ?? item?.delivered_qty ?? 0) || 0;
+        acc.ordered +=
+          Number(
+            item?.ordered_qty ?? item?.ordered_quantity ?? item?.quantity ?? 0,
+          ) || 0;
+        return acc;
+      },
+      { delivered: 0, ordered: 0 },
+    );
+    return `${totals.delivered}/${totals.ordered}`;
+  }
+  return `${delivered === "-" ? 0 : delivered}/${ordered === "-" ? 0 : ordered}`;
+};
+
+const deliveryType = (row) => {
+  const explicit = value(row, "delivery_type", "deliveryType");
+  if (explicit !== "-") return explicit;
+  const text = String(value(row, "status", "delivery_status")).toLowerCase();
+  if (text.includes("partial")) return "Partial";
+  if (text.includes("deliver")) return "Full";
+  return "-";
+};
+
+export const deliveryNoteColumns = (onDelete) => [
   {
     header: "DN No",
-    accessor: "deliveryNoteNumber",
-
-    render: (row) => row.deliveryNoteNumber || row.delivery_note_number || "-",
-  },
-
-  {
-    header: "SO Ref",
-    accessor: "salesOrderReference",
-
+    accessor: "delivery_note_number",
     render: (row) =>
-      row.salesOrderReference || row.sales_order_reference || "-",
+      value(row, "delivery_note_number", "deliveryNoteNumber", "number"),
   },
-
   {
     header: "Customer",
     accessor: "customer",
-
-    render: (row) => {
-      const customer = row?.customer;
-
-      if (customer && typeof customer === "object") {
-        return (
-          customer?.name ||
-          customer?.customer_name ||
-          customer?.company_name ||
-          "-"
-        );
-      }
-
-      return customer || row?.customer_name || "-";
-    },
+    render: customerLabel,
   },
-
   {
-    header: "Delivery Date",
-    accessor: "deliveryDate",
-
-    render: (row) => formatDeliveryDate(row.deliveryDate || row.delivery_date),
-  },
-
-  {
-    header: "Delivery Value",
-    accessor: "deliveryValue",
-
-    render: (row) => {
-      const value =
-        row.deliveryValue ||
-        row.delivery_value ||
-        row.amount ||
-        row.total_amount ||
-        row.thisDelivery ||
-        row.this_delivery ||
-        row.orderedValue;
-
-      if (!value) {
-        return "-";
-      }
-
-      const stringValue = String(value);
-
-      return stringValue.toUpperCase().includes("SAR")
-        ? stringValue
-        : `SAR ${stringValue}`;
-    },
-  },
-
-  {
-    header: "Delivery Status",
-    accessor: "deliveryStatus",
-
+    header: "Order ref",
+    accessor: "sales_order_reference",
     render: (row) =>
-      row.deliveryStatus || row.delivery_status || row.status || "-",
+      value(
+        row,
+        "sales_order_reference",
+        "salesOrderReference",
+        "order_reference",
+        "order_ref",
+      ),
   },
-
   {
-    header: "Invoice Status",
-    accessor: "invoiceStatus",
-
-    render: (row) => row.invoiceStatus || row.invoice_status || "-",
+    header: "Dispatch date",
+    accessor: "dispatch_date",
+    render: (row) => dateLabel(value(row, "dispatch_date", "dispatchDate")),
   },
-
+  {
+    header: "Delivery date",
+    accessor: "expected_delivery_date",
+    render: (row) =>
+      dateLabel(
+        value(
+          row,
+          "expected_delivery_date",
+          "expectedDeliveryDate",
+          "delivery_date",
+          "deliveryDate",
+        ),
+      ),
+  },
+  {
+    header: "Warehouse",
+    accessor: "warehouse",
+    render: (row) => {
+      const warehouse = row?.warehouse;
+      if (warehouse && typeof warehouse === "object")
+        return value(warehouse, "name", "warehouse_name");
+      return value(row, "warehouse_name", "warehouse", "dispatch_location");
+    },
+  },
+  {
+    header: "Items (Delivered/Ordered)",
+    accessor: "items",
+    render: itemSummary,
+  },
+  {
+    header: "Delivery Type",
+    accessor: "delivery_type",
+    render: deliveryType,
+  },
+  {
+    header: "Status",
+    accessor: "status",
+    render: (row) => value(row, "status", "delivery_status", "deliveryStatus"),
+  },
   {
     header: "Action",
     accessor: "actions",
     sortable: false,
-
     render: (row) => <DeliveryAction row={row} onDelete={onDelete} />,
   },
 ];
 
-export const salesOrderStats = (stats) => [
+export const deliveryNoteStats = (stats) => [
   {
-    title: "Total Deliveries",
-    count: stats.totalDeliveries,
-    icon: <FiShoppingCart />,
-    backgroundColor: "#E8F8EF",
-    iconColor: "#22A06B",
-  },
-
-  {
-    title: "Pending Deliveries",
-    count: stats.pendingDeliveries,
-    icon: <FiClock />,
+    title: "Total delivery notes",
+    count: stats.total,
+    icon: <FiFileText />,
     backgroundColor: "#E8F1FF",
     iconColor: "#3478F6",
   },
-
+  {
+    title: "In transit",
+    count: stats.inTransit,
+    icon: <FiTruck />,
+    backgroundColor: "#F3E8FF",
+    iconColor: "#9333EA",
+  },
+  {
+    title: "Delivered",
+    count: stats.delivered,
+    icon: <FiCheckCircle />,
+    backgroundColor: "#E8F8EF",
+    iconColor: "#22A06B",
+  },
   {
     title: "Partially Delivered",
     count: stats.partiallyDelivered,
@@ -144,20 +183,11 @@ export const salesOrderStats = (stats) => [
     backgroundColor: "#FFF4E5",
     iconColor: "#F59E0B",
   },
-
   {
-    title: "Delivered",
-    count: stats.delivered,
-    icon: <FiCheckCircle />,
+    title: "Cancelled",
+    count: stats.cancelled,
+    icon: <FiXCircle />,
     backgroundColor: "#FDECEC",
     iconColor: "#E5484D",
-  },
-
-  {
-    title: "Delivery Value",
-    count: stats.deliveryValue,
-    icon: <FiDollarSign />,
-    backgroundColor: "#E5F6FA",
-    iconColor: "#00A86B",
   },
 ];

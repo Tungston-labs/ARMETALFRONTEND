@@ -15,11 +15,11 @@ export const ActionButton = styled.button`
     padding: 0;
     margin: 0;
 
-    border: none;
-    border-radius: 50%;
+    border: 1px solid #ccc;
+    border-radius: 5px;
 
-    background: #f3f4f6;
-    color: #374151;
+    background: #fff;
+    /* color: #374151; */
 
     display: flex;
     align-items: center;

@@ -16,6 +16,7 @@ import financeReducer from "./financeSlice";
 import salaryIncrementReducer from "../Redux/salaryIncrementSlice";
 import warehouseReducer from "./finance/Product/warehouseSlice";
 import quotationReducer from "./quotationSlice";
+// import quotationReducer from "./quotationSlice";
 import deliveryNotesReducer from "../Redux/finance/Sales/deliveryNotesSlice";
 import categoryReducer from "./finance/Product/categorySlice";
 import productReducer from "./finance/Product/ProductSlice";
@@ -56,6 +57,8 @@ import paymentReportReducer from "./finance/reports/paymentReportSlice";
 import inventoryReportReducer from "./finance/reports/InventoryReportSlice";
 import balanceSheetReducer from "./finance/reports/BalanceSheetSlice";
 import changesInEquityReportReducer from "./finance/reports/ChangesInEquitySlice";
+import quotationReducer from "./finance/Sales/Quotationslice";
+
 
 export const store = configureStore({
   reducer: {
@@ -73,7 +76,7 @@ export const store = configureStore({
     projects: projectReducer,
     company: companyReducer,
     finance: financeReducer,
-    quotation: quotationReducer,
+    // quotation: quotationReducer,
     salaryIncrement: salaryIncrementReducer,
 
     category: categoryReducer,
@@ -116,5 +119,6 @@ export const store = configureStore({
     inventoryReport: inventoryReportReducer,
     balanceSheet: balanceSheetReducer,
     changesInEquityReport: changesInEquityReportReducer,
+    quotation: quotationReducer,
   },
 });

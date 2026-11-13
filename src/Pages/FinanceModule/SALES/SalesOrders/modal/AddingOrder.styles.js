@@ -247,18 +247,18 @@ export const InvoiceTable = styled.table`
 
     th {
         height: 42px;
-
         padding: 0 9px;
-
         color: #ffffff;
-
         font-family: "Poppins", sans-serif;
-        font-size: 11px;
-        font-weight: 600;
-
         text-align: left;
-
         white-space: nowrap;
+font-weight: 600;
+font-style: SemiBold;
+font-size: 14px;
+line-height: 100%;
+letter-spacing: 0%;
+text-align: center;
+
     }
 
     td {
@@ -274,6 +274,7 @@ export const InvoiceTable = styled.table`
         font-size: 11px;
 
         vertical-align: middle;
+        
     }
 
     tbody tr:last-child td {
@@ -400,6 +401,7 @@ export const PaymentSection = styled.div`
   width: 100%;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
   margin-top: 28px;
   box-sizing: border-box;
 
@@ -409,8 +411,71 @@ export const PaymentSection = styled.div`
 `;
 
 export const PaymentLeft = styled.div`
+  width: 100%;
+  min-width: 0;
+`;
+
+export const NotesTitle = styled.h4`
+  margin: 0 0 10px;
+  font-family: "Poppins", sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  color: #111111;
+font-weight: 500;
+font-style: Medium;
+font-size: 16px;
+leading-trim: NONE;
+line-height: 100%;
+letter-spacing: 0%;
+
+`;
+
+export const NotesBox = styled.div`
+  width: 100%;
+  min-height: 50px;
+  box-sizing: border-box;
+  padding: 7px 10px;
+  border: 1px solid #e2e5ea;
+  border-radius: 5px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 3px;
+
+  span {
+    font-family: "Poppins", sans-serif;
+    font-size: 10px;
+    color: #999999;
+font-weight: 400;
+font-style: Regular;
+font-size: 11px;
+line-height: 100%;
+letter-spacing: 0%;
+margin-bottom: 5px;
+  }
+
+  strong {
+    font-family: "Poppins", sans-serif;
+    font-size: 9px;
+    font-weight: 600;
+    color: #111111;
+font-weight: 500;
+font-style: Medium;
+font-size: 12px;
+line-height: 100%;
+letter-spacing: 0%;
+
+  }
+`;
+export const PaymentRight = styled.div`
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  justify-self: stretch;
+
+  @media (max-width: 768px) {
     width: 100%;
-    min-width: 0;
+  }
 `;
 
 export const PaymentGrid = styled.div`
@@ -425,19 +490,7 @@ export const PaymentGrid = styled.div`
     margin-top: 14px;
 `;
 
-export const PaymentRight = styled.div`
-  grid-column: 2;
-  width: 100%;
-  min-width: 0;
-  box-sizing: border-box;
-  justify-self: end;
-  padding-top: 2px;
 
-  @media (max-width: 768px) {
-    grid-column: 1;
-    width: 100%;
-  }
-`;
 
 export const SummaryRow = styled.div`
     min-height: 32px;

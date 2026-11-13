@@ -1,11 +1,10 @@
 import React from "react";
-import {
-  FiInfo,
-  FiUsers,
-  FiDollarSign,
-  FiClock,
-  FiAlertCircle,
-} from "react-icons/fi";
+import { FiEye } from "react-icons/fi";
+import Paymentactions from "./action/Paymentaction";
+
+/* =========================================================
+   FORMAT STATUS LABEL
+========================================================= */
 
 export const formatStatusLabel = (value = "") =>
   String(value)
@@ -13,6 +12,10 @@ export const formatStatusLabel = (value = "") =>
     .filter(Boolean)
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
     .join(" ");
+
+/* =========================================================
+   FORMAT CURRENCY
+========================================================= */
 
 export const formatCurrency = (value) => {
   if (value === null || value === undefined || value === "") {
@@ -26,9 +29,14 @@ export const formatCurrency = (value) => {
   }
 
   return `SAR ${amount.toLocaleString("en-US", {
-    maximumFractionDigits: 0,
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
   })}`;
 };
+
+/* =========================================================
+   FORMAT PAYMENT DATE
+========================================================= */
 
 const formatPaymentDate = (value) => {
   if (!value) return "-";
@@ -46,8 +54,14 @@ const formatPaymentDate = (value) => {
   });
 };
 
+/* =========================================================
+   CUSTOMER NAME
+========================================================= */
+
 const getCustomerName = (row) => {
-  if (row.customer_name) return row.customer_name;
+  if (row.customer_name) {
+    return row.customer_name;
+  }
 
   if (typeof row.customer === "string") {
     return row.customer;
@@ -60,16 +74,91 @@ const getCustomerName = (row) => {
   return "-";
 };
 
-const getStatusColor = (status) => {
-  switch (String(status).toLowerCase()) {
-    case "completed":
-      return "#008000";
+/* =========================================================
+   PAYMENT NUMBER
+========================================================= */
 
-    case "cancelled":
-      return "#FF0000";
+const getPaymentNumber = (row) => {
+  return (
+    row.payment_no ||
+    row.payment_number ||
+    row.receipt_no ||
+    row.receipt_number ||
+    "-"
+  );
+};
+
+/* =========================================================
+   INVOICE REFERENCE
+========================================================= */
+
+const getInvoiceReference = (row) => {
+  return (
+    row.invoice_reference ||
+    row.invoice_ref ||
+    row.invoice_no ||
+    row.invoice_number ||
+    row.invoice?.invoice_no ||
+    row.invoice?.invoice_number ||
+    "-"
+  );
+};
+
+/* =========================================================
+   PAYMENT STATUS
+========================================================= */
+
+const getPaymentStatus = (row) => {
+  const status = String(row.status || row.payment_status || "")
+    .toLowerCase()
+    .replace(/\s+/g, "_");
+
+  switch (status) {
+    case "completed":
+    case "fully_paid":
+    case "paid":
+      return "Fully Paid";
+
+    case "partially_paid":
+    case "partial":
+    case "partially_completed":
+      return "Partially Paid";
 
     case "pending":
-      return "#FF8C00";
+      return "Pending";
+
+    case "cancelled":
+    case "canceled":
+      return "Cancelled";
+
+    case "overdue":
+      return "Overdue";
+
+    default:
+      return formatStatusLabel(status) || "-";
+  }
+};
+
+/* =========================================================
+   STATUS COLOR
+========================================================= */
+
+const getStatusColor = (status) => {
+  switch (status) {
+    case "Fully Paid":
+      return "#008000";
+
+    case "Partially Paid":
+      return "#ff8500";
+
+    case "Pending":
+      return "#3152b8";
+
+    case "Cancelled":
+      return "#ff0000";
+
+    case "Overdue":
+      return "#ff0000";
 
     default:
       return "#008000";
@@ -84,35 +173,35 @@ export const buildPaymentStats = (kpi = {}) => [
   {
     title: "Total Collections",
     count: formatCurrency(kpi.totalCollections),
-    icon: <FiUsers />,
+    icon: <span />,
     backgroundColor: "#e8f8f0",
     iconColor: "#008000",
   },
   {
     title: "This Month Collections",
     count: formatCurrency(kpi.thisMonthCollections),
-    icon: <FiUsers />,
+    icon: <span />,
     backgroundColor: "#e9efff",
     iconColor: "#3152b8",
   },
   {
     title: "Outstanding Receivables",
     count: formatCurrency(kpi.outstandingReceivables),
-    icon: <FiUsers />,
+    icon: <span />,
     backgroundColor: "#fff3df",
     iconColor: "#f59e0b",
   },
   {
     title: "Overdue Receivables",
     count: formatCurrency(kpi.overdueReceivables),
-    icon: <FiAlertCircle />,
+    icon: <span />,
     backgroundColor: "#ffe7e7",
     iconColor: "#ef4444",
   },
   {
     title: "Collection Rate",
     count: `${Number(kpi.collectionRate || 0)}%`,
-    icon: <FiUsers />,
+    icon: <span />,
     backgroundColor: "#e5f6f8",
     iconColor: "#008000",
   },
@@ -124,16 +213,20 @@ export const buildPaymentStats = (kpi = {}) => [
 
 export const PAYMENT_STATUS_OPTIONS = [
   {
-    label: "Completed",
+    label: "Fully Paid",
     value: "completed",
   },
   {
-    label: "Cancelled",
-    value: "cancelled",
+    label: "Partially Paid",
+    value: "partially_paid",
   },
   {
     label: "Pending",
     value: "pending",
+  },
+  {
+    label: "Cancelled",
+    value: "cancelled",
   },
 ];
 
@@ -177,8 +270,9 @@ export const PAYMENT_METHOD_OPTIONS = [
 
 export const getPaymentColumns = ({ onInfo }) => [
   {
-    header: "Receipt No",
+    header: "Payment no.",
     accessor: "receipt_no",
+    render: (row) => getPaymentNumber(row),
   },
 
   {
@@ -188,8 +282,19 @@ export const getPaymentColumns = ({ onInfo }) => [
   },
 
   {
-    header: "Invoice No",
+    header: "Invoice ref",
     accessor: "invoice_no",
+    render: (row) => (
+      <span
+        style={{
+          textDecoration: "underline",
+          cursor: "pointer",
+          color: "#333333",
+        }}
+      >
+        {getInvoiceReference(row)}
+      </span>
+    ),
   },
 
   {
@@ -221,46 +326,26 @@ export const getPaymentColumns = ({ onInfo }) => [
     header: "Status",
     accessor: "status",
     render: (row) => {
-      const status = row.status || row.payment_status || "";
+      const status = getPaymentStatus(row);
 
       return (
         <span
           style={{
             color: getStatusColor(status),
+            fontWeight: 500,
+            whiteSpace: "nowrap",
           }}
         >
-          {formatStatusLabel(status)}
+          {status}
         </span>
       );
     },
   },
 
   {
-    header: "Action",
-    accessor: "actions",
-    sortable: false,
-
-    render: (row) => (
-      <button
-        type="button"
-        onClick={() => onInfo?.(row)}
-        style={{
-          width: "25px",
-          height: "25px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          padding: 0,
-          border: "1px solid #e5e7eb",
-          borderRadius: "5px",
-          background: "#ffffff",
-          color: "#111827",
-          cursor: "pointer",
-        }}
-        aria-label={`View payment ${row.receipt_no || row.id}`}
-      >
-        <FiInfo size={13} />
-      </button>
-    ),
-  },
+  header: "Action",
+  accessor: "actions",
+  sortable: false,
+  render: (row) => <Paymentactions row={row} onInfo={onInfo} />,
+},
 ];

@@ -28,8 +28,6 @@ import {
   updateWarehouse,
   deleteWarehouse,
   clearWarehouseDetail,
-  clearUpdateWarehouseError,
-  clearDeleteWarehouseError,
 } from "../../../../Redux/finance/Product/warehouseSlice";
 
 import {

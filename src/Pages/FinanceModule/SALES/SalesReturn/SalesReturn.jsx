@@ -1,9 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
-
 import { FiDownload } from "react-icons/fi";
-
 import { useNavigate } from "react-router-dom";
-
 import { useDispatch, useSelector } from "react-redux";
 
 import ReusableHeader from "../../../../Components/ReusableTable/ReusableHeader";
@@ -46,31 +43,33 @@ import {
   selectCustomers,
 } from "../../../../Redux/finance/Sales/CustomerSlice";
 
+/* --------------------------------------------------
+   Date Helpers
+-------------------------------------------------- */
+
 const getCurrentMonthRange = () => {
   const today = new Date();
 
   const year = today.getFullYear();
   const month = today.getMonth();
 
-  const firstDay = new Date(year, month, 1);
-
-  const lastDay = new Date(year, month + 1, 0);
-
   const formatDate = (date) => {
     const y = date.getFullYear();
-
     const m = String(date.getMonth() + 1).padStart(2, "0");
-
     const d = String(date.getDate()).padStart(2, "0");
 
     return `${y}-${m}-${d}`;
   };
 
   return {
-    start: formatDate(firstDay),
-    end: formatDate(lastDay),
+    start: formatDate(new Date(year, month, 1)),
+    end: formatDate(new Date(year, month + 1, 0)),
   };
 };
+
+/* --------------------------------------------------
+   Debounce
+-------------------------------------------------- */
 
 const useDebouncedValue = (value, delay = 400) => {
   const [debounced, setDebounced] = useState(value);
@@ -86,50 +85,50 @@ const useDebouncedValue = (value, delay = 400) => {
   return debounced;
 };
 
+/* --------------------------------------------------
+   Sales Return
+-------------------------------------------------- */
+
 const SalesReturn = () => {
   const navigate = useNavigate();
-
   const dispatch = useDispatch();
 
   const currentMonth = useMemo(() => getCurrentMonthRange(), []);
 
+  /* Redux */
+
   const salesReturns = useSelector(selectSalesReturns);
-
   const pagination = useSelector(selectSalesReturnPagination);
-
   const kpi = useSelector(selectSalesReturnKPI);
 
   const loading = useSelector(selectSalesReturnLoading);
-
   const deleteLoading = useSelector(selectSalesReturnDeleteLoading);
-
   const exportLoading = useSelector(selectSalesReturnExportLoading);
 
   const customers = useSelector(selectCustomers);
 
+  /* Filters */
+
   const [search, setSearch] = useState("");
-
   const [status, setStatus] = useState("");
-
   const [customer, setCustomer] = useState("");
-
   const [reason, setReason] = useState("");
 
-  const [startDate, setStartDate] = useState("");
-
-  const [endDate, setEndDate] = useState("");
+  const [startDate, setStartDate] = useState(currentMonth.start);
+  const [endDate, setEndDate] = useState(currentMonth.end);
 
   const [currentPage, setCurrentPage] = useState(1);
 
-  const [returnToDelete, setReturnToDelete] = useState(null);
+  /* Delete */
 
+  const [returnToDelete, setReturnToDelete] = useState(null);
   const [deleteError, setDeleteError] = useState("");
 
   const debouncedSearch = useDebouncedValue(search);
 
-  /* -----------------------------------------------
+  /* --------------------------------------------------
      Customers
-  ------------------------------------------------ */
+  -------------------------------------------------- */
 
   useEffect(() => {
     dispatch(getCustomers());
@@ -149,14 +148,14 @@ const SalesReturn = () => {
     [customers],
   );
 
-  /* -----------------------------------------------
+  /* --------------------------------------------------
      Sales Return List
-  ------------------------------------------------ */
+  -------------------------------------------------- */
 
   useEffect(() => {
     const params = {
       page: currentPage,
-      page_size: 10,
+      page_size: 8,
     };
 
     if (debouncedSearch) {
@@ -195,9 +194,9 @@ const SalesReturn = () => {
     currentPage,
   ]);
 
-  /* -----------------------------------------------
-     KPI
-  ------------------------------------------------ */
+  /* --------------------------------------------------
+     KPI Summary
+  -------------------------------------------------- */
 
   useEffect(() => {
     dispatch(
@@ -210,9 +209,9 @@ const SalesReturn = () => {
 
   const stats = useMemo(() => buildSalesReturnStats(kpi), [kpi]);
 
-  /* -----------------------------------------------
-     Date
-  ------------------------------------------------ */
+  /* --------------------------------------------------
+     Date Filters
+  -------------------------------------------------- */
 
   const handleStartDateChange = (event) => {
     const value = event.target.value;
@@ -234,9 +233,10 @@ const SalesReturn = () => {
   const handleEndDateChange = (event) => {
     const value = event.target.value;
 
+    setCurrentPage(1);
+
     if (!value) {
       setEndDate("");
-      setCurrentPage(1);
       return;
     }
 
@@ -245,12 +245,11 @@ const SalesReturn = () => {
     }
 
     setEndDate(value);
-    setCurrentPage(1);
   };
 
-  /* -----------------------------------------------
-     Delete
-  ------------------------------------------------ */
+  /* --------------------------------------------------
+     Delete Sales Return
+  -------------------------------------------------- */
 
   const handleDelete = (salesReturn) => {
     setDeleteError("");
@@ -284,7 +283,13 @@ const SalesReturn = () => {
       dispatch(
         getSalesReturns({
           page: currentPage,
-          page_size: 10,
+          page_size: 8,
+          search: debouncedSearch,
+          customer,
+          status,
+          reason,
+          return_date_after: startDate,
+          return_date_before: endDate,
         }),
       );
 
@@ -304,9 +309,9 @@ const SalesReturn = () => {
     );
   };
 
-  /* -----------------------------------------------
-     Columns
-  ------------------------------------------------ */
+  /* --------------------------------------------------
+     Table Columns
+  -------------------------------------------------- */
 
   const columns = useMemo(
     () =>
@@ -316,9 +321,9 @@ const SalesReturn = () => {
     [],
   );
 
-  /* -----------------------------------------------
-     Export
-  ------------------------------------------------ */
+  /* --------------------------------------------------
+     Export CSV
+  -------------------------------------------------- */
 
   const handleExport = async () => {
     const params = {};
@@ -358,28 +363,24 @@ const SalesReturn = () => {
     });
 
     const url = URL.createObjectURL(blob);
-
     const link = document.createElement("a");
 
     link.href = url;
-
     link.download = "sales-returns.csv";
 
     document.body.appendChild(link);
-
     link.click();
-
     document.body.removeChild(link);
 
     URL.revokeObjectURL(url);
   };
 
+  /* --------------------------------------------------
+     Render
+  -------------------------------------------------- */
+
   return (
-    <div
-      style={{
-        padding: 20,
-      }}
-    >
+    <div style={{ padding: 20 }}>
       <ReusableHeader
         title="Sales Return"
         breadcrumbs={["Sales", "Sales Return"]}
@@ -415,7 +416,11 @@ const SalesReturn = () => {
         </DateRangeWrapper>
       </ReusableHeader>
 
+      {/* KPI Cards */}
+
       <StatsCards cards={stats} />
+
+      {/* Search and Filters */}
 
       <ReusableFilter
         search={search}
@@ -448,7 +453,6 @@ const SalesReturn = () => {
             options: customerOptions,
             placeholder: "All Customer",
           },
-
           {
             key: "reason",
             value: reason,
@@ -457,18 +461,24 @@ const SalesReturn = () => {
               setCurrentPage(1);
             },
             options: SALES_RETURN_REASON_OPTIONS,
-            placeholder: "Reason",
+            placeholder: "All Reason",
           },
         ]}
       />
 
+      {/* Sales Return Table */}
+
       <ReusableTable columns={columns} data={salesReturns} loading={loading} />
+
+      {/* Pagination */}
 
       <ReusablePagination
         currentPage={pagination.currentPage || currentPage}
         totalPages={pagination.totalPages || 1}
         onPageChange={setCurrentPage}
       />
+
+      {/* Delete Confirmation */}
 
       <ReusableConfirmModal
         show={!!returnToDelete}

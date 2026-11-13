@@ -6,6 +6,7 @@ import {
     ActionButton,
     FloatingAction,
 } from "./OrderAction.styles";
+import { IoEllipsisVerticalCircleOutline } from "react-icons/io5";
 
 const OrderActions = ({ row, onDelete }) => {
     const [open, setOpen] = useState(false);
@@ -39,7 +40,7 @@ const OrderActions = ({ row, onDelete }) => {
                 }}
                 title="Actions"
             >
-                <FiMoreVertical size={12} />
+                <IoEllipsisVerticalCircleOutline size={14} />
             </ActionButton>
 
             <FloatingAction

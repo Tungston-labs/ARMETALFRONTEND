@@ -54,6 +54,7 @@ const UploadBox = ({ children }) => (
 );
 
 const errorStyle = { borderColor: "#c0392b" };
+const lockedStyle = { background: "#f5f5f5", cursor: "not-allowed" };
 const ErrorText = ({ children }) =>
   children ? (
     <span
@@ -72,6 +73,7 @@ const AddingInvoice = () => {
   const {
     id,
     isEditMode,
+    isViewMode,
     salesOrders,
     customers,
     detailLoading,
@@ -90,7 +92,6 @@ const AddingInvoice = () => {
     errors,
     isSaving,
     notFound,
-    handleInvoiceNumberChange,
     handleInvoiceDateChange,
     handleDueDateChange,
     handlePaymentStatusChange,
@@ -109,11 +110,17 @@ const AddingInvoice = () => {
     navigate,
   } = useAddingInvoice();
 
+  const pageTitle = isViewMode
+    ? "Invoice Details"
+    : isEditMode
+    ? "Edit Invoice"
+    : "Generate New Invoice";
+
   if (detailLoading && isEditMode && !selectedInvoice) {
     return (
       <InvoiceContainer>
         <ReusableHeader
-          title="Edit Invoice"
+          title={pageTitle}
           breadcrumbs={["Sales", "Invoices"]}
           showBack
           onBack={() => navigate("/sales/invoices")}
@@ -143,7 +150,7 @@ const AddingInvoice = () => {
   return (
     <InvoiceContainer>
       <ReusableHeader
-        title={isEditMode ? "Edit Invoice" : "Generate New Invoice"}
+        title={pageTitle}
         breadcrumbs={["Sales", "Invoices"]}
         showBack
         onBack={() => navigate("/sales/invoices")}
@@ -153,7 +160,14 @@ const AddingInvoice = () => {
         <div style={{ padding: "0 20px", color: "#c0392b" }}>
           {typeof saveError === "string"
             ? saveError
-            : "Something went wrong saving this invoice."}
+            : saveError?.detail ||
+              saveError?.message ||
+              (typeof saveError === "object" &&
+                Object.values(saveError)
+                  .flat()
+                  .filter((v) => typeof v === "string")
+                  .join(" ")) ||
+              "Something went wrong saving this invoice."}
         </div>
       )}
 
@@ -162,34 +176,65 @@ const AddingInvoice = () => {
           <FormGroup>
             <Label>SALES ORDER REFERENCE</Label>
             {isEditMode ? (
-              <Input value={salesOrderRef} readOnly />
+              <Input value={salesOrderRef} readOnly style={lockedStyle} />
             ) : (
-              <SelectWrapper>
-                <Select value={salesOrderRef} onChange={handleSalesOrderChange}>
-                  <option value="" disabled>
-                    Select Sales Order
-                  </option>
-                  {salesOrders.map((order) => (
-                    <option key={order.id} value={order.id}>
-                      {order.so_number || order.order_number || `Sales Order #${order.id}`}
+              <>
+                <SelectWrapper>
+                  <Select
+                    value={salesOrderRef}
+                    onChange={handleSalesOrderChange}
+                    style={errors.salesOrderRef ? errorStyle : undefined}
+                  >
+                    <option value="" disabled>
+                      Select Sales Order
                     </option>
-                  ))}
-                </Select>
-                <FiChevronDown />
-              </SelectWrapper>
+                    {salesOrders.map((order) => (
+                      <option key={order.id} value={order.id}>
+                        {order.so_number || order.order_number || `Sales Order #${order.id}`}
+                      </option>
+                    ))}
+                  </Select>
+                  <FiChevronDown />
+                </SelectWrapper>
+                <ErrorText>{errors.salesOrderRef}</ErrorText>
+              </>
             )}
           </FormGroup>
-
+ <FormGroup>
+            <Label>Delivery Note REFERENCE</Label>
+            {isEditMode ? (
+              <Input value={salesOrderRef} readOnly style={lockedStyle} />
+            ) : (
+              <>
+                <SelectWrapper>
+                  <Select
+                    value={salesOrderRef}
+                    onChange={handleSalesOrderChange}
+                    style={errors.salesOrderRef ? errorStyle : undefined}
+                  >
+                    <option value="" disabled>
+                      Select Sales Order
+                    </option>
+                    {salesOrders.map((order) => (
+                      <option key={order.id} value={order.id}>
+                        {order.so_number || order.order_number || `Sales Order #${order.id}`}
+                      </option>
+                    ))}
+                  </Select>
+                  <FiChevronDown />
+                </SelectWrapper>
+                <ErrorText>{errors.salesOrderRef}</ErrorText>
+              </>
+            )}
+          </FormGroup>
           <FormGroup>
             <Label>INVOICE NUMBER</Label>
             <Input
-              placeholder="INV001"
+              placeholder="Auto-generated"
               value={invoiceNumber}
-              onChange={(e) => handleInvoiceNumberChange(e.target.value)}
-              readOnly={isEditMode}
-              style={errors.invoiceNumber ? errorStyle : undefined}
+              readOnly
+              style={lockedStyle}
             />
-            <ErrorText>{errors.invoiceNumber}</ErrorText>
           </FormGroup>
 
           <FormGroup>
@@ -214,6 +259,8 @@ const AddingInvoice = () => {
                 type="date"
                 value={dueDate}
                 onChange={(e) => handleDueDateChange(e.target.value)}
+                readOnly={isViewMode}
+                disabled={isViewMode}
                 style={errors.dueDate ? errorStyle : undefined}
               />
             </CalendarInput>
@@ -226,13 +273,14 @@ const AddingInvoice = () => {
               <Select
                 value={paymentStatus}
                 onChange={(e) => handlePaymentStatusChange(e.target.value)}
+                disabled={isViewMode}
                 style={errors.paymentStatus ? errorStyle : undefined}
               >
                 <option value="" disabled>
                   Select Payment Status
                 </option>
                 <option value="paid">Paid</option>
-                <option value="pending">Pending</option>
+                <option value="unpaid">Pending</option>
                 <option value="partially_paid">Partially Paid</option>
               </Select>
               <FiChevronDown />
@@ -249,7 +297,11 @@ const AddingInvoice = () => {
               placeholder="0.00"
               value={amountPaid}
               onChange={(e) => handleAmountPaidChange(e.target.value)}
-              readOnly={paymentStatus === "paid" || paymentStatus === "pending"}
+              readOnly={
+                isViewMode ||
+                paymentStatus === "paid" ||
+                paymentStatus === "unpaid"
+              }
               style={errors.amountPaid ? errorStyle : undefined}
             />
             <ErrorText>{errors.amountPaid}</ErrorText>
@@ -386,7 +438,7 @@ const AddingInvoice = () => {
                 <th>VAT (%)</th>
                 <th>VAT </th>
                 <th>Amount</th>
-                <th>Action</th>
+                {!isEditMode && <th>Action</th>}
               </tr>
             </thead>
 
@@ -462,13 +514,13 @@ const AddingInvoice = () => {
                         readOnly={isEditMode}
                       />
                     </td>
-                    <td>
-                      {!isEditMode && (
+                    {!isEditMode && (
+                      <td>
                         <DeleteButton onClick={() => removeItem(item.id)}>
                           <FiX />
                         </DeleteButton>
-                      )}
-                    </td>
+                      </td>
+                    )}
                   </tr>
                 );
               })}
@@ -550,10 +602,16 @@ const AddingInvoice = () => {
         </PaymentSection>
 
         <ButtonWrapper>
-          <CancelButton onClick={handleCancel}>CANCEL</CancelButton>
-          <PreviewButton onClick={handleSave} disabled={isSaving}>
-            {isSaving ? "SAVING..." : isEditMode ? "UPDATE" : "PREVIEW"}
-          </PreviewButton>
+          {isViewMode ? (
+            <CancelButton onClick={handleCancel}>BACK</CancelButton>
+          ) : (
+            <>
+              <CancelButton onClick={handleCancel}>CANCEL</CancelButton>
+              <PreviewButton onClick={handleSave} disabled={isSaving}>
+                {isSaving ? "SAVING..." : isEditMode ? "UPDATE" : "PREVIEW"}
+              </PreviewButton>
+            </>
+          )}
         </ButtonWrapper>
       </InvoiceForm>
     </InvoiceContainer>

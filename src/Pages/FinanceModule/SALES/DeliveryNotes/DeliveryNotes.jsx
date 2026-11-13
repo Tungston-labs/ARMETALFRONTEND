@@ -1,9 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-
 import { FiDownload } from "react-icons/fi";
-
 import { useDispatch, useSelector } from "react-redux";
-
 import { useNavigate } from "react-router-dom";
 
 import ReusableHeader from "../../../../Components/ReusableTable/ReusableHeader";
@@ -20,163 +17,90 @@ import {
   ExportButton,
 } from "./DeliveryNotes.style";
 
-import { salesOrderColumns, salesOrderStats } from "./DeliveryNotesColoumns";
-
+import {
+  deliveryNoteColumns,
+  deliveryNoteStats,
+} from "./DeliveryNotesColoumns";
 import {
   fetchDeliveryNotes,
   fetchDeliveryNoteKpi,
   removeDeliveryNote,
 } from "../../../../Redux/finance/Sales/deliveryNotesSlice";
-
-/* =========================================================
-   DATE HELPERS
-========================================================= */
+import { fetchWarehouses } from "../../../../Redux/finance/Product/warehouseSlice";
 
 const getCurrentMonthRange = () => {
-  const today = new Date();
-
-  const year = today.getFullYear();
-  const month = today.getMonth();
-
-  const firstDay = new Date(year, month, 1);
-
-  const lastDay = new Date(year, month + 1, 0);
-
-  const formatDate = (date) => {
-    const y = date.getFullYear();
-
-    const m = String(date.getMonth() + 1).padStart(2, "0");
-
-    const d = String(date.getDate()).padStart(2, "0");
-
-    return `${y}-${m}-${d}`;
-  };
+  const now = new Date();
+  const format = (date) =>
+    `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 
   return {
-    start: formatDate(firstDay),
-    end: formatDate(lastDay),
+    start: format(new Date(now.getFullYear(), now.getMonth(), 1)),
+    end: format(new Date(now.getFullYear(), now.getMonth() + 1, 0)),
   };
 };
 
-/* =========================================================
-   AMOUNT HELPER
-========================================================= */
-
-const parseAmount = (value) => {
-  if (value === undefined || value === null || value === "") {
-    return 0;
-  }
-
-  const amount = Number(
-    String(value).replace(/SAR/gi, "").replace(/,/g, "").trim(),
-  );
-
-  return Number.isNaN(amount) ? 0 : amount;
-};
-
-/* =========================================================
-   KPI HELPER
-========================================================= */
-
-const getKpiValue = (kpi, keys, fallback = 0) => {
+const read = (row, ...keys) => {
   for (const key of keys) {
-    if (kpi?.[key] !== undefined && kpi?.[key] !== null) {
-      return kpi[key];
+    if (row?.[key] !== undefined && row?.[key] !== null && row?.[key] !== "") {
+      return row[key];
     }
   }
+  return "";
+};
 
+const getCount = (kpi, keys, fallback = 0) => {
+  for (const key of keys) {
+    if (kpi?.[key] !== undefined && kpi?.[key] !== null) return kpi[key];
+  }
   return fallback;
 };
 
-/* =========================================================
-   STATUS HELPERS
-========================================================= */
-
-const normalizeStatus = (value) => {
-  return String(value || "")
-    .trim()
-    .toLowerCase()
-    .replace(/[\s_-]+/g, "");
-};
-
-/* =========================================================
-   COMPONENT
-========================================================= */
-
 const DeliveryNotes = () => {
   const navigate = useNavigate();
-
   const dispatch = useDispatch();
 
-  const { deliveryNotes, kpi, totalItems, totalPages, loading, error } =
-    useSelector((state) => state.deliveryNotes);
+  const {
+    deliveryNotes = [],
+    kpi = {},
+    totalItems = 0,
+    totalPages = 1,
+    loading,
+    error,
+  } = useSelector((state) => state.deliveryNotes || {});
 
-  const currentMonth = useMemo(() => getCurrentMonthRange(), []);
+  // Must live INSIDE the component (hooks can't run at module level)
+  const { warehouses = [] } = useSelector((state) => state.warehouse || {});
 
+  const currentMonth = useMemo(getCurrentMonthRange, []);
   const [search, setSearch] = useState("");
-
   const [status, setStatus] = useState("");
-
   const [customer, setCustomer] = useState("");
-
-  const [startDate, setStartDate] = useState(currentMonth.start);
-
-  const [endDate, setEndDate] = useState(currentMonth.end);
-
+  const [warehouse, setWarehouse] = useState("");
+  const [startDate, setStartDate] = useState();
+  const [endDate, setEndDate] = useState();
   const [dateFilterChanged, setDateFilterChanged] = useState(false);
-
+  const [currentPage, setCurrentPage] = useState(1);
   const rowsPerPage = 10;
 
-  const [currentPage, setCurrentPage] = useState(1);
-
-  /* =======================================================
-     API PARAMETERS
-  ======================================================= */
-
   const apiParams = useMemo(() => {
-    const params = {
-      page: currentPage,
-      page_size: rowsPerPage,
-    };
-
-    if (search.trim()) {
-      params.search = search.trim();
-    }
-
-    if (status) {
-      params.status = status;
-    }
-
-    if (customer) {
-      params.customer = customer;
-    }
-
-    /*
-     * Warehouse intentionally removed.
-     */
-
-    if (dateFilterChanged && startDate) {
-      params.start_date = startDate;
-    }
-
-    if (dateFilterChanged && endDate) {
-      params.end_date = endDate;
-    }
-
+    const params = { page: currentPage, page_size: rowsPerPage };
+    if (search.trim()) params.search = search.trim();
+    if (status) params.status = status;
+    if (customer) params.customer = customer;
+    if (warehouse) params.warehouse = warehouse;
+    if (dateFilterChanged && startDate) params.start_date = startDate;
+    if (dateFilterChanged && endDate) params.end_date = endDate;
     return params;
   }, [
     currentPage,
     search,
     status,
     customer,
+    warehouse,
     startDate,
     endDate,
     dateFilterChanged,
   ]);
-
-  /* =======================================================
-     FETCH LIST
-  ======================================================= */
 
   const loadDeliveryNotes = useCallback(() => {
     dispatch(fetchDeliveryNotes(apiParams));
@@ -186,37 +110,36 @@ const DeliveryNotes = () => {
     loadDeliveryNotes();
   }, [loadDeliveryNotes]);
 
-  /* =======================================================
-     FETCH KPI
-  ======================================================= */
-
   useEffect(() => {
     dispatch(fetchDeliveryNoteKpi());
   }, [dispatch]);
 
-  /* =======================================================
-     DELETE
-  ======================================================= */
+  // Load warehouses once for the filter dropdown
+  useEffect(() => {
+    dispatch(fetchWarehouses({ page: 1, page_size: 100 }));
+  }, [dispatch]);
+
+  const warehouseOptions = useMemo(
+    () =>
+      (Array.isArray(warehouses) ? warehouses : []).map((w) => ({
+        label: w.warehouse_name || w.name || `Warehouse ${w.id}`,
+        value: w.id,
+      })),
+    [warehouses],
+  );
 
   const handleDelete = useCallback(
     async (row) => {
-      if (!row?.id) {
+      const id = row?.id ?? row?.pk;
+      if (!id) return;
+      if (
+        !window.confirm("Are you sure you want to delete this delivery note?")
+      )
         return;
-      }
-
-      const confirmed = window.confirm(
-        "Are you sure you want to delete this delivery note?",
-      );
-
-      if (!confirmed) {
-        return;
-      }
 
       try {
-        await dispatch(removeDeliveryNote(row.id)).unwrap();
-
+        await dispatch(removeDeliveryNote(id)).unwrap();
         dispatch(fetchDeliveryNotes(apiParams));
-
         dispatch(fetchDeliveryNoteKpi());
       } catch (deleteError) {
         console.error("Delete delivery note failed:", deleteError);
@@ -225,220 +148,167 @@ const DeliveryNotes = () => {
     [dispatch, apiParams],
   );
 
-  /* =======================================================
-     TABLE DATA
-  ======================================================= */
-
-  const normalizedRows = useMemo(() => {
-    if (!Array.isArray(deliveryNotes)) {
-      return [];
-    }
-
-    return deliveryNotes;
-  }, [deliveryNotes]);
-
-  /* =======================================================
-     STATUS FALLBACK COUNTS
-  ======================================================= */
-
-  const getStatusCount = useCallback(
-    (targetStatus) => {
-      const normalizedTarget = normalizeStatus(targetStatus);
-
-      return normalizedRows.filter((row) => {
-        const rowStatus = normalizeStatus(
-          row?.deliveryStatus || row?.delivery_status || row?.status,
-        );
-
-        if (normalizedTarget === "partially") {
-          return (
-            rowStatus === "partially" ||
-            rowStatus === "partial" ||
-            rowStatus === "partiallydelivered"
-          );
-        }
-
-        if (normalizedTarget === "delivered") {
-          return rowStatus === "delivered" || rowStatus === "fullydelivered";
-        }
-
-        return rowStatus === normalizedTarget;
-      }).length;
-    },
-    [normalizedRows],
+  const rows = useMemo(
+    () => (Array.isArray(deliveryNotes) ? deliveryNotes : []),
+    [deliveryNotes],
   );
 
-  /* =======================================================
-     AMOUNT FALLBACK
-  ======================================================= */
-
-  const totalAmount = useMemo(() => {
-    return normalizedRows.reduce((sum, row) => {
-      const value =
-        row.deliveryValue ??
-        row.delivery_value ??
-        row.amount ??
-        row.total_amount ??
-        row.thisDelivery ??
-        row.this_delivery ??
-        row.orderedValue ??
-        0;
-
-      return sum + parseAmount(value);
-    }, 0);
-  }, [normalizedRows]);
-
-  /* =======================================================
-     KPI CARDS
-  ======================================================= */
-
-  const deliveryValue = getKpiValue(
-    kpi,
-    ["delivery_value", "total_delivery_value", "total_value"],
-    totalAmount,
+  const fallbackCount = useCallback(
+    (predicate) => rows.filter(predicate).length,
+    [rows],
   );
 
-  const formattedDeliveryValue =
-    typeof deliveryValue === "number"
-      ? `SAR ${deliveryValue.toLocaleString("en-US")}`
-      : String(deliveryValue || "SAR 0")
-            .toUpperCase()
-            .includes("SAR")
-        ? deliveryValue
-        : `SAR ${deliveryValue}`;
-
-  const stats = salesOrderStats({
-    totalDeliveries: getKpiValue(
+  const stats = deliveryNoteStats({
+    total: getCount(
       kpi,
-      ["total_deliveries", "total_delivery_notes", "total"],
+      ["total_delivery_notes", "total_deliveries", "total"],
       totalItems,
     ),
-
-    pendingDeliveries: getKpiValue(
+    inTransit: getCount(
       kpi,
-      ["pending_deliveries", "pending"],
-      getStatusCount("Pending"),
+      ["in_transit", "in_transit_count", "dispatched"],
+      fallbackCount((row) => {
+        const value = String(
+          read(row, "status", "delivery_status"),
+        ).toLowerCase();
+        return value.includes("transit") || value.includes("dispatch");
+      }),
     ),
-
-    partiallyDelivered: getKpiValue(
+    delivered: getCount(
+      kpi,
+      ["delivered", "delivered_count"],
+      fallbackCount(
+        (row) =>
+          String(read(row, "status", "delivery_status"))
+            .toLowerCase()
+            .includes("deliver") &&
+          !String(read(row, "status", "delivery_status"))
+            .toLowerCase()
+            .includes("partial"),
+      ),
+    ),
+    partiallyDelivered: getCount(
       kpi,
       ["partially_delivered", "partial_deliveries", "partial"],
-      getStatusCount("Partially"),
+      fallbackCount((row) =>
+        String(read(row, "status", "delivery_status"))
+          .toLowerCase()
+          .includes("partial"),
+      ),
     ),
-
-    delivered: getKpiValue(
+    cancelled: getCount(
       kpi,
-      ["delivered", "delivered_deliveries"],
-      getStatusCount("Delivered"),
+      ["cancelled", "cancelled_count"],
+      fallbackCount((row) =>
+        String(read(row, "status", "delivery_status"))
+          .toLowerCase()
+          .includes("cancel"),
+      ),
     ),
-
-    deliveryValue: formattedDeliveryValue,
   });
 
-  /* =======================================================
-     DATE HANDLERS
-  ======================================================= */
-
-  const handleStartDateChange = (e) => {
-    const value = e.target.value;
-
-    setDateFilterChanged(true);
-
-    if (!value) {
-      setStartDate("");
-      setCurrentPage(1);
-      return;
-    }
-
-    setStartDate(value);
-    setCurrentPage(1);
-
-    if (endDate && value > endDate) {
-      setEndDate(value);
-    }
-  };
-
-  const handleEndDateChange = (e) => {
-    const value = e.target.value;
-
-    setDateFilterChanged(true);
-
-    if (!value) {
-      setEndDate("");
-      setCurrentPage(1);
-      return;
-    }
-
-    if (startDate && value < startDate) {
-      return;
-    }
-
-    setEndDate(value);
-    setCurrentPage(1);
-  };
-
-  /* =======================================================
-     EXPORT
-  ======================================================= */
-
   const handleExport = () => {
-    console.log("Export Delivery Notes", {
-      startDate,
-      endDate,
-      search,
-      status,
-      customer,
-    });
+    const headers = [
+      "DN No",
+      "Customer",
+      "Order Ref",
+      "Dispatch Date",
+      "Delivery Date",
+      "Warehouse",
+      "Items",
+      "Delivery Type",
+      "Status",
+    ];
+    const csvRows = rows.map((row) => [
+      read(row, "delivery_note_number", "deliveryNoteNumber"),
+      typeof row.customer === "object"
+        ? read(row.customer, "name", "customer_name")
+        : read(row, "customer", "customer_name"),
+      read(
+        row,
+        "sales_order_reference",
+        "salesOrderReference",
+        "order_reference",
+      ),
+      read(row, "dispatch_date", "dispatchDate"),
+      read(
+        row,
+        "expected_delivery_date",
+        "expectedDeliveryDate",
+        "delivery_date",
+      ),
+      read(row, "warehouse_name", "warehouse", "dispatch_location"),
+      `${read(row, "delivered_quantity", "total_delivered", "already_delivered") || 0}/${read(row, "ordered_quantity", "total_ordered", "ordered_qty") || 0}`,
+      read(row, "delivery_type", "deliveryType"),
+      read(row, "status", "delivery_status"),
+    ]);
+    const csv = [headers, ...csvRows]
+      .map((line) =>
+        line
+          .map((value) => `"${String(value ?? "").replace(/"/g, '""')}"`)
+          .join(","),
+      )
+      .join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "delivery-notes.csv";
+    link.click();
+    URL.revokeObjectURL(url);
   };
 
-  /* =======================================================
-     TABLE COLUMNS
-  ======================================================= */
-
-  const tableColumns = useMemo(
-    () => salesOrderColumns(handleDelete),
+  const columns = useMemo(
+    () => deliveryNoteColumns(handleDelete),
     [handleDelete],
   );
 
-  /* =======================================================
-     RENDER
-  ======================================================= */
+  const clearFilters = () => {
+    setSearch("");
+    setStatus("");
+    setCustomer("");
+    setWarehouse("");
+    setDateFilterChanged(false);
+    setStartDate(currentMonth.start);
+    setEndDate(currentMonth.end);
+    setCurrentPage(1);
+  };
 
   return (
-    <div
-      style={{
-        padding: 20,
-      }}
-    >
+    <div style={{ padding: 20 }}>
       <ReusableHeader
         title="Delivery Notes"
         breadcrumbs={["Sales", "Delivery Notes"]}
-        buttonText="+ CREATE DELIVERY NOTE"
+        buttonText="+ Create Delivery Note"
         onButtonClick={() => navigate("add")}
       >
         <ExportButton type="button" onClick={handleExport}>
           <FiDownload />
-
           <span>Export</span>
         </ExportButton>
-
         <DateRangeWrapper>
           <DatePickerContainer>
             <DateInput
               type="date"
               value={startDate}
-              onChange={handleStartDateChange}
               max={endDate || undefined}
+              onChange={(event) => {
+                setStartDate(event.target.value);
+                setDateFilterChanged(true);
+                setCurrentPage(1);
+              }}
               aria-label="Start date"
             />
-
             <DateSeparator>-</DateSeparator>
-
             <DateInput
               type="date"
               value={endDate}
-              onChange={handleEndDateChange}
               min={startDate || undefined}
+              onChange={(event) => {
+                setEndDate(event.target.value);
+                setDateFilterChanged(true);
+                setCurrentPage(1);
+              }}
               aria-label="End date"
             />
           </DatePickerContainer>
@@ -453,81 +323,45 @@ const DeliveryNotes = () => {
           setSearch(value);
           setCurrentPage(1);
         }}
-        searchPlaceholder="Search Delivery Note"
+        searchPlaceholder="Search"
         showSearch
         status={status}
-        statuses={["Delivered", "Partially", "Pending", "Dispatched"]}
+        statuses={[
+          "Draft",
+          "In Transit",
+          "Dispatched",
+          "Delivered",
+          "Partially Delivered",
+          "Cancelled",
+        ]}
         onStatus={(value) => {
           setStatus(value);
           setCurrentPage(1);
         }}
         showStatus
         filters={[
+          
           {
-            key: "customer",
-
-            value: customer,
-
+            key: "warehouse",
+            value: warehouse,
             onChange: (value) => {
-              setCustomer(value);
+              setWarehouse(value);
               setCurrentPage(1);
             },
-
-            options: [
-              {
-                label: "ABC Trading",
-                value: "ABC Trading",
-              },
-              {
-                label: "Riyadh Tech",
-                value: "Riyadh Tech",
-              },
-              {
-                label: "Al Noor Company",
-                value: "Al Noor Company",
-              },
-              {
-                label: "Saudi Solutions",
-                value: "Saudi Solutions",
-              },
-            ],
-
-            placeholder: "All Customer",
+            options: warehouseOptions,
+            placeholder: "All Warehouse",
           },
         ]}
-        showFilterButton
-        filterButtonText="Filter"
-        onFilterClick={() => {
-          setCurrentPage(1);
-          loadDeliveryNotes();
-        }}
+        
       />
 
-      {loading && (
-        <div
-          style={{
-            padding: 20,
-          }}
-        >
-          Loading delivery notes...
-        </div>
-      )}
-
+      {loading && <div style={{ padding: 20 }}>Loading delivery notes...</div>}
       {error && (
-        <div
-          style={{
-            padding: 20,
-            color: "red",
-          }}
-        >
+        <div style={{ padding: 20, color: "red" }}>
           {typeof error === "string" ? error : "Failed to load delivery notes"}
         </div>
       )}
-
-      {!loading && (
-        <ReusableTable columns={tableColumns} data={normalizedRows} />
-      )}
-
+      {!loading && <ReusableTable columns={columns} data={rows} />}
       <ReusablePagination
         currentPage={currentPage}
         totalPages={Math.max(

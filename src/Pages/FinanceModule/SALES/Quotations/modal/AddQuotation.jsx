@@ -1,1018 +1,1046 @@
-import React, { useState, useEffect } from "react";
-import { useParams, useNavigate, useLocation } from "react-router-dom";
-import { FiChevronDown, FiPlus, FiX, FiUpload, FiEdit3 } from "react-icons/fi";
+import React, { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import { FiChevronDown, FiPlus, FiX, FiLock } from "react-icons/fi";
+
+import ReusableHeader from "../../../../../Components/ReusableTable/ReusableHeader";
+import { createQuotation } from "../../../../../Redux/quotationThunks";
 
 import {
-  InvoiceContainer as OrderContainer,
-  InvoiceForm as OrderForm,
+  getCustomers,
+  selectCustomers,
+} from "../../../../../Redux/finance/Sales/CustomerSlice";
+
+import {
+  getProducts,
+  selectProducts,
+} from "../../../../../Redux/finance/Product/ProductSlice";
+
+// Adjust this import path to your actual companySlice location.
+import { getCompanySelf } from "../../../../../Redux/companySlice";
+
+import {
+  PageWrapper,
+  FormBody,
   SectionTitle,
   FormGrid,
   FormGroup,
   Label,
   Input,
-  SelectWrapper,
+  SelectWrap,
   Select,
-  CalendarInput,
-  InvoiceItemsHeader as OrderItemsHeader,
+  ItemsHeader,
   AddItemButton,
-  InvoiceTableWrapper as OrderTableWrapper,
-  InvoiceTable as OrderTable,
+  TableWrap,
+  ItemsTable,
   DeleteButton,
-  PaymentSection,
-  PaymentLeft,
-  PaymentGrid,
-  PaymentRight,
+  BottomSection,
+  NotesBlock,
+  Summary,
   SummaryRow,
-  TotalAmount,
-  ButtonWrapper,
-  CancelButton,
-  PreviewButton,
+  DiscountInput,
+  TotalBar,
+  Footer,
+  LockNote,
+  Actions,
+  OutlineButton,
+  PrimaryButton,
+  ErrorMessage,
+  Required,
 } from "./AddQuotation.style";
-import ReusableHeader from "../../../../../Components/ReusableTable/ReusableHeader";
-import { getOrderById } from "../SalesOrders.columns";
 
-const defaultItem = () => ({
-  id: Date.now(),
-  slNo: "01",
-  service: "",
-  particular: "",
-  qty: "",
-  hsCode: "",
-  rate: "",
-  vat: "",
-  vatAmount: "",
-  amount: "",
-});
+// Where to go after a successful save.
+const QUOTATIONS_LIST_PATH = "/sales/quotations";
 
-const emptyForm = {
-  orderNumber: "",
-  soNumber: "",
-  orderStatus: "",
-  paymentTerms: "",
-  warehouse: "",
-  from: { name: "", address: "", phone: "", email: "" },
-  billTo: { client: "", address: "", phone: "", email: "" },
-  payment: { accountHolder: "", accountNumber: "", iban: "" },
-  summary: { subTotal: "", vat: "", discount: "", roundOff: "", total: "" },
-  items: [defaultItem()],
+const todayLocal = () => {
+  const now = new Date();
+  const offset = now.getTimezoneOffset();
+
+  return new Date(now.getTime() - offset * 60000)
+    .toISOString()
+    .slice(0, 10);
 };
 
-// Bridges the flat mock row shape (SalesOrders.columns.jsx) into the
-// nested shape this form works with. Swap out once a real
-// "get order detail by id" endpoint exists — items/from/payment
-// currently have no source data and are left at defaults. Fields like
-// so_number, due_date, payment_terms, warehouse aren't in the mock data
-// yet, so they'll come back blank until salesOrderData includes them.
-const mapRowToFormData = (row) => ({
-  orderNumber: row.order_number || "",
-  soNumber: row.so_number || "",
-  orderDate: row.order_date || "",
-  deliveryDate: row.delivery_date || "",
-  dueDate: row.due_date || "",
-  paymentTerms: row.payment_terms || "",
-  warehouse: row.warehouse || "",
-  orderStatus: (row.status || "").toLowerCase(),
-  from: emptyForm.from,
-  billTo: { ...emptyForm.billTo, client: row.customer || "" },
-  payment: emptyForm.payment,
-  summary: {
-    ...emptyForm.summary,
-    subTotal: row.amount || "",
-    total: row.amount || "",
-  },
-  items: [defaultItem()],
+const makeItem = () => ({
+  id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+  productId: "",
+  service: "",
+  description: "",
+  quantity: "1",
+  hsCode: "",
+  rate: "",
+  vatRate: "",
 });
 
-const AddingOrder = ({ mode = "order", onCancel, onPreview }) => {
-  const { id } = useParams();
+const STATUS_API = {
+  Draft: "draft",
+  Pending: "pending",
+  Approved: "approved",
+  Rejected: "rejected",
+};
+
+const money = (value) =>
+  `SAR ${Number(value || 0).toLocaleString("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
+
+const getErrorMessage = (err) => {
+  if (!err) return "";
+
+  if (typeof err === "string") return err;
+
+  if (err.detail || err.message) {
+    return err.detail || err.message;
+  }
+
+  if (typeof err === "object") {
+    const errorText = Object.values(err)
+      .flat()
+      .filter((value) => typeof value === "string")
+      .join(" ");
+
+    if (errorText) return errorText;
+  }
+
+  return "Something went wrong saving this quotation.";
+};
+
+// Customer field readers
+const customerName = (customer) =>
+  customer?.name ||
+  customer?.customer_name ||
+  customer?.company_name ||
+  `Customer #${customer?.id}`;
+
+const customerAddress = (customer) =>
+  customer?.address ||
+  customer?.billing_address ||
+  customer?.customer_address ||
+  "";
+
+const customerPhone = (customer) =>
+  customer?.phno ||
+  customer?.phone ||
+  customer?.phone_number ||
+  customer?.mobile ||
+  customer?.contact_number ||
+  "";
+
+const customerEmail = (customer) =>
+  customer?.financial_email ||
+  customer?.finance_email ||
+  customer?.finance_contact_email ||
+  customer?.email ||
+  "";
+
+// Product field readers
+const productName = (product) =>
+  product?.name ||
+  product?.product_name ||
+  product?.title ||
+  `Product #${product?.id}`;
+
+const productDescription = (product) =>
+  product?.description || "";
+
+const productHsCode = (product) =>
+  product?.hs_code ||
+  product?.hsn_code ||
+  product?.hsn ||
+  "";
+
+const productRate = (product) =>
+  product?.selling_price ??
+  product?.sale_price ??
+  product?.unit_price ??
+  product?.price ??
+  product?.rate ??
+  "";
+
+const productVat = (product) =>
+  product?.vat_rate ??
+  product?.vat ??
+  product?.tax_rate ??
+  product?.gst ??
+  "";
+
+const AddQuotation = ({ onCancel, onClose }) => {
   const navigate = useNavigate();
-  const location = useLocation();
-  const isQuoteMode = mode === "quotation";
-  const isEditMode = Boolean(id) && !isQuoteMode;
-  const today = new Date().toISOString().split("T")[0];
+  const dispatch = useDispatch();
 
-  // Prefer the row passed via navigate() state (fast path, no lookup).
-  // Fall back to the mock-data lookup for direct links/page refreshes,
-  // where location.state is empty.
-  const existingRow = isEditMode
-    ? location.state?.orderData || getOrderById(id)
-    : null;
+  const today = todayLocal();
 
-  const initialData = existingRow ? mapRowToFormData(existingRow) : null;
-  const notFound = isEditMode && !existingRow;
+  // Redux data
+  const customers = useSelector(selectCustomers);
+  const products = useSelector(selectProducts);
 
-  const [orderNumber, setOrderNumber] = useState(
-    initialData?.orderNumber || "",
-  );
-  const [soNumber, setSoNumber] = useState(initialData?.soNumber || "");
-  const [orderDate, setOrderDate] = useState(initialData?.orderDate || today);
-  const [deliveryDate, setDeliveryDate] = useState(
-    initialData?.deliveryDate || "",
-  );
-  const [dueDate, setDueDate] = useState(initialData?.dueDate || "");
-  const [paymentTerms, setPaymentTerms] = useState(
-    initialData?.paymentTerms || "",
-  );
-  const [warehouse, setWarehouse] = useState(initialData?.warehouse || "");
-  const [orderStatus, setOrderStatus] = useState(
-    initialData?.orderStatus || "",
-  );
-  const [from, setFrom] = useState(initialData?.from || emptyForm.from);
-  const [billTo, setBillTo] = useState(initialData?.billTo || emptyForm.billTo);
-  const [payment, setPayment] = useState(
-    initialData?.payment || emptyForm.payment,
-  );
-  const [summary, setSummary] = useState(
-    initialData?.summary || emptyForm.summary,
-  );
-  const [items, setItems] = useState(initialData?.items || [defaultItem()]);
+  // Company details from company-self API
+  const company = useSelector((state) => state.company.company);
 
-  // Re-sync if the :id param changes while this component stays mounted
+  const handleCancel =
+    onCancel || onClose || (() => navigate(-1));
+
+  const [quotationDate, setQuotationDate] = useState(today);
+  const [dueDate, setDueDate] = useState(today);
+  const [paymentStatus, setPaymentStatus] = useState("Draft");
+
+  // FROM details will be populated from company-self API
+  const [from, setFrom] = useState({
+    name: "",
+    address: "",
+    phone: "",
+    email: "",
+  });
+
+  const [billTo, setBillTo] = useState({
+    customerId: "",
+    client: "",
+    address: "",
+    phno: "",
+    financial_email: "",
+  });
+
+  const [items, setItems] = useState([
+    makeItem(),
+    makeItem(),
+  ]);
+
+  const [discount, setDiscount] = useState("0");
+
+  const [notes, setNotes] = useState(
+    "Above information is not an invoice and only an estimate of services.\nPLEASE CONFIRM YOUR ACCEPTANCE OF THIS QUOTE"
+  );
+
+  const [error, setError] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
+
+  // Load company, customer and product data
   useEffect(() => {
-    if (existingRow) {
-      const mapped = mapRowToFormData(existingRow);
-      setOrderNumber(mapped.orderNumber);
-      setSoNumber(mapped.soNumber);
-      setOrderDate(mapped.orderDate);
-      setDeliveryDate(mapped.deliveryDate);
-      setDueDate(mapped.dueDate);
-      setPaymentTerms(mapped.paymentTerms);
-      setWarehouse(mapped.warehouse);
-      setOrderStatus(mapped.orderStatus);
-      setFrom(mapped.from);
-      setBillTo(mapped.billTo);
-      setPayment(mapped.payment);
-      setSummary(mapped.summary);
-      setItems(mapped.items);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id]);
+    dispatch(getCompanySelf());
+    dispatch(getCustomers({ page_size: 1000 }));
+    dispatch(getProducts({ page_size: 1000 }));
+  }, [dispatch]);
 
+  // Populate FROM details when company API returns
+  useEffect(() => {
+    if (company) {
+      setFrom({
+        name: company.name || "",
+        address: company.address || "",
+        phone: company.contact_number || "",
+        email: company.email || "",
+      });
+    }
+  }, [company]);
+
+  // Calculate totals
+  const totals = useMemo(() => {
+    const subtotal = items.reduce(
+      (sum, item) =>
+        sum +
+        (Number(item.quantity) || 0) *
+          (Number(item.rate) || 0),
+      0
+    );
+
+    const vat = items.reduce((sum, item) => {
+      const amount =
+        (Number(item.quantity) || 0) *
+        (Number(item.rate) || 0);
+
+      return (
+        sum +
+        (amount * (Number(item.vatRate) || 0)) / 100
+      );
+    }, 0);
+
+    const discountValue = Math.max(
+      0,
+      Number(discount) || 0
+    );
+
+    const total = Math.max(
+      0,
+      subtotal + vat - discountValue
+    );
+
+    return {
+      subtotal,
+      vat,
+      discount: discountValue,
+      total,
+    };
+  }, [items, discount]);
+
+  // Update quotation item
+  const updateItem = (id, field, value) => {
+    setItems((current) =>
+      current.map((item) =>
+        item.id === id
+          ? { ...item, [field]: value }
+          : item
+      )
+    );
+  };
+
+  // Add new item
   const addItem = () => {
-    setItems((prev) => [
-      ...prev,
-      {
-        id: Date.now(),
-        slNo: String(prev.length + 1).padStart(2, "0"),
-        service: "",
-        particular: "",
-        qty: "",
-        hsCode: "",
-        rate: "",
-        vat: "",
-        vatAmount: "",
-        amount: "",
-      },
+    setItems((current) => [
+      ...current,
+      makeItem(),
     ]);
   };
 
-  const removeItem = (itemId) => {
-    setItems((prev) => prev.filter((item) => item.id !== itemId));
-  };
-
-  const updateItem = (itemId, field, value) => {
-    setItems((prev) =>
-      prev.map((item) =>
-        item.id === itemId ? { ...item, [field]: value } : item,
-      ),
+  // Remove item
+  const removeItem = (id) => {
+    setItems((current) =>
+      current.length === 1
+        ? current
+        : current.filter((item) => item.id !== id)
     );
   };
 
-  const handleCancel = () => {
-    if (onCancel) {
-      onCancel();
-      return;
-    }
+  // Selecting a customer fills BILL TO details
+  const handleCustomerChange = (e) => {
+    const customerId = e.target.value;
 
-    navigate("/sales/orders");
-  };
-
-  const handleSave = () => {
-    const payload = {
-      ...(isEditMode ? { id } : {}),
-      orderNumber,
-      soNumber,
-      orderDate,
-      deliveryDate,
-      dueDate,
-      paymentTerms,
-      warehouse,
-      orderStatus,
-      from,
-      billTo,
-      payment,
-      summary,
-      items,
-    };
-
-    if (isQuoteMode && onPreview) {
-      onPreview(payload);
-      return;
-    }
-
-    // TODO: POST for create, PATCH/PUT for update, against your real API
-    console.log(isEditMode ? "Update order:" : "Create order:", payload);
-    navigate("/sales/orders");
-  };
-
-  if (notFound) {
-    return (
-      <OrderContainer>
-        <ReusableHeader
-          title="Order not found"
-          breadcrumbs={["Sales", "Orders"]}
-          showBack
-          onBack={() => navigate("/sales/orders")}
-        />
-        <div style={{ padding: 20 }}>
-          No order found for id "{id}".{" "}
-          <button onClick={handleCancel}>Back to Orders</button>
-        </div>
-      </OrderContainer>
+    const selected = customers.find(
+      (customer) =>
+        String(customer.id) === String(customerId)
     );
-  }
+
+    setBillTo({
+      customerId: selected?.id ?? "",
+      client: selected ? customerName(selected) : "",
+      address: selected ? customerAddress(selected) : "",
+      phno: selected ? customerPhone(selected) : "",
+      financial_email: selected
+        ? customerEmail(selected)
+        : "",
+    });
+  };
+
+  // Selecting a product fills the item row
+  const handleProductChange = (itemId, productId) => {
+    const selected = products.find(
+      (product) =>
+        String(product.id) === String(productId)
+    );
+
+    setItems((current) =>
+      current.map((item) => {
+        if (item.id !== itemId) return item;
+
+        if (!selected) {
+          return {
+            ...item,
+            productId: "",
+            service: "",
+            description: "",
+            hsCode: "",
+            rate: "",
+          };
+        }
+
+        const vat = productVat(selected);
+        const rate = productRate(selected);
+
+        return {
+          ...item,
+          productId: selected.id,
+          service: productName(selected),
+          description: productDescription(selected),
+          hsCode: productHsCode(selected),
+          rate: rate === "" ? "" : String(rate),
+          vatRate:
+            vat === "" ? item.vatRate : String(vat),
+        };
+      })
+    );
+  };
+
+  // Validate quotation form
+  const validate = () => {
+    const validItems = items.filter(
+      (item) =>
+        item.service.trim() ||
+        item.description.trim() ||
+        (
+          Number(item.quantity) > 0 &&
+          Number(item.rate) >= 0 &&
+          item.rate !== ""
+        )
+    );
+
+    if (!billTo.customerId) {
+      setError("Please select a customer.");
+      return null;
+    }
+
+    if (!validItems.length) {
+      setError("Please add at least one quotation item.");
+      return null;
+    }
+
+    if (
+      !quotationDate ||
+      !dueDate ||
+      dueDate < quotationDate
+    ) {
+      setError(
+        "Please select a valid quotation date and valid-till date."
+      );
+      return null;
+    }
+
+    setError("");
+    return validItems;
+  };
+
+  // Build API payload
+  const buildPayload = (validItems, status) => ({
+    customer: billTo.customerId,
+
+    issue_date: quotationDate,
+    valid_till: dueDate,
+
+    status:
+      STATUS_API[status] ||
+      String(status).toLowerCase(),
+
+    // Company details from company-self API
+    from_company_name: from.name,
+    from_address: from.address,
+    from_phone_number: from.phone,
+    from_email: from.email,
+
+    // Customer details
+    bill_to_name: billTo.client,
+    bill_to_address: billTo.address,
+    bill_to_phone: billTo.phno,
+    finance_contact_email: billTo.financial_email,
+
+    discount: totals.discount,
+    round_off: 0,
+    notes,
+
+    items: validItems.map((item) => ({
+      ...(item.productId
+        ? { product: item.productId }
+        : {}),
+
+      service_name:
+        item.service || item.description,
+
+      description:
+        item.description || item.service,
+
+      quantity: Number(item.quantity) || 1,
+      hs_code: item.hsCode || "",
+      rate: Number(item.rate) || 0,
+      vat_percentage: Number(item.vatRate) || 0,
+    })),
+  });
+
+  // Save quotation
+  const saveQuotation = async (status) => {
+    if (isSaving) return;
+
+    const validItems = validate();
+
+    if (!validItems) return;
+
+    setIsSaving(true);
+
+    try {
+      await dispatch(
+        createQuotation(
+          buildPayload(validItems, status)
+        )
+      ).unwrap();
+
+      navigate(QUOTATIONS_LIST_PATH);
+    } catch (err) {
+      setError(getErrorMessage(err));
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleSaveDraft = () =>
+    saveQuotation("Draft");
+
+  const handleSend = () =>
+    saveQuotation("Pending");
+
+  // Download quotation as CSV
+  const handleDownload = () => {
+    const validItems = validate();
+
+    if (!validItems) return;
+
+    const rows = [
+      ["Quotation Number", "Auto-generated on save"],
+      ["Quotation Date", quotationDate],
+      ["Valid Till", dueDate],
+      ["From", from.name],
+      ["Bill To", billTo.client],
+      [],
+      [
+        "SL No",
+        "Product",
+        "Description",
+        "Qty",
+        "HS Code",
+        "Rate",
+        "VAT %",
+        "VAT",
+        "Amount",
+      ],
+      ...validItems.map((item, index) => {
+        const amount =
+          (Number(item.quantity) || 0) *
+          (Number(item.rate) || 0);
+
+        const vatAmount =
+          (amount * (Number(item.vatRate) || 0)) / 100;
+
+        return [
+          index + 1,
+          item.service,
+          item.description,
+          item.quantity,
+          item.hsCode,
+          item.rate,
+          item.vatRate,
+          vatAmount.toFixed(2),
+          amount.toFixed(2),
+        ];
+      }),
+      [],
+      ["Sub Total", totals.subtotal.toFixed(2)],
+      ["Total VAT", totals.vat.toFixed(2)],
+      ["Discount", totals.discount.toFixed(2)],
+      ["Total Amount", totals.total.toFixed(2)],
+    ];
+
+    const csv = rows
+      .map((row) =>
+        row
+          .map(
+            (value) =>
+              `"${String(value ?? "").replace(/"/g, '""')}"`
+          )
+          .join(",")
+      )
+      .join("\n");
+
+    const url = URL.createObjectURL(
+      new Blob([csv], {
+        type: "text/csv;charset=utf-8;",
+      })
+    );
+
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "quotation.csv";
+    link.click();
+
+    URL.revokeObjectURL(url);
+  };
 
   return (
-    <OrderContainer>
+    <PageWrapper>
       <ReusableHeader
-        title={
-          isQuoteMode
-            ? "Generate New Quotation"
-            : isEditMode
-              ? "Edit Sales Order"
-              : "Generate New Sales Order"
-        }
-        breadcrumbs={
-          isQuoteMode
-            ? ["Dashboard", "Sales", "Quotations"]
-            : ["Sales", "Orders"]
-        }
-        showBack={!isQuoteMode}
-        onBack={() => navigate("/sales/orders")}
-      ></ReusableHeader>
+        title="Generate New Quotation"
+        breadcrumbs={["Sales", "Quotations"]}
+        showBack
+        onBack={handleCancel}
+      />
 
-      <OrderForm>
-        {isQuoteMode ? (
-          <>
-            <FormGrid>
-              <FormGroup>
-                <Label>QUOTATION NUMBER</Label>
-                <Input
-                  placeholder="INV001"
-                  value={orderNumber || "INV001"}
-                  onChange={(e) => setOrderNumber(e.target.value)}
-                />
-              </FormGroup>
+      <FormBody>
+        <FormGrid>
+          {/* QUOTATION NUMBER */}
+          <FormGroup>
+            <Label>QUOTATION NUMBER</Label>
 
-              <FormGroup>
-                <Label>QUOTATION DATE</Label>
-                <CalendarInput>
-                  <Input
-                    type="date"
-                    value={orderDate || today}
-                    onChange={(e) => setOrderDate(e.target.value)}
-                  />
-                </CalendarInput>
-              </FormGroup>
+            <Input
+              placeholder="Auto-generated"
+              value=""
+              readOnly
+              style={{
+                background: "#f5f5f5",
+                cursor: "not-allowed",
+              }}
+            />
+          </FormGroup>
 
-              <FormGroup>
-                <Label>DUE DATE</Label>
-                <CalendarInput>
-                  <Input
-                    type="date"
-                    value={dueDate || today}
-                    min={orderDate || today}
-                    onChange={(e) => setDueDate(e.target.value)}
-                  />
-                </CalendarInput>
-              </FormGroup>
+          {/* QUOTATION DATE */}
+          <FormGroup>
+            <Label>QUOTATION DATE</Label>
 
-              <FormGroup>
-                <Label>STATUS</Label>
-                <SelectWrapper>
-                  <Select
-                    value={orderStatus || "Draft"}
-                    onChange={(e) => setOrderStatus(e.target.value)}
+            <Input
+              type="date"
+              value={quotationDate}
+              onChange={(e) =>
+                setQuotationDate(e.target.value)
+              }
+            />
+          </FormGroup>
+
+          {/* VALID TILL */}
+          <FormGroup>
+            <Label>
+              VALID TILL <Required>*</Required>
+            </Label>
+
+            <Input
+              type="date"
+              min={quotationDate}
+              value={dueDate}
+              onChange={(e) =>
+                setDueDate(e.target.value)
+              }
+            />
+          </FormGroup>
+
+          {/* STATUS */}
+          <FormGroup>
+            <Label>STATUS</Label>
+
+            <SelectWrap>
+              <Select
+                value={paymentStatus}
+                onChange={(e) =>
+                  setPaymentStatus(e.target.value)
+                }
+              >
+                <option value="Draft">Draft</option>
+                <option value="Pending">Pending</option>
+                <option value="Approved">Approved</option>
+                <option value="Rejected">Rejected</option>
+              </Select>
+
+              <FiChevronDown />
+            </SelectWrap>
+          </FormGroup>
+
+          {/* FROM - COMPANY DETAILS */}
+          <FormGroup>
+            <Label>FROM</Label>
+
+            <Input
+              placeholder="Company Name"
+              value={from.name}
+              onChange={(e) =>
+                setFrom({
+                  ...from,
+                  name: e.target.value,
+                })
+              }
+            />
+          </FormGroup>
+
+          <FormGroup>
+            <Label>ADDRESS</Label>
+
+            <Input
+              placeholder="Company Address"
+              value={from.address}
+              onChange={(e) =>
+                setFrom({
+                  ...from,
+                  address: e.target.value,
+                })
+              }
+            />
+          </FormGroup>
+
+          <FormGroup>
+            <Label>PHONE NUMBER</Label>
+
+            <Input
+              placeholder="Company Phone Number"
+              value={from.phone}
+              onChange={(e) =>
+                setFrom({
+                  ...from,
+                  phone: e.target.value,
+                })
+              }
+            />
+          </FormGroup>
+
+          <FormGroup>
+            <Label>EMAIL ID</Label>
+
+            <Input
+              type="email"
+              placeholder="Company Email"
+              value={from.email}
+              onChange={(e) =>
+                setFrom({
+                  ...from,
+                  email: e.target.value,
+                })
+              }
+            />
+          </FormGroup>
+
+          {/* BILL TO */}
+          <FormGroup>
+            <Label>
+              BILL TO <Required>*</Required>
+            </Label>
+
+            <SelectWrap>
+              <Select
+                value={billTo.customerId}
+                onChange={handleCustomerChange}
+              >
+                <option value="">Select Customer</option>
+
+                {customers.map((customer) => (
+                  <option
+                    key={customer.id}
+                    value={customer.id}
                   >
-                    <option value="Draft">Draft</option>
-                    <option value="Approved">Approved</option>
-                    <option value="Pending">Pending</option>
-                    <option value="Rejected">Rejected</option>
-                  </Select>
-                  <FiChevronDown />
-                </SelectWrapper>
-              </FormGroup>
+                    {customerName(customer)}
+                  </option>
+                ))}
+              </Select>
 
-              <FormGroup>
-                <Label>FROM</Label>
-                <Input
-                  placeholder="TUNGSTON LABS"
-                  value={from.name || "TUNGSTON LABS"}
-                  onChange={(e) => setFrom({ ...from, name: e.target.value })}
-                />
-              </FormGroup>
+              <FiChevronDown />
+            </SelectWrap>
+          </FormGroup>
 
-              <FormGroup>
-                <Label>ADDRESS</Label>
-                <Input
-                  placeholder="Tungston Labs, Ullampilly Building,..."
-                  value={
-                    from.address || "Tungston Labs, Ullampilly Building,..."
-                  }
-                  onChange={(e) =>
-                    setFrom({ ...from, address: e.target.value })
-                  }
-                />
-              </FormGroup>
+          <FormGroup>
+            <Label>ADDRESS</Label>
 
-              <FormGroup>
-                <Label>PHONE NUMBER</Label>
-                <Input
-                  placeholder="+91 97783 77526"
-                  value={from.phone || "+91 97783 77526"}
-                  onChange={(e) => setFrom({ ...from, phone: e.target.value })}
-                />
-              </FormGroup>
+            <Input
+              value={billTo.address}
+              onChange={(e) =>
+                setBillTo({
+                  ...billTo,
+                  address: e.target.value,
+                })
+              }
+              placeholder="Company/Client ADDRESS"
+            />
+          </FormGroup>
 
-              <FormGroup>
-                <Label>EMAIL ID</Label>
-                <Input
-                  placeholder="info@tungstonlabs.com"
-                  value={from.email || "info@tungstonlabs.com"}
-                  onChange={(e) => setFrom({ ...from, email: e.target.value })}
-                />
-              </FormGroup>
+          <FormGroup>
+            <Label>PHONE NUMBER</Label>
 
-              <FormGroup>
-                <Label>BILL TO</Label>
-                <SelectWrapper>
-                  <Select
-                    value={billTo.client || ""}
-                    onChange={(e) =>
-                      setBillTo({ ...billTo, client: e.target.value })
-                    }
-                  >
-                    <option value="">Company/Client Name</option>
-                    <option value="client1">ABC Company</option>
-                    <option value="client2">XYZ Company</option>
-                  </Select>
-                  <FiChevronDown />
-                </SelectWrapper>
-              </FormGroup>
+            <Input
+              value={billTo.phno || ""}
+              onChange={(e) =>
+                setBillTo({
+                  ...billTo,
+                  phno: e.target.value,
+                })
+              }
+              placeholder="Company/Client Phone Number"
+            />
+          </FormGroup>
 
-              <FormGroup>
-                <Label>ADDRESS</Label>
-                <Input
-                  placeholder="Company/Client Address"
-                  value={billTo.address || ""}
-                  onChange={(e) =>
-                    setBillTo({ ...billTo, address: e.target.value })
-                  }
-                />
-              </FormGroup>
+          <FormGroup>
+            <Label>FINANCE CONTACT EMAIL</Label>
 
-              <FormGroup>
-                <Label>PHONE NUMBER</Label>
-                <Input
-                  placeholder="Company/Client Phone Number"
-                  value={billTo.phone || ""}
-                  onChange={(e) =>
-                    setBillTo({ ...billTo, phone: e.target.value })
-                  }
-                />
-              </FormGroup>
+            <Input
+              type="email"
+              value={billTo.financial_email || ""}
+              onChange={(e) =>
+                setBillTo({
+                  ...billTo,
+                  financial_email: e.target.value,
+                })
+              }
+              placeholder="Company/Client Email ID"
+            />
+          </FormGroup>
+        </FormGrid>
 
-              <FormGroup>
-                <Label>Finance Contact Email</Label>
-                <SelectWrapper>
-                  <Select
-                    value={billTo.email || ""}
-                    onChange={(e) =>
-                      setBillTo({ ...billTo, email: e.target.value })
-                    }
-                  >
-                    <option value="">Company/Client Email ID</option>
-                    <option value="finance@client.com">
-                      finance@client.com
-                    </option>
-                    <option value="accounts@client.com">
-                      accounts@client.com
-                    </option>
-                  </Select>
-                  <FiChevronDown />
-                </SelectWrapper>
-              </FormGroup>
-            </FormGrid>
+        {/* QUOTATION ITEMS */}
+        <ItemsHeader>
+          <SectionTitle>QUOTATION ITEMS</SectionTitle>
 
-            <OrderItemsHeader>
-              <SectionTitle>QUOTATION ITEMS</SectionTitle>
-              <AddItemButton onClick={addItem}>
-                <FiPlus />
-                ADD ITEM
-              </AddItemButton>
-            </OrderItemsHeader>
+          <AddItemButton
+            type="button"
+            onClick={addItem}
+          >
+            <FiPlus />
+            ADD ITEM
+          </AddItemButton>
+        </ItemsHeader>
 
-            <OrderTableWrapper>
-              <OrderTable>
-                <thead>
-                  <tr>
-                    <th>SL No</th>
-                    <th>Service</th>
-                    <th>Description</th>
-                    <th>QTY</th>
-                    <th>HS Code</th>
-                    <th>Rate</th>
-                    <th>VAT (%)</th>
-                    <th>VAT (SAR)</th>
-                    <th>Amount</th>
-                    <th>Action</th>
+        <TableWrap>
+          <ItemsTable>
+            <thead>
+              <tr>
+                <th>SL No</th>
+                <th>Product</th>
+                <th>Description</th>
+                <th>QTY</th>
+                <th>HS Code</th>
+                <th>Rate</th>
+                <th>VAT (%)</th>
+                <th>VAT (SAR)</th>
+                <th>Amount</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {items.map((item, index) => {
+                const amount =
+                  (Number(item.quantity) || 0) *
+                  (Number(item.rate) || 0);
+
+                const vatAmount =
+                  (amount *
+                    (Number(item.vatRate) || 0)) /
+                  100;
+
+                return (
+                  <tr key={item.id}>
+                    <td>
+                      {String(index + 1).padStart(2, "0")}
+                    </td>
+
+                    <td>
+                      <select
+                        aria-label="Product"
+                        value={item.productId}
+                        onChange={(e) =>
+                          handleProductChange(
+                            item.id,
+                            e.target.value
+                          )
+                        }
+                      >
+                        <option value="">
+                          Select product
+                        </option>
+
+                        {products.map((product) => (
+                          <option
+                            key={product.id}
+                            value={product.id}
+                          >
+                            {productName(product)}
+                          </option>
+                        ))}
+                      </select>
+                    </td>
+
+                    <td>
+                      <input
+                        aria-label="Description"
+                        placeholder="Item description"
+                        value={item.description}
+                        onChange={(e) =>
+                          updateItem(
+                            item.id,
+                            "description",
+                            e.target.value
+                          )
+                        }
+                      />
+                    </td>
+
+                    <td>
+                      <input
+                        aria-label="Quantity"
+                        type="number"
+                        min="0"
+                        value={item.quantity}
+                        onChange={(e) =>
+                          updateItem(
+                            item.id,
+                            "quantity",
+                            e.target.value
+                          )
+                        }
+                      />
+                    </td>
+
+                    <td>
+                      <input
+                        aria-label="HS Code"
+                        value={item.hsCode}
+                        onChange={(e) =>
+                          updateItem(
+                            item.id,
+                            "hsCode",
+                            e.target.value
+                          )
+                        }
+                      />
+                    </td>
+
+                    <td>
+                      <input
+                        aria-label="Rate"
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        placeholder="SAR"
+                        value={item.rate}
+                        onChange={(e) =>
+                          updateItem(
+                            item.id,
+                            "rate",
+                            e.target.value
+                          )
+                        }
+                      />
+                    </td>
+
+                    <td>
+                      <input
+                        aria-label="VAT percentage"
+                        type="number"
+                        min="0"
+                        max="100"
+                        value={item.vatRate}
+                        onChange={(e) =>
+                          updateItem(
+                            item.id,
+                            "vatRate",
+                            e.target.value
+                          )
+                        }
+                      />
+                    </td>
+
+                    <td className="calculated">
+                      {money(vatAmount)}
+                    </td>
+
+                    <td className="calculated">
+                      {money(amount)}
+                    </td>
+
+                    <td>
+                      <DeleteButton
+                        type="button"
+                        aria-label="Remove item"
+                        onClick={() =>
+                          removeItem(item.id)
+                        }
+                        disabled={items.length === 1}
+                      >
+                        <FiX />
+                      </DeleteButton>
+                    </td>
                   </tr>
-                </thead>
+                );
+              })}
+            </tbody>
+          </ItemsTable>
+        </TableWrap>
 
-                <tbody>
-                  {items.map((item) => (
-                    <tr key={item.id}>
-                      <td>{item.slNo}</td>
-                      <td>
-                        <input
-                          placeholder="App Design"
-                          value={item.service}
-                          onChange={(e) =>
-                            updateItem(item.id, "service", e.target.value)
-                          }
-                        />
-                      </td>
-                      <td>
-                        <input
-                          placeholder="Wireframe Of 15 Pages"
-                          value={item.particular}
-                          onChange={(e) =>
-                            updateItem(item.id, "particular", e.target.value)
-                          }
-                        />
-                      </td>
-                      <td>
-                        <input
-                          value={item.qty}
-                          onChange={(e) =>
-                            updateItem(item.id, "qty", e.target.value)
-                          }
-                        />
-                      </td>
-                      <td>
-                        <input
-                          value={item.hsCode}
-                          onChange={(e) =>
-                            updateItem(item.id, "hsCode", e.target.value)
-                          }
-                        />
-                      </td>
-                      <td>
-                        <input
-                          value={item.rate}
-                          onChange={(e) =>
-                            updateItem(item.id, "rate", e.target.value)
-                          }
-                        />
-                      </td>
-                      <td>
-                        <input
-                          value={item.vat}
-                          onChange={(e) =>
-                            updateItem(item.id, "vat", e.target.value)
-                          }
-                        />
-                      </td>
-                      <td>
-                        <input
-                          value={item.vatAmount}
-                          onChange={(e) =>
-                            updateItem(item.id, "vatAmount", e.target.value)
-                          }
-                        />
-                      </td>
-                      <td>
-                        <input
-                          value={item.amount}
-                          onChange={(e) =>
-                            updateItem(item.id, "amount", e.target.value)
-                          }
-                        />
-                      </td>
-                      <td>
-                        <DeleteButton onClick={() => removeItem(item.id)}>
-                          <FiX />
-                        </DeleteButton>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </OrderTable>
-            </OrderTableWrapper>
+        {/* NOTES AND SUMMARY */}
+        <BottomSection>
+          <NotesBlock>
+            <SectionTitle>NOTES</SectionTitle>
 
-            <PaymentSection>
-              <PaymentLeft style={{ flex: 1 }}>
-                <SectionTitle>NOTES</SectionTitle>
-                <div
-                  style={{
-                    marginTop: 12,
-                    border: "1px solid #e5e5e5",
-                    borderRadius: 4,
-                    padding: 12,
-                    minHeight: 92,
-                    color: "#555",
-                    fontSize: 13,
-                    lineHeight: 1.6,
-                  }}
-                >
-                  Above information is not an invoice and only an estimate of
-                  services.
-                  <br />
-                  PLEASE CONFIRM YOUR ACCEPTANCE OF THIS QUOTE
-                </div>
-              </PaymentLeft>
+            <textarea
+              value={notes}
+              onChange={(e) =>
+                setNotes(e.target.value)
+              }
+            />
+          </NotesBlock>
 
-              <PaymentRight style={{ maxWidth: 330, marginLeft: "auto" }}>
-                <SummaryRow>
-                  <span>Sub Total</span>
-                  <strong>{summary.subTotal || "SAR 1,970"}</strong>
-                </SummaryRow>
-                <SummaryRow>
-                  <span>Total GST (₹)</span>
-                  <strong>{summary.vat || "SAR 295.50"}</strong>
-                </SummaryRow>
-                <SummaryRow>
-                  <span>Discount</span>
-                  <strong className="discount">
-                    -{summary.discount || "SAR 19.69"}
-                  </strong>
-                </SummaryRow>
-                <SummaryRow>
-                  <span>Round Off</span>
-                  <strong>{summary.roundOff || "SAR 1,411.15"}</strong>
-                </SummaryRow>
-                <TotalAmount style={{ marginTop: 18 }}>
-                  <span>TOTAL AMOUNT</span>
-                  <strong>{summary.total || "SAR 1,411.15"}</strong>
-                </TotalAmount>
-              </PaymentRight>
-            </PaymentSection>
+          <Summary>
+            <SummaryRow>
+              <span>Sub Total</span>
+              <strong>{money(totals.subtotal)}</strong>
+            </SummaryRow>
 
-            <ButtonWrapper style={{ marginTop: 18 }}>
-              <CancelButton onClick={handleCancel}>CANCEL</CancelButton>
-              <PreviewButton onClick={handleSave}>PREVIEW</PreviewButton>
-            </ButtonWrapper>
-          </>
-        ) : (
-          <>
-            <FormGrid>
-              <FormGroup>
-                <Label>QUOTE REFERENCE</Label>
-                <Input
-                  placeholder="SO001"
-                  value={orderNumber}
-                  onChange={(e) => setOrderNumber(e.target.value)}
-                  readOnly={isEditMode}
-                />
-              </FormGroup>
+            <SummaryRow>
+              <span>Total VAT</span>
+              <strong>{money(totals.vat)}</strong>
+            </SummaryRow>
 
-              <FormGroup>
-                <Label>SO NUMBER</Label>
-                <Input
-                  placeholder="SO-2026-001"
-                  value={soNumber}
-                  onChange={(e) => setSoNumber(e.target.value)}
-                  readOnly={isEditMode}
-                />
-              </FormGroup>
+            <SummaryRow>
+              <span>Discount (SAR)</span>
 
-              <FormGroup>
-                <Label>ORDER DATE</Label>
-                <CalendarInput>
-                  <Input
-                    type="date"
-                    value={orderDate}
-                    onChange={(e) => setOrderDate(e.target.value)}
-                    readOnly={isEditMode}
-                    disabled={isEditMode}
-                  />
-                </CalendarInput>
-              </FormGroup>
+              <DiscountInput
+                type="number"
+                min="0"
+                step="0.01"
+                value={discount}
+                onChange={(e) =>
+                  setDiscount(e.target.value)
+                }
+              />
+            </SummaryRow>
 
-              <FormGroup>
-                <Label>ORDER STATUS</Label>
-                <SelectWrapper>
-                  <Select
-                    value={orderStatus}
-                    onChange={(e) => setOrderStatus(e.target.value)}
-                  >
-                    <option value="" disabled>
-                      Select Order Status
-                    </option>
-                    <option value="completed">Completed</option>
-                    <option value="pending">Pending</option>
-                    <option value="cancelled">Cancelled</option>
-                  </Select>
-                  <FiChevronDown />
-                </SelectWrapper>
-              </FormGroup>
+            <SummaryRow>
+              <span>Round Off</span>
+              <strong>{money(0)}</strong>
+            </SummaryRow>
 
-              <FormGroup>
-                <Label>DELIVERY DATE</Label>
-                <CalendarInput>
-                  <Input
-                    type="date"
-                    value={deliveryDate}
-                    min={orderDate}
-                    onChange={(e) => setDeliveryDate(e.target.value)}
-                    readOnly={isEditMode}
-                    disabled={isEditMode}
-                  />
-                </CalendarInput>
-              </FormGroup>
+            <TotalBar>
+              <span>TOTAL AMOUNT</span>
+              <strong>{money(totals.total)}</strong>
+            </TotalBar>
+          </Summary>
+        </BottomSection>
 
-              <FormGroup>
-                <Label>DUE DATE</Label>
-                <CalendarInput>
-                  <Input
-                    type="date"
-                    value={dueDate}
-                    min={orderDate}
-                    onChange={(e) => setDueDate(e.target.value)}
-                    readOnly={isEditMode}
-                    disabled={isEditMode}
-                  />
-                </CalendarInput>
-              </FormGroup>
-
-              <FormGroup>
-                <Label>PAYMENT TERMS</Label>
-                <SelectWrapper>
-                  <Select
-                    value={paymentTerms}
-                    onChange={(e) => setPaymentTerms(e.target.value)}
-                    disabled={isEditMode}
-                  >
-                    <option value="" disabled>
-                      Select Payment Terms
-                    </option>
-                    <option value="net15">Net 15</option>
-                    <option value="net30">Net 30</option>
-                    <option value="net45">Net 45</option>
-                    <option value="cod">Cash on Delivery</option>
-                  </Select>
-                  <FiChevronDown />
-                </SelectWrapper>
-              </FormGroup>
-
-              <FormGroup>
-                <Label>WAREHOUSE</Label>
-                <SelectWrapper>
-                  <Select
-                    value={warehouse}
-                    onChange={(e) => setWarehouse(e.target.value)}
-                    disabled={isEditMode}
-                  >
-                    <option value="" disabled>
-                      Select Warehouse
-                    </option>
-                    <option value="warehouse1">Warehouse 1 - Riyadh</option>
-                    <option value="warehouse2">Warehouse 2 - Jeddah</option>
-                    <option value="warehouse3">Warehouse 3 - Dammam</option>
-                  </Select>
-                  <FiChevronDown />
-                </SelectWrapper>
-              </FormGroup>
-
-              <FormGroup>
-                <Label>FROM</Label>
-                <Input
-                  placeholder="TUNGSTON LABS"
-                  value={from.name}
-                  onChange={(e) => setFrom({ ...from, name: e.target.value })}
-                  readOnly={isEditMode}
-                />
-              </FormGroup>
-
-              <FormGroup>
-                <Label>ADDRESS</Label>
-                <Input
-                  placeholder="Tungston Labs, Ullampilly Building,..."
-                  value={from.address}
-                  onChange={(e) =>
-                    setFrom({ ...from, address: e.target.value })
-                  }
-                  readOnly={isEditMode}
-                />
-              </FormGroup>
-
-              <FormGroup>
-                <Label>PHONE NUMBER</Label>
-                <Input
-                  placeholder="+91 97783 77526"
-                  value={from.phone}
-                  onChange={(e) => setFrom({ ...from, phone: e.target.value })}
-                  readOnly={isEditMode}
-                />
-              </FormGroup>
-
-              <FormGroup>
-                <Label>EMAIL ID</Label>
-                <Input
-                  placeholder="info@tungstonlabs.com"
-                  value={from.email}
-                  onChange={(e) => setFrom({ ...from, email: e.target.value })}
-                  readOnly={isEditMode}
-                />
-              </FormGroup>
-
-              <FormGroup>
-                <Label>BILL TO</Label>
-                <SelectWrapper>
-                  <Select
-                    value={billTo.client}
-                    onChange={(e) =>
-                      setBillTo({ ...billTo, client: e.target.value })
-                    }
-                    disabled={isEditMode}
-                  >
-                    <option value="" disabled>
-                      Company/Client Name
-                    </option>
-                    <option value="client1">Company 1</option>
-                    <option value="client2">Company 2</option>
-                  </Select>
-                  <FiChevronDown />
-                </SelectWrapper>
-              </FormGroup>
-
-              <FormGroup>
-                <Label>ADDRESS</Label>
-                <Input
-                  placeholder="Company/Client ADDRESS"
-                  value={billTo.address}
-                  onChange={(e) =>
-                    setBillTo({ ...billTo, address: e.target.value })
-                  }
-                  readOnly={isEditMode}
-                />
-              </FormGroup>
-
-              <FormGroup>
-                <Label>PHONE NUMBER</Label>
-                <Input
-                  placeholder="Company/Client Phone Number"
-                  value={billTo.phone}
-                  onChange={(e) =>
-                    setBillTo({ ...billTo, phone: e.target.value })
-                  }
-                  readOnly={isEditMode}
-                />
-              </FormGroup>
-
-              <FormGroup>
-                <Label>FINANCE EMAIL ID</Label>
-                <Input
-                  placeholder="Company/Client Email ID"
-                  value={billTo.email}
-                  onChange={(e) =>
-                    setBillTo({ ...billTo, email: e.target.value })
-                  }
-                  readOnly={isEditMode}
-                />
-              </FormGroup>
-            </FormGrid>
-
-            <OrderItemsHeader>
-              <SectionTitle>ORDER ITEMS</SectionTitle>
-              {!isEditMode && (
-                <AddItemButton onClick={addItem}>
-                  <FiPlus />
-                  ADD ITEM
-                </AddItemButton>
-              )}
-            </OrderItemsHeader>
-
-            <OrderTableWrapper>
-              <OrderTable>
-                <thead>
-                  <tr>
-                    <th>SL No</th>
-                    <th>Service</th>
-                    <th>Particular</th>
-                    <th>QTY</th>
-                    <th>HS Code</th>
-                    <th>Rate</th>
-                    <th>VAT (%)</th>
-                    <th>VAT (SAR)</th>
-                    <th>Amount</th>
-                    <th>Action</th>
-                  </tr>
-                </thead>
-
-                <tbody>
-                  {items.map((item) => (
-                    <tr key={item.id}>
-                      <td>{item.slNo}</td>
-                      <td>
-                        <input
-                          placeholder="App Design"
-                          value={item.service}
-                          onChange={(e) =>
-                            updateItem(item.id, "service", e.target.value)
-                          }
-                          readOnly={isEditMode}
-                        />
-                      </td>
-                      <td>
-                        <input
-                          placeholder="Wireframe Of 15 Pages"
-                          value={item.particular}
-                          onChange={(e) =>
-                            updateItem(item.id, "particular", e.target.value)
-                          }
-                          readOnly={isEditMode}
-                        />
-                      </td>
-                      <td>
-                        <input
-                          value={item.qty}
-                          onChange={(e) =>
-                            updateItem(item.id, "qty", e.target.value)
-                          }
-                          readOnly={isEditMode}
-                        />
-                      </td>
-                      <td>
-                        <input
-                          value={item.hsCode}
-                          onChange={(e) =>
-                            updateItem(item.id, "hsCode", e.target.value)
-                          }
-                          readOnly={isEditMode}
-                        />
-                      </td>
-                      <td>
-                        <input
-                          value={item.rate}
-                          onChange={(e) =>
-                            updateItem(item.id, "rate", e.target.value)
-                          }
-                          readOnly={isEditMode}
-                        />
-                      </td>
-                      <td>
-                        <input
-                          value={item.vat}
-                          onChange={(e) =>
-                            updateItem(item.id, "vat", e.target.value)
-                          }
-                          readOnly={isEditMode}
-                        />
-                      </td>
-                      <td>
-                        <input
-                          value={item.vatAmount}
-                          onChange={(e) =>
-                            updateItem(item.id, "vatAmount", e.target.value)
-                          }
-                          readOnly={isEditMode}
-                        />
-                      </td>
-                      <td>
-                        <input
-                          value={item.amount}
-                          onChange={(e) =>
-                            updateItem(item.id, "amount", e.target.value)
-                          }
-                          readOnly={isEditMode}
-                        />
-                      </td>
-                      <td>
-                        {!isEditMode && (
-                          <DeleteButton onClick={() => removeItem(item.id)}>
-                            <FiX />
-                          </DeleteButton>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </OrderTable>
-            </OrderTableWrapper>
-
-            <PaymentSection>
-              <PaymentLeft>
-                <SectionTitle>
-                  PAYMENT DETAILS
-                  <FiEdit3 />
-                </SectionTitle>
-
-                <PaymentGrid>
-                  <FormGroup>
-                    <Label>Account Holder</Label>
-                    <Input
-                      placeholder="TUNGSTON LABS"
-                      value={payment.accountHolder}
-                      onChange={(e) =>
-                        setPayment({
-                          ...payment,
-                          accountHolder: e.target.value,
-                        })
-                      }
-                      readOnly={isEditMode}
-                    />
-                  </FormGroup>
-
-                  <FormGroup>
-                    <Label>Account Number</Label>
-                    <Input
-                      placeholder="12534789652135"
-                      value={payment.accountNumber}
-                      onChange={(e) =>
-                        setPayment({
-                          ...payment,
-                          accountNumber: e.target.value,
-                        })
-                      }
-                      readOnly={isEditMode}
-                    />
-                  </FormGroup>
-
-                  <FormGroup>
-                    <Label>IBAN</Label>
-                    <Input
-                      placeholder="2654559"
-                      value={payment.iban}
-                      onChange={(e) =>
-                        setPayment({ ...payment, iban: e.target.value })
-                      }
-                      readOnly={isEditMode}
-                    />
-                  </FormGroup>
-
-                  <FormGroup>
-                    <Label>UPLOAD QR CODE</Label>
-                    <UploadBox>
-                      <FiUpload />
-                    </UploadBox>
-                  </FormGroup>
-                </PaymentGrid>
-              </PaymentLeft>
-
-              <PaymentRight>
-                <SummaryRow>
-                  <span>Sub Total</span>
-                  <strong>{summary.subTotal || "SAR 0"}</strong>
-                </SummaryRow>
-                <SummaryRow>
-                  <span>Total VAT (15%)</span>
-                  <strong>{summary.vat || "SAR 0"}</strong>
-                </SummaryRow>
-                <SummaryRow>
-                  <span>Discount</span>
-                  <strong className="discount">
-                    {summary.discount || "SAR 0"}
-                  </strong>
-                </SummaryRow>
-                <SummaryRow>
-                  <span>Round Off</span>
-                  <strong>{summary.roundOff || "SAR 0"}</strong>
-                </SummaryRow>
-                <TotalAmount>
-                  <span>TOTAL AMOUNT</span>
-                  <strong>{summary.total || "SAR 0"}</strong>
-                </TotalAmount>
-              </PaymentRight>
-            </PaymentSection>
-
-            <ButtonWrapper>
-              <CancelButton onClick={handleCancel}>CANCEL</CancelButton>
-              <PreviewButton onClick={handleSave}>
-                {isEditMode ? "UPDATE" : "PREVIEW"}
-              </PreviewButton>
-            </ButtonWrapper>
-          </>
+        {/* ERROR */}
+        {error && (
+          <ErrorMessage role="alert">
+            {error}
+          </ErrorMessage>
         )}
-      </OrderForm>
-    </OrderContainer>
+
+        {/* FOOTER */}
+        <Footer>
+          <LockNote>
+            <FiLock />
+            Sent is locked until an admin approves this quote
+          </LockNote>
+
+          <Actions>
+            <OutlineButton
+              type="button"
+              onClick={handleCancel}
+            >
+              CANCEL
+            </OutlineButton>
+
+            <OutlineButton
+              type="button"
+              onClick={handleDownload}
+            >
+              DOWNLOAD
+            </OutlineButton>
+
+            <OutlineButton
+              type="button"
+              onClick={handleSaveDraft}
+              disabled={isSaving}
+            >
+              {isSaving ? "SAVING..." : "SAVE AS DRAFT"}
+            </OutlineButton>
+
+            <PrimaryButton
+              type="button"
+              onClick={handleSend}
+              disabled={isSaving}
+            >
+              SEND
+            </PrimaryButton>
+          </Actions>
+        </Footer>
+      </FormBody>
+    </PageWrapper>
   );
 };
 
-const UploadBox = ({ children }) => (
-  <div
-    style={{
-      height: "30px",
-      border: "1px solid #e5e5e5",
-      borderRadius: "3px",
-      display: "flex",
-      alignItems: "center",
-      paddingLeft: "15px",
-      color: "#111",
-    }}
-  >
-    {children}
-  </div>
-);
-
-export default AddingOrder;
+export default AddQuotation;

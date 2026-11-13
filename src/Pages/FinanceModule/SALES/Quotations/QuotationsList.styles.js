@@ -1,224 +1,100 @@
-// import styled from "styled-components";
+import styled from "styled-components";
 
-// /* =========================================================
-//    PAGE
-// ========================================================= */
+export const DateRangeWrapper = styled.div`
+    display: flex;
+    align-items: center;
+    gap: 10px;
+`;
 
-// export const PageContainer = styled.div`
-//   width: 100%;
-//   min-height: 100vh;
-//   padding: 0 38px 25px;
-//   box-sizing: border-box;
-//   background: #ffffff;
+export const DatePickerContainer = styled.div`
+    display: flex;
+    align-items: center;
+    gap: 8px;
 
-//   @media (max-width: 1100px) {
-//     padding: 0 20px 25px;
-//   }
+    width: 280px;
+    height: 38px;
+    padding: 0 10px;
 
-//   @media (max-width: 700px) {
-//     padding: 0 12px 20px;
-//   }
-// `;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    background: #ffffff;
 
-// /* =========================================================
-//    HEADER
-// ========================================================= */
+    box-sizing: border-box;
+`;
 
-// export const HeaderActions = styled.div`
-//   display: flex;
-//   align-items: center;
-//   gap: 8px;
-//   flex-wrap: nowrap;
+export const DateInput = styled.input`
+    flex: 1;
+    min-width: 0;
+    width: 100%;
+    height: 100%;
 
-//   @media (max-width: 1100px) {
-//     flex-wrap: wrap;
-//   }
+    border: none;
+    outline: none;
+    background: transparent;
 
-//   @media (max-width: 700px) {
-//     width: 100%;
-//   }
-// `;
+    color: #374151;
+    font-size: 13px;
+    cursor: pointer;
 
-// /* =========================================================
-//    DATE RANGE
-// ========================================================= */
+    &::-webkit-calendar-picker-indicator {
+        cursor: pointer;
+    }
+`;
 
-// export const DateRangeWrapper = styled.div`
-//   position: relative;
-//   width: 190px;
-//   height: 32px;
+export const DateSeparator = styled.span`
+    flex-shrink: 0;
 
-//   @media (max-width: 700px) {
-//     width: 180px;
-//   }
-// `;
+    color: #6b7280;
+    font-size: 13px;
+    font-weight: 500;
+`;
 
-// export const DateInput = styled.input`
-//   width: 100%;
-//   height: 32px;
+export const ExportButton = styled.button`
+    height: 38px;
+    min-width: 90px;
 
-//   padding: 0 32px 0 10px;
-//   box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
 
-//   border: 1px solid #e1e1e1;
-//   border-radius: 4px;
+    padding: 0 14px;
 
-//   background: #ffffff;
-//   color: #222222;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
 
-//   font-family: inherit;
-//   font-size: 11px;
+    background: #ffffff;
+    color: #374151;
 
-//   outline: none;
-//   cursor: pointer;
-// `;
+    font-size: 13px;
+    font-weight: 500;
 
-// export const CalendarIcon = styled.span`
-//   position: absolute;
+    cursor: pointer;
 
-//   top: 50%;
-//   right: 9px;
+    transition: all 0.2s ease;
 
-//   display: flex;
-//   align-items: center;
-//   justify-content: center;
+    svg {
+        width: 16px;
+        height: 16px;
+    }
 
-//   transform: translateY(-50%);
+    &:hover {
+        border-color: #f78926;
+        color: #f78926;
+        background: #fff8f2;
+    }
 
-//   color: #333333;
+    &:active {
+        transform: scale(0.98);
+    }
 
-//   pointer-events: none;
+    @media (max-width: 900px) {
+        min-width: 38px;
+        width: 38px;
+        padding: 0;
 
-//   svg {
-//     width: 14px;
-//     height: 14px;
-//   }
-// `;
-
-// /* =========================================================
-//    FILTER
-// ========================================================= */
-
-// export const FilterSection = styled.div`
-//   margin-bottom: 0;
-
-//   border: 1px solid #e3e3e3;
-//   border-bottom: none;
-
-//   border-radius: 4px 4px 0 0;
-// `;
-
-// /* =========================================================
-//    TABLE
-// ========================================================= */
-
-// export const TableSection = styled.div`
-//   width: 100%;
-//   overflow-x: auto;
-
-//   border: 1px solid #e3e3e3;
-//   border-top: none;
-// `;
-
-// export const QuotationNumber = styled.span`
-//   color: #304ba3;
-//   font-size: 13px;
-//   font-weight: 600;
-//   cursor: pointer;
-
-//   &:hover {
-//     text-decoration: underline;
-//   }
-// `;
-
-// /* =========================================================
-//    STATUS
-// ========================================================= */
-
-// export const StatusBadge = styled.span`
-//   display: inline-flex;
-//   align-items: center;
-//   justify-content: center;
-
-//   min-width: 75px;
-//   padding: 5px 10px;
-
-//   border-radius: 4px;
-
-//   font-size: 11px;
-//   font-weight: 500;
-
-//   ${({ $status }) => {
-//     if ($status === "Approved") {
-//       return `
-//         color: #16834b;
-//         background: #e7f7ee;
-//       `;
-//     }
-
-//     if ($status === "Pending") {
-//       return `
-//         color: #c47b00;
-//         background: #fff4dc;
-//       `;
-//     }
-
-//     if ($status === "Rejected") {
-//       return `
-//         color: #d64545;
-//         background: #fdeaea;
-//       `;
-//     }
-
-//     return `
-//       color: #555555;
-//       background: #f1f1f1;
-//     `;
-//   }}
-// `;
-
-// /* =========================================================
-//    ACTIONS
-// ========================================================= */
-
-// export const ActionButtons = styled.div`
-//   display: flex;
-//   align-items: center;
-//   justify-content: center;
-//   gap: 6px;
-// `;
-
-// export const IconButton = styled.button`
-//   width: 30px;
-//   height: 30px;
-
-//   display: inline-flex;
-//   align-items: center;
-//   justify-content: center;
-
-//   padding: 0;
-
-//   border: 1px solid #e1e1e1;
-//   border-radius: 4px;
-
-//   background: #ffffff;
-//   color: #555555;
-
-//   cursor: pointer;
-
-//   transition:
-//     background 0.2s ease,
-//     color 0.2s ease,
-//     border-color 0.2s ease;
-
-//   svg {
-//     width: 15px;
-//     height: 15px;
-//   }
-
-//   &:hover {
-//     background: #f5f6fb;
-//     color: #304ba3;
-//     border-color: #304ba3;
-//   }
-// `;
+        span {
+            display: none;
+        }
+    }
+`;

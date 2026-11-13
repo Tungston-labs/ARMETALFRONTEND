@@ -1,245 +1,294 @@
 import styled from "styled-components";
 
 export const ModalOverlay = styled.div`
-    position: fixed;
-    inset: 0;
-    z-index: 1000;
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
 
-    display: flex;
-    align-items: flex-start;
-    justify-content: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 
-    padding: 8px 6px;
-
-    background: rgba(0, 0, 0, 0.5);
-
-    overflow-y: auto;
+  background: rgba(0, 0, 0, 0.25);
+  padding: 20px;
 `;
 
 export const ModalContainer = styled.div`
-    width: 100%;
-    max-width: 1205px;
-    min-height: 450px;
+  width: 100%;
+  max-width: 1420px;
 
-    margin-top: 0;
+  background: #fff;
+  border-radius: 4px;
+  padding: 28px 32px 24px;
+  box-sizing: border-box;
+  box-shadow: 0 10px 35px rgba(0, 0, 0, 0.12);
 
-    padding: 74px 22px 76px;
+  max-height: 95vh;
+  overflow-y: auto;
 
-    background: #ffffff;
-    border-radius: 2px;
+  .payment-error {
+    margin-top: 18px;
+    padding: 12px 16px;
+    border-radius: 6px;
+    background: #fff1f0;
+    border: 1px solid #ffccc7;
+    color: #c0392b;
+    font-family: "Poppins", sans-serif;
+    font-size: 13px;
+  }
 
-    box-sizing: border-box;
+  @media (max-width: 1100px) {
+    max-width: 95%;
+  }
 
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+  @media (max-width: 900px) {
+    padding: 24px;
+  }
 
-    @media (max-width: 700px) {
-        padding: 35px 20px;
-    }
-
-    @media (max-width: 480px) {
-        padding: 30px 15px;
-    }
+  @media (max-width: 600px) {
+    padding: 20px;
+  }
 `;
 
 export const ModalHeader = styled.div`
-    margin-bottom: 46px;
+  margin-bottom: 23px;
 `;
 
 export const Title = styled.h2`
-    margin: 0 0 2px;
+  margin: 0 0 12px;
 
-    color: #2f4eb5;
-
-    font-size: 20px;
-    font-weight: 600;
-    line-height: 1.3;
+  color: #111;
+  font-family: "Poppins", sans-serif;
+  font-size: 20px;
+  font-weight: 500;
+  line-height: 100%;
+  letter-spacing: 0%;
 `;
 
 export const Subtitle = styled.p`
-    margin: 0;
+  margin: 0;
 
-    color: #777777;
-
-    font-size: 12px;
-    font-weight: 400;
-    line-height: 1.5;
+  color: #333;
+  font-family: "Poppins", sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 100%;
+  letter-spacing: 0%;
 `;
 
 export const FormGrid = styled.div`
-    display: grid;
-    grid-template-columns: repeat(5, 1fr);
-    column-gap: 22px;
-    row-gap: 17px;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
 
-    width: 100%;
+  column-gap: 25px;
+  row-gap: 20px;
 
-    @media (max-width: 1000px) {
-        grid-template-columns: repeat(3, 1fr);
-    }
+  width: 100%;
 
-    @media (max-width: 700px) {
-        grid-template-columns: repeat(2, 1fr);
-    }
+  @media (max-width: 1100px) {
+    grid-template-columns: repeat(3, 1fr);
+  }
 
-    @media (max-width: 480px) {
-        grid-template-columns: 1fr;
-    }
+  @media (max-width: 750px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  @media (max-width: 500px) {
+    grid-template-columns: 1fr;
+  }
 `;
 
 export const FormGroup = styled.div`
-    display: flex;
-    flex-direction: column;
-
-    min-width: 0;
+  width: 100%;
+  min-width: 0;
 `;
 
 export const Label = styled.label`
-    margin-bottom: 8px;
+  display: block;
+  margin-bottom: 10px;
 
-    color: #111111;
+  color: #222;
+  font-family: "Poppins", sans-serif;
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 100%;
+  letter-spacing: 0%;
+  text-transform: uppercase;
 
-    font-size: 13px;
-    font-weight: 400;
-    line-height: 1.2;
-
-    span {
-        color: #111111;
-    }
-`;
-
-const fieldStyles = `
-    width: 100%;
-    height: 35px;
-
-    padding: 0 10px;
-
-    box-sizing: border-box;
-
-    border: 1px solid #e3e3e3;
-    border-radius: 4px;
-
-    background: #ffffff;
-
-    color: #555555;
-
-    font-family: inherit;
-    font-size: 11px;
-    font-weight: 400;
-
-    outline: none;
-
-    transition: border-color 0.2s ease;
-
-    &::placeholder {
-        color: #999999;
-    }
-
-    &:focus {
-        border-color: #3154bd;
-    }
+  span {
+    margin-left: 3px;
+    color: #e53935;
+  }
 `;
 
 export const Input = styled.input`
-    ${fieldStyles}
+  width: 100%;
+  height: 41px;
 
-    &[type="date"] {
-        color: #999999;
-        cursor: pointer;
-    }
+  padding: 0 12px;
+  box-sizing: border-box;
 
-    &[type="date"]::-webkit-calendar-picker-indicator {
-        width: 12px;
-        height: 12px;
+  border: 1px solid #e1e1e1;
+  border-radius: 4px;
+  outline: none;
 
-        cursor: pointer;
-    }
+  background: #ffffff;
+  color: #333333;
+
+  font-family: "Poppins", sans-serif;
+  font-size: 13px;
+
+  transition: 0.2s ease;
+
+  &::placeholder {
+    color: #999999;
+  }
+
+  &:focus {
+    border-color: #3654b5;
+  }
+
+  &[readonly] {
+    cursor: default;
+  }
+
+  &:disabled {
+    background: #f9f9f9;
+    cursor: not-allowed;
+  }
+
+  ${({ $isBalance }) =>
+    $isBalance &&
+    `
+      color: #dc2626;
+      font-weight: 500;
+    `}
 `;
 
 export const Select = styled.select`
-    ${fieldStyles}
+  width: 100%;
+  height: 41px;
 
-    appearance: auto;
+  padding: 0 12px;
+  box-sizing: border-box;
 
-    color: #777777;
+  border: 1px solid #e1e1e1;
+  border-radius: 4px;
+  outline: none;
 
-    cursor: pointer;
+  background: #ffffff;
+  color: #333333;
+
+  font-family: "Poppins", sans-serif;
+  font-size: 13px;
+
+  cursor: pointer;
+  transition: 0.2s ease;
+
+  &:focus {
+    border-color: #3654b5;
+  }
+
+  &:disabled {
+    background: #f9f9f9;
+    cursor: not-allowed;
+  }
 `;
 
 export const Textarea = styled.textarea`
-    ${fieldStyles}
+  width: 100%;
+  min-height: 80px;
 
-    height: 70px;
+  padding: 10px 12px;
+  box-sizing: border-box;
+  resize: vertical;
 
-    padding-top: 9px;
+  border: 1px solid #e1e1e1;
+  border-radius: 4px;
+  outline: none;
 
-    resize: none;
+  background: #ffffff;
+  color: #333333;
+
+  font-family: "Poppins", sans-serif;
+  font-size: 13px;
+
+  &::placeholder {
+    color: #999999;
+  }
+
+  &:focus {
+    border-color: #3654b5;
+  }
 `;
 
 export const ButtonWrapper = styled.div`
-    display: flex;
-    align-items: center;
-    gap: 12px;
+  display: flex;
+  align-items: center;
+  gap: 13px;
 
-    margin-top: 40px;
+  margin-top: 17px;
 
-    @media (max-width: 480px) {
-        flex-wrap: wrap;
-    }
+  @media (max-width: 480px) {
+    flex-wrap: wrap;
+  }
 `;
 
 export const CancelButton = styled.button`
-    height: 35px;
-    min-width: 75px;
+  height: 40px;
+  padding: 0 14px;
 
-    padding: 0 15px;
+  border: 1px solid #111;
+  border-radius: 4px;
 
-    border: 1px solid #222222;
-    border-radius: 4px;
+  background: #fff;
+  color: #111;
 
-    background: #ffffff;
-    color: #111111;
+  font-family: "Poppins", sans-serif;
+  font-size: 13px;
+  font-weight: 500;
 
-    font-size: 12px;
-    font-weight: 500;
+  cursor: pointer;
 
-    cursor: pointer;
+  &:hover {
+    background: #f5f5f5;
+  }
 
-    transition: all 0.2s ease;
-
-    &:hover {
-        background: #f5f5f5;
-    }
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
 `;
 
 export const SaveButton = styled.button`
-    height: 35px;
-    min-width: 149px;
+  min-width: 207px;
+  height: 40px;
 
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
 
-    padding: 0 16px;
+  padding: 0 22px;
 
-    border: none;
-    border-radius: 4px;
+  border: none;
+  border-radius: 4px;
 
-    background: #3453b5;
-    color: #ffffff;
+  background: #3855bd;
+  color: #fff;
 
-    font-size: 12px;
-    font-weight: 500;
+  font-family: "Poppins", sans-serif;
+  font-size: 13px;
+  font-weight: 600;
 
-    cursor: pointer;
+  cursor: pointer;
 
-    transition: background 0.2s ease;
+  &:hover {
+    background: #3049a5;
+  }
 
-    span {
-        font-size: 11px;
-    }
-
-    &:hover {
-        background: #29469f;
-    }
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
 `;
