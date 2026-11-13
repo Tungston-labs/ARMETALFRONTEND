@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
 import {
-    FiCalendar,
     FiUpload,
     FiSave,
     FiPlus,
@@ -43,6 +42,8 @@ import {
 const initialFormData = {
     customerId: "",
     customerName: "",
+    customerType: "",
+    customerCategory: "",
     companyType: "",
     industry: "",
     website: "",
@@ -74,6 +75,8 @@ const WEBSITE_PATTERN = /^(https?:\/\/)?([\w-]+\.)+[\w-]{2,}(\/\S*)?$/i;
 
 const BACKEND_FIELD_MAP = {
     customer_name: "customerName",
+    customer_type: "customerType",
+    customer_category: "customerCategory",
     company_name: "companyType",
     industry: "industry",
     website: "website",
@@ -114,6 +117,9 @@ const CustomerModal = ({
     const isEdit = mode === "edit";
     const isView = mode === "view";
     const isReadOnly = isView;
+
+    // Company-only fields (CR number, VAT number, VAT date) are hidden for individuals
+    const isIndividual = formData.customerType === "individual";
 
     const selectedCountry = useMemo(
         () => getCountryByCode(formData.country),
@@ -167,6 +173,8 @@ const CustomerModal = ({
             setFormData({
                 customerId: customer.customer_id || "",
                 customerName: customer.customer_name || "",
+                customerType: customer.customer_type || "",
+                customerCategory: customer.customer_category || "",
                 companyType: customer.company_name || "",
                 industry: customer.industry || "",
                 website: customer.website || "",
@@ -224,6 +232,31 @@ const CustomerModal = ({
         }));
 
         clearError(name);
+    };
+
+    const handleTypeChange = (e) => {
+        const value = e.target.value;
+
+        setFormData((prev) => ({
+            ...prev,
+            customerType: value,
+            // clear company-only values so stale data isn't saved
+            ...(value === "individual"
+                ? {
+                    crNumber: "",
+                    vatRegistrationNumber: "",
+                    crExpiryDate: "",
+                }
+                : {}),
+        }));
+
+        if (value === "individual") {
+            clearError("crNumber");
+            clearError("vatRegistrationNumber");
+            clearError("crExpiryDate");
+        }
+
+        clearError("customerType");
     };
 
     const handleCountryChange = (e) => {
@@ -350,6 +383,11 @@ const CustomerModal = ({
             }
         }
 
+        // If you later require the CR number, only do it for non-individuals:
+        // if (!isIndividual && !formData.crNumber.trim()) {
+        //     nextErrors.crNumber = "Commercial registration number is required";
+        // }
+
         setErrors(nextErrors);
 
         return Object.keys(nextErrors).length === 0;
@@ -362,14 +400,16 @@ const CustomerModal = ({
     const prepareCustomerData = () => {
         return {
             customer_name: formData.customerName.trim(),
+            customer_type: formData.customerType,
+            customer_category: formData.customerCategory,
             company_name: formData.companyType.trim(),
             industry: formData.industry,
             website: formData.website.trim(),
-            cr_number: formData.crNumber.trim(),
+            cr_number: isIndividual ? "" : formData.crNumber.trim(),
             currency: formData.currency,
-            vat_number: formData.vatRegistrationNumber.trim(),
+            vat_number: isIndividual ? "" : formData.vatRegistrationNumber.trim(),
             payment_term: formData.paymentTerm,
-            cr_expiry_date: formData.crExpiryDate || null,
+            cr_expiry_date: isIndividual ? null : formData.crExpiryDate || null,
             billing_address: formData.billingAddress.trim(),
             city: formData.city.trim(),
             state: selectedStateName.trim(),
@@ -498,37 +538,41 @@ const CustomerModal = ({
                         <FormGroup>
                             <Label>CUSTOMER TYPE</Label>
                             <Select
-                                name="customer_type"
-                                value={formData.customer_type}
-                                onChange={handleChange}
+                                name="customerType"
+                                value={formData.customerType}
+                                onChange={handleTypeChange}
                                 disabled={isReadOnly}
-                                aria-invalid={!!errors.customer_type}
+                                aria-invalid={!!errors.customerType}
                             >
-                                <option value="">Select Category</option>
-                                <option value="manufacturing">Company</option>
-                                <option value="construction">Individual</option>
-                                <option value="healthcare">Individual</option>
-                                <option value="finance">Government</option>
+                                <option value="">Select Type</option>
+                                <option value="company">Company</option>
+                                <option value="individual">Individual</option>
                             </Select>
-
+                            {errors.customerType && (
+                                <span style={errorStyle}>{errors.customerType}</span>
+                            )}
                         </FormGroup>
+
                         <FormGroup>
                             <Label>CUSTOMER CATEGORY</Label>
                             <Select
-                                name="customer_category"
-                                value={formData.customer_category}
+                                name="customerCategory"
+                                value={formData.customerCategory}
                                 onChange={handleChange}
                                 disabled={isReadOnly}
-                                aria-invalid={!!errors.customer_category}
+                                aria-invalid={!!errors.customerCategory}
                             >
                                 <option value="">Select Category</option>
-                                <option value="manufacturing">Corporate</option>
-                                <option value="construction">SME</option>
-                                <option value="healthcare">Individual</option>
-                                <option value="finance">Government</option>
+                                <option value="corporate">Corporate</option>
+                                <option value="sme">SME</option>
+                                <option value="individual">Individual</option>
+                                <option value="government">Government</option>
                             </Select>
-
+                            {errors.customerCategory && (
+                                <span style={errorStyle}>{errors.customerCategory}</span>
+                            )}
                         </FormGroup>
+
                         <FormGroup>
                             <Label>INDUSTRY</Label>
                             <Select
@@ -539,85 +583,74 @@ const CustomerModal = ({
                                 aria-invalid={!!errors.industry}
                             >
                                 <option value="">Select Industry</option>
-                                <option value="manufacturing">IT & Software</option>
+                                <option value="it_software">IT & Software</option>
                                 <option value="manufacturing">Manufacturing</option>
                                 <option value="construction">Construction & Real Estate</option>
-                                <option value="healthcare">Trading</option>
-                                <option value="healthcare">Wholesale & Distribution</option>
+                                <option value="trading">Trading</option>
+                                <option value="wholesale">Wholesale & Distribution</option>
                                 <option value="finance">Banking & Financial Services</option>
                                 <option value="retail">Retail</option>
-                                <option value="technology">Others</option>
+                                <option value="others">Others</option>
                             </Select>
                             {errors.industry && (
                                 <span style={errorStyle}>{errors.industry}</span>
                             )}
                         </FormGroup>
 
-
-
-                        <FormGroup>
-                            <Label>COMMERCIAL REGISTRATION NUMBER
-                                <Required>*</Required>
-                            </Label>
-                            <Input
-                                name="crNumber"
-                                value={formData.crNumber}
-                                onChange={handleChange}
-                                placeholder="Enter number"
-                                disabled={isReadOnly}
-                            />
-                        </FormGroup>
-
-                        {/* <FormGroup>
-                            <Label>CURRENCY</Label>
-                            <Select
-                                name="currency"
-                                value={formData.currency}
-                                onChange={handleChange}
-                                disabled={isReadOnly}
-                            >
-                                <option value="">Select currency</option>
-                                {selectedCountry && (
-                                    <option value={selectedCountry.currencyCode}>
-                                        {selectedCountry.currencyCode} (
-                                        {selectedCountry.currencySymbol})
-                                    </option>
-                                )}
-                                {formData.currency &&
-                                    formData.currency !==
-                                    selectedCountry?.currencyCode && (
-                                        <option value={formData.currency}>
-                                            {formData.currency}
-                                        </option>
+                        {/* Company-only fields: hidden when customer type is Individual */}
+                        {!isIndividual && (
+                            <>
+                                <FormGroup>
+                                    <Label>COMMERCIAL REGISTRATION NUMBER
+                                        <Required>*</Required>
+                                    </Label>
+                                    <Input
+                                        name="crNumber"
+                                        value={formData.crNumber}
+                                        onChange={handleChange}
+                                        placeholder="Enter number"
+                                        disabled={isReadOnly}
+                                        aria-invalid={!!errors.crNumber}
+                                    />
+                                    {errors.crNumber && (
+                                        <span style={errorStyle}>{errors.crNumber}</span>
                                     )}
-                            </Select>
-                        </FormGroup> */}
+                                </FormGroup>
 
-                        <FormGroup>
-                            <Label>VAT REGISTRATION NUMBER</Label>
-                            <Input
-                                name="vatRegistrationNumber"
-                                value={formData.vatRegistrationNumber}
-                                onChange={handleChange}
-                                placeholder="Enter number"
-                                disabled={isReadOnly}
-                            />
-                        </FormGroup>
+                                <FormGroup>
+                                    <Label>VAT REGISTRATION NUMBER</Label>
+                                    <Input
+                                        name="vatRegistrationNumber"
+                                        value={formData.vatRegistrationNumber}
+                                        onChange={handleChange}
+                                        placeholder="Enter number"
+                                        disabled={isReadOnly}
+                                        aria-invalid={!!errors.vatRegistrationNumber}
+                                    />
+                                    {errors.vatRegistrationNumber && (
+                                        <span style={errorStyle}>
+                                            {errors.vatRegistrationNumber}
+                                        </span>
+                                    )}
+                                </FormGroup>
 
-
-                        <FormGroup>
-                            <Label>VAT REGISTRATION EFFECTIVE DATE</Label>
-                            <InputWithIcon>
-                                <Input
-                                    type="date"
-                                    name="crExpiryDate"
-                                    value={formData.crExpiryDate}
-                                    onChange={handleChange}
-                                    disabled={isReadOnly}
-                                />
-
-                            </InputWithIcon>
-                        </FormGroup>
+                                <FormGroup>
+                                    <Label>VAT REGISTRATION EFFECTIVE DATE</Label>
+                                    <InputWithIcon>
+                                        <Input
+                                            type="date"
+                                            name="crExpiryDate"
+                                            value={formData.crExpiryDate}
+                                            onChange={handleChange}
+                                            disabled={isReadOnly}
+                                        />
+                                    </InputWithIcon>
+                                    {errors.crExpiryDate && (
+                                        <span style={errorStyle}>{errors.crExpiryDate}</span>
+                                    )}
+                                </FormGroup>
+                            </>
+                        )}
 
                         <FormGroup>
                             <Label>PAYMENT TERM
@@ -659,6 +692,7 @@ const CustomerModal = ({
                                 <span style={errorStyle}>{errors.clientStatus}</span>
                             )}
                         </FormGroup>
+
                         <FormGroup>
                             <AddressLabel>
                                 BILLING ADDRESS
