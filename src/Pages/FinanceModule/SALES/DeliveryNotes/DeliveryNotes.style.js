@@ -82,3 +82,56 @@ export const ExportButton = styled.button`
     }
   }
 `;
+
+export const CompactTableWrapper = styled.div`
+  width: 100%;
+  overflow-x: auto;
+
+  table {
+    width: 100%;
+    min-width: 100% !important;
+  }
+
+  th,
+  td {
+    padding-left: 8px;
+    padding-right: 8px;
+    font-size: 13px;
+  }
+`;
+
+const deliveryStatusColors = {
+  draft: { bg: "#eff6ff", color: "#2563eb", border: "#bfdbfe" },
+  pending: { bg: "#fffbeb", color: "#b45309", border: "#fde68a" },
+  in_transit: { bg: "#faf5ff", color: "#9333ea", border: "#e9d5ff" },
+  dispatched: { bg: "#fff7ed", color: "#ea580c", border: "#fed7aa" },
+  delivered: { bg: "#ecfdf5", color: "#16a34a", border: "#a7f3d0" },
+  partially_delivered: { bg: "#fffbeb", color: "#d97706", border: "#fde68a" },
+  cancelled: { bg: "#fef2f2", color: "#dc2626", border: "#fecaca" },
+};
+
+export const getDeliveryStatusColor = (status) => {
+  const key = String(status || "draft").toLowerCase().replace(/[\s-]/g, "_");
+  if (key === "partial") return deliveryStatusColors.partially_delivered;
+  if (key === "transit") return deliveryStatusColors.in_transit;
+  if (key === "canceled") return deliveryStatusColors.cancelled;
+  return deliveryStatusColors[key] || deliveryStatusColors.draft;
+};
+
+export const InlineStatusSelect = styled.select`
+  height: 28px;
+  padding: 0 8px;
+  border: 1px solid ${({ $status }) => getDeliveryStatusColor($status).border};
+  border-radius: 999px;
+  outline: none;
+  background: ${({ $status }) => getDeliveryStatusColor($status).bg};
+  color: ${({ $status }) => getDeliveryStatusColor($status).color};
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  &:focus {
+    border-color: #f78926;
+  }
+`;

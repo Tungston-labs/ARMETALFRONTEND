@@ -7,6 +7,7 @@ import {
   DeliveryNoteContainer,
   DeliveryNoteForm,
   FormGrid,
+  FormGridThree,
   FormGroup,
   Label,
   Input,
@@ -35,6 +36,7 @@ import {
 } from "../../../../../Redux/finance/Sales/deliveryNotesSlice";
 import { getCustomers as getCustomerList } from "../../../../../Redux/finance/Sales/CustomerSlice";
 import { getProducts } from "../../../../../Redux/finance/Product/ProductSlice";
+import { getDeliveryNotePrefill } from "../../../../../services/finance/Sales/deliveryNotesService";
 
 const today = () => {
   const date = new Date();
@@ -55,6 +57,8 @@ const asNumber = (value) => {
   const parsed = Number(
     String(value ?? "")
       .replace(/SAR/gi, "")
+      .replace(/INR/gi, "")
+      .replace(/AED/gi, "")
       .replace(/,/g, "")
       .trim(),
   );
@@ -109,58 +113,6 @@ const apiStatus = (value) =>
     Cancelled: "cancelled",
   })[value] || "draft";
 
-const createItem = (index) => ({
-  id: `${Date.now()}-${index}`,
-  slNo: String(index).padStart(2, "0"),
-  product: "",
-  productId: null,
-  orderedQty: "",
-  alreadyDelivered: "",
-  deliveringNow: "",
-  amount: "",
-});
-
-const getProductId = (item, products) => {
-  if (item.productId) return normalizeId(item.productId);
-  const raw = String(item.product || "").trim();
-  if (!raw) return null;
-  if (/^\d+$/.test(raw)) return Number(raw);
-  const found = products.find(
-    (product) =>
-      String(
-        first(product, ["name", "product_name", "code", "product_code"], ""),
-      ).toLowerCase() === raw.toLowerCase(),
-  );
-  return found ? normalizeId(first(found, ["id", "pk", "product_id"])) : null;
-};
-
-const mapApiItem = (item, index) => ({
-  id: item?.id ?? `${Date.now()}-${index}`,
-  slNo: String(
-    first(item, ["sl_no", "slNo"], String(index + 1).padStart(2, "0")),
-  ),
-  product: first(
-    item,
-    ["product_name"],
-    typeof item?.product === "string" ? item.product : "",
-  ),
-  productId: first(
-    item,
-    ["product_id"],
-    item?.product?.id ??
-      item?.product?.pk ??
-      (typeof item?.product === "number" ? item.product : null),
-  ),
-  orderedQty: first(item, ["ordered_qty", "ordered_quantity", "quantity"], ""),
-  alreadyDelivered: first(
-    item,
-    ["already_delivered", "already_delivered_qty"],
-    "",
-  ),
-  deliveringNow: first(item, ["delivering_now", "delivering_quantity"], ""),
-  amount: first(item, ["amount", "delivery_value"], ""),
-});
-
 const Createdeliverynotes = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -169,14 +121,12 @@ const Createdeliverynotes = () => {
   const isEditMode = Boolean(id);
 
   /* ---------- Redux state ---------- */
-
   const customerState = useSelector(
     (state) => state?.customer?.customers ?? [],
   );
   const productState = useSelector((state) => state?.product?.products ?? []);
   const { selectedDeliveryNote, detailsLoading, submitting, submitError } =
     useSelector((state) => state?.deliveryNotes ?? {});
-  // The key "warehouse" must match how the reducer is registered in your store
   const warehouseList = useSelector(
     (state) => state?.warehouse?.warehouses ?? [],
   );
@@ -197,28 +147,41 @@ const Createdeliverynotes = () => {
   }, [productState]);
 
   /* ---------- Form state ---------- */
-
   const [deliveryNoteNumber, setDeliveryNoteNumber] = useState("");
   const [dispatchDate, setDispatchDate] = useState(today());
   const [expectedDeliveryDate, setExpectedDeliveryDate] = useState(today());
   const [status, setStatus] = useState("Draft");
   const [customerId, setCustomerId] = useState("");
   const [orderReference, setOrderReference] = useState("");
-  const [warehouse, setWarehouse] = useState(""); // holds the warehouse id
-  const [items, setItems] = useState([createItem(1)]);
+  const [selectedOrderId, setSelectedOrderId] = useState(null);
+  const [warehouse, setWarehouse] = useState("");
+  const [items, setItems] = useState([]);
   const [notes, setNotes] = useState("");
   const [formError, setFormError] = useState("");
 
-  // Must come after the customerId state, because it depends on it
+  const selectedCustomerObj = useMemo(
+    () => customers.find((c) => String(c.id) === String(customerId)),
+    [customers, customerId],
+  );
+  const currency = selectedCustomerObj?.currency || "SAR";
+
   const orderOptions = useMemo(() => {
     const list = Array.isArray(salesOrders) ? salesOrders : [];
-    return customerId
-      ? list.filter((o) => String(o.customer) === String(customerId))
-      : list;
-  }, [salesOrders, customerId]);
+    if (!customerId) return list;
+    return list.filter((o) => {
+      const oCustId = o.customer?.id ?? o.customer_id ?? o.customer;
+      if (oCustId && String(oCustId) === String(customerId)) return true;
+      if (selectedCustomerObj?.customer_name && o.customer_name) {
+        return (
+          o.customer_name.toLowerCase().trim() ===
+          selectedCustomerObj.customer_name.toLowerCase().trim()
+        );
+      }
+      return false;
+    });
+  }, [salesOrders, customerId, selectedCustomerObj]);
 
-  /* ---------- Load data ---------- */
-
+  /* ---------- Load initial data ---------- */
   useEffect(() => {
     dispatch(getCustomerList());
     dispatch(getProducts({ page_size: 200 }));
@@ -232,12 +195,13 @@ const Createdeliverynotes = () => {
 
   const routeData = location.state?.deliveryNoteData || null;
 
+  /* ---------- Edit mode populate ---------- */
   useEffect(() => {
     const row = selectedDeliveryNote || routeData;
     if (!isEditMode || !row) return;
 
     setDeliveryNoteNumber(
-      first(row, ["delivery_note_number", "deliveryNoteNumber"], ""),
+      first(row, ["delivery_note_number", "deliveryNoteNumber", "dn_number"], ""),
     );
     setDispatchDate(
       dateValue(first(row, ["dispatch_date", "dispatchDate"], "")) || today(),
@@ -261,77 +225,235 @@ const Createdeliverynotes = () => {
         ? (row.customer.id ?? row.customer.pk)
         : (row.customer_id ?? row.customer);
     setCustomerId(customer == null ? "" : String(customer));
-    setOrderReference(
-      String(
-        first(
-          row,
-          ["sales_order_reference", "salesOrderReference", "order_reference"],
-          "",
-        ),
+
+    const orderRef = String(
+      first(
+        row,
+        ["sales_order_reference", "salesOrderReference", "order_reference", "so_ref"],
+        "",
       ),
     );
+    setOrderReference(orderRef);
+    if (row.sales_order) setSelectedOrderId(row.sales_order);
+
     const warehouseValue =
       row.warehouse && typeof row.warehouse === "object"
         ? (row.warehouse.id ?? row.warehouse.pk)
         : (row.warehouse_id ?? row.warehouse);
     setWarehouse(warehouseValue == null ? "" : String(warehouseValue));
-    setItems(
-      Array.isArray(row.items) && row.items.length
-        ? row.items.map(mapApiItem)
-        : [createItem(1)],
-    );
+
+    if (Array.isArray(row.items) && row.items.length) {
+      setItems(
+        row.items.map((item, idx) => {
+          const ordered = asNumber(item.ordered_qty ?? item.ordered_quantity ?? item.quantity);
+          const already = asNumber(item.already_delivered ?? 0);
+          const now = asNumber(item.delivering_now ?? item.quantity ?? 0);
+          const rate = asNumber(item.rate ?? 0);
+          const vatPct = asNumber(item.vat_percentage ?? 15);
+          const base = now * rate;
+          const vat = base * (vatPct / 100);
+          const amount = asNumber(item.amount) || base + vat;
+
+          let itemStatus = "Pending";
+          if (already + now >= ordered && ordered > 0) {
+            itemStatus = "Fully Delivered";
+          } else if (already + now > 0) {
+            itemStatus = "Partial";
+          }
+
+          return {
+            id: item.id || `${Date.now()}-${idx}`,
+            sales_order_item: item.sales_order_item || null,
+            productId: item.product?.id ?? item.product ?? null,
+            product:
+              item.product_name ||
+              item.item_name ||
+              item.service_name ||
+              item.product?.product_name ||
+              "Product",
+            slNo: String(idx + 1).padStart(2, "0"),
+            orderedQty: ordered,
+            alreadyDelivered: already,
+            deliveringNow: now,
+            balance: Math.max(0, ordered - already - now),
+            rate,
+            vat_percentage: vatPct,
+            amount,
+            status: itemStatus,
+          };
+        }),
+      );
+    }
     setNotes(first(row, ["notes", "instructions"], ""));
   }, [isEditMode, selectedDeliveryNote, routeData]);
 
-  /* ---------- Item helpers ---------- */
+  /* ---------- Sales Order Selection & Items Prefill ---------- */
+  const handleOrderChange = async (selectedRef) => {
+    setOrderReference(selectedRef);
+    if (!selectedRef) {
+      setSelectedOrderId(null);
+      setItems([]);
+      return;
+    }
 
-  const updateItem = (idToUpdate, field, value) => {
-    setItems((previous) =>
-      previous.map((item) => {
-        if (item.id !== idToUpdate) return item;
-        const updated = { ...item, [field]: value };
-        if (field === "product") updated.productId = null;
-        return updated;
-      }),
-    );
-  };
-
-  const getItemBalance = (item) =>
-    Math.max(
-      0,
-      asNumber(item.orderedQty) -
-        asNumber(item.alreadyDelivered) -
-        asNumber(item.deliveringNow),
+    const matchedOrder = (Array.isArray(salesOrders) ? salesOrders : []).find(
+      (o) => (o.so_number || o.order_number) === selectedRef,
     );
 
-  const getItemStatus = (item) => {
-    const ordered = asNumber(item.orderedQty);
-    const deliveredAfterThis =
-      asNumber(item.alreadyDelivered) + asNumber(item.deliveringNow);
-    if (ordered > 0 && deliveredAfterThis >= ordered) return "Fully Delivered";
-    if (deliveredAfterThis > 0) return "Partial";
-    return "Pending";
+    if (matchedOrder) {
+      setSelectedOrderId(matchedOrder.id);
+      const custVal =
+        matchedOrder.customer?.id ??
+        matchedOrder.customer_id ??
+        matchedOrder.customer;
+      if (custVal) {
+        setCustomerId(String(custVal));
+      } else if (matchedOrder.customer_name) {
+        const foundCust = customers.find(
+          (c) =>
+            (c.customer_name || c.name || "").toLowerCase().trim() ===
+            matchedOrder.customer_name.toLowerCase().trim(),
+        );
+        if (foundCust) setCustomerId(String(foundCust.id));
+      }
+      if (matchedOrder.warehouse) {
+        setWarehouse(String(matchedOrder.warehouse));
+      }
+    }
+
+    // Try API prefill first for live already_delivered & stock data
+    if (matchedOrder?.id) {
+      try {
+        const prefill = await getDeliveryNotePrefill(matchedOrder.id);
+        if (prefill) {
+          if (prefill.customer) setCustomerId(String(prefill.customer));
+          if (prefill.warehouse) setWarehouse(String(prefill.warehouse));
+          if (Array.isArray(prefill.items) && prefill.items.length) {
+            setItems(
+              prefill.items.map((it, idx) => {
+                const ordered = asNumber(it.ordered_qty);
+                const already = asNumber(it.already_delivered);
+                const now = asNumber(it.delivering_now);
+                const rate = asNumber(it.rate);
+                const vatPct = asNumber(it.vat_percentage);
+                const base = now * rate;
+                const vat = base * (vatPct / 100);
+                const amount = asNumber(it.amount) || base + vat;
+
+                return {
+                  id: `${Date.now()}-${idx}`,
+                  sales_order_item: it.sales_order_item || null,
+                  productId: it.product || null,
+                  product: it.product_name || it.item_name || it.service_name || "Product",
+                  slNo: String(idx + 1).padStart(2, "0"),
+                  orderedQty: ordered,
+                  alreadyDelivered: already,
+                  deliveringNow: now,
+                  balance: Math.max(0, ordered - already - now),
+                  rate,
+                  vat_percentage: vatPct,
+                  amount,
+                  status: it.status || (now >= ordered - already && ordered > 0 ? "Fully Delivered" : (now > 0 ? "Partial" : "Pending")),
+                };
+              }),
+            );
+            return;
+          }
+        }
+      } catch (e) {
+        console.warn("Could not fetch delivery note prefill, falling back to local sales order items:", e);
+      }
+    }
+
+    // Fallback: Populate directly from local sales order items
+    if (matchedOrder && Array.isArray(matchedOrder.items) && matchedOrder.items.length) {
+      setItems(
+        matchedOrder.items.map((it, idx) => {
+          const ordered = asNumber(it.quantity);
+          const already = asNumber(it.delivered_quantity);
+          const now = Math.max(0, ordered - already);
+          const rate = asNumber(it.rate);
+          const vatPct = asNumber(it.vat_percentage ?? 15);
+          const base = now * rate;
+          const vat = base * (vatPct / 100);
+          const amount = base + vat;
+
+          let itemStatus = "Pending";
+          if (already + now >= ordered && ordered > 0) {
+            itemStatus = "Fully Delivered";
+          } else if (already + now > 0) {
+            itemStatus = "Partial";
+          }
+
+          return {
+            id: `${Date.now()}-${idx}`,
+            sales_order_item: it.id || null,
+            productId: it.product?.id ?? it.product ?? null,
+            product: it.product_name || it.service_name || "Product",
+            slNo: String(idx + 1).padStart(2, "0"),
+            orderedQty: ordered,
+            alreadyDelivered: already,
+            deliveringNow: now,
+            balance: Math.max(0, ordered - already - now),
+            rate,
+            vat_percentage: vatPct,
+            amount,
+            status: itemStatus,
+          };
+        }),
+      );
+    }
   };
 
-  /* ---------- Submit ---------- */
+  /* ---------- Delivering Now Edit & Auto Calculate ---------- */
+  const handleDeliveringNowChange = (index, value) => {
+    setItems((prev) => {
+      const next = [...prev];
+      const item = { ...next[index] };
+      const now = asNumber(value);
+      item.deliveringNow = value;
 
+      const ordered = asNumber(item.orderedQty);
+      const already = asNumber(item.alreadyDelivered);
+      item.balance = Math.max(0, ordered - already - now);
+
+      const rate = asNumber(item.rate);
+      const vatPct = asNumber(item.vat_percentage ?? 15);
+      const base = now * rate;
+      const vat = base * (vatPct / 100);
+      item.amount = base + vat;
+
+      if (already + now >= ordered && ordered > 0) {
+        item.status = "Fully Delivered";
+      } else if (already + now > 0) {
+        item.status = "Partial";
+      } else {
+        item.status = "Pending";
+      }
+
+      next[index] = item;
+      return next;
+    });
+  };
+
+  /* ---------- Submit Handler ---------- */
   const handleCreate = async () => {
     setFormError("");
-    if (!deliveryNoteNumber.trim())
-      return setFormError("Please enter a delivery note number.");
     if (!customerId) return setFormError("Please select a customer.");
     if (!dispatchDate || !expectedDeliveryDate)
-      return setFormError("Please select both dates.");
+      return setFormError("Please select both dispatch and delivery dates.");
     if (expectedDeliveryDate < dispatchDate)
       return setFormError(
         "Expected delivery date cannot be earlier than dispatch date.",
       );
     if (!orderReference.trim())
-      return setFormError("Please select or enter an order reference.");
+      return setFormError("Please select an order reference.");
     if (!warehouse) return setFormError("Please select a warehouse.");
-    if (!items.length || items.some((item) => !getProductId(item, products))) {
-      return setFormError("Please select a valid product for every item.");
+
+    if (!items.length) {
+      return setFormError("Please select an Order Reference with products to deliver.");
     }
+
     if (
       items.some(
         (item) =>
@@ -347,34 +469,45 @@ const Createdeliverynotes = () => {
       );
     }
 
-    const payloadItems = items.map((item, index) => ({
-      sl_no: item.slNo || String(index + 1).padStart(2, "0"),
-      product: getProductId(item, products),
-      ordered_qty: asNumber(item.orderedQty),
-      already_delivered: asNumber(item.alreadyDelivered),
-      delivering_now: asNumber(item.deliveringNow),
-      balance: getItemBalance(item),
-      amount: asNumber(item.amount),
-      status: getItemStatus(item).toLowerCase().replace(/\s+/g, "_"),
-    }));
+    const payloadItems = items.map((item, index) => {
+      const delivering = asNumber(item.deliveringNow);
+      const rate = asNumber(item.rate);
+      const vatPct = asNumber(item.vat_percentage ?? 15);
+      const base = delivering * rate;
+      const vatAmt = base * (vatPct / 100);
 
-    const selectedWarehouse = warehouseList.find(
-      (w) => String(w.id) === String(warehouse),
-    );
-    const warehouseName =
-      selectedWarehouse?.warehouse_name || selectedWarehouse?.name || "";
+      return {
+        sales_order_item: item.sales_order_item || undefined,
+        product: item.productId || undefined,
+        item_name: item.product || "Product",
+        service_name: item.product || "Product",
+        quantity: delivering,
+        delivering_now: delivering,
+        rate: rate,
+        vat_percentage: vatPct,
+        vat_amount: vatAmt,
+        amount: base + vatAmt,
+        sl_no: item.slNo || String(index + 1).padStart(2, "0"),
+      };
+    });
 
     const payload = {
-      delivery_note_number: deliveryNoteNumber.trim(),
+      ...(deliveryNoteNumber.trim()
+        ? {
+            dn_number: deliveryNoteNumber.trim(),
+            delivery_note_number: deliveryNoteNumber.trim(),
+          }
+        : {}),
+      sales_order: selectedOrderId || undefined,
+      so_ref: orderReference.trim(),
+      sales_order_reference: orderReference.trim(),
       dispatch_date: dispatchDate,
       expected_delivery_date: expectedDeliveryDate,
       delivery_date: expectedDeliveryDate,
-      status: apiStatus(status),
       delivery_status: apiStatus(status),
+      status: apiStatus(status),
       customer: normalizeId(customerId),
-      sales_order_reference: orderReference.trim(),
       warehouse: normalizeId(warehouse),
-      dispatch_location: warehouseName,
       notes: notes.trim(),
       items: payloadItems,
     };
@@ -388,12 +521,19 @@ const Createdeliverynotes = () => {
       navigate("/delivery/notes");
     } catch (error) {
       console.error("Delivery note save failed:", error);
-      const message =
-        typeof error === "string"
-          ? error
-          : error?.detail ||
-            error?.message ||
-            "Unable to save delivery note. Check the API response.";
+      const respData = error?.response?.data || error?.data || error;
+      let message = "Unable to save delivery note.";
+      if (typeof respData === "string") {
+        message = respData;
+      } else if (respData?.detail) {
+        message = Array.isArray(respData.detail)
+          ? respData.detail.join(", ")
+          : String(respData.detail);
+      } else if (typeof respData === "object") {
+        message = Object.entries(respData)
+          .map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join(", ") : v}`)
+          .join(" | ");
+      }
       setFormError(message);
     }
   };
@@ -413,7 +553,7 @@ const Createdeliverynotes = () => {
     <DeliveryNoteContainer>
       <ReusableHeader
         title={isEditMode ? "Edit Delivery Note" : "Generate Delivery Notes"}
-        breadcrumbs={["Dashboard", "Sales", "Delivery Notes"]}
+        breadcrumbs={["Sales", "Delivery Notes"]}
         showBack
         onBack={() => navigate("/delivery/notes")}
       />
@@ -421,40 +561,17 @@ const Createdeliverynotes = () => {
       {displayedError && <div className="form-error">{displayedError}</div>}
 
       <DeliveryNoteForm>
+        {/* ROW 1: 4 Columns matching UI */}
         <FormGrid>
-        <FormGroup>
-    <Label>DELIVERY NOTE NUMBER</Label>
-    <Input
-        value={deliveryNoteNumber || ""}
-        readOnly
-        placeholder="Auto-generated"
-    />
-</FormGroup>
-
           <FormGroup>
-            <Label>ORDER REFERENCE</Label>
-            <SelectWrapper>
-              <Select
-                value={orderReference}
-                onChange={(e) => setOrderReference(e.target.value)}
-              >
-                <option value="">Select Order Reference</option>
-                {orderOptions.map((order) => {
-                  const ref = order.so_number || order.order_number;
-                  return (
-                    <option key={order.id} value={ref}>
-                      {ref}
-                    </option>
-                  );
-                })}
-                {orderReference &&
-                  !orderOptions.some(
-                    (o) => (o.so_number || o.order_number) === orderReference,
-                  ) && <option value={orderReference}>{orderReference}</option>}
-              </Select>
-              <FiChevronDown />
-            </SelectWrapper>
+            <Label>DELIVERY NOTE NUMBER</Label>
+            <Input
+              value={deliveryNoteNumber}
+              onChange={(e) => setDeliveryNoteNumber(e.target.value)}
+              placeholder="DN 0123"
+            />
           </FormGroup>
+
           <FormGroup>
             <Label>DISPATCH DATE</Label>
             <Input
@@ -497,31 +614,44 @@ const Createdeliverynotes = () => {
               <FiChevronDown />
             </SelectWrapper>
           </FormGroup>
+        </FormGrid>
 
-          {/* <FormGroup>
+        {/* ROW 2: 3 Columns matching UI */}
+        <FormGridThree>
+          <FormGroup>
             <Label>CUSTOMER</Label>
             <SelectWrapper>
               <Select
                 value={customerId}
                 onChange={(e) => {
-                  setCustomerId(e.target.value);
-                  setOrderReference(""); // orders are filtered by customer
+                  const newCustId = e.target.value;
+                  setCustomerId(newCustId);
+                  if (orderReference) {
+                    const currentOrder = (Array.isArray(salesOrders) ? salesOrders : []).find(
+                      (o) => (o.so_number || o.order_number) === orderReference,
+                    );
+                    const oCustId =
+                      currentOrder?.customer?.id ??
+                      currentOrder?.customer_id ??
+                      currentOrder?.customer;
+                    if (newCustId && oCustId && String(oCustId) !== String(newCustId)) {
+                      setOrderReference("");
+                      setSelectedOrderId(null);
+                      setItems([]);
+                    }
+                  }
                 }}
               >
                 <option value="">Select Customer</option>
-                {customers.map((customer, index) => {
-                  const idValue = first(
-                    customer,
-                    ["id", "pk", "customer_id", "customer_code"],
-                    "",
-                  );
+                {customers.map((c, index) => {
+                  const idVal = first(c, ["id", "pk"], index);
                   const label = first(
-                    customer,
-                    ["customer_name", "name", "company_name", "customerName"],
+                    c,
+                    ["customer_name", "name", "company_name"],
                     `Customer ${index + 1}`,
                   );
                   return (
-                    <option key={idValue || index} value={idValue}>
+                    <option key={idVal} value={idVal}>
                       {label}
                     </option>
                   );
@@ -529,8 +659,34 @@ const Createdeliverynotes = () => {
               </Select>
               <FiChevronDown />
             </SelectWrapper>
-          </FormGroup> */}
+          </FormGroup>
 
+          <FormGroup>
+            <Label>ORDER REFERENCE</Label>
+            <SelectWrapper>
+              <Select
+                value={orderReference}
+                onChange={(e) => handleOrderChange(e.target.value)}
+              >
+                <option value="">Select Order Reference</option>
+                {orderOptions.map((order) => {
+                  const ref = order.so_number || order.order_number;
+                  return (
+                    <option key={order.id} value={ref}>
+                      {ref}
+                    </option>
+                  );
+                })}
+                {orderReference &&
+                  !orderOptions.some(
+                    (o) => (o.so_number || o.order_number) === orderReference,
+                  ) && (
+                    <option value={orderReference}>{orderReference}</option>
+                  )}
+              </Select>
+              <FiChevronDown />
+            </SelectWrapper>
+          </FormGroup>
 
           <FormGroup>
             <Label>WAREHOUSE / DISPATCH LOCATION</Label>
@@ -549,8 +705,9 @@ const Createdeliverynotes = () => {
               <FiChevronDown />
             </SelectWrapper>
           </FormGroup>
-        </FormGrid>
+        </FormGridThree>
 
+        {/* ITEMS SECTION */}
         <ItemsTitle>ITEMS TO DELIVER</ItemsTitle>
 
         <ItemsTableWrapper>
@@ -568,95 +725,88 @@ const Createdeliverynotes = () => {
               </tr>
             </thead>
             <tbody>
-              {items.map((item) => (
-                <tr key={item.id}>
-                  <td>{item.slNo}</td>
-                  <td>
-                    <input
-                      list="delivery-product-options"
-                      value={item.product}
-                      placeholder="Select Product"
-                      onChange={(e) =>
-                        updateItem(item.id, "product", e.target.value)
-                      }
-                    />
-                  </td>
-                  <td>
-                    <input
-                      type="number"
-                      min="0"
-                      value={item.orderedQty}
-                      onChange={(e) =>
-                        updateItem(item.id, "orderedQty", e.target.value)
-                      }
-                    />
-                  </td>
-                  <td>
-                    <input
-                      type="number"
-                      min="0"
-                      value={item.alreadyDelivered}
-                      onChange={(e) =>
-                        updateItem(item.id, "alreadyDelivered", e.target.value)
-                      }
-                    />
-                  </td>
-                  <td>
-                    <input
-                      type="number"
-                      min="0"
-                      value={item.deliveringNow}
-                      onChange={(e) =>
-                        updateItem(item.id, "deliveringNow", e.target.value)
-                      }
-                    />
-                  </td>
-                  <td>
-                    <input value={getItemBalance(item)} readOnly />
-                  </td>
-                  <td>
-                    <input
-                      value={item.amount}
-                      onChange={(e) =>
-                        updateItem(item.id, "amount", e.target.value)
-                      }
-                      placeholder="SAR 0.00"
-                    />
-                  </td>
-                  <td>
-                    <span
-                      className={`item-status ${getItemStatus(item).toLowerCase().replace(/\s+/g, "-")}`}
-                    >
-                      {getItemStatus(item)}
-                    </span>
+              {items.length === 0 ? (
+                <tr>
+                  <td colSpan={8} style={{ padding: "24px 0", color: "#6b7280", fontStyle: "italic" }}>
+                    Select an Order Reference above to populate items to deliver.
                   </td>
                 </tr>
-              ))}
+              ) : (
+                items.map((item, index) => (
+                  <tr key={item.id || index}>
+                    <td>{item.slNo}</td>
+                    <td>
+                      <input
+                        value={item.product}
+                        readOnly
+                        style={{ background: "#f9fafb", cursor: "default" }}
+                      />
+                    </td>
+                    <td>
+                      <input
+                        value={item.orderedQty}
+                        readOnly
+                        style={{ background: "#f9fafb", textAlign: "center" }}
+                      />
+                    </td>
+                    <td>
+                      <input
+                        value={item.alreadyDelivered}
+                        readOnly
+                        style={{ background: "#f9fafb", textAlign: "center" }}
+                      />
+                    </td>
+                    <td>
+                      <input
+                        type="number"
+                        min="0"
+                        max={Math.max(0, asNumber(item.orderedQty) - asNumber(item.alreadyDelivered))}
+                        value={item.deliveringNow}
+                        onChange={(e) =>
+                          handleDeliveringNowChange(index, e.target.value)
+                        }
+                        style={{ textAlign: "center", fontWeight: 600, borderColor: "#3049a3" }}
+                      />
+                    </td>
+                    <td>
+                      <input
+                        value={item.balance}
+                        readOnly
+                        style={{ background: "#f9fafb", textAlign: "center" }}
+                      />
+                    </td>
+                    <td>
+                      <input
+                        value={`${currency} ${asNumber(item.amount).toFixed(2)}`}
+                        readOnly
+                        style={{ background: "#f9fafb", textAlign: "right" }}
+                      />
+                    </td>
+                    <td>
+                      <span
+                        className={`item-status ${String(item.status || "pending").toLowerCase().replace(/\s+/g, "-")}`}
+                      >
+                        {item.status}
+                      </span>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </ItemsTable>
         </ItemsTableWrapper>
 
-        <datalist id="delivery-product-options">
-          {products.map((product, index) => (
-            <option
-              key={first(product, ["id", "pk", "product_id"], index)}
-              value={first(
-                product,
-                ["product_name", "name", "code", "product_code"],
-                "",
-              )}
-            />
-          ))}
-        </datalist>
-
+        {/* NOTES & INSTRUCTIONS */}
         <NotesSection>
-    <Label>Notes &amp; instructions</Label>
-    <NotesTextarea
-        value="Remaining packing units to be dispatched with next batch from Jeddah DC - awaiting stock replenishment."
-        readOnly
-    />
-</NotesSection>
+          <Label>Notes &amp; instructions</Label>
+          <NotesTextarea
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            placeholder="Remaining packaging units to be dispatched with next batch from Jeddah DC — awaiting stock replenishment."
+          />
+        </NotesSection>
 
+        {/* ACTION BUTTONS */}
         <ButtonWrapper>
           <CancelButton
             type="button"

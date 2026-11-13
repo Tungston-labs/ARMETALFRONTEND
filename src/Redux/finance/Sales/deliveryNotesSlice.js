@@ -189,21 +189,27 @@ const normalizeDeliveryNote = (row) => {
     row?.warehouseDetails ||
     {};
 
-  const customer =
-    typeof billTo === "object"
-      ? billTo.client ||
-        billTo.name ||
-        billTo.company ||
-        ""
-      : billTo || row?.customer || "";
+  const customerName =
+    row?.customer_name ||
+    row?.customerName ||
+    (typeof row?.customer === "object"
+      ? row?.customer?.customer_name || row?.customer?.name || row?.customer?.company_name
+      : null) ||
+    (typeof billTo === "object"
+      ? billTo?.client || billTo?.name || billTo?.company
+      : null) ||
+    (typeof row?.customer === "string" ? row?.customer : "") ||
+    "";
 
   const warehouseName =
-    typeof warehouse === "object"
-      ? warehouse.name ||
-        warehouse.warehouseName ||
-        warehouse.warehouse_name ||
-        ""
-      : warehouse || row?.warehouseName || "";
+    row?.warehouse_name ||
+    row?.warehouseName ||
+    row?.dispatch_location ||
+    (typeof warehouse === "object"
+      ? warehouse?.warehouse_name || warehouse?.name || warehouse?.warehouseName
+      : null) ||
+    (typeof row?.warehouse === "string" ? row?.warehouse : "") ||
+    "";
 
   return {
     ...row,
@@ -249,9 +255,9 @@ const normalizeDeliveryNote = (row) => {
       row?.invoice_status ??
       "",
 
-    customer,
+    customer: customerName || (typeof row?.customer === "string" || typeof row?.customer === "number" ? row.customer : ""),
 
-    warehouse: warehouseName,
+    warehouse: warehouseName || (typeof row?.warehouse === "string" || typeof row?.warehouse === "number" ? row.warehouse : ""),
 
     /*
       Compatibility fields for your current table
@@ -268,7 +274,8 @@ const normalizeDeliveryNote = (row) => {
       row?.delivery_date ??
       "",
 
-    customer_name: customer,
+    customer_name: customerName,
+    warehouse_name: warehouseName,
 
     amount:
       row?.deliveryValue ??
