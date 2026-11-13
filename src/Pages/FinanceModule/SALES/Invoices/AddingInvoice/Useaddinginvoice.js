@@ -323,43 +323,52 @@ export const useAddingInvoice = () => {
     }, [selectedInvoice]);
 
 
-    useEffect(() => {
-        if (isEditMode || !selectedSalesOrder) return;
+   useEffect(() => {
+    if (isEditMode || !selectedSalesOrder) return;
 
-        setBillTo((prev) => ({
-            ...prev,
-            client: selectedSalesOrder.customer ?? prev.client,
-            address: selectedSalesOrder.customer_address || prev.address,
-            phone: selectedSalesOrder.customer_phone || prev.phone,
-            email: selectedSalesOrder.customer_email || prev.email,
-        }));
+    console.log("Selected Sales Order:", selectedSalesOrder);
 
-        if (selectedSalesOrder.payment_terms in PAYMENT_TERMS_DAYS) {
-            const days = PAYMENT_TERMS_DAYS[selectedSalesOrder.payment_terms];
-            setDueDate(addDaysToDateString(invoiceDate, days));
-        } else if (selectedSalesOrder.due_date && selectedSalesOrder.due_date >= invoiceDate) {
+    // Handle either direct response or nested data response
+    const order = selectedSalesOrder.data || selectedSalesOrder;
 
-            setDueDate(selectedSalesOrder.due_date);
-        }
+    setBillTo({
+        client: order.customer ?? "",
+        address: order.customer_address ?? "",
+        phone: order.customer_phone ?? "",
+        email: order.customer_email ?? "",
+    });
 
-        if (Array.isArray(selectedSalesOrder.items) && selectedSalesOrder.items.length > 0) {
-            setItems(
-                selectedSalesOrder.items.map((item, idx) => ({
-                    id: item.id ?? Date.now() + idx,
-                    product: item.product || "",
-                    slNo: String(idx + 1).padStart(2, "0"),
-                    service: item.product_name || item.service_name || item.service || "",
-                    particular: item.particular || item.description || "",
-                    qty: item.quantity ?? item.qty ?? "",
-                    hsCode: item.hs_code || "",
-                    rate: item.rate || "",
-                    vat: item.vat_percentage ?? item.vat ?? "",
-                    vatAmount: item.vat_amount || "",
-                    amount: item.amount || "",
-                }))
-            );
-        }
-    }, [selectedSalesOrder, isEditMode]);
+    // Payment terms and due date
+    if (order.payment_terms in PAYMENT_TERMS_DAYS) {
+        const days = PAYMENT_TERMS_DAYS[order.payment_terms];
+        setDueDate(addDaysToDateString(invoiceDate, days));
+    } else if (order.due_date && order.due_date >= invoiceDate) {
+        setDueDate(order.due_date);
+    }
+
+    // Populate sales order items
+    if (Array.isArray(order.items) && order.items.length > 0) {
+        setItems(
+            order.items.map((item, idx) => ({
+                id: item.id ?? Date.now() + idx,
+                product: item.product || "",
+                slNo: String(idx + 1).padStart(2, "0"),
+                service:
+                    item.product_name ||
+                    item.service_name ||
+                    item.service ||
+                    "",
+                particular: item.particular || item.description || "",
+                qty: item.quantity ?? item.qty ?? "",
+                hsCode: item.hs_code || "",
+                rate: item.rate ?? "",
+                vat: item.vat_percentage ?? item.vat ?? "",
+                vatAmount: item.vat_amount ?? "",
+                amount: item.amount ?? "",
+            }))
+        );
+    }
+}, [selectedSalesOrder, isEditMode, invoiceDate]);
 
     /* ---- error helpers ---- */
     const clearError = (field) => {
@@ -441,12 +450,36 @@ export const useAddingInvoice = () => {
     };
 
     const handleSalesOrderChange = (e) => {
-        const value = e.target.value;
-        setSalesOrderRef(value);
-        if (value) {
-            dispatch(getInvoiceSalesOrderById(value));
-        }
-    };
+    const value = e.target.value;
+
+    setSalesOrderRef(value);
+
+    if (!value) {
+        dispatch(clearSelectedSalesOrder());
+
+        setBillTo({
+            client: "",
+            address: "",
+            phone: "",
+            email: "",
+        });
+
+        setItems([defaultItem()]);
+        return;
+    }
+
+    // Clear previous selection while fetching the new order
+    dispatch(clearSelectedSalesOrder());
+
+    setBillTo({
+        client: "",
+        address: "",
+        phone: "",
+        email: "",
+    });
+
+    dispatch(getInvoiceSalesOrderById(value));
+};
 
     const handleCustomerChange = (e) => {
         const customerId = e.target.value;

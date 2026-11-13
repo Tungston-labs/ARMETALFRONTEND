@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
+import { getCompanySelf } from "../../../../../Redux/companySlice"
 import {
   FiChevronDown,
   FiPlus,
@@ -66,12 +67,11 @@ import {
   selectWarehouses,
   selectAvailableQuotations,
   selectSelectedQuotation,
+  updateSalesOrderPartial,
 } from "../../../../../Redux/finance/Sales/Salesorderslice";
 import { Hourglass } from "lucide-react";
-
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PHONE_PATTERN = /^[0-9+\-\s()]{7,20}$/;
-
 
 
 const defaultItem = () => ({
@@ -192,6 +192,8 @@ const AddingOrder = () => {
   const [summary, setSummary] = useState(emptyForm.summary);
   const [items, setItems] = useState(emptyForm.items);
   const [isSendForApproval, setIsSendForApproval] = useState(false);
+  const company = useSelector((state) => state.company.company);
+
   const [errors, setErrors] = useState({});
 
   const clearError = (field) =>
@@ -202,14 +204,47 @@ const AddingOrder = () => {
       return next;
     });
 
-  useEffect(() => {
-    dispatch(getCompanies());
-    dispatch(getCustomers());
-    dispatch(getWarehouses());
-    if (!isEditMode) {
-      dispatch(getAvailableQuotations());
-    }
-  }, [dispatch, isEditMode]);
+
+    const handleSaveAsDraft = async () => {
+  const payload = buildPayload("Draft");
+
+  if (isEditMode) {
+    await dispatch(
+      updateSalesOrderPartial({
+        id: salesOrderId,
+        salesOrderData: payload,
+      })
+    ).unwrap();
+  } else {
+    await dispatch(addSalesOrder(payload)).unwrap();
+  }
+};
+
+const handleSendForApproval = async () => {
+  const payload = buildPayload("Pending Approval");
+
+  if (isEditMode) {
+    await dispatch(
+      updateSalesOrderPartial({
+        id: salesOrderId,
+        salesOrderData: payload,
+      })
+    ).unwrap();
+  } else {
+    await dispatch(addSalesOrder(payload)).unwrap();
+  }
+};
+
+useEffect(() => {
+  dispatch(getCompanySelf());
+  dispatch(getCompanies());
+  dispatch(getCustomers());
+  dispatch(getWarehouses());
+
+  if (!isEditMode) {
+    dispatch(getAvailableQuotations());
+  }
+}, [dispatch, isEditMode]);
 
   useEffect(() => {
     if (isEditMode) {
@@ -246,6 +281,20 @@ const AddingOrder = () => {
     setItems(mapped.items);
   }, [selectedSalesOrder]);
 
+  useEffect(() => {
+  dispatch(getCompanySelf());
+}, [dispatch]);
+
+useEffect(() => {
+  if (!company || isEditMode) return;
+
+  setFrom({
+    name: company.name || "",
+    address: company.address || "",
+    phone: company.contact_number || "",
+    email: company.email || "",
+  });
+}, [company, isEditMode]);
   useEffect(() => {
     if (isEditMode || !selectedQuotation) return;
 
@@ -428,6 +477,17 @@ const AddingOrder = () => {
 
     return payload;
   };
+
+  const buildPayload = (status) => ({
+  // Include your existing Sales Order payload fields here.
+
+  company_name: from.name || undefined,
+  company_email: from.email || undefined,
+  company_phone: from.phone || undefined,
+  company_address: from.address || undefined,
+
+  status,
+});
 
   const handleSave = () => {
     // In edit mode the validated fields are read-only, so only validate on create.
