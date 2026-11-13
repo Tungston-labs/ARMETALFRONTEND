@@ -82,9 +82,11 @@ export const deleteQuotation = createAsyncThunk(
 
 export const convertQuotation = createAsyncThunk(
   "quotation/convertQuotation",
-  async (id, { rejectWithValue }) => {
+  async (arg, { rejectWithValue }) => {
     try {
-      return await convertQuotationToSalesOrder(id);
+      const id = typeof arg === "object" && arg !== null ? arg.id : arg;
+      const data = typeof arg === "object" && arg !== null ? arg.data || {} : {};
+      return await convertQuotationToSalesOrder(id, data);
     } catch (error) {
       return rejectWithValue(apiError(error));
     }
