@@ -1,129 +1,56 @@
-import { FaTasks, FaCalendarAlt } from "react-icons/fa";
-import { RiBarChartLine } from "react-icons/ri";
-import { LuCircleDollarSign, LuWallet } from "react-icons/lu";
-import { PiNetworkLight, PiUsersThreeLight } from "react-icons/pi";
-import { GoHome } from "react-icons/go";
-import { FiCodesandbox } from "react-icons/fi";
-import { BsFillBuildingsFill } from "react-icons/bs";
-import { MdOutlineLaptopChromebook } from "react-icons/md";
-import { FaReceipt } from "react-icons/fa";
+import getFinanceSidebarData from "./financeSidebarData";
+import getHrSidebarData from "./hrSidebarData";
+import getSuperAdminSidebarData from "./superAdminSidebarData";
 
-const getSidebarData = (user) => {
+export const isFinanceRoute = (pathname = "") => {
+  if (!pathname) return false;
+  const normalized = pathname.toLowerCase();
+
+  const financePrefixes = [
+    "/sales",
+    "/purchases",
+    "/purchase",
+    "/product",
+    "/warehouse",
+    "/delivery",
+    "/credit-notes",
+    "/sales-return",
+    "/accounts",
+    "/reports",
+    "/finance",
+    "/quotation-list",
+  ];
+
+  return financePrefixes.some(
+    (prefix) => normalized === prefix || normalized.startsWith(`${prefix}/`)
+  );
+};
+
+const getSidebarData = (user, pathname = "") => {
   if (!user) return [];
-
-  const modules = user?.company_modules || {};
 
   // Superadmin gets its own fixed menu
   if (user?.is_superadmin) {
-    return [
-      {
-        title: "DASHBOARD",
-        icon: <MdOutlineLaptopChromebook />,
-        path: "/dashboard",
-      },
-      {
-        title: "COMPANYS",
-        icon: <BsFillBuildingsFill />,
-        path: "/company",
-      },
-      {
-        title: "TRANSACTIONS",
-        icon: <FaReceipt />,
-        path: "/finance",
-      },
-      {
-        title: "PLANS & PRICING",
-        icon: <LuCircleDollarSign />,
-        path: "/PlanAndPricing",
-      },
-    ];
+    return getSuperAdminSidebarData();
+  }
+
+  // If navigating any Finance route, render Finance sidebar
+  if (isFinanceRoute(pathname)) {
+    return getFinanceSidebarData();
   }
 
   // HR admin / HR menu, gated by company_modules
-  if (user?.is_hr_admin || user?.is_hr) {
-    const items = [];
-
-    if (modules.dashboard) {
-      items.push({ title: "DASHBOARD", icon: <GoHome />, path: "/" });
-    }
-
-    if (modules.department) {
-      items.push({ title: "DEPARTMENT", icon: <PiNetworkLight />, path: "/department" });
-    }
-
-    if (modules.employee) {
-      items.push({
-        title: "EMPLOYEE",
-        icon: <PiUsersThreeLight />,
-        children: [
-          { title: "EMPLOYEE LIST", path: "/employee" },
-          { title: "LEAVE REQUEST", path: "/employee-leaveRequestList" },
-          { title: "ATTENDANCE", path: "/employee-attendance" },
-          { title: "ATTEND. REPORT", path: "/employee-attendance-report" },
-          { title: "VISA & CONTRACT", path: "/employee-ContractAndVisaExpiry" },
-          { title: "ARCHIVED STAFF", path: "/employee-archived-staff" },
-        ],
-      });
-    }
-
-    if (modules.daily_task) {
-      items.push({ title: "DAILY TASK", icon: <FaTasks />, path: "/daily-task" });
-    }
-
-    if (modules.finance) {
-      items.push({ title: "FINANCE", icon: <RiBarChartLine />, path: "/finance" });
-    }
-
-    if (modules.payroll) {
-      items.push({ title: "PAYROLL", icon: <LuWallet />, path: "/PayrollList" });
-    }
-
-    if (modules.holiday) {
-      items.push({ title: "HOLIDAY", icon: <FaCalendarAlt />, path: "/holiday" });
-    }
-
-    if (modules.reimbursement) {
-      items.push({ title: "REIMBURSEMENT", icon: <LuCircleDollarSign />, path: "/ReimbursementCards" });
-    }
-
-    if (modules.project) {
-      items.push({ title: "PROJECT", icon: <FiCodesandbox />, path: "/projects" });
-    }
-    if (modules.employee) {
-      items.push({
-        title: "PRODUCT",
-        icon: <PiUsersThreeLight />,
-        children: [
-          { title: "Product List", path: "/product/Product-List" },
-          { title: "Categories", path: "/product/Categories-List" },
-          { title: "Inventory", path: "/product/Inventory-List" },
-          { title: "Warehouses", path: "/product/warehouse" },
-          
-        ],
-      });
-    }
-    if (modules.employee) {
-      items.push({
-        title: "SALES",
-        icon: <PiUsersThreeLight />,
-        children: [
-          { title: "Customers", path: "/sales/customers" },
-          { title: "Quotations", path: "/sales/Quotationlist" },
-          { title: "Sales Orders", path: "/sales/orders" },
-          { title: "Delivery Notes", path: "/delivery/notes" },
-          { title: "Invoices", path: "/sales/invoices" },
-          { title: "Payments", path: "/sales/payments" },
-          { title: "Customer Ledger", path: "/sales/customer-ledger" },
-          { title: "Credit Notes", path: "/credit-notes" },
-          { title: "Sales Returns", path: "/sales-return" },
-          { title: "Recurring Billing", path: "/sales/recurring-billing" },
-        ],
-      });
-    }
-    return items;
+  if (user?.is_hr_admin || user?.is_hr || user?.is_employee) {
+    return getHrSidebarData(user);
   }
 
-  return [];
+  // Default fallback to finance or hr if user has access
+  const modules = user?.company_modules || {};
+  if (modules.finance) {
+    return getFinanceSidebarData();
+  }
+
+  return getHrSidebarData(user);
 };
 
 export default getSidebarData;

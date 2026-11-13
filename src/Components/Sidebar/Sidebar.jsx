@@ -1,10 +1,11 @@
 import React, { useState } from "react";
 import { FaBars } from "react-icons/fa";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
 
-import getSidebarData from "./SidebarData";
+import getSidebarData, { isFinanceRoute } from "./SidebarData";
 import SidebarItem from "./SidebarItem";
+import FinanceSidebar from "./FinanceSidebar";
 import {
   SidebarContainer,
   LogoSection,
@@ -21,11 +22,17 @@ const Sidebar = () => {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
   const user = useSelector((state) => state.auth.user);
 
   if (!user) return null;
 
-  const sidebarItems = getSidebarData(user);
+  // Dedicated Finance Sidebar when navigating Finance module
+  if (isFinanceRoute(location.pathname)) {
+    return <FinanceSidebar />;
+  }
+
+  const sidebarItems = getSidebarData(user, location.pathname);
 
   return (
     <>

@@ -164,6 +164,9 @@ import AddQuotation from "../Pages/FinanceModule/SALES/Quotations/modal/AddQuota
 // import Quotationlist from "../Pages/FinanceModule/SALES/Quotations/Quotationlist.jsx";
 import WarehouseList from "../Pages/FinanceModule/PRODUCTS/Warehouse/WarehouseList.jsx";
 import QuotationsList from "../Pages/FinanceModule/SALES/Quotations/QuotationsList.jsx";
+import BalanceSheet from "../Pages/FinanceModule/REPORTS/BalanceSheet/BalanceSheet.jsx";
+import ChangesInEquityReport from "../Pages/FinanceModule/REPORTS/ChangesInEquityReport/ChangesInEquityReport.jsx";
+import FinancePage from "../Pages/HrModule/finance/FinancePage.jsx";
 
 const FinanceRoutes = () => {
   return (
@@ -175,6 +178,7 @@ const FinanceRoutes = () => {
       <Route path="/product/Categories-List" element={<CategoriesList />} />
       <Route path="/product/Product-List" element={<ProductList />} />
       <Route path="/product/Warehouse" element={<WarehouseList />} />
+      <Route path="/product/warehouse" element={<WarehouseList />} />
       <Route path="warehouse/:id" element={<WarehouseDetails />} />
       <Route path="/product/Inventory-List" element={<InventoryList />} />
 
@@ -265,11 +269,9 @@ const FinanceRoutes = () => {
           SALES - QUOTATIONS
       ===================================================== */}
 
-      {/* <Route path="Quotation-List" element={<QuotationsList />} /> */}
+      <Route path="Quotation-List" element={<QuotationsList />} />
+      <Route path="sales/quotations" element={<QuotationsList />} />
       <Route path="sales/add-Quotation" element={<AddQuotation />} />
-
-
-
       <Route path="sales/Quotationlist" element={<QuotationsList />} />
 
       {/* =====================================================
@@ -398,7 +400,10 @@ const FinanceRoutes = () => {
          <Route path="reports/expense-report" element={<ExpenseReport />} />
          <Route path="reports/vendor-report" element={<VendorReport />} />
          <Route path="reports/profit-loss" element={<ProfitLoss />} />
-          <Route path="reports/cash-flow" element={<CashFlow />} />
+         <Route path="reports/balance-sheet" element={<BalanceSheet />} />
+         <Route path="reports/cash-flow" element={<CashFlow />} />
+         <Route path="reports/changes-in-equity" element={<ChangesInEquityReport />} />
+         <Route path="finance" element={<FinancePage />} />
     </>
   );
 };
