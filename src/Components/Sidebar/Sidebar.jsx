@@ -27,8 +27,39 @@ const Sidebar = () => {
 
   if (!user) return null;
 
-  // Dedicated Finance Sidebar when navigating Finance module
-  if (isFinanceRoute(location.pathname)) {
+  // Superadmin ALWAYS gets its own superadmin sidebar
+  if (user?.is_superadmin) {
+    const sidebarItems = getSidebarData(user, location.pathname);
+    return (
+      <>
+        <MobileButton $open={mobileOpen} onClick={() => setMobileOpen(true)}>
+          <FaBars />
+        </MobileButton>
+
+        <MobileOverlay $open={mobileOpen} onClick={() => setMobileOpen(false)} />
+
+        <SidebarContainer $collapsed={collapsed} $open={mobileOpen}>
+          <LogoSection onClick={() => setCollapsed(!collapsed)} style={{ cursor: "pointer" }}>
+            <Logo src="/images/superadminlogo.png" alt="logo" />
+          </LogoSection>
+
+          <Menu>
+            {sidebarItems.map((item) => (
+              <SidebarItem key={item.title} item={item} collapsed={collapsed} />
+            ))}
+          </Menu>
+
+          <Footer>
+            <span>POWERED BY</span>
+            <strong>REKORY</strong>
+          </Footer>
+        </SidebarContainer>
+      </>
+    );
+  }
+
+  // Non-superadmin: Dedicated Finance Sidebar when navigating Finance module
+  if (isFinanceRoute(location.pathname, user)) {
     return <FinanceSidebar />;
   }
 

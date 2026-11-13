@@ -2,7 +2,8 @@ import getFinanceSidebarData from "./financeSidebarData";
 import getHrSidebarData from "./hrSidebarData";
 import getSuperAdminSidebarData from "./superAdminSidebarData";
 
-export const isFinanceRoute = (pathname = "") => {
+export const isFinanceRoute = (pathname = "", user = null) => {
+  if (user?.is_superadmin) return false;
   if (!pathname) return false;
   const normalized = pathname.toLowerCase();
 
@@ -35,7 +36,7 @@ const getSidebarData = (user, pathname = "") => {
   }
 
   // If navigating any Finance route, render Finance sidebar
-  if (isFinanceRoute(pathname)) {
+  if (isFinanceRoute(pathname, user)) {
     return getFinanceSidebarData();
   }
 
