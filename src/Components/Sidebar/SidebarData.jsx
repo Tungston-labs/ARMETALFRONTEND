@@ -102,6 +102,24 @@ const getSidebarData = (user) => {
         ],
       });
     }
+    if (modules.employee) {
+      items.push({
+        title: "SALES",
+        icon: <PiUsersThreeLight />,
+        children: [
+          { title: "Customers", path: "/sales/customers" },
+          { title: "Quotations", path: "/sales/Quotationlist" },
+          { title: "Sales Orders", path: "/sales/orders" },
+          { title: "Delivery Notes", path: "/delivery/notes" },
+          { title: "Invoices", path: "/sales/invoices" },
+          { title: "Payments", path: "/sales/payments" },
+          { title: "Customer Ledger", path: "/sales/customer-ledger" },
+          { title: "Credit Notes", path: "/credit-notes" },
+          { title: "Sales Returns", path: "/sales-return" },
+          { title: "Recurring Billing", path: "/sales/recurring-billing" },
+        ],
+      });
+    }
     return items;
   }
 
