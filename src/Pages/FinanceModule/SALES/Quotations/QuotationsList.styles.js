@@ -1,224 +1,240 @@
-// import styled from "styled-components";
+import styled from "styled-components";
 
-// /* =========================================================
-//    PAGE
-// ========================================================= */
+export const PageContainer = styled.div`
+  width: 100%;
+  max-width: 100%;
+  min-height: 100vh;
+  background: #f5f6fa;
+  padding: 20px;
+  box-sizing: border-box;
 
-// export const PageContainer = styled.div`
-//   width: 100%;
-//   min-height: 100vh;
-//   padding: 0 38px 25px;
-//   box-sizing: border-box;
-//   background: #ffffff;
+  @media (max-width: 768px) {
+    padding: 14px;
+  }
 
-//   @media (max-width: 1100px) {
-//     padding: 0 20px 25px;
-//   }
+  @media (max-width: 480px) {
+    padding: 10px;
+  }
+`;
 
-//   @media (max-width: 700px) {
-//     padding: 0 12px 20px;
-//   }
-// `;
+export const HeaderActionsRow = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
 
-// /* =========================================================
-//    HEADER
-// ========================================================= */
+  @media (max-width: 768px) {
+    width: 100%;
+  }
+`;
 
-// export const HeaderActions = styled.div`
-//   display: flex;
-//   align-items: center;
-//   gap: 8px;
-//   flex-wrap: nowrap;
+export const ExportOutlineButton = styled.button`
+  height: 38px;
+  padding: 0 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: #ffffff;
+  color: #111827;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-family: "Poppins", sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
 
-//   @media (max-width: 1100px) {
-//     flex-wrap: wrap;
-//   }
+  &:hover:not(:disabled) {
+    background: #f9fafb;
+    border-color: #9ca3af;
+  }
 
-//   @media (max-width: 700px) {
-//     width: 100%;
-//   }
-// `;
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+`;
 
-// /* =========================================================
-//    DATE RANGE
-// ========================================================= */
+export const GenerateQuoteButton = styled.button`
+  height: 38px;
+  padding: 0 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: #3857b9;
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  font-family: "Poppins", sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
 
-// export const DateRangeWrapper = styled.div`
-//   position: relative;
-//   width: 190px;
-//   height: 32px;
+  &:hover:not(:disabled) {
+    background: #2e49a5;
+  }
+`;
 
-//   @media (max-width: 700px) {
-//     width: 180px;
-//   }
-// `;
+export const DateRangeGroup = styled.div`
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 38px;
+  padding: 0 10px;
+  background: #ffffff;
+  border: 1px solid #dfe3ea;
+  border-radius: 6px;
+  font-size: 12px;
+  color: #374151;
 
-// export const DateInput = styled.input`
-//   width: 100%;
-//   height: 32px;
+  input[type="date"] {
+    border: none;
+    outline: none;
+    background: transparent;
+    font-family: inherit;
+    font-size: 12px;
+    color: #374151;
+    width: 112px;
+    cursor: pointer;
+  }
 
-//   padding: 0 32px 0 10px;
-//   box-sizing: border-box;
+  @media (max-width: 600px) {
+    width: 100%;
+    justify-content: space-between;
+  }
+`;
 
-//   border: 1px solid #e1e1e1;
-//   border-radius: 4px;
+/* Compact KPI cards wrapper so currency totals don't truncate on laptop screens */
+export const CompactStatsWrapper = styled.div`
+  width: 100%;
+  margin-bottom: 4px;
 
-//   background: #ffffff;
-//   color: #222222;
+  & > div {
+    gap: 12px;
+  }
 
-//   font-family: inherit;
-//   font-size: 11px;
+  & > div > div {
+    padding: 14px 12px;
+    gap: 10px;
+  }
 
-//   outline: none;
-//   cursor: pointer;
-// `;
+  & > div > div > div:last-child > div:first-child {
+    font-size: clamp(13px, 1.15vw, 16px);
+  }
+`;
 
-// export const CalendarIcon = styled.span`
-//   position: absolute;
+export const InlineStatusSelect = styled.select`
+  height: 28px;
+  padding: 0 6px;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+  background: #ffffff;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  outline: none;
+  color: ${({ $status }) => {
+    const s = String($status || "").toLowerCase();
+    if (s === "approved" || s === "converted") return "#16a34a";
+    if (s === "pending") return "#f59e0b";
+    if (s === "rejected") return "#ef4444";
+    if (s === "sent" || s === "draft") return "#3b82f6";
+    return "#6b7280";
+  }};
 
-//   top: 50%;
-//   right: 9px;
+  &:focus {
+    border-color: #3857b9;
+  }
+`;
 
-//   display: flex;
-//   align-items: center;
-//   justify-content: center;
+/* Compact table wrapper: eliminates horizontal scroll on laptop screens */
+export const CompactTableWrapper = styled.div`
+  width: 100%;
+  max-width: 100%;
 
-//   transform: translateY(-50%);
+  table {
+    min-width: 100% !important;
+    table-layout: auto !important;
+  }
 
-//   color: #333333;
+  th {
+    font-size: 12.5px !important;
+    padding: 11px 8px !important;
+  }
 
-//   pointer-events: none;
+  td {
+    font-size: 12.5px !important;
+    padding: 10px 8px !important;
+  }
 
-//   svg {
-//     width: 14px;
-//     height: 14px;
-//   }
-// `;
+  @media (max-width: 1320px) {
+    th,
+    td {
+      font-size: 12px !important;
+      padding: 9px 6px !important;
+    }
+  }
+`;
 
-// /* =========================================================
-//    FILTER
-// ========================================================= */
+export const StatusText = styled.span`
+  font-size: 12.5px;
+  font-weight: 500;
+  text-transform: capitalize;
+  color: ${({ $status }) => {
+    const s = String($status || "").toLowerCase();
+    if (s === "approved" || s === "converted") return "#16a34a";
+    if (s === "pending") return "#f59e0b";
+    if (s === "rejected") return "#ef4444";
+    if (s === "sent" || s === "draft") return "#3b82f6";
+    return "#6b7280";
+  }};
+`;
 
-// export const FilterSection = styled.div`
-//   margin-bottom: 0;
+export const ActionGroup = styled.div`
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+`;
 
-//   border: 1px solid #e3e3e3;
-//   border-bottom: none;
+export const ConvertSOButton = styled.button`
+  height: 28px;
+  padding: 0 10px;
+  border: 1px solid #dfe3ea;
+  background: #ffffff;
+  color: #1f2937;
+  border-radius: 4px;
+  font-size: 11.5px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
 
-//   border-radius: 4px 4px 0 0;
-// `;
+  &:hover {
+    border-color: #3857b9;
+    color: #3857b9;
+    background: #eff6ff;
+  }
+`;
 
-// /* =========================================================
-//    TABLE
-// ========================================================= */
+export const SmallIconButton = styled.button`
+  width: 28px;
+  height: 28px;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+  color: ${({ $danger }) => ($danger ? "#ef4444" : "#374151")};
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
 
-// export const TableSection = styled.div`
-//   width: 100%;
-//   overflow-x: auto;
-
-//   border: 1px solid #e3e3e3;
-//   border-top: none;
-// `;
-
-// export const QuotationNumber = styled.span`
-//   color: #304ba3;
-//   font-size: 13px;
-//   font-weight: 600;
-//   cursor: pointer;
-
-//   &:hover {
-//     text-decoration: underline;
-//   }
-// `;
-
-// /* =========================================================
-//    STATUS
-// ========================================================= */
-
-// export const StatusBadge = styled.span`
-//   display: inline-flex;
-//   align-items: center;
-//   justify-content: center;
-
-//   min-width: 75px;
-//   padding: 5px 10px;
-
-//   border-radius: 4px;
-
-//   font-size: 11px;
-//   font-weight: 500;
-
-//   ${({ $status }) => {
-//     if ($status === "Approved") {
-//       return `
-//         color: #16834b;
-//         background: #e7f7ee;
-//       `;
-//     }
-
-//     if ($status === "Pending") {
-//       return `
-//         color: #c47b00;
-//         background: #fff4dc;
-//       `;
-//     }
-
-//     if ($status === "Rejected") {
-//       return `
-//         color: #d64545;
-//         background: #fdeaea;
-//       `;
-//     }
-
-//     return `
-//       color: #555555;
-//       background: #f1f1f1;
-//     `;
-//   }}
-// `;
-
-// /* =========================================================
-//    ACTIONS
-// ========================================================= */
-
-// export const ActionButtons = styled.div`
-//   display: flex;
-//   align-items: center;
-//   justify-content: center;
-//   gap: 6px;
-// `;
-
-// export const IconButton = styled.button`
-//   width: 30px;
-//   height: 30px;
-
-//   display: inline-flex;
-//   align-items: center;
-//   justify-content: center;
-
-//   padding: 0;
-
-//   border: 1px solid #e1e1e1;
-//   border-radius: 4px;
-
-//   background: #ffffff;
-//   color: #555555;
-
-//   cursor: pointer;
-
-//   transition:
-//     background 0.2s ease,
-//     color 0.2s ease,
-//     border-color 0.2s ease;
-
-//   svg {
-//     width: 15px;
-//     height: 15px;
-//   }
-
-//   &:hover {
-//     background: #f5f6fb;
-//     color: #304ba3;
-//     border-color: #304ba3;
-//   }
-// `;
+  &:hover {
+    border-color: ${({ $danger }) => ($danger ? "#ef4444" : "#3857b9")};
+    background: ${({ $danger }) => ($danger ? "#fef2f2" : "#eff6ff")};
+  }
+`;

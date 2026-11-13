@@ -1,225 +1,115 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
-  FiCalendar,
   FiCheckCircle,
   FiClock,
-  FiDownload,
   FiFileText,
+  FiPlus,
+  FiUpload,
   FiXCircle,
 } from "react-icons/fi";
 
 import QuotationInvoice from "../../../../Components/QuotationInvoice/QuotationInvoice";
-
-import {
-  createQuotation,
-  fetchQuotationDetails,
-  fetchQuotationKpi,
-  fetchQuotationList,
-  convertQuotation,
-} from "../../../../Redux/quotationThunks";
-
+import ReusableConfirmModal from "../../../../Components/modals/ReusableConfirmModal";
 import ReusableHeader from "../../../../Components/ReusableTable/ReusableHeader";
 import ReusableFilter from "../../../../Components/ReusableTable/ReusableFilter";
-import { HeaderButton } from "../../../../Components/ReusableTable/ReusableHeader.styles";
 import ReusableTable from "../../../../Components/ReusableTable/ReusableTable";
 import ReusablePagination from "../../../../Components/Pagination/ReusablePagination";
 import StatsCards from "../../../../Components/StatsCards/StatsCards";
 
+import AddQuotation from "./modal/AddQuotation";
 import { quotationColumns } from "./quotationColumns";
+import { exportQuotationsService } from "../../../../services/quotationService";
+import {
+  convertQuotation,
+  createQuotation,
+  deleteQuotation,
+  fetchQuotationDetails,
+  fetchQuotationKpi,
+  fetchQuotationList,
+  patchQuotation,
+  updateQuotation,
+} from "../../../../Redux/quotationThunks";
+import {
+  CompactStatsWrapper,
+  CompactTableWrapper,
+  DateRangeGroup,
+  ExportOutlineButton,
+  GenerateQuoteButton,
+  HeaderActionsRow,
+  PageContainer,
+} from "./QuotationsList.styles";
 
-const formatCurrency = (value) => {
-  if (value === null || value === undefined || value === "") return "-";
+const ROWS_PER_PAGE = 20;
 
-  const number = Number(value);
-
-  return Number.isNaN(number)
-    ? value
-    : `SAR ${number.toLocaleString("en-US", {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-      })}`;
+const formatCurrency = (value, currency = "SAR") => {
+  if (value === null || value === undefined || value === "") return "—";
+  const num = Number(value);
+  if (Number.isNaN(num)) return String(value);
+  return `${currency || "SAR"} ${num.toLocaleString("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
 };
 
-const normalizeQuotationData = (quotation = {}) => {
-  const company =
-    quotation.from && typeof quotation.from === "object"
-      ? quotation.from
-      : {
-          name: quotation.from || quotation.company_name || "TUNGSTON LABS",
-        };
+const formatTwoDigits = (value) => {
+  const num = Number(value ?? 0);
+  if (!Number.isFinite(num) || num < 0) return "00";
+  return num < 10 ? `0${Math.trunc(num)}` : String(Math.trunc(num));
+};
 
-  const client =
-    quotation.billTo && typeof quotation.billTo === "object"
-      ? quotation.billTo
-      : {
-          client:
-            quotation.billTo ||
-            quotation.client_name ||
-            quotation.bill_to ||
-            "",
-        };
+const formatApiError = (err) => {
+  if (!err) return "";
+  if (typeof err === "string") return err;
+  if (err.detail) return err.detail;
+  if (err.errors && typeof err.errors === "object") {
+    return Object.entries(err.errors)
+      .map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join(", ") : v}`)
+      .join(" | ");
+  }
+  return Object.entries(err)
+    .map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join(", ") : v}`)
+    .join(" | ");
+};
 
+const toInvoicePreviewData = (q = {}) => {
+  const currency = q.currency || "SAR";
   return {
-    quotationNumber:
-      quotation.quotationNumber ||
-      quotation.quotation_number ||
-      quotation.quote_number ||
-      "",
-
-    quotationDate:
-      quotation.quotationDate ||
-      quotation.quotation_date ||
-      quotation.issue_date ||
-      "",
-
-    dueDate:
-      quotation.dueDate || quotation.due_date || quotation.valid_till || "",
-
-    paymentStatus:
-      quotation.paymentStatus || quotation.payment_status || "Draft",
-
-    from: company.name || "TUNGSTON LABS",
-
-    companyAddress:
-      company.address ||
-      quotation.companyAddress ||
-      quotation.company_address ||
-      "",
-
-    phoneNumber:
-      company.phone || quotation.phoneNumber || quotation.phone || "",
-
-    email: company.email || quotation.email || "",
-
-    billTo:
-      client.client ||
-      client.name ||
-      quotation.billTo ||
-      quotation.client_name ||
-      quotation.bill_to ||
-      "",
-
-    clientAddress:
-      client.address ||
-      quotation.clientAddress ||
-      quotation.client_address ||
-      "",
-
-    clientPhone:
-      client.phone || quotation.clientPhone || quotation.client_phone || "",
-
-    clientEmail:
-      client.email || quotation.clientEmail || quotation.client_email || "",
-
-    discount: quotation.discount ?? 0,
-
-    notes: quotation.notes || "",
-
-    totals: {
-      subtotal: quotation.totals?.subtotal ?? quotation.subtotal ?? 0,
-
-      vat: quotation.totals?.vat ?? quotation.vat ?? 0,
-
-      discount: quotation.totals?.discount ?? quotation.discount ?? 0,
-
-      total:
-        quotation.totals?.total ??
-        quotation.total_amount ??
-        quotation.total ??
-        0,
-    },
-
-    items: (quotation.items || []).map((item) => ({
-      id: item.id,
-      service: item.service || item.particular || "",
-      description: item.description || "",
-      quantity: item.quantity ?? item.qty ?? "",
-      hsCode: item.hsCode || item.hs_code || item.hsn || "",
-      rate: item.rate ?? 0,
-      vatRate: item.vatRate ?? item.vat_rate ?? item.gst_percent ?? 0,
-    })),
+    quoteNumber: q.quote_number || "",
+    invoiceNumber: q.quote_number || "",
+    issueDate: q.issue_date || "",
+    dueDate: q.valid_till || "",
+    paymentStatus: q.status
+      ? String(q.status).charAt(0).toUpperCase() + String(q.status).slice(1)
+      : "Pending",
+    companyName: q.from_company_name || "Tungston Labs",
+    companyAddress: q.from_address || "",
+    phone: q.from_phone_number || "",
+    email: q.from_email || "",
+    billToName: q.bill_to_name || q.customer_name || "",
+    billToAddress: q.bill_to_address || "",
+    subTotal: formatCurrency(q.sub_total ?? 0, currency),
+    gstTotal: formatCurrency(q.total_vat ?? 0, currency),
+    discount: formatCurrency(q.discount ?? 0, currency),
+    roundOff: formatCurrency(q.round_off ?? 0, currency),
+    grandTotal: formatCurrency(q.quote_amount ?? 0, currency),
+    website: "https://tungstonlabs.com/",
+    items: (q.items || []).map((item, idx) => {
+      const lineBase = Number(item.quantity ?? 0) * Number(item.rate ?? 0);
+      return {
+        id: item.id || idx,
+        slNo: String(idx + 1).padStart(2, "0"),
+        particular: item.service_name || item.product_name || item.description || "-",
+        qty: item.quantity ?? 0,
+        hsn: item.hs_code || "-",
+        rate: formatCurrency(item.rate ?? 0, currency),
+        gstPercent: `${item.vat_percentage ?? 0}%`,
+        gstAmount: formatCurrency(item.vat_amount ?? 0, currency),
+        amount: formatCurrency(lineBase, currency),
+      };
+    }),
   };
 };
-
-const toInvoiceData = (data) => ({
-  quoteNumber: data.quotationNumber,
-  invoiceNumber: data.quotationNumber,
-  issueDate: data.quotationDate,
-  dueDate: data.dueDate,
-  paymentStatus: data.paymentStatus || "Draft",
-
-  companyName: String(data.from || "Tungston Labs"),
-  companyAddress: String(data.companyAddress || ""),
-  phone: String(data.phoneNumber || ""),
-  email: String(data.email || ""),
-
-  billToName: String(data.billTo || "Company/Client Name"),
-  billToAddress: String(data.clientAddress || ""),
-
-  subTotal: formatCurrency(data.totals.subtotal),
-  gstTotal: formatCurrency(data.totals.vat),
-  discount: formatCurrency(data.totals.discount),
-  roundOff: formatCurrency(0),
-  grandTotal: formatCurrency(data.totals.total),
-
-  website: "https://tungstonlabs.com/",
-
-  items: data.items.map((item, index) => {
-    const amount = Number(item.quantity) * Number(item.rate) || 0;
-
-    const vatAmount = (amount * Number(item.vatRate || 0)) / 100;
-
-    return {
-      id: item.id,
-      slNo: String(index + 1).padStart(2, "0"),
-      particular: item.service || item.description || "-",
-
-      qty: item.quantity || "0",
-      hsn: item.hsCode || "-",
-      rate: formatCurrency(item.rate),
-      gstPercent: `${item.vatRate || 0}%`,
-      gstAmount: formatCurrency(vatAmount),
-      amount: formatCurrency(amount),
-    };
-  }),
-});
-
-const toApiPayload = (data) => ({
-  quotation_number: data.quotationNumber,
-  quotation_date: data.quotationDate,
-  due_date: data.dueDate,
-  payment_status: data.paymentStatus || "pending",
-
-  client_name: data.billTo,
-  client_address: data.clientAddress,
-  client_phone: data.clientPhone,
-  client_email: data.clientEmail,
-
-  items: data.items
-    .filter(
-      (item) =>
-        item.service ||
-        item.description ||
-        Number(item.quantity) ||
-        Number(item.rate),
-    )
-    .map((item) => ({
-      service: item.service || item.description,
-      description: item.description || item.service,
-      quantity: Number(item.quantity) || 1,
-      hs_code: item.hsCode || "",
-      rate: Number(item.rate) || 0,
-      vat_rate: Number(item.vatRate) || 0,
-    })),
-
-  discount: Number(data.discount) || 0,
-  notes: data.notes,
-
-  subtotal: data.totals.subtotal,
-  vat: data.totals.vat,
-  total_amount: data.totals.total,
-});
 
 const QuotationsList = () => {
   const dispatch = useDispatch();
@@ -229,500 +119,370 @@ const QuotationsList = () => {
   );
 
   const [search, setSearch] = useState("");
-  const [customer, setCustomer] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [status, setStatus] = useState("");
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const [isQuotationModalOpen, setIsQuotationModalOpen] = useState(false);
 
-  const [invoiceQuotation, setInvoiceQuotation] = useState(null);
-
-  const [sendError, setSendError] = useState(null);
-
-  const rowsPerPage = 10;
+  const [editorState, setEditorState] = useState({ open: false, initialData: null });
+  const [previewQuotation, setPreviewQuotation] = useState(null);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [submitError, setSubmitError] = useState("");
+  const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
-    dispatch(
-      fetchQuotationList({
-        page: currentPage,
-        page_size: rowsPerPage,
-      }),
-    );
+    const t = setTimeout(() => setDebouncedSearch(search.trim()), 350);
+    return () => clearTimeout(t);
+  }, [search]);
 
-    dispatch(fetchQuotationKpi());
-  }, [currentPage, dispatch]);
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [debouncedSearch, status, fromDate, toDate]);
 
-  const quotationData = useMemo(
+  const queryParams = useMemo(() => {
+    const params = { page: currentPage, page_size: ROWS_PER_PAGE };
+    if (debouncedSearch) params.search = debouncedSearch;
+    if (status) params.status = status.toLowerCase();
+    if (fromDate) params.from_date = fromDate;
+    if (toDate) params.to_date = toDate;
+    return params;
+  }, [currentPage, debouncedSearch, status, fromDate, toDate]);
+
+  const reloadData = useCallback(() => {
+    const kpiParams = {};
+    if (fromDate) kpiParams.from_date = fromDate;
+    if (toDate) kpiParams.to_date = toDate;
+    return Promise.all([
+      dispatch(fetchQuotationList(queryParams)),
+      dispatch(fetchQuotationKpi(kpiParams)),
+    ]);
+  }, [dispatch, queryParams, fromDate, toDate]);
+
+  useEffect(() => {
+    reloadData();
+  }, [reloadData]);
+
+  const currency = kpi?.currency || "SAR";
+
+  const rows = useMemo(
     () =>
-      list.map((quotation) => ({
-        ...quotation,
-
-        quoteNumber:
-          quotation.quoteNumber ||
-          quotation.quotation_number ||
-          quotation.quote_number ||
-          "-",
-
-        customer:
-          quotation.customer ||
-          quotation.client_name ||
-          quotation.bill_to ||
-          "-",
-
-        issueDate:
-          quotation.issueDate ||
-          quotation.quotation_date ||
-          quotation.issue_date ||
-          "-",
-
-        validTill:
-          quotation.validTill ||
-          quotation.due_date ||
-          quotation.valid_till ||
-          "-",
-
-        quoteAmount:
-          quotation.quoteAmount ?? quotation.total_amount ?? quotation.total,
-
-        negotiationAmount:
-          quotation.negotiationAmount ?? quotation.negotiation_amount,
-
-        status: quotation.status || quotation.payment_status || "Pending",
+      (list || []).map((q) => ({
+        ...q,
+        quoteNumber: q.quote_number || q.quoteNumber || "-",
+        customerName: q.customer_name || q.bill_to_name || "-",
+        issueDate: q.issue_date || "",
+        validTill: q.valid_till || "",
+        oldQuoteAmount: q.old_quote_amount,
+        negotiationAmount: q.negotiation_amount,
+        quoteAmount: q.quote_amount,
+        status: q.status || "pending",
       })),
     [list],
   );
 
-  const customerOptions = useMemo(
-    () => [
-      ...new Set(
-        quotationData.map((quotation) => quotation.customer).filter(Boolean),
-      ),
-    ],
-    [quotationData],
-  );
-
-  const filteredData = useMemo(() => {
-    const value = search.trim().toLowerCase();
-
-    return quotationData.filter(
-      (quotation) =>
-        (!value ||
-          String(quotation.quoteNumber).toLowerCase().includes(value) ||
-          String(quotation.customer).toLowerCase().includes(value)) &&
-        (!customer || quotation.customer === customer) &&
-        (!status || quotation.status === status),
-    );
-  }, [customer, quotationData, search, status]);
-
-  const totalPages = Math.max(
-    1,
-    pagination.totalPages || Math.ceil(filteredData.length / rowsPerPage),
-  );
-
-  const paginatedData = pagination.totalPages
-    ? filteredData
-    : filteredData.slice(
-        (currentPage - 1) * rowsPerPage,
-        currentPage * rowsPerPage,
-      );
-
   const quotationCards = useMemo(
     () => [
       {
-        count: formatCurrency(
-          kpi.totalValue ??
-            kpi.total_quotation_value ??
-            quotationData.reduce(
-              (sum, item) => sum + Number(item.quoteAmount || 0),
-              0,
-            ),
-        ),
-
-        title: "Total Quotation Value",
+        count: formatCurrency(kpi?.totalQuotationValue ?? 0, currency),
+        title: "Total quotation value",
         icon: <FiFileText size={20} />,
         backgroundColor: "#e7f5ec",
         iconColor: "#1bb36f",
       },
-
       {
-        count: formatCurrency(
-          kpi.negotiation ??
-            kpi.negotiation_amount ??
-            quotationData.reduce(
-              (sum, item) => sum + Number(item.negotiationAmount || 0),
-              0,
-            ),
-        ),
-
-        title: "Negotiation Amount",
-        icon: <FiCheckCircle size={20} />,
-        backgroundColor: "#e8efff",
-        iconColor: "#4267d6",
+        count: formatCurrency(kpi?.negotiationAmount ?? 0, currency),
+        title: "Negotiation amount",
+        icon: <FiFileText size={20} />,
+        backgroundColor: "#f3e8ff",
+        iconColor: "#9333ea",
       },
-
       {
-        count: String(
-          kpi.approved ??
-            kpi.approved_quotes ??
-            quotationData.filter((item) => item.status === "Approved").length,
-        ).padStart(2, "0"),
-
-        title: "Approved Quotes",
+        count: formatTwoDigits(kpi?.approvedQuotes),
+        title: "Approved Quotations",
         icon: <FiCheckCircle size={20} />,
         backgroundColor: "#e7f5ec",
         iconColor: "#1bb36f",
+        onClick: () => setStatus("Approved"),
       },
-
       {
-        count: String(
-          kpi.rejected ??
-            kpi.rejected_quotes ??
-            quotationData.filter((item) => item.status === "Rejected").length,
-        ).padStart(2, "0"),
-
-        title: "Rejected Quotes",
+        count: formatTwoDigits(kpi?.pendingQuotes),
+        title: "Pending quotes",
+        icon: <FiClock size={20} />,
+        backgroundColor: "#fff7ed",
+        iconColor: "#ea580c",
+        onClick: () => setStatus("Pending"),
+      },
+      {
+        count: formatTwoDigits(kpi?.rejectedQuotes),
+        title: "Rejected Quotations",
         icon: <FiXCircle size={20} />,
         backgroundColor: "#fdeaea",
         iconColor: "#d9544f",
-      },
-
-      {
-        count: String(
-          kpi.pending ??
-            kpi.pending_quotes ??
-            quotationData.filter((item) => item.status === "Pending").length,
-        ).padStart(2, "0"),
-
-        title: "Pending Quotes",
-        icon: <FiClock size={20} />,
-        backgroundColor: "#fef1eb",
-        iconColor: "#e58842",
+        onClick: () => setStatus("Rejected"),
       },
     ],
-    [kpi, quotationData],
+    [kpi, currency],
   );
 
-  const showQuotation = (quotation) => {
-    const data = normalizeQuotationData(quotation);
+  const handleView = useCallback(
+    (row) => {
+      dispatch(fetchQuotationDetails(row.id))
+        .unwrap()
+        .then((detail) => setPreviewQuotation(toInvoicePreviewData(detail)))
+        .catch(() => setPreviewQuotation(toInvoicePreviewData(row)));
+    },
+    [dispatch],
+  );
 
-    setInvoiceQuotation({
-      formData: data,
-      invoice: toInvoiceData(data),
-    });
+  const handleEdit = useCallback(
+    (row) => {
+      setSubmitError("");
+      dispatch(fetchQuotationDetails(row.id))
+        .unwrap()
+        .then((detail) =>
+          setEditorState({ open: true, initialData: detail || row }),
+        )
+        .catch(() => setEditorState({ open: true, initialData: row }));
+    },
+    [dispatch],
+  );
+
+  const handleConvertSO = useCallback(
+    (row) => {
+      dispatch(convertQuotation(row.id))
+        .unwrap()
+        .then(() => reloadData())
+        .catch(() => undefined);
+    },
+    [dispatch, reloadData],
+  );
+
+  const handleStatusChange = useCallback(
+    (row, nextStatus) => {
+      if (!row?.id || !nextStatus) return;
+      dispatch(patchQuotation({ id: row.id, data: { status: nextStatus } }))
+        .unwrap()
+        .then(() => reloadData())
+        .catch(() => undefined);
+    },
+    [dispatch, reloadData],
+  );
+
+  const handleExport = async () => {
+    if (exporting) return;
+    setExporting(true);
+    try {
+      const blob = await exportQuotationsService({
+        ...(debouncedSearch ? { search: debouncedSearch } : {}),
+        ...(status ? { status: status.toLowerCase() } : {}),
+        ...(fromDate ? { from_date: fromDate } : {}),
+        ...(toDate ? { to_date: toDate } : {}),
+        export: "csv",
+      });
+      const url = window.URL.createObjectURL(new Blob([blob]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", "quotations.csv");
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("Failed to export quotations:", err);
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const handleDownloadRow = useCallback(
+    (row) => {
+      dispatch(fetchQuotationDetails(row.id))
+        .unwrap()
+        .then((detail) => {
+          setPreviewQuotation(toInvoicePreviewData(detail));
+        })
+        .catch(() => setPreviewQuotation(toInvoicePreviewData(row)));
+    },
+    [dispatch],
+  );
+
+  const handleSaveEditor = async (payload) => {
+    setSubmitError("");
+    try {
+      const isEditing = Boolean(editorState.initialData?.id);
+      if (isEditing) {
+        await dispatch(
+          updateQuotation({
+            id: editorState.initialData.id,
+            data: payload,
+            partial: true,
+          }),
+        ).unwrap();
+      } else {
+        await dispatch(createQuotation(payload)).unwrap();
+      }
+      setEditorState({ open: false, initialData: null });
+      if (!isEditing && currentPage !== 1) {
+        setCurrentPage(1);
+      } else {
+        await reloadData();
+      }
+    } catch (err) {
+      setSubmitError(formatApiError(err) || "Failed to save quotation.");
+    }
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget) return;
+    try {
+      await dispatch(deleteQuotation(deleteTarget.id)).unwrap();
+      setDeleteTarget(null);
+      reloadData();
+    } catch {
+      setDeleteTarget(null);
+    }
   };
 
   const columns = useMemo(
     () =>
       quotationColumns({
-        dispatch,
-        currentPage,
-        rowsPerPage,
-        convertQuotation,
-        fetchQuotationList,
-        fetchQuotationKpi,
-        fetchQuotationDetails,
-        showQuotation,
+        onConvertSO: handleConvertSO,
+        onView: handleView,
+        onDownload: handleDownloadRow,
+        onEdit: handleEdit,
+        onDelete: (row) => setDeleteTarget(row),
+        onStatusChange: handleStatusChange,
         formatCurrency,
+        currency,
       }),
-    [dispatch, currentPage, rowsPerPage],
+    [handleConvertSO, handleView, handleDownloadRow, handleEdit, handleStatusChange, currency],
   );
 
-  const submitQuotation = (statusOverride = null) => {
-    if (!invoiceQuotation?.formData || saving) return;
-
-    const { formData } = invoiceQuotation;
-
-    const validItems = (formData.items || []).filter(
-      (item) =>
-        item.service ||
-        item.description ||
-        Number(item.quantity) ||
-        Number(item.rate),
-    );
-
-    if (
-      !String(formData.quotationNumber || "").trim() ||
-      !String(formData.billTo || "").trim() ||
-      validItems.length === 0
-    ) {
-      setSendError(
-        "Quotation number, customer, and at least one quotation item are required.",
-      );
-
-      return;
-    }
-
-    const payload = toApiPayload(formData);
-
-    const normalizedStatus =
-      statusOverride ||
-      formData.paymentStatus ||
-      payload.payment_status ||
-      "pending";
-
-    const finalPayload = {
-      ...payload,
-
-      payment_status: normalizedStatus,
-      status: normalizedStatus,
-
-      quotation_number: formData.quotationNumber,
-
-      quotation_date: formData.quotationDate,
-
-      due_date: formData.dueDate,
-
-      client_name: formData.billTo,
-
-      client_address: formData.clientAddress,
-
-      client_phone: formData.clientPhone,
-
-      client_email: formData.clientEmail,
-
-      notes: formData.notes,
-
-      discount: Number(formData.discount ?? payload.discount ?? 0),
-
-      subtotal: Number(formData.totals?.subtotal ?? payload.subtotal ?? 0),
-
-      vat: Number(formData.totals?.vat ?? payload.vat ?? 0),
-
-      total_amount: Number(formData.totals?.total ?? payload.total_amount ?? 0),
-    };
-
-    setSendError(null);
-
-    dispatch(createQuotation(finalPayload))
-      .unwrap()
-      .then(() => {
-        setInvoiceQuotation(null);
-
-        dispatch(
-          fetchQuotationList({
-            page: currentPage,
-            page_size: rowsPerPage,
-          }),
-        );
-
-        dispatch(fetchQuotationKpi());
-      })
-      .catch((requestError) => setSendError(requestError));
-  };
-
-  const handleSaveDraft = () => submitQuotation("Draft");
-
-  const handleSendQuotation = () => submitQuotation("Pending");
-
-  const handleExport = () => {
-    const rows = [
-      [
-        "Quote Number",
-        "Customer",
-        "Issue Date",
-        "Valid Till",
-        "Quote Amount",
-        "Status",
-      ],
-
-      ...filteredData.map((row) => [
-        row.quoteNumber,
-        row.customer,
-        row.issueDate,
-        row.validTill,
-        row.quoteAmount,
-        row.status,
-      ]),
-    ];
-
-    const csv = rows
-      .map((row) =>
-        row
-          .map((value) => `"${String(value ?? "").replace(/"/g, '""')}"`)
-          .join(","),
-      )
-      .join("\n");
-
-    const url = URL.createObjectURL(
-      new Blob([csv], {
-        type: "text/csv;charset=utf-8;",
-      }),
-    );
-
-    const link = document.createElement("a");
-
-    link.href = url;
-    link.download = "quotations.csv";
-    link.click();
-
-    URL.revokeObjectURL(url);
-  };
-
-  if (invoiceQuotation) {
+  if (previewQuotation) {
     return (
       <QuotationInvoice
-        quotation={invoiceQuotation.invoice}
-        items={invoiceQuotation.invoice.items}
-        onCancel={() => {
-          setSendError(null);
-          setInvoiceQuotation(null);
-        }}
-        onDownload={handleExport}
-        onSaveDraft={handleSaveDraft}
-        onSend={handleSendQuotation}
-        error={sendError}
+        quotation={previewQuotation}
+        items={previewQuotation.items}
+        onCancel={() => setPreviewQuotation(null)}
+        onDownload={() => window.print()}
       />
     );
   }
 
-  if (isQuotationModalOpen) {
+  if (editorState.open) {
     return (
-      <GenerateQuotationModal
-        isOpen={isQuotationModalOpen}
-        onClose={() => setIsQuotationModalOpen(false)}
-        onPreview={(data) => {
-          const normalized = normalizeQuotationData(data);
-
-          setInvoiceQuotation({
-            formData: normalized,
-            invoice: toInvoiceData(normalized),
-          });
-
-          setIsQuotationModalOpen(false);
+      <AddQuotation
+        isOpen
+        initialData={editorState.initialData}
+        submitting={saving}
+        error={submitError}
+        onCancel={() => {
+          setSubmitError("");
+          setEditorState({ open: false, initialData: null });
         }}
+        onSave={handleSaveEditor}
       />
     );
   }
 
   return (
-    <div
-      style={{
-        width: "100%",
-        minHeight: "100vh",
-        background: "#f5f6fa",
-        padding: "24px",
-      }}
-    >
+    <PageContainer>
       <ReusableHeader
         title="Quotations"
-        breadcrumbs={["Dashboard", "Sales", "Quotations"]}
+        breadcrumbs={["Sales", "Quotations"]}
       >
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 12,
-            flexWrap: "wrap",
-          }}
-        >
-          <HeaderButton $variant="excel" onClick={handleExport}>
-            <FiDownload /> EXPORT
-          </HeaderButton>
+        <HeaderActionsRow>
+          <ExportOutlineButton
+            type="button"
+            onClick={handleExport}
+            disabled={exporting}
+          >
+            <FiUpload size={14} />
+            {exporting ? "Exporting..." : "Export"}
+          </ExportOutlineButton>
 
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              position: "relative",
-              background: "#fff",
-              border: "1px solid #dfe3ea",
-              borderRadius: 6,
-              height: 40,
-              padding: "0 12px 0 14px",
-              minWidth: 190,
+          <DateRangeGroup title="Filter by Issue Date range">
+            <input
+              type="date"
+              aria-label="From date"
+              value={fromDate}
+              onChange={(e) => setFromDate(e.target.value)}
+            />
+            <span>–</span>
+            <input
+              type="date"
+              aria-label="To date"
+              value={toDate}
+              onChange={(e) => setToDate(e.target.value)}
+            />
+          </DateRangeGroup>
+
+          <GenerateQuoteButton
+            type="button"
+            onClick={() => {
+              setSubmitError("");
+              setEditorState({ open: true, initialData: null });
             }}
           >
-            <span
-              style={{
-                fontSize: 12,
-                color: "#333",
-                whiteSpace: "nowrap",
-              }}
-            >
-              01 Apr 2026 - 30 Apr 2026
-            </span>
-
-            <span
-              style={{
-                marginLeft: 10,
-                fontSize: 14,
-                color: "#5b6478",
-              }}
-            >
-              <FiCalendar />
-            </span>
-          </div>
-
-          <HeaderButton
-            $variant="orange"
-            onClick={() => setIsQuotationModalOpen(true)}
-          >
-            <FiFileText /> GENERATE QUOTE
-          </HeaderButton>
-        </div>
+            <FiPlus size={15} />
+            Generate Quote
+          </GenerateQuoteButton>
+        </HeaderActionsRow>
       </ReusableHeader>
 
-      <div style={{ marginTop: 12 }}>
+      <CompactStatsWrapper>
         <StatsCards cards={quotationCards} loading={loading} />
-      </div>
+      </CompactStatsWrapper>
 
       {error && (
-        <div
-          role="alert"
-          style={{
-            margin: "16px 0",
-            color: "#b42318",
-          }}
-        >
-          Unable to load quotations. Please try again.
+        <div role="alert" style={{ margin: "12px 0", color: "#b42318", fontSize: 13 }}>
+          {formatApiError(error) || "Unable to load quotations."}
         </div>
       )}
 
-      <div
-        style={{
-          marginTop: 18,
-          marginBottom: 12,
-        }}
-      >
-        <ReusableFilter
-          search={search}
-          onSearch={(value) => {
-            setSearch(value);
-            setCurrentPage(1);
-          }}
-          department={customer}
-          departments={customerOptions}
-          onDepartment={(value) => {
-            setCustomer(value);
-            setCurrentPage(1);
-          }}
-          status={status}
-          statuses={["Approved", "Pending", "Rejected"]}
-          onStatus={(value) => {
-            setStatus(value);
-            setCurrentPage(1);
-          }}
-          showSearch
-          showDepartment
-          showStatus
-          rightButton={
-            <HeaderButton $variant="orange" onClick={() => setCurrentPage(1)}>
-              Filter
-            </HeaderButton>
-          }
-        />
-      </div>
+      <ReusableFilter
+        search={search}
+        onSearch={setSearch}
+        searchPlaceholder="Search Quote no/customer"
+        status={status}
+        statuses={["Approved", "Pending", "Rejected", "Draft", "Sent", "Converted"]}
+        onStatus={setStatus}
+        showSearch
+        showStatus
+        showDepartment={false}
+        showDate={false}
+      />
 
-      <ReusableTable columns={columns} data={paginatedData} loading={loading} />
-
-      <div style={{ marginTop: 18 }}>
-        <ReusablePagination
-          currentPage={currentPage}
-          totalPages={totalPages}
-          onPageChange={setCurrentPage}
-          totalRecords={pagination.totalItems}
+      <CompactTableWrapper>
+        <ReusableTable
+          columns={columns}
+          data={rows}
+          loading={loading}
+          emptyMessage="No quotations found"
+          autoLayout
         />
-      </div>
-    </div>
+      </CompactTableWrapper>
+
+      <ReusablePagination
+        currentPage={currentPage}
+        totalPages={Math.max(1, pagination.totalPages || 1)}
+        onPageChange={setCurrentPage}
+        totalRecords={pagination.totalItems}
+      />
+
+      <ReusableConfirmModal
+        show={Boolean(deleteTarget)}
+        title="Delete Quotation"
+        message={`Are you sure you want to delete "${deleteTarget?.quoteNumber || "this quotation"}"?`}
+        confirmText="Delete"
+        cancelText="Cancel"
+        confirmVariant="danger"
+        loadingText="Deleting..."
+        onConfirm={handleConfirmDelete}
+        onClose={() => setDeleteTarget(null)}
+      />
+    </PageContainer>
   );
 };
 

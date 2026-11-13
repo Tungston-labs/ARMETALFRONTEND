@@ -40,12 +40,23 @@ export const deleteQuotationService = async (id) => {
 
 export const deleteQuotationById = deleteQuotationService;
 
-export const convertQuotationService = async (id) => {
-  const response = await API.post(`${quotationPath}/${id}/convert-so/`);
+export const convertQuotationService = async (id, data = {}) => {
+  const response = await API.post(`${quotationPath}/${id}/convert-so/`, data);
   return response.data;
 };
 
 export const convertQuotationToSalesOrder = convertQuotationService;
+
+export const exportQuotationsService = async (params = {}) => {
+  const response = await API.get(`${quotationPath}/export/`, {
+    params: {
+      ...params,
+      export: params.export || "csv",
+    },
+    responseType: "blob",
+  });
+  return response.data;
+};
 
 export const quotationKpiService = async (params = {}) => {
   const response = await API.get(`${quotationPath}/kpi/`, { params });

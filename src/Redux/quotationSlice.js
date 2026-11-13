@@ -31,11 +31,14 @@ const initialState = {
     previous: null,
   },
   kpi: {
+    currency: "SAR",
     totalQuotationValue: 0,
     negotiationAmount: 0,
     approvedQuotes: 0,
     rejectedQuotes: 0,
     pendingQuotes: 0,
+    draftQuotes: 0,
+    sentQuotes: 0,
   },
   loading: false,
   listLoading: false,
@@ -78,13 +81,31 @@ const quotationSlice = createSlice({
         state.listLoading = false;
         state.list = getRows(action.payload);
         state.quotations = state.list;
+        const totalItems =
+          action.payload?.total_items ?? action.payload?.count ?? state.list.length;
+        const pageSize = action.meta?.arg?.page_size || 20;
         state.pagination = {
-          totalItems: action.payload?.total_items ?? action.payload?.count ?? state.list.length,
-          totalPages: action.payload?.total_pages ?? 1,
-          currentPage: action.payload?.current_page ?? 1,
+          totalItems,
+          totalPages:
+            action.payload?.total_pages ??
+            (Math.ceil(totalItems / pageSize) || 1),
+          currentPage:
+            action.payload?.current_page ?? action.meta?.arg?.page ?? 1,
           next: action.payload?.next ?? null,
           previous: action.payload?.previous ?? null,
         };
+        if (action.payload?.total_quotation_value !== undefined) {
+          state.kpi = {
+            currency: action.payload?.currency || state.kpi.currency || "SAR",
+            totalQuotationValue: action.payload.total_quotation_value ?? 0,
+            negotiationAmount: action.payload.negotiation_amount ?? 0,
+            approvedQuotes: action.payload.approved_quotes ?? 0,
+            rejectedQuotes: action.payload.rejected_quotes ?? 0,
+            pendingQuotes: action.payload.pending_quotes ?? 0,
+            draftQuotes: action.payload.draft_quotes ?? 0,
+            sentQuotes: action.payload.sent_quotes ?? 0,
+          };
+        }
       })
       .addCase(fetchQuotationList.rejected, (state, action) => {
         state.loading = false;
@@ -107,6 +128,7 @@ const quotationSlice = createSlice({
       .addCase(fetchQuotationKpi.fulfilled, (state, action) => {
         const payload = action.payload?.data || action.payload || {};
         state.kpi = {
+          currency: payload.currency || state.kpi.currency || "SAR",
           totalQuotationValue:
             payload.totalQuotationValue ?? payload.total_quotation_value ?? payload.totalValue ?? 0,
           negotiationAmount:
@@ -117,15 +139,22 @@ const quotationSlice = createSlice({
             payload.rejectedQuotes ?? payload.rejected_quotes ?? payload.rejected ?? 0,
           pendingQuotes:
             payload.pendingQuotes ?? payload.pending_quotes ?? payload.pending ?? 0,
+          draftQuotes:
+            payload.draftQuotes ?? payload.draft_quotes ?? 0,
+          sentQuotes:
+            payload.sentQuotes ?? payload.sent_quotes ?? 0,
         };
       })
       .addCase(fetchQuotationKpi.rejected, (state) => {
         state.kpi = {
+          currency: state.kpi.currency || "SAR",
           totalQuotationValue: 0,
           negotiationAmount: 0,
           approvedQuotes: 0,
           rejectedQuotes: 0,
           pendingQuotes: 0,
+          draftQuotes: 0,
+          sentQuotes: 0,
         };
       })
       .addCase(createQuotation.pending, (state) => {
