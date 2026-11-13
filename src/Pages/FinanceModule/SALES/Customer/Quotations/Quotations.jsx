@@ -20,7 +20,7 @@ import { getCustomerQuotations } from "../../../../../Redux/finance/Sales/Custom
 
 const Quotations = () => {
   const dispatch = useDispatch();
-  const { customerId } = useParams(); // adjust if id comes via props instead
+  const { customerId } = useParams(); 
 
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);

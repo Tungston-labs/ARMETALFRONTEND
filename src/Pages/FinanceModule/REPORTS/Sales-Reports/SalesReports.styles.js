@@ -12,10 +12,10 @@ export const MainReportLayout = styled.div`
 
   align-items: stretch;
 
-    /* Tablet and below: stack table and side panel */
-    @media (max-width: 1350px) {
-        grid-template-columns: minmax(0, 1fr);
-    }
+  /* Tablet and below: stack table and side panel */
+  @media (max-width: 1350px) {
+    grid-template-columns: minmax(0, 1fr);
+  }
 
   /* Mobile: tighter spacing */
   @media (max-width: 600px) {

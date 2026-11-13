@@ -1,25 +1,9 @@
 import { Route } from "react-router-dom";
-
-/* =========================================================
-   PRODUCTS
-========================================================= */
-
-import Warehouse from "../Pages/FinanceModule/PRODUCTS/Warehouse/Warehouselist.jsx";
 import WarehouseDetails from "../Pages/FinanceModule/PRODUCTS/Warehouse/WarehouseDetails.jsx";
 import InventoryList from "../Pages/FinanceModule/PRODUCTS/Inventory/Inventorylist.jsx";
 import ProductList from "../Pages/FinanceModule/PRODUCTS/ProductList/ProductList";
 import CategoriesList from "../Pages/FinanceModule/PRODUCTS/Categories/CategoriesList";
-
-/* =========================================================
-   SALES - QUOTATIONS
-========================================================= */
-
 import QuotationsList from "../Pages/FinanceModule/SALES/Quotations/QuotationsList.jsx";
-
-/* =========================================================
-   SALES - CUSTOMERS
-========================================================= */
-
 import CustomerList from "../Pages/FinanceModule/SALES/Customer/CustomerList";
 import Overview from "../Pages/FinanceModule/SALES/Customer/Overview/Overview";
 import Quotations from "../Pages/FinanceModule/SALES/Customer/Quotations/Quotations";
@@ -29,73 +13,23 @@ import Ledger from "../Pages/FinanceModule/SALES/Customer/Ledger/Ledger";
 import CreditNotes from "../Pages/FinanceModule/SALES/Customer/CreditNotes/CreditNotes";
 import CompanyLayout from "../Pages/FinanceModule/SALES/Customer/layout/CompanyLayout";
 import Invoices from "../Pages/FinanceModule/SALES/Customer/Invoices/Invoices";
-
-/* =========================================================
-   SALES - ORDERS
-========================================================= */
-
 import SalesOrder from "../Pages/FinanceModule/SALES/SalesOrders/SalesOrder";
 import AddingOrder from "../Pages/FinanceModule/SALES/SalesOrders/modal/AddingOrder.jsx";
-
-/* =========================================================
-   SALES - INVOICES
-========================================================= */
-
 import SalesInvoices from "../Pages/FinanceModule/SALES/Invoices/SalesInvoices";
 import AddingInvoice from "../Pages/FinanceModule/SALES/Invoices/AddingInvoice/AddingInvoice.jsx";
-
-/* =========================================================
-   SALES - RECURRING BILLING
-========================================================= */
-
 import RecurringBilling from "../Pages/FinanceModule/SALES/Recurring Billing/RecurringBilling";
-
-/* =========================================================
-   SALES - LEDGER
-========================================================= */
-
 import CustomerLedger from "../Pages/FinanceModule/SALES/Ledger/Customerledger.jsx";
-
-/* =========================================================
-   SALES - DELIVERY NOTES
-========================================================= */
-
 import DeliveryNotes from "../Pages/FinanceModule/SALES/DeliveryNotes/DeliveryNotes.jsx";
 import Createdeliverynotes from "../Pages/FinanceModule/SALES/DeliveryNotes/modal/CreatedeliveryNotes.jsx";
-
-/* =========================================================
-   SALES - PAYMENTS
-========================================================= */
-
 import PaymentPage from "../Pages/FinanceModule/SALES/Payments/Payment.jsx";
-
-/* =========================================================
-   SALES - CREDIT NOTES
-========================================================= */
-
 import SalesCreditNotes from "../Pages/FinanceModule/SALES/CreditNotes/SalesCreditNotes.jsx";
 import CreateCreditNotes from "../Pages/FinanceModule/SALES/CreditNotes/modal/CreateCreditNotes.jsx";
 import CreditAction from "../Pages/FinanceModule/SALES/CreditNotes/action/CreditAction.jsx";
-
-/* =========================================================
-   SALES - SALES RETURN
-========================================================= */
-
 import SalesReturn from "../Pages/FinanceModule/SALES/SalesReturn/SalesReturn.jsx";
 import CreateSalesReturnAction from "../Pages/FinanceModule/SALES/SalesReturn/modal/CreateSalesReturnAction.jsx";
 import SalesReturnAction from "../Pages/FinanceModule/SALES/SalesReturn/action/SalesReturnAction.jsx";
-
-/* =========================================================
-   PURCHASES - PURCHASE ORDERS
-========================================================= */
-
 import PurchaseOrders from "../Pages/FinanceModule/PURCHASES/PurchaseOrders/PurchaseOrders.jsx";
 import AddingPurchaseOrder from "../Pages/FinanceModule/PURCHASES/PurchaseOrders/modal/Addingpurchaseorder.jsx";
-
-/* =========================================================
-   PURCHASES - VENDORS
-========================================================= */
-
 import Vendors from "../Pages/FinanceModule/PURCHASES/Vendors/Vendors.jsx";
 import VendorOverview from "../Pages/FinanceModule/PURCHASES/Vendors/Overview/VendorOverview.jsx";
 import VendorPurchaseOrders from "../Pages/FinanceModule/PURCHASES/Vendors/Orders/VendorPurchaseOrders.jsx";
@@ -104,37 +38,12 @@ import VendorLedgerTab from "../Pages/FinanceModule/PURCHASES/Vendors/Ledger/Ven
 import VendorLayout from "../Pages/FinanceModule/PURCHASES/Vendors/layout/Vendorlayout.jsx";
 import VendorDebitNotes from "../Pages/FinanceModule/PURCHASES/Vendors/DebitNotes/Debitnotes.jsx";
 import VendorBills from "../Pages/FinanceModule/PURCHASES/Vendors/Bills/VendorBills.jsx";
-
-/* =========================================================
-   PURCHASES - VENDOR LEDGER
-========================================================= */
-
 import VendorLedger from "../Pages/FinanceModule/PURCHASES/VendorLedger/VendorLedger.jsx";
-
-/* =========================================================
-   PURCHASES - BILLS
-========================================================= */
-
 import Bill from "../Pages/FinanceModule/PURCHASES/Bill/Bill.jsx";
 import CreateBill from "../Pages/FinanceModule/PURCHASES/Bill/modal/CreateBill.jsx";
-
-/* =========================================================
-   PURCHASES - PAYMENTS
-========================================================= */
-
 import PurchasePaymentPage from "../Pages/FinanceModule/PURCHASES/Payments/Payment.jsx";
-
-/* =========================================================
-   PURCHASES - DEBIT NOTES
-========================================================= */
-
 import PurchaseDebitNotes from "../Pages/FinanceModule/PURCHASES/DebitNotes/DebitNotes.jsx";
 import CreateDebitNote from "../Pages/FinanceModule/PURCHASES/DebitNotes/modal/CreateDebitNote.jsx";
-
-/* =========================================================
-   ACCOUNTS
-========================================================= */
-
 import ChartOfAccounts from "../Pages/FinanceModule/ACCOUNTS/Chart of Accounts/ChartOfAccounts.jsx";
 import GeneralLedger from "../Pages/FinanceModule/ACCOUNTS/General Ledger/GeneralLedger.jsx";
 import Expenses from "../Pages/FinanceModule/ACCOUNTS/Expenses/Expenses.jsx";
@@ -144,11 +53,6 @@ import SalesReports from "../Pages/FinanceModule/REPORTS/Sales-Reports/SalesRepo
 import CustomerReport from "../Pages/FinanceModule/REPORTS/Customer-Reports/CustomerReport.jsx";
 import ExpenseReport from "../Pages/FinanceModule/REPORTS/Expense-Report/ExpenseReport.jsx";
 import VendorReport from "../Pages/FinanceModule/REPORTS/Vendor-Report/VendorReport.jsx";
-
-/* =========================================================
-   ACCOUNTS - JOURNAL ENTRIES
-========================================================= */
-
 import JournalEntries from "../Pages/FinanceModule/ACCOUNTS/JournalEntries/JournalEntries.jsx";
 import NewJournalentry from "../Pages/FinanceModule/ACCOUNTS/JournalEntries/modal/NewJournalentry.jsx";
 import PurchaseReports from "../Pages/FinanceModule/REPORTS/PurchaseReports/PurchaseReports.jsx";
@@ -159,244 +63,160 @@ import Banking from "../Pages/FinanceModule/ACCOUNTS/Bank/Banking.jsx";
 import TrialBalance from "../Pages/FinanceModule/ACCOUNTS/TrialBalance/TrialBalance.jsx";
 import ProfitLoss from "../Pages/FinanceModule/REPORTS/ProfitLoss/ProfitLoss.jsx";
 import CashFlow from "../Pages/FinanceModule/REPORTS/CashFlow/CashFlow.jsx";
+import BalanceSheet from "../Pages/FinanceModule/REPORTS/BalanceSheet/BalanceSheet.jsx";
+import ChangesInEquity from "../Pages/FinanceModule/REPORTS/ChangesInEquityReport/ChangesInEquityReport.jsx";
+import AddingRecurring from "../Pages/FinanceModule/SALES/Recurring Billing/modal/AddingRecurring.jsx";
+import WarehouseList from "../Pages/FinanceModule/PRODUCTS/Warehouse/WarehouseList.jsx";
 
 const FinanceRoutes = () => {
-  return (
-    <>
-      {/* =====================================================
-          PRODUCTS
-      ===================================================== */}
+    return (
+        <>
+            <Route path="product/Categories-List" element={<CategoriesList />} />
+            <Route path="product/Product-List" element={<ProductList />} />
+            <Route path="product/warehouse" element={<WarehouseList />} />
+            <Route path="warehouse/:id" element={<WarehouseDetails />} />
+            <Route path="product/Inventory-List" element={<InventoryList />} />
+            <Route path="purchases/bill" element={<Bill />} />
+            <Route path="purchases/bill/add" element={<CreateBill />} />
+            <Route path="purchases/bill/edit/:id" element={<CreateBill />} />
+            <Route path="purchases/payments" element={<PurchasePaymentPage />} />
+            <Route path="purchases/debit-notes" element={<PurchaseDebitNotes />} />
+            <Route path="purchases/debit-notes/add" element={<CreateDebitNote />} />
+            <Route
+                path="purchases/debit-notes/edit/:id"
+                element={<CreateDebitNote />}
+            />
 
-      <Route path="Categories-List" element={<CategoriesList />} />
+            <Route path="sales/customers" element={<CustomerList />} />
 
-      <Route path="Product-List" element={<ProductList />} />
+            <Route path="sales/customers/:customerId" element={<CompanyLayout />}>
+                <Route index element={<Overview />} />
 
-      <Route path="Warehouse-List" element={<Warehouse />} />
+                <Route path="overview" element={<Overview />} />
 
-      <Route path="warehouse/:id" element={<WarehouseDetails />} />
+                <Route path="quotations" element={<Quotations />} />
 
-      <Route path="Inventory-List" element={<InventoryList />} />
+                <Route path="orders" element={<Orders />} />
 
-      {/* =====================================================
-          PURCHASES - BILLS
-      ===================================================== */}
+                <Route path="invoices" element={<Invoices />} />
 
-      <Route path="purchases/bill" element={<Bill />} />
+                <Route path="payments" element={<Payments />} />
 
-      <Route path="purchases/bill/add" element={<CreateBill />} />
+                <Route path="ledger" element={<Ledger />} />
 
-      <Route path="purchases/bill/edit/:id" element={<CreateBill />} />
+                <Route path="credit-notes" element={<CreditNotes />} />
+            </Route>
 
-      {/* =====================================================
-          PURCHASES - PAYMENTS
-      ===================================================== */}
+            <Route path="sales/orders" element={<SalesOrder />} />
 
-      <Route path="purchases/payments" element={<PurchasePaymentPage />} />
+            <Route path="sales/orders/add" element={<AddingOrder />} />
 
-      {/* =====================================================
-          PURCHASES - DEBIT NOTES
-      ===================================================== */}
+            <Route path="sales/orders/edit/:id" element={<AddingOrder />} />
 
-      <Route path="purchases/debit-notes" element={<PurchaseDebitNotes />} />
+            <Route path="sales/invoices" element={<SalesInvoices />} />
 
-      <Route path="purchases/debit-notes/add" element={<CreateDebitNote />} />
+            <Route path="sales/invoices/add" element={<AddingInvoice />} />
 
-      <Route
-        path="purchases/debit-notes/edit/:id"
-        element={<CreateDebitNote />}
-      />
+            <Route path="sales/invoices/edit/:id" element={<AddingInvoice />} />
 
-      {/* =====================================================
-          SALES - CUSTOMERS
-      ===================================================== */}
+            <Route path="sales/recurring-billing" element={<RecurringBilling />} />
+            <Route path="sales/recurring-billing/add" element={<AddingRecurring />} />
+            <Route
+                path="sales/recurring-billing/;id"
+                element={<RecurringBilling />}
+            />
 
-      <Route path="sales/customers" element={<CustomerList />} />
+            <Route path="sales/customer-ledger" element={<CustomerLedger />} />
 
-      <Route path="sales/customers/:customerId" element={<CompanyLayout />}>
-        <Route index element={<Overview />} />
+            <Route path="Quotation-List" element={<QuotationsList />} />
 
-        <Route path="overview" element={<Overview />} />
+            <Route path="delivery/notes" element={<DeliveryNotes />} />
 
-        <Route path="quotations" element={<Quotations />} />
+            <Route path="delivery/notes/add" element={<Createdeliverynotes />} />
 
-        <Route path="orders" element={<Orders />} />
+            <Route path="delivery/notes/edit/:id" element={<Createdeliverynotes />} />
 
-        <Route path="invoices" element={<Invoices />} />
+            <Route path="sales/payments" element={<PaymentPage />} />
 
-        <Route path="payments" element={<Payments />} />
+            <Route path="credit-notes" element={<SalesCreditNotes />} />
 
-        <Route path="ledger" element={<Ledger />} />
+            <Route path="credit-notes/add" element={<CreateCreditNotes />} />
 
-        <Route path="credit-notes" element={<CreditNotes />} />
-      </Route>
+            <Route path="credit-notes/edit/:id" element={<CreateCreditNotes />} />
 
-      {/* =====================================================
-          SALES - ORDERS
-      ===================================================== */}
+            <Route path="credit-notes/action/:id" element={<CreditAction />} />
 
-      <Route path="sales/orders" element={<SalesOrder />} />
+            <Route path="sales-return" element={<SalesReturn />} />
 
-      <Route path="sales/orders/add" element={<AddingOrder />} />
+            <Route path="sales-return/add" element={<CreateSalesReturnAction />} />
 
-      <Route path="sales/orders/edit/:id" element={<AddingOrder />} />
+            <Route path="sales-return/edit/:id" element={<SalesReturnAction />} />
 
-      {/* =====================================================
-          SALES - INVOICES
-      ===================================================== */}
+            <Route path="purchase/vendors" element={<Vendors />} />
 
-      <Route path="sales/invoices" element={<SalesInvoices />} />
+            <Route path="purchase/purchaseorder" element={<PurchaseOrders />} />
 
-      <Route path="sales/invoices/add" element={<AddingInvoice />} />
+            <Route
+                path="purchases/purchase-orders/add"
+                element={<AddingPurchaseOrder />}
+            />
 
-      <Route path="sales/invoices/edit/:id" element={<AddingInvoice />} />
+            <Route
+                path="purchases/purchase-orders/edit/:id"
+                element={<AddingPurchaseOrder />}
+            />
 
-      {/* =====================================================
-          SALES - RECURRING BILLING
-      ===================================================== */}
+            <Route path="purchases/vendor-ledger" element={<VendorLedger />} />
 
-      <Route path="sales/recurring-billing" element={<RecurringBilling />} />
+            <Route path="purchase/vendors/:vendorId" element={<VendorLayout />}>
+                <Route index element={<VendorOverview />} />
 
-      {/* =====================================================
-          SALES - CUSTOMER LEDGER
-      ===================================================== */}
+                <Route path="overview" element={<VendorOverview />} />
 
-      <Route path="sales/customer-ledger" element={<CustomerLedger />} />
+                <Route path="purchase-orders" element={<VendorPurchaseOrders />} />
 
-      {/* =====================================================
-          SALES - QUOTATIONS
-      ===================================================== */}
+                <Route path="bills" element={<VendorBills />} />
 
-      <Route path="Quotation-List" element={<QuotationsList />} />
+                <Route path="payments" element={<VendorPayments />} />
 
-      {/* =====================================================
-          SALES - DELIVERY NOTES
-      ===================================================== */}
+                <Route path="ledger" element={<VendorLedgerTab />} />
 
-      <Route path="delivery/notes" element={<DeliveryNotes />} />
+                <Route path="debit-notes" element={<VendorDebitNotes />} />
+            </Route>
+            <Route path="accounts/chartofaccounts" element={<ChartOfAccounts />} />
 
-      <Route path="delivery/notes/add" element={<Createdeliverynotes />} />
+            <Route path="accounts/journal-entries" element={<JournalEntries />} />
 
-      <Route path="delivery/notes/edit/:id" element={<Createdeliverynotes />} />
+            <Route
+                path="accounts/journal-entries/add"
+                element={<NewJournalentry />}
+            />
 
-      {/* =====================================================
-          SALES - PAYMENTS
-      ===================================================== */}
-
-      <Route path="sales/payments" element={<PaymentPage />} />
-
-      {/* =====================================================
-          SALES - CREDIT NOTES
-      ===================================================== */}
-
-      <Route path="credit-notes" element={<SalesCreditNotes />} />
-
-      <Route path="credit-notes/add" element={<CreateCreditNotes />} />
-
-      <Route path="credit-notes/edit/:id" element={<CreateCreditNotes />} />
-
-      {/* =====================================================
-          SALES - CREDIT NOTE ACTION
-      ===================================================== */}
-
-      <Route path="credit-notes/action/:id" element={<CreditAction />} />
-
-      {/* =====================================================
-          SALES - SALES RETURN
-      ===================================================== */}
-
-      <Route path="sales-return" element={<SalesReturn />} />
-
-      <Route path="sales-return/add" element={<CreateSalesReturnAction />} />
-
-      <Route path="sales-return/edit/:id" element={<SalesReturnAction />} />
-
-      {/* =====================================================
-          PURCHASES - VENDORS
-      ===================================================== */}
-
-      <Route path="purchase/vendors" element={<Vendors />} />
-
-      {/* =====================================================
-          PURCHASES - PURCHASE ORDERS
-      ===================================================== */}
-
-      <Route path="purchase/purchaseorder" element={<PurchaseOrders />} />
-
-      <Route
-        path="purchases/purchase-orders/add"
-        element={<AddingPurchaseOrder />}
-      />
-
-      <Route
-        path="purchases/purchase-orders/edit/:id"
-        element={<AddingPurchaseOrder />}
-      />
-
-      {/* =====================================================
-          PURCHASES - VENDOR LEDGER
-      ===================================================== */}
-
-      <Route path="purchases/vendor-ledger" element={<VendorLedger />} />
-
-      {/* =====================================================
-          PURCHASES - VENDOR DETAILS
-      ===================================================== */}
-
-      <Route path="purchase/vendors/:vendorId" element={<VendorLayout />}>
-        <Route index element={<VendorOverview />} />
-
-        <Route path="overview" element={<VendorOverview />} />
-
-        <Route path="purchase-orders" element={<VendorPurchaseOrders />} />
-
-        <Route path="bills" element={<VendorBills />} />
-
-        <Route path="payments" element={<VendorPayments />} />
-
-        <Route path="ledger" element={<VendorLedgerTab />} />
-
-        <Route path="debit-notes" element={<VendorDebitNotes />} />
-      </Route>
-
-      {/* =====================================================
-          ACCOUNTS - CHART OF ACCOUNTS
-      ===================================================== */}
-
-      <Route path="accounts/chartofaccounts" element={<ChartOfAccounts />} />
-
-      {/* =====================================================
-          ACCOUNTS - JOURNAL ENTRIES
-      ===================================================== */}
-
-      <Route path="accounts/journal-entries" element={<JournalEntries />} />
-
-      <Route
-        path="accounts/journal-entries/add"
-        element={<NewJournalentry />}
-      />
-
-      <Route path="accounts/journal-entries/edit/:id" element={<NewJournalentry />}
-      />
-      <Route path="accounts/generalledger" element={<GeneralLedger />} />
-      <Route path="accounts/expenses" element={<Expenses />} />
-      <Route path="accounts/payables" element={<Payables />} />
-      <Route path="accounts/recievables" element={<Recievables />} />
-      <Route path="accounts/banking" element={<Banking />} />
+            <Route
+                path="accounts/journal-entries/edit/:id"
+                element={<NewJournalentry />}
+            />
+            <Route path="accounts/generalledger" element={<GeneralLedger />} />
+            <Route path="accounts/expenses" element={<Expenses />} />
+            <Route path="accounts/payables" element={<Payables />} />
+            <Route path="accounts/recievables" element={<Recievables />} />
+            <Route path="accounts/banking" element={<Banking />} />
             <Route path="accounts/trialbalance" element={<TrialBalance />} />
 
-      {/* Report Section */}
-      <Route path="reports/sales-report" element={<SalesReports />} />
-      <Route path="reports/purchase-report" element={<PurchaseReports />} />
-      <Route path="reports/payment-report" element={<PaymentReports />} />
-      <Route path="reports/inventory-report" element={<InventoryReports />} />
-      <Route path="reports/tax-report" element={<TaxReport />} />
-         <Route path="reports/customer-report" element={<CustomerReport />} />
-         <Route path="reports/expense-report" element={<ExpenseReport />} />
-         <Route path="reports/vendor-report" element={<VendorReport />} />
-         <Route path="reports/profit-loss" element={<ProfitLoss />} />
-          <Route path="reports/cash-flow" element={<CashFlow />} />
-    </>
-  );
+            <Route path="reports/sales-report" element={<SalesReports />} />
+            <Route path="reports/purchase-report" element={<PurchaseReports />} />
+            <Route path="reports/payment-report" element={<PaymentReports />} />
+            <Route path="reports/inventory-report" element={<InventoryReports />} />
+            <Route path="reports/tax-report" element={<TaxReport />} />
+            <Route path="reports/customer-report" element={<CustomerReport />} />
+            <Route path="reports/expense-report" element={<ExpenseReport />} />
+            <Route path="reports/vendor-report" element={<VendorReport />} />
+            <Route path="reports/profit-loss" element={<ProfitLoss />} />
+            <Route path="reports/cash-flow" element={<CashFlow />} />
+            <Route path="reports/balance-sheet" element={<BalanceSheet />} />
+            <Route path="reports/changeinequity" element={<ChangesInEquity />} />
+        </>
+    );
 };
 
 export default FinanceRoutes;

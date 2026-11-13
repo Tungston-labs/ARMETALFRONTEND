@@ -1,18 +1,14 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
-
+import React, { useEffect, useMemo, useState } from "react";
+import { FiBox, FiCheckCircle, FiAlertTriangle, FiXCircle } from "react-icons/fi";
 import { useDispatch, useSelector } from "react-redux";
-
 import ReusableTable from "../../../../Components/ReusableTable/ReusableTable";
 import ReusablePagination from "../../../../Components/Pagination/ReusablePagination";
-
 import ReusableFilter from "../../../../Components/ReusableTable/ReusableFilter";
 import ReusableHeader from "../../../../Components/ReusableTable/ReusableHeader";
 import { HeaderButton } from "../../../../Components/ReusableTable/ReusableHeader.styles";
-
 import { FiDownload } from "react-icons/fi";
-
 import StockAdjustmentModal from "../Inventory/InventoryModal/InventoryModal.jsx";
-
+import StatsCards from "../../../../Components/StatsCards/StatsCards"; 
 import {
   fetchInventory,
   fetchInventoryKPI,
@@ -21,14 +17,12 @@ import {
   fetchInventoryAdjustmentById,
   deleteInventoryAdjustment,
 } from "../../../../Redux/finance/Product/inventorySlice";
-
 import { getCategories } from "../../../../Redux/finance/Product/categorySlice.js";
-
 import { getWarehouses } from "../../../../services/warehouseService";
-
 import { fetchProducts } from "../../../../services/finance/Product/productServices";
+import { inventoryColumns } from "./inventoryColumns.jsx";
 
-import { inventoryColumns } from "../../../../Components/ReusableTable/inventoryColumns.jsx";
+const PAGE_SIZE = 20;
 
 const InventoryList = () => {
   const dispatch = useDispatch();
@@ -47,13 +41,15 @@ const InventoryList = () => {
     adjustmentLoading = false,
     error = null,
     adjustmentError = null,
-    selectedAdjustment = null,
   } = useSelector((state) => state.inventory || {});
 
   const categoryOptions = useSelector(
     (state) => state.category?.categories || [],
   );
-
+const kpi = useSelector(
+  (state) => state.inventory?.kpi || state.inventory?.kpis || null,
+);
+const kpiLoading = useSelector((state) => state.inventory?.kpiLoading || false);
   /*
   |--------------------------------------------------------------------------
   | FILTER STATE
@@ -61,12 +57,12 @@ const InventoryList = () => {
   */
 
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [category, setCategory] = useState("");
   const [warehouse, setWarehouse] = useState("");
   const [status, setStatus] = useState("");
 
   const [warehouseOptions, setWarehouseOptions] = useState([]);
-
   const [productOptions, setProductOptions] = useState([]);
 
   /*
@@ -84,38 +80,30 @@ const InventoryList = () => {
   */
 
   const [isInventoryModalOpen, setIsInventoryModalOpen] = useState(false);
-
   const [isEditMode, setIsEditMode] = useState(false);
-
   const [selectedAdjustmentId, setSelectedAdjustmentId] = useState(null);
-
   const [initialFormData, setInitialFormData] = useState(null);
 
   /*
   |--------------------------------------------------------------------------
-  | FETCH INVENTORY
+  | BUILD QUERY PARAMS (single source of truth for every fetch)
   |--------------------------------------------------------------------------
   */
 
-  const loadInventory = useCallback(
-    (page = 1) => {
-      dispatch(
-        fetchInventory({
-          page,
-          page_size: 20,
-          search: search.trim(),
-          category,
-          warehouse,
-          stock_status: status,
-        }),
-      );
-    },
-    [dispatch, search, category, warehouse, status],
-  );
+  const buildParams = (page) => ({
+    page,
+    page_size: PAGE_SIZE,
+    search: debouncedSearch,
+    category,
+    warehouse,
+    stock_status: status,
+  });
 
   /*
   |--------------------------------------------------------------------------
-  | INITIAL LOAD
+  | INITIAL LOAD (dropdown options + KPI)
+  |--------------------------------------------------------------------------
+  | Inventory list itself is loaded by the filter effect below.
   |--------------------------------------------------------------------------
   */
 
@@ -173,100 +161,80 @@ const InventoryList = () => {
         setProductOptions([]);
       });
 
-    dispatch(
-      fetchInventory({
-        page: 1,
-        page_size: 20,
-        search: "",
-        category: "",
-        warehouse: "",
-        stock_status: "",
-      }),
-    );
-
     dispatch(fetchInventoryKPI());
   }, [dispatch]);
 
   /*
   |--------------------------------------------------------------------------
-  | APPLY FILTERS
+  | DEBOUNCE SEARCH
+  |--------------------------------------------------------------------------
+  | Wait 400ms after typing stops, then apply the search and go to page 1.
   |--------------------------------------------------------------------------
   */
 
-  const handleApplyFilters = () => {
-    setCurrentPage(1);
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search.trim());
+      setCurrentPage(1);
+    }, 400);
 
+    return () => clearTimeout(timer);
+  }, [search]);
+
+  /*
+  |--------------------------------------------------------------------------
+  | AUTO FETCH INVENTORY
+  |--------------------------------------------------------------------------
+  | Runs on first load and whenever a filter or the page changes.
+  | No "Apply Filters" button needed.
+  |--------------------------------------------------------------------------
+  */
+
+  useEffect(() => {
     dispatch(
       fetchInventory({
-        page: 1,
-        page_size: 20,
-        search: search.trim(),
+        page: currentPage,
+        page_size: PAGE_SIZE,
+        search: debouncedSearch,
         category,
         warehouse,
         stock_status: status,
       }),
     );
-  };
+  }, [dispatch, currentPage, debouncedSearch, category, warehouse, status]);
 
   /*
   |--------------------------------------------------------------------------
-  | SEARCH
+  | FILTER HANDLERS (only set state, the effect above does the fetching)
   |--------------------------------------------------------------------------
   */
 
   const handleSearch = (value) => {
     setSearch(value || "");
-    setCurrentPage(1);
   };
-
-  /*
-  |--------------------------------------------------------------------------
-  | CATEGORY
-  |--------------------------------------------------------------------------
-  */
 
   const handleCategory = (value) => {
     setCategory(value || "");
     setCurrentPage(1);
   };
 
-  /*
-  |--------------------------------------------------------------------------
-  | WAREHOUSE
-  |--------------------------------------------------------------------------
-  */
-
   const handleWarehouse = (value) => {
     setWarehouse(value || "");
     setCurrentPage(1);
   };
-
-  /*
-  |--------------------------------------------------------------------------
-  | STATUS
-  |--------------------------------------------------------------------------
-  */
 
   const handleStatus = (value) => {
     setStatus(value || "");
     setCurrentPage(1);
   };
 
-  /*
-  |--------------------------------------------------------------------------
-  | PAGINATION
-  |--------------------------------------------------------------------------
-  */
-
   const handlePageChange = (page) => {
     setCurrentPage(page);
-
-    loadInventory(page);
   };
 
   /*
   |--------------------------------------------------------------------------
-  | OPEN CREATE MODAL
+  | OPEN / CLOSE MODAL
   |--------------------------------------------------------------------------
   */
 
@@ -277,12 +245,6 @@ const InventoryList = () => {
 
     setIsInventoryModalOpen(true);
   };
-
-  /*
-  |--------------------------------------------------------------------------
-  | CLOSE MODAL
-  |--------------------------------------------------------------------------
-  */
 
   const handleCloseInventoryModal = () => {
     if (adjustmentLoading) {
@@ -315,40 +277,12 @@ const InventoryList = () => {
         await dispatch(createInventoryAdjustment(formData)).unwrap();
       }
 
-      /*
-      |--------------------------------------------------------------------------
-      | IMPORTANT
-      |--------------------------------------------------------------------------
-      | The adjustment API changes the actual inventory.
-      | Therefore reload the inventory list after success.
-      |--------------------------------------------------------------------------
-      */
-
-      await dispatch(
-        fetchInventory({
-          page: currentPage,
-          page_size: 20,
-          search: search.trim(),
-          category,
-          warehouse,
-          stock_status: status,
-        }),
-      ).unwrap();
-
-      /*
-      |--------------------------------------------------------------------------
-      | Refresh KPI
-      |--------------------------------------------------------------------------
-      */
+      // The adjustment API changes actual stock, so reload list + KPI.
+      await dispatch(fetchInventory(buildParams(currentPage))).unwrap();
 
       dispatch(fetchInventoryKPI());
 
-      /*
-      |--------------------------------------------------------------------------
-      | Close only after successful API request
-      |--------------------------------------------------------------------------
-      */
-
+      // Close only after a successful API request
       setIsInventoryModalOpen(false);
       setIsEditMode(false);
       setSelectedAdjustmentId(null);
@@ -466,22 +400,7 @@ const InventoryList = () => {
     try {
       await dispatch(deleteInventoryAdjustment(adjustmentId)).unwrap();
 
-      /*
-      |--------------------------------------------------------------------------
-      | Refresh inventory after deletion
-      |--------------------------------------------------------------------------
-      */
-
-      await dispatch(
-        fetchInventory({
-          page: currentPage,
-          page_size: 20,
-          search: search.trim(),
-          category,
-          warehouse,
-          stock_status: status,
-        }),
-      ).unwrap();
+      await dispatch(fetchInventory(buildParams(currentPage))).unwrap();
 
       dispatch(fetchInventoryKPI());
     } catch (deleteError) {
@@ -509,7 +428,7 @@ const InventoryList = () => {
 
   /*
   |--------------------------------------------------------------------------
-  | CATEGORY FILTER OPTIONS
+  | FILTER / MODAL OPTIONS
   |--------------------------------------------------------------------------
   */
 
@@ -525,12 +444,6 @@ const InventoryList = () => {
     [categoryOptions],
   );
 
-  /*
-  |--------------------------------------------------------------------------
-  | WAREHOUSE FILTER OPTIONS
-  |--------------------------------------------------------------------------
-  */
-
   const warehouseFilterOptions = useMemo(
     () =>
       Array.isArray(warehouseOptions)
@@ -542,12 +455,6 @@ const InventoryList = () => {
         : [],
     [warehouseOptions],
   );
-
-  /*
-  |--------------------------------------------------------------------------
-  | MODAL WAREHOUSE OPTIONS
-  |--------------------------------------------------------------------------
-  */
 
   const modalWarehouseOptions = useMemo(
     () =>
@@ -565,37 +472,70 @@ const InventoryList = () => {
     [warehouseOptions],
   );
 
-  /*
-  |--------------------------------------------------------------------------
-  | MODAL PRODUCT OPTIONS
-  |--------------------------------------------------------------------------
-  */
-
-  const modalProductOptions = useMemo(
-    () =>
-      Array.isArray(productOptions)
-        ? productOptions.map((item) => ({
-            id: item?.id ?? item?.product_id,
-
-            value: item?.id ?? item?.product_id,
-
-            name: item?.product_name || item?.name || "Product",
-
-            label: item?.product_name || item?.name || "Product",
-          }))
-        : [],
-    [productOptions],
-  );
+ const modalProductOptions = useMemo(
+  () =>
+    Array.isArray(productOptions)
+      ? productOptions.map((item) => ({
+          id: item?.id ?? item?.product_id,
+          value: item?.id ?? item?.product_id,
+          name: item?.product_name || item?.name || "Product",
+          label: item?.product_name || item?.name || "Product",
+          unit: item?.unit || "PCS",              // fills the unit label
+        }))
+      : [],
+  [productOptions],
+);
 
   /*
   |--------------------------------------------------------------------------
   | RENDER
   |--------------------------------------------------------------------------
   */
-
+const statsCards = [
+  {
+    title: "Total Items",
+    count: kpi?.total_stock_items ?? 0,
+    icon: <FiBox size={20} />,
+    backgroundColor: "#EEF2FF",
+    iconColor: "#4F46E5",
+    onClick: () => handleStatus(""),
+  },
+  {
+    title: "Total Stock value",
+    count: kpi?.total_inventory_value ?? 0,
+    icon: <FiCheckCircle size={20} />,
+    backgroundColor: "#E6F6EC",
+    iconColor: "#1E7A3C",
+    onClick: () => handleStatus("In Stock"),
+  },
+  {
+    title: "Low Stock",
+    count: kpi?.low_stock ?? 0,
+    icon: <FiAlertTriangle size={20} />,
+    backgroundColor: "#FFF4E5",
+    iconColor: "#B26A00",
+    onClick: () => handleStatus("Low Stock"),
+  },
+  {
+    title: "Out of Stock",
+    count: kpi?.out_of_stock ?? 0,
+    icon: <FiXCircle size={20} />,
+    backgroundColor: "#FDE8E8",
+    iconColor: "#B42318",
+    onClick: () => handleStatus("Out of Stock"),
+  },
+  {
+    title: "In Stock",
+    count: kpi?.in_stock ?? 0,
+    icon: <FiBox size={20} />,
+    backgroundColor: "#fdf3e8",
+    iconColor: "#b46318",
+    onClick: () => handleStatus("Out of Stock"),
+  },
+];
   return (
     <div style={{ padding: 20 }}>
-      <ReusableHeader title="Inventory" breadcrumbs={["Inventory"]}>
+      <ReusableHeader title="Inventory" breadcrumbs={["Product","Inventory"]}>
         <HeaderButton $variant="excel" onClick={handleExportExcel}>
           <FiDownload />
           EXPORT EXCEL
@@ -605,47 +545,39 @@ const InventoryList = () => {
           + STOCK ADJUSTMENT
         </HeaderButton>
       </ReusableHeader>
+<StatsCards cards={statsCards} loading={kpiLoading} />
 
-      <ReusableFilter
-        search={search}
-        onSearch={handleSearch}
-        department={category}
-        departments={categoryOptionsForFilter}
-        onDepartment={handleCategory}
-        status={status}
-        statuses={[
-          {
-            label: "In Stock",
-            value: "In Stock",
-          },
-          {
-            label: "Low Stock",
-            value: "Low Stock",
-          },
-          {
-            label: "Out of Stock",
-            value: "Out of Stock",
-          },
-        ]}
-        onStatus={handleStatus}
-        showSearch
-        showDepartment
-        showStatus
-        filters={[
-          {
-            key: "warehouse",
-            value: warehouse,
-            onChange: handleWarehouse,
-            placeholder: "All Warehouses",
-            options: warehouseFilterOptions,
-          },
-        ]}
-        rightButton={
-          <HeaderButton $variant="orange" onClick={handleApplyFilters}>
-            Apply Filters
-          </HeaderButton>
-        }
-      />
+
+ <ReusableFilter
+  search={search}
+  onSearch={handleSearch}
+  searchPlaceholder="Search Product"
+  status={status}
+  statuses={[
+    { label: "In Stock", value: "In Stock" },
+    { label: "Low Stock", value: "Low Stock" },
+    { label: "Out of Stock", value: "Out of Stock" },
+  ]}
+  onStatus={handleStatus}
+  showSearch
+  showStatus
+  filters={[
+    {
+      key: "category",
+      value: category,
+      onChange: handleCategory,
+      placeholder: "All Categories",
+      options: categoryOptionsForFilter,
+    },
+    {
+      key: "warehouse",
+      value: warehouse,
+      onChange: handleWarehouse,
+      placeholder: "All Warehouses",
+      options: warehouseFilterOptions,
+    },
+  ]}
+/>
 
       {error && (
         <div

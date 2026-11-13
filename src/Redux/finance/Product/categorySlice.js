@@ -572,11 +572,16 @@ const categorySlice = createSlice({
 
       })
 
-      .addCase(getCategorySummary.fulfilled, (state, action) => {
+     .addCase(getCategorySummary.fulfilled, (state, action) => {
+  const payload = action.payload;
 
-        state.summary = action.payload || null;
-
-      })
+  // Supports both API response and Axios response structures
+  state.summary =
+    payload?.data?.data ??
+    payload?.data ??
+    payload ??
+    null;
+})
 
       .addCase(getCategorySummary.rejected, (state, action) => {
 

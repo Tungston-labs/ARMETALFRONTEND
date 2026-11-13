@@ -349,7 +349,7 @@ const AddingInvoice = () => {
           </FormGroup>
 
           <FormGroup>
-            <Label>EMAIL ID</Label>
+            <Label>FINANCE CONTACT EMAIL</Label>
             <Input
               placeholder="Company/Client Email ID"
               value={billTo.email}

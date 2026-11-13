@@ -292,7 +292,7 @@ const CategoryModal = ({
 
             setSubmitError(
                 err?.message ||
-                    "Something went wrong while saving. Please try again."
+                "Something went wrong while saving. Please try again."
             );
         } finally {
             setSaving(false);
@@ -320,25 +320,14 @@ const CategoryModal = ({
 
                     <FormRow>
                         <FormGroup>
-                          <Label>
-                                CODE
-                            </Label>
-
+                            <Label>CODE</Label>
                             <Input
                                 type="text"
-                                name="code"
-                                value={formData.code}
-                                onChange={handleChange}
-                                placeholder="1253698"
-                                aria-invalid={!!errors.code}
+                                value={isEdit ? initialData.code ?? "" : ""}
+                                placeholder="Auto-generated"
+                                disabled
+                                readOnly
                             />
-
-                            {errors.code && (
-                                <span style={{ color: "#e53935", fontSize: 12 }}>
-                                    {errors.code}
-                                </span>
-                            )}
-
                         </FormGroup>
                         <FormGroup>
 
@@ -548,13 +537,13 @@ const CategoryModal = ({
                             type="submit"
                             disabled={saving}
                         >
-                           <FiSave /> 
+                            <FiSave />
 
                             {saving
                                 ? "SAVING..."
                                 : isEdit
-                                ? "UPDATE CATEGORY"
-                                : "SAVE CATEGORY"}
+                                    ? "UPDATE CATEGORY"
+                                    : "SAVE CATEGORY"}
                         </SaveButton>
 
                     </ButtonRow>

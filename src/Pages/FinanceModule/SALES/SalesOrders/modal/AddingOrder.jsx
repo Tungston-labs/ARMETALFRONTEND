@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
@@ -35,6 +34,11 @@ import {
   ButtonWrapper,
   CancelButton,
   PreviewButton,
+  Required,
+  ErrorText,
+  DraftButton,
+  DownloadButton,
+  SendButton,
 } from "./AddingOrder.styles";
 import ReusableHeader from "../../../../../Components/ReusableTable/ReusableHeader";
 
@@ -61,6 +65,12 @@ import {
   selectAvailableQuotations,
   selectSelectedQuotation,
 } from "../../../../../Redux/finance/Sales/Salesorderslice";
+import { Hourglass } from "lucide-react";
+
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const PHONE_PATTERN = /^[0-9+\-\s()]{7,20}$/;
+
+
 
 const defaultItem = () => ({
   id: Date.now(),
@@ -88,12 +98,6 @@ const emptyForm = {
   items: [defaultItem()],
 };
 
-// Bridges the real "get sales order by id" API response into the nested
-// shape this form works with. Field names on the left are exactly what the
-// form already used (unchanged); the right-hand fallbacks cover a couple of
-// plausible backend key spellings (snake_case flat vs. nested objects) so
-// this keeps working once the real API contract is confirmed against
-// Salesorderservices.js.
 const mapOrderToFormData = (order) => {
   if (!order) return null;
 
@@ -138,17 +142,17 @@ const mapOrderToFormData = (order) => {
     items:
       Array.isArray(order.items) && order.items.length > 0
         ? order.items.map((item, idx) => ({
-            id: item.id ?? Date.now() + idx,
-            slNo: String(idx + 1).padStart(2, "0"),
-            service: item.service_name || "",
-            particular: item.description || "",
-            qty: item.quantity ?? "",
-            hsCode: item.hs_code || "",
-            rate: item.rate || "",
-            vat: item.vat_percentage || "",
-            vatAmount: item.vat_amount || "",
-            amount: item.amount || "",
-          }))
+          id: item.id ?? Date.now() + idx,
+          slNo: String(idx + 1).padStart(2, "0"),
+          service: item.service_name || "",
+          particular: item.description || "",
+          qty: item.quantity ?? "",
+          hsCode: item.hs_code || "",
+          rate: item.rate || "",
+          vat: item.vat_percentage || "",
+          vatAmount: item.vat_amount || "",
+          amount: item.amount || "",
+        }))
         : [defaultItem()],
   };
 };
@@ -165,20 +169,13 @@ const AddingOrder = () => {
   const createLoading = useSelector(selectSalesOrderCreateLoading);
   const updateLoading = useSelector(selectSalesOrderUpdateLoading);
   const saveError = useSelector(selectSalesOrderError);
-
   const companies = useSelector(selectCompanies);
   const customers = useSelector(selectCustomers);
   const warehouses = useSelector(selectWarehouses);
   const availableQuotations = useSelector(selectAvailableQuotations);
   const selectedQuotation = useSelector(selectSelectedQuotation);
-
-  // pk-based fields the backend actually needs (confirmed by the 400
-  // response: quotation, company, customer and warehouse are all FKs, not
-  // free text). orderNumber stays as the human-readable label shown in the
-  // QUOTE REFERENCE field; quotationId is what actually gets submitted.
   const [quotationId, setQuotationId] = useState("");
   const [companyId, setCompanyId] = useState("");
-
   const [orderNumber, setOrderNumber] = useState(emptyForm.orderNumber);
   const [soNumber, setSoNumber] = useState(emptyForm.soNumber);
   const [orderDate, setOrderDate] = useState(today);
@@ -192,10 +189,17 @@ const AddingOrder = () => {
   const [payment, setPayment] = useState(emptyForm.payment);
   const [summary, setSummary] = useState(emptyForm.summary);
   const [items, setItems] = useState(emptyForm.items);
+const [isSendForApproval, setIsSendForApproval] = useState(false);
+  const [errors, setErrors] = useState({});
 
-  // Lookup lists needed for the pk-based Selects (company, customer,
-  // warehouse) and, for create mode, the list of quotations that can be
-  // converted into a sales order.
+  const clearError = (field) =>
+    setErrors((prev) => {
+      if (!prev[field]) return prev;
+      const next = { ...prev };
+      delete next[field];
+      return next;
+    });
+
   useEffect(() => {
     dispatch(getCompanies());
     dispatch(getCustomers());
@@ -203,12 +207,8 @@ const AddingOrder = () => {
     if (!isEditMode) {
       dispatch(getAvailableQuotations());
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dispatch, isEditMode]);
 
-  // Fetch the real order whenever we're in edit mode / the :id changes.
-  // Clear the selected order/quotation out of the store on unmount so a
-  // stale record doesn't flash for the next visit to this form.
   useEffect(() => {
     if (isEditMode) {
       dispatch(clearSalesOrderError());
@@ -218,11 +218,8 @@ const AddingOrder = () => {
       dispatch(clearSelectedSalesOrder());
       dispatch(clearSelectedQuotation());
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dispatch, id, isEditMode]);
 
-  // Once the API response lands in the store, map it into this form's
-  // (unchanged) field shape and populate local state.
   useEffect(() => {
     if (!selectedSalesOrder) return;
 
@@ -238,26 +235,28 @@ const AddingOrder = () => {
     setWarehouse(mapped.warehouse);
     setOrderStatus(mapped.orderStatus);
     setFrom(mapped.from);
-    setBillTo({ ...mapped.billTo, client: selectedSalesOrder.customer ?? mapped.billTo.client });
+    setBillTo({
+      ...mapped.billTo,
+      client: selectedSalesOrder.customer ?? mapped.billTo.client,
+    });
     setPayment(mapped.payment);
     setSummary(mapped.summary);
     setItems(mapped.items);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedSalesOrder]);
 
-  // Create mode: picking a quotation in QUOTE REFERENCE fetches its detail
-  // and auto-populates company/customer/warehouse/items, mirroring how the
-  // rest of this form already treats a quotation as the source of truth.
   useEffect(() => {
     if (isEditMode || !selectedQuotation) return;
 
     setCompanyId(selectedQuotation.company ?? "");
-    setBillTo((prev) => ({ ...prev, client: selectedQuotation.customer ?? prev.client }));
+    setBillTo((prev) => ({
+      ...prev,
+      client: selectedQuotation.customer ?? prev.client,
+    }));
     setWarehouse(selectedQuotation.warehouse ?? "");
-    if (Array.isArray(selectedQuotation.items) && selectedQuotation.items.length > 0) {
-      // QuotationItem isn't shown here, but its sibling SalesOrderItem uses
-      // service_name/description/quantity/vat_percentage — assuming the
-      // same convention until QuotationItem's model is confirmed.
+    if (
+      Array.isArray(selectedQuotation.items) &&
+      selectedQuotation.items.length > 0
+    ) {
       setItems(
         selectedQuotation.items.map((item, idx) => ({
           id: item.id ?? Date.now() + idx,
@@ -273,7 +272,6 @@ const AddingOrder = () => {
         }))
       );
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedQuotation, isEditMode]);
 
   const handleQuotationChange = (e) => {
@@ -320,35 +318,77 @@ const AddingOrder = () => {
 
   const handleCancel = () => navigate("/sales/orders");
 
-  // Translates this form's own (unchanged) field names into exactly what
-  // SalesOrder / SalesOrderItem expect, per the actual Django model:
-  //  - decimal fields (discount, round_off, quantity, rate, vat_percentage)
-  //    reject blank strings ("A valid number is required."), so we either
-  //    send a real number or omit the key and let the model's own default
-  //    apply.
-  //  - payment_terms / order_status must be one of the model's choice
-  //    values (e.g. "net_15", not "net15"); omitting them falls back to
-  //    the model defaults ("net_15" / "pending").
-  //  - amount_before_vat / vat_amount / amount are computed server-side in
-  //    SalesOrderItem.calculate_amounts(), so they're never sent.
-  //  - subtotal / total_vat / order_value are computed by
-  //    SalesOrder.calculate_totals(), so they're left out too.
-  //  - there's no payment (account holder / number / IBAN) field on this
-  //    model at all, so that section isn't submitted here — flag if it's
-  //    meant to go to a different endpoint/model.
   const toDecimal = (value) => {
     if (value === "" || value === null || value === undefined) return undefined;
     const num = Number(value);
     return Number.isNaN(num) ? undefined : num;
   };
+const handleSaveDraft = async () => {
+  try {
+    // Replace with your draft-save API function.
+    await handleSaveAsDraft();
+
+    console.log("Draft saved successfully");
+  } catch (error) {
+    console.error("Failed to save draft:", error);
+  }
+};
+
+const handleDownload = () => {
+  // Connect your existing PDF/Excel download function here.
+  handleDownloadDocument();
+};
+
+const handleSendClick = async () => {
+  if (!isSendForApproval) {
+    setIsSendForApproval(true);
+    return;
+  }
+
+  await handleSendForApproval();
+};
+  // ============================================================
+  // VALIDATION
+  // ============================================================
+
+  const validate = () => {
+    const e = {};
+    const t = (v) => String(v ?? "").trim();
+
+    if (!orderDate) e.orderDate = "Order date is required";
+
+    if (!deliveryDate) e.deliveryDate = "Delivery date is required";
+    else if (orderDate && deliveryDate < orderDate)
+      e.deliveryDate = "Delivery date cannot be before order date";
+
+    if (!warehouse) e.warehouse = "Please select a warehouse";
+    if (!paymentTerms) e.paymentTerms = "Please select payment terms";
+    if (!billTo.client) e.billTo = "Please select a client";
+    if (!t(billTo.address)) e.billToAddress = "Address is required";
+
+    if (!t(billTo.phone)) e.billToPhone = "Phone number is required";
+    else if (!PHONE_PATTERN.test(t(billTo.phone)))
+      e.billToPhone = "Enter a valid phone number";
+
+    if (!t(billTo.email)) e.billToEmail = "Finance email is required";
+    else if (!EMAIL_PATTERN.test(t(billTo.email)))
+      e.billToEmail = "Enter a valid email address";
+
+    setErrors(e);
+    return Object.keys(e).length === 0;
+  };
+
+  // ============================================================
+  // PAYLOAD
+  // ============================================================
 
   const buildApiPayload = () => {
+    // so_number is generated by the backend, so it is never sent.
     const payload = {
       quotation: quotationId || null,
       company: companyId || null,
       customer: billTo.client || null,
       warehouse: warehouse || null,
-      so_number: soNumber || undefined,
       order_date: orderDate,
       delivery_date: deliveryDate || undefined,
       due_date: dueDate || undefined,
@@ -373,8 +413,6 @@ const AddingOrder = () => {
       })),
     };
 
-    // Strip undefined keys so optional/decimal fields fall back to the
-    // model's own defaults instead of sending blanks DRF will reject.
     Object.keys(payload).forEach((key) => {
       if (payload[key] === undefined) delete payload[key];
     });
@@ -390,6 +428,9 @@ const AddingOrder = () => {
   };
 
   const handleSave = () => {
+    // In edit mode the validated fields are read-only, so only validate on create.
+    if (!isEditMode && !validate()) return;
+
     const payload = buildApiPayload();
 
     const action = isEditMode
@@ -404,7 +445,8 @@ const AddingOrder = () => {
   };
 
   const isSaving = isEditMode ? updateLoading : createLoading;
-  const notFound = isEditMode && !orderLoading && !selectedSalesOrder && Boolean(saveError);
+  const notFound =
+    isEditMode && !orderLoading && !selectedSalesOrder && Boolean(saveError);
 
   if (orderLoading && isEditMode && !selectedSalesOrder) {
     return (
@@ -446,9 +488,9 @@ const AddingOrder = () => {
         onBack={() => navigate("/sales/orders")}
       ></ReusableHeader>
 
-    {saveError && (
-    <div
-        style={{
+      {saveError && (
+        <div
+          style={{
             margin: "0 20px 16px",
             padding: "12px 16px",
             borderRadius: "6px",
@@ -456,16 +498,16 @@ const AddingOrder = () => {
             border: "1px solid #ffccc7",
             color: "#c0392b",
             fontSize: "14px",
-        }}
-    >
-        {typeof saveError === "string"
+          }}
+        >
+          {typeof saveError === "string"
             ? saveError
             : saveError?.detail ||
-              saveError?.message ||
-              saveError?.order_status?.[0] ||
-              "Unable to update Sales Order. Please try again."}
-    </div>
-)}
+            saveError?.message ||
+            saveError?.order_status?.[0] ||
+            "Unable to update Sales Order. Please try again."}
+        </div>
+      )}
 
       <OrderForm>
         <FormGrid>
@@ -490,27 +532,34 @@ const AddingOrder = () => {
             )}
           </FormGroup>
 
+          {/* SO NUMBER: auto-generated by the backend */}
           <FormGroup>
             <Label>SO NUMBER</Label>
             <Input
-              placeholder="SO-2026-001"
+              placeholder="Auto-generated after save"
               value={soNumber}
-              onChange={(e) => setSoNumber(e.target.value)}
-              readOnly={isEditMode}
+              readOnly
+              disabled
             />
           </FormGroup>
 
           <FormGroup>
-            <Label>ORDER DATE</Label>
+            <Label>
+              ORDER DATE <Required />
+            </Label>
             <CalendarInput>
               <Input
                 type="date"
                 value={orderDate}
-                onChange={(e) => setOrderDate(e.target.value)}
+                onChange={(e) => {
+                  setOrderDate(e.target.value);
+                  clearError("orderDate");
+                }}
                 readOnly={isEditMode}
                 disabled={isEditMode}
               />
             </CalendarInput>
+            {errors.orderDate && <ErrorText>{errors.orderDate}</ErrorText>}
           </FormGroup>
 
           <FormGroup>
@@ -533,17 +582,24 @@ const AddingOrder = () => {
           </FormGroup>
 
           <FormGroup>
-            <Label>DELIVERY DATE</Label>
+            <Label>
+              DELIVERY DATE <Required />
+            </Label>
             <CalendarInput>
               <Input
                 type="date"
                 value={deliveryDate}
                 min={orderDate}
-                onChange={(e) => setDeliveryDate(e.target.value)}
+                onChange={(e) => {
+                  setDeliveryDate(e.target.value);
+                  clearError("deliveryDate");
+                }}
                 readOnly={isEditMode}
                 disabled={isEditMode}
               />
             </CalendarInput>
+            {errors.deliveryDate && <ErrorText>{errors.deliveryDate}</ErrorText>}
+
           </FormGroup>
 
           <FormGroup>
@@ -561,11 +617,16 @@ const AddingOrder = () => {
           </FormGroup>
 
           <FormGroup>
-            <Label>PAYMENT TERMS</Label>
+            <Label>
+              PAYMENT TERMS <Required />
+            </Label>
             <SelectWrapper>
               <Select
                 value={paymentTerms}
-                onChange={(e) => setPaymentTerms(e.target.value)}
+                onChange={(e) => {
+                  setPaymentTerms(e.target.value);
+                  clearError("paymentTerms");
+                }}
                 disabled={isEditMode}
               >
                 <option value="" disabled>
@@ -580,14 +641,22 @@ const AddingOrder = () => {
               </Select>
               <FiChevronDown />
             </SelectWrapper>
+
+            {errors.paymentTerms && <ErrorText>{errors.paymentTerms}</ErrorText>}
+
           </FormGroup>
 
           <FormGroup>
-            <Label>WAREHOUSE</Label>
+            <Label>
+              WAREHOUSE <Required />
+            </Label>
             <SelectWrapper>
               <Select
                 value={warehouse}
-                onChange={(e) => setWarehouse(e.target.value)}
+                onChange={(e) => {
+                  setWarehouse(e.target.value);
+                  clearError("warehouse");
+                }}
                 disabled={isEditMode}
               >
                 <option value="" disabled>
@@ -601,6 +670,11 @@ const AddingOrder = () => {
               </Select>
               <FiChevronDown />
             </SelectWrapper>
+            {errors.warehouse && (
+              <span style={errorStyle}>{errors.warehouse}</span>
+            )}
+            {errors.warehouse && <ErrorText>{errors.warehouse}</ErrorText>}
+
           </FormGroup>
 
           <FormGroup>
@@ -671,11 +745,16 @@ const AddingOrder = () => {
           </FormGroup>
 
           <FormGroup>
-            <Label>BILL TO</Label>
+            <Label>
+              BILL TO <Required />
+            </Label>
             <SelectWrapper>
               <Select
                 value={billTo.client}
-                onChange={(e) => setBillTo({ ...billTo, client: e.target.value })}
+                onChange={(e) => {
+                  setBillTo({ ...billTo, client: e.target.value });
+                  clearError("billTo");
+                }}
                 disabled={isEditMode}
               >
                 <option value="" disabled>
@@ -689,36 +768,61 @@ const AddingOrder = () => {
               </Select>
               <FiChevronDown />
             </SelectWrapper>
+            {errors.billTo && <ErrorText>{errors.billTo}</ErrorText>}
+
           </FormGroup>
 
           <FormGroup>
-            <Label>ADDRESS</Label>
+            <Label>
+              ADDRESS <Required />
+            </Label>
             <Input
               placeholder="Company/Client ADDRESS"
               value={billTo.address}
-              onChange={(e) => setBillTo({ ...billTo, address: e.target.value })}
+              onChange={(e) => {
+                setBillTo({ ...billTo, address: e.target.value });
+                clearError("billToAddress");
+              }}
               readOnly={isEditMode}
             />
+
+            {errors.billToAddress && <ErrorText>{errors.billToAddress}</ErrorText>}
+
           </FormGroup>
 
           <FormGroup>
-            <Label>PHONE NUMBER</Label>
+            <Label>
+              PHONE NUMBER <Required />
+            </Label>
             <Input
               placeholder="Company/Client Phone Number"
               value={billTo.phone}
-              onChange={(e) => setBillTo({ ...billTo, phone: e.target.value })}
+              onChange={(e) => {
+                setBillTo({ ...billTo, phone: e.target.value });
+                clearError("billToPhone");
+              }}
               readOnly={isEditMode}
             />
+
+            {errors.billToPhone && <ErrorText>{errors.billToPhone}</ErrorText>}
+
           </FormGroup>
 
           <FormGroup>
-            <Label>FINANCE EMAIL ID</Label>
+            <Label>
+              FINANCE EMAIL ID <Required />
+            </Label>
             <Input
               placeholder="Company/Client Email ID"
               value={billTo.email}
-              onChange={(e) => setBillTo({ ...billTo, email: e.target.value })}
+              onChange={(e) => {
+                setBillTo({ ...billTo, email: e.target.value });
+                clearError("billToEmail");
+              }}
               readOnly={isEditMode}
             />
+            {errors.billToEmail && <ErrorText>{errors.billToEmail}</ErrorText>}
+
           </FormGroup>
         </FormGrid>
 
@@ -757,7 +861,9 @@ const AddingOrder = () => {
                     <input
                       placeholder="App Design"
                       value={item.service}
-                      onChange={(e) => updateItem(item.id, "service", e.target.value)}
+                      onChange={(e) =>
+                        updateItem(item.id, "service", e.target.value)
+                      }
                       readOnly={isEditMode}
                     />
                   </td>
@@ -765,49 +871,63 @@ const AddingOrder = () => {
                     <input
                       placeholder="Wireframe Of 15 Pages"
                       value={item.particular}
-                      onChange={(e) => updateItem(item.id, "particular", e.target.value)}
+                      onChange={(e) =>
+                        updateItem(item.id, "particular", e.target.value)
+                      }
                       readOnly={isEditMode}
                     />
                   </td>
                   <td>
                     <input
                       value={item.qty}
-                      onChange={(e) => updateItem(item.id, "qty", e.target.value)}
+                      onChange={(e) =>
+                        updateItem(item.id, "qty", e.target.value)
+                      }
                       readOnly={isEditMode}
                     />
                   </td>
                   <td>
                     <input
                       value={item.hsCode}
-                      onChange={(e) => updateItem(item.id, "hsCode", e.target.value)}
+                      onChange={(e) =>
+                        updateItem(item.id, "hsCode", e.target.value)
+                      }
                       readOnly={isEditMode}
                     />
                   </td>
                   <td>
                     <input
                       value={item.rate}
-                      onChange={(e) => updateItem(item.id, "rate", e.target.value)}
+                      onChange={(e) =>
+                        updateItem(item.id, "rate", e.target.value)
+                      }
                       readOnly={isEditMode}
                     />
                   </td>
                   <td>
                     <input
                       value={item.vat}
-                      onChange={(e) => updateItem(item.id, "vat", e.target.value)}
+                      onChange={(e) =>
+                        updateItem(item.id, "vat", e.target.value)
+                      }
                       readOnly={isEditMode}
                     />
                   </td>
                   <td>
                     <input
                       value={item.vatAmount}
-                      onChange={(e) => updateItem(item.id, "vatAmount", e.target.value)}
+                      onChange={(e) =>
+                        updateItem(item.id, "vatAmount", e.target.value)
+                      }
                       readOnly={isEditMode}
                     />
                   </td>
                   <td>
                     <input
                       value={item.amount}
-                      onChange={(e) => updateItem(item.id, "amount", e.target.value)}
+                      onChange={(e) =>
+                        updateItem(item.id, "amount", e.target.value)
+                      }
                       readOnly={isEditMode}
                     />
                   </td>
@@ -825,56 +945,6 @@ const AddingOrder = () => {
         </OrderTableWrapper>
 
         <PaymentSection>
-          <PaymentLeft>
-            <SectionTitle>
-              PAYMENT DETAILS
-              <FiEdit3 />
-            </SectionTitle>
-
-            <PaymentGrid>
-              <FormGroup>
-                <Label>Account Holder</Label>
-                <Input
-                  placeholder="TUNGSTON LABS"
-                  value={payment.accountHolder}
-                  onChange={(e) =>
-                    setPayment({ ...payment, accountHolder: e.target.value })
-                  }
-                  readOnly={isEditMode}
-                />
-              </FormGroup>
-
-              <FormGroup>
-                <Label>Account Number</Label>
-                <Input
-                  placeholder="12534789652135"
-                  value={payment.accountNumber}
-                  onChange={(e) =>
-                    setPayment({ ...payment, accountNumber: e.target.value })
-                  }
-                  readOnly={isEditMode}
-                />
-              </FormGroup>
-
-              <FormGroup>
-                <Label>IBAN</Label>
-                <Input
-                  placeholder="2654559"
-                  value={payment.iban}
-                  onChange={(e) => setPayment({ ...payment, iban: e.target.value })}
-                  readOnly={isEditMode}
-                />
-              </FormGroup>
-
-              <FormGroup>
-                <Label>UPLOAD QR CODE</Label>
-                <UploadBox>
-                  <FiUpload />
-                </UploadBox>
-              </FormGroup>
-            </PaymentGrid>
-          </PaymentLeft>
-
           <PaymentRight>
             <SummaryRow>
               <span>Sub Total</span>
@@ -886,7 +956,9 @@ const AddingOrder = () => {
             </SummaryRow>
             <SummaryRow>
               <span>Discount</span>
-              <strong className="discount">{summary.discount || "SAR 0"}</strong>
+              <strong className="discount">
+                {summary.discount || "SAR 0"}
+              </strong>
             </SummaryRow>
             <SummaryRow>
               <span>Round Off</span>
@@ -899,31 +971,44 @@ const AddingOrder = () => {
           </PaymentRight>
         </PaymentSection>
 
-        <ButtonWrapper>
-          <CancelButton onClick={handleCancel}>CANCEL</CancelButton>
-          <PreviewButton onClick={handleSave} disabled={isSaving}>
-            {isSaving ? "SAVING..." : isEditMode ? "UPDATE" : "PREVIEW"}
-          </PreviewButton>
-        </ButtonWrapper>
+     <ButtonWrapper>
+  <CancelButton type="button" onClick={handleCancel}>
+    CANCEL
+  </CancelButton>
+
+  <DraftButton
+    type="button"
+    onClick={handleSaveDraft}
+    disabled={isSaving}
+  >
+    SAVE DRAFT
+  </DraftButton>
+
+  <DownloadButton type="button" onClick={handleDownload}>
+    DOWNLOAD
+  </DownloadButton>
+
+  
+<SendButton
+  type="button"
+  onClick={handleSendClick}
+  disabled={isSaving}
+>
+  {isSaving ? (
+    <>
+      <Hourglass className="loading-icon" />
+      SENDING...
+    </>
+  ) : isSendForApproval ? (
+    "SEND FOR APPROVAL"
+  ) : (
+    "SEND"
+  )}
+</SendButton>
+</ButtonWrapper>
       </OrderForm>
     </OrderContainer>
   );
 };
-
-const UploadBox = ({ children }) => (
-  <div
-    style={{
-      height: "30px",
-      border: "1px solid #e5e5e5",
-      borderRadius: "3px",
-      display: "flex",
-      alignItems: "center",
-      paddingLeft: "15px",
-      color: "#111",
-    }}
-  >
-    {children}
-  </div>
-);
 
 export default AddingOrder;

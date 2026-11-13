@@ -1,5 +1,7 @@
 import styled from "styled-components";
 
+const ERROR_COLOR = "#dc2626";
+
 /* =========================================================
    OVERLAY
 ========================================================= */
@@ -13,11 +15,9 @@ export const Overlay = styled.div`
   align-items: center;
   justify-content: center;
 
-  padding: 15px;
+  background: rgba(0, 0, 0, 0.25);
 
-  background: rgba(0, 0, 0, 0.35);
-
-  overflow-y: auto;
+  padding: 20px;
 `;
 
 /* =========================================================
@@ -26,23 +26,31 @@ export const Overlay = styled.div`
 
 export const ModalContainer = styled.div`
   width: 100%;
-  max-width: 1205px;
-  max-height: calc(100vh - 30px);
+  max-width: 1420px;
 
-  padding: 48px 22px 46px;
-
-  box-sizing: border-box;
-
-  background: #ffffff;
+  background: #fff;
 
   border-radius: 4px;
 
-  box-shadow: 0 10px 35px rgba(0, 0, 0, 0.15);
+  padding: 28px 32px 30px;
 
+  box-sizing: border-box;
+
+  box-shadow: 0 10px 35px rgba(0, 0, 0, 0.12);
+
+  max-height: 95vh;
   overflow-y: auto;
 
-  @media (max-width: 768px) {
-    padding: 30px 20px;
+  @media (max-width: 1100px) {
+    max-width: 95%;
+  }
+
+  @media (max-width: 900px) {
+    padding: 24px;
+  }
+
+  @media (max-width: 600px) {
+    padding: 20px;
   }
 `;
 
@@ -51,39 +59,27 @@ export const ModalContainer = styled.div`
 ========================================================= */
 
 export const Header = styled.div`
-  margin-bottom: 22px;
+  margin-bottom: 23px;
 `;
-
-/* =========================================================
-   TITLE
-========================================================= */
 
 export const Title = styled.h2`
-  margin: 0 0 5px;
-
+  margin: 0 0 12px;
   font-family: "Poppins", sans-serif;
-  font-size: 17px;
-  font-weight: 600;
-
-  line-height: 1.4;
-
   color: #111111;
+  font-weight: 500;
+  font-size: 20px;
+  line-height: 100%;
+  letter-spacing: 0%;
 `;
-
-/* =========================================================
-   DESCRIPTION
-========================================================= */
 
 export const Description = styled.p`
   margin: 0;
-
+  color: #333;
   font-family: "Poppins", sans-serif;
-  font-size: 11px;
   font-weight: 400;
-
-  line-height: 1.5;
-
-  color: #111111;
+  font-size: 14px;
+  line-height: 100%;
+  letter-spacing: 0%;
 `;
 
 /* =========================================================
@@ -94,17 +90,14 @@ export const Form = styled.form`
   width: 100%;
 `;
 
-/* =========================================================
-   FORM GRID
-========================================================= */
-
 export const FormGrid = styled.div`
   display: grid;
 
+  /* 10 fields -> 2 clean rows of 5 */
   grid-template-columns: repeat(5, minmax(0, 1fr));
 
-  column-gap: 22px;
-  row-gap: 17px;
+  column-gap: 18px;
+  row-gap: 15px;
 
   width: 100%;
 
@@ -114,77 +107,73 @@ export const FormGrid = styled.div`
 
   @media (max-width: 768px) {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+
+    column-gap: 16px;
+    row-gap: 16px;
   }
 
-  @media (max-width: 500px) {
+  @media (max-width: 650px) {
     grid-template-columns: 1fr;
   }
 `;
 
-/* =========================================================
-   FIELD
-========================================================= */
-
 export const Field = styled.div`
-  display: flex;
-  flex-direction: column;
-
   min-width: 0;
 `;
 
 /* =========================================================
-   LABEL
+   LABEL / REQUIRED STAR / ERROR TEXT
 ========================================================= */
 
 export const Label = styled.label`
-  margin-bottom: 8px;
-
+  display: block;
+  margin-bottom: 10px;
+  color: #222;
+  text-transform: uppercase;
   font-family: "Poppins", sans-serif;
-  font-size: 11px;
-  font-weight: 500;
+  font-weight: 400;
+  font-size: 13px;
+  line-height: 100%;
+  letter-spacing: 0%;
+`;
 
-  line-height: 1.2;
+/* red star shown after the label of a required field */
+export const RequiredStar = styled.span`
+  color: ${ERROR_COLOR};
+  margin-left: 4px;
+  font-weight: 600;
+`;
 
-  color: #111111;
+/* validation message shown under a field */
+export const ErrorText = styled.span`
+  display: block;
+  margin-top: 4px;
+  color: ${ERROR_COLOR};
+  font-family: "Poppins", sans-serif;
+  font-size: 12px;
+  line-height: 1.3;
 `;
 
 /* =========================================================
-   COMMON FIELD STYLES
+   INPUT / SELECT
+   $hasError turns the border red
 ========================================================= */
 
 const fieldStyles = `
   width: 100%;
-  height: 35px;
-
+  height: 41px;
+  padding: 0 12px;
   box-sizing: border-box;
-
-  padding: 0 11px;
-
-  border: 1px solid #e4e4e4;
   border-radius: 4px;
-
   outline: none;
-
   background: #ffffff;
-
   font-family: "Poppins", sans-serif;
-  font-size: 11px;
-
+  font-size: 13px;
   color: #333333;
-
-  transition:
-    border-color 0.2s ease,
-    box-shadow 0.2s ease;
+  transition: 0.2s ease;
 
   &::placeholder {
-    color: #888888;
-  }
-
-  &:focus {
-    border-color: #3454b9;
-
-    box-shadow:
-      0 0 0 2px rgba(52, 84, 185, 0.08);
+    color: #999999;
   }
 
   &:disabled {
@@ -197,39 +186,34 @@ const fieldStyles = `
   }
 `;
 
-/* =========================================================
-   INPUT
-========================================================= */
-
 export const Input = styled.input`
   ${fieldStyles}
 
-  &[type="date"] {
-    color: #333333;
+  border: 1px solid ${({ $hasError }) => ($hasError ? ERROR_COLOR : "#e1e1e1")};
+
+  &:focus {
+    border-color: ${({ $hasError }) => ($hasError ? ERROR_COLOR : "#3654b5")};
   }
 
   &[type="date"]::-webkit-calendar-picker-indicator {
     cursor: pointer;
     opacity: 0.65;
   }
-`;
 
-/* =========================================================
-   SELECT
-========================================================= */
+  &[type="number"] {
+    padding-right: 42px;
+  }
+`;
 
 export const Select = styled.select`
   ${fieldStyles}
 
+  border: 1px solid ${({ $hasError }) => ($hasError ? ERROR_COLOR : "#e1e1e1")};
+
   cursor: pointer;
 
-  appearance: auto;
-
-  color: ${({ value }) =>
-    value ? "#333333" : "#888888"};
-
-  option {
-    color: #333333;
+  &:focus {
+    border-color: ${({ $hasError }) => ($hasError ? ERROR_COLOR : "#3654b5")};
   }
 
   &:disabled {
@@ -238,32 +222,65 @@ export const Select = styled.select`
 `;
 
 /* =========================================================
-   UNIT INPUT
+   UNIT INPUT (PCS suffix)
 ========================================================= */
 
 export const UnitInput = styled.div`
   position: relative;
 
   width: 100%;
-`;
 
-/* =========================================================
-   UNIT TEXT
-========================================================= */
+  input {
+    padding-right: 48px;
+  }
+`;
 
 export const UnitText = styled.span`
   position: absolute;
 
   top: 50%;
-  right: 11px;
+  right: 12px;
 
   transform: translateY(-50%);
 
   font-family: "Poppins", sans-serif;
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 400;
 
   color: #777777;
+
+  pointer-events: none;
+`;
+
+/* =========================================================
+   NOTE
+========================================================= */
+
+export const NoteWrapper = styled.div`
+  position: relative;
+
+  width: 100%;
+`;
+
+export const NoteInput = styled.input`
+  ${fieldStyles}
+
+  padding-right: 32px;
+`;
+
+export const NoteChevron = styled.span`
+  position: absolute;
+
+  top: 50%;
+  right: 10px;
+
+  transform: translateY(-50%);
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  color: #333333;
 
   pointer-events: none;
 `;
@@ -279,36 +296,31 @@ export const AttachmentWrapper = styled.div`
   align-items: center;
 
   width: 100%;
-  height: 35px;
+  height: 41px;
 
   box-sizing: border-box;
 
-  border: 1px solid #e4e4e4;
+  border: 1px solid ${({ $hasError }) => ($hasError ? ERROR_COLOR : "#e1e1e1")};
   border-radius: 4px;
 
   background: #ffffff;
 
   overflow: hidden;
 
-  &:focus-within {
-    border-color: #3454b9;
+  transition: 0.2s ease;
 
-    box-shadow:
-      0 0 0 2px rgba(52, 84, 185, 0.08);
+  &:focus-within {
+    border-color: ${({ $hasError }) => ($hasError ? ERROR_COLOR : "#3654b5")};
   }
 `;
 
-/* =========================================================
-   ATTACHMENT INPUT
-========================================================= */
-
 export const AttachmentInput = styled.input`
   width: 100%;
-  height: 33px;
+  height: 39px;
 
   box-sizing: border-box;
 
-  padding: 0 40px 0 11px;
+  padding: 0 44px 0 12px;
 
   border: none;
   outline: none;
@@ -316,18 +328,14 @@ export const AttachmentInput = styled.input`
   background: transparent;
 
   font-family: "Poppins", sans-serif;
-  font-size: 11px;
+  font-size: 13px;
 
   color: #777777;
 
   &::placeholder {
-    color: #888888;
+    color: #999999;
   }
 `;
-
-/* =========================================================
-   UPLOAD LABEL
-========================================================= */
 
 export const UploadLabel = styled.label`
   position: absolute;
@@ -335,8 +343,8 @@ export const UploadLabel = styled.label`
   top: 0;
   right: 0;
 
-  width: 35px;
-  height: 34px;
+  width: 41px;
+  height: 100%;
 
   display: flex;
   align-items: center;
@@ -348,73 +356,52 @@ export const UploadLabel = styled.label`
 
   cursor: pointer;
 
-  transition: background 0.2s ease;
+  transition: 0.2s ease;
 
   &:hover {
     background: #f5f5f5;
   }
 
   svg {
+    width: 15px;
+    height: 15px;
     stroke-width: 1.6;
   }
 `;
-
-/* =========================================================
-   HIDDEN FILE INPUT
-========================================================= */
 
 export const HiddenFileInput = styled.input`
   display: none;
 `;
 
 /* =========================================================
-   BUTTON GROUP
+   BUTTONS
 ========================================================= */
 
 export const ButtonGroup = styled.div`
   display: flex;
   align-items: center;
 
-  gap: 12px;
+  gap: 10px;
 
-  margin-top: 21px;
+  margin-top: 20px;
 `;
 
-/* =========================================================
-   CANCEL BUTTON
-========================================================= */
-
 export const CancelButton = styled.button`
-  height: 36px;
-
-  padding: 0 15px;
-
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-
-  border: 1px solid #222222;
-  border-radius: 3px;
-
+  height: 40px;
+  min-width: 86px;
+  padding: 0 18px;
   background: #ffffff;
-
+  border: 1px solid #111111;
+  border-radius: 4px;
   font-family: "Poppins", sans-serif;
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 500;
-
   color: #111111;
-
   cursor: pointer;
-
-  transition: all 0.2s ease;
+  transition: 0.2s ease;
 
   &:hover {
-    background: #111111;
-    color: #ffffff;
-  }
-
-  &:active {
-    transform: translateY(1px);
+    background: #f5f5f5;
   }
 
   &:disabled {
@@ -423,42 +410,36 @@ export const CancelButton = styled.button`
   }
 `;
 
-/* =========================================================
-   SAVE / CONFIRM BUTTON
-========================================================= */
-
 export const SaveButton = styled.button`
-  height: 36px;
+  height: 40px;
+  min-width: 207px;
+  padding: 0 25px;
 
-  padding: 0 24px;
-
-  display: inline-flex;
+  display: flex;
   align-items: center;
   justify-content: center;
+  gap: 10px;
 
-  gap: 7px;
-
+  background: #3857b9;
   border: none;
-  border-radius: 3px;
-
-  background: #3454b9;
+  border-radius: 4px;
 
   font-family: "Poppins", sans-serif;
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 500;
-
+  letter-spacing: 0.4px;
   color: #ffffff;
 
   cursor: pointer;
+  transition: 0.2s ease;
 
-  transition: all 0.2s ease;
-
-  &:hover {
-    background: #2947a5;
+  svg {
+    width: 15px;
+    height: 15px;
   }
 
-  &:active {
-    transform: translateY(1px);
+  &:hover {
+    background: #2e49a5;
   }
 
   &:disabled {

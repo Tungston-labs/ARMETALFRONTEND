@@ -13,9 +13,11 @@ import {
 import {
     getCustomers,
     getCustomerById,
+    getCustomerSummary,
     addCustomer,
     editCustomer,
     removeCustomer,
+       uploadCustomerDocumentThunk,
 } from "../../../../Redux/finance/Sales/CustomerSlice";
 
 export const useCustomerList = () => {
@@ -25,10 +27,12 @@ export const useCustomerList = () => {
     const {
         customers,
         totalPages,
-            totalItems,  
+        totalItems,
         currentPage,
         loading,
         selectedCustomer,
+         summary,
+    summaryLoading,
     } = useSelector((state) => state.customer);
 
     const [search, setSearch] = useState("");
@@ -99,43 +103,47 @@ export const useCustomerList = () => {
         0
     );
 
-    const cards = [
-        {
-            title: "Total Customers",
-            count: totalCustomers,
-            icon: <FiUsers />,
-            backgroundColor: "#E8F7EE",
-            iconColor: "#127923",
-        },
-        {
-            title: "Active Customers",
-            count: totalCreditLimit,
-            icon: <FiDollarSign />,
-            backgroundColor: "#e3e7ff",
-            iconColor: "#3250B5",
-        },
-        {
-            title: "New Customers (MAY)",
-            count: totalInvoices,
-            icon: <FiFileText />,
-            backgroundColor: "#fff2e8",
-            iconColor: "#F48211",
-        },
-        {
-            title: "Inactive Customers",
-            count: totalPaymentsReceived,
-            icon: <FiCheckCircle />,
-            backgroundColor: "#fff3f3",
-            iconColor: "#DB0F12",
-        },
-        {
-            title: "Payments Received",
-            count: totalOutstanding,
-            icon: <FiAlertCircle />,
-            backgroundColor: "#f4fff2",
-            iconColor: "#21C034",
-        },
-    ];
+  const monthLabel = new Date()
+    .toLocaleString("en-US", { month: "short" })
+    .toUpperCase();
+
+const cards = [
+    {
+        title: "Total Customers",
+        count: summary?.total_customers ?? 0,
+        icon: <FiUsers />,
+        backgroundColor: "#E8F7EE",
+        iconColor: "#127923",
+    },
+    {
+        title: "Active Customers",
+        count: summary?.active_customers ?? 0,
+        icon: <FiCheckCircle />,
+        backgroundColor: "#e3e7ff",
+        iconColor: "#3250B5",
+    },
+    {
+        title: `New Customers (${monthLabel})`,
+        count: summary?.new_customers ?? 0,
+        icon: <FiFileText />,
+        backgroundColor: "#fff2e8",
+        iconColor: "#F48211",
+    },
+    {
+        title: "Inactive Customers",
+        count: summary?.inactive_customers ?? 0,
+        icon: <FiAlertCircle />,
+        backgroundColor: "#fff3f3",
+        iconColor: "#DB0F12",
+    },
+    {
+        title: "Payments Received",
+        count: formatCurrency(summary?.payments_received),
+        icon: <FiDollarSign />,
+        backgroundColor: "#f4fff2",
+        iconColor: "#21C034",
+    },
+];
 
     const handleAddCustomer = () => {
         setModalMode("add");
@@ -169,39 +177,58 @@ export const useCustomerList = () => {
         dispatch(removeCustomer(customer.id));
     };
 
-    const handleSaveCustomer = async (customerData) => {
-        if (modalMode === "edit" && editingCustomer?.id) {
-            const result = await dispatch(
-                editCustomer({ id: editingCustomer.id, customerData })
-            );
+  const handleSaveCustomer = async (customerData, documentFile) => {
+    const isEditMode = modalMode === "edit" && editingCustomer?.id;
 
-            if (!result.error) {
-                setIsCustomerModalOpen(false);
-                dispatch(
-                    getCustomers({
-                        search: search.trim(),
-                        page,
-                        page_size: rowsPerPage,
-                    })
-                );
-            }
-            return;
-        }
+    const result = isEditMode
+        ? await dispatch(
+              editCustomer({ id: editingCustomer.id, customerData })
+          )
+        : await dispatch(addCustomer(customerData));
 
-        const result = await dispatch(addCustomer(customerData));
+    if (result.error) return;
 
-        if (!result.error) {
-            setIsCustomerModalOpen(false);
-            dispatch(
-                getCustomers({
-                    search: search.trim(),
-                    page,
-                    page_size: rowsPerPage,
-                })
+    const customerId = isEditMode
+        ? editingCustomer.id
+        : result.payload?.data?.id;
+
+    if (documentFile && customerId) {
+        const uploadResult = await dispatch(
+            uploadCustomerDocumentThunk({
+                id: customerId,
+                documentName: documentFile.name,
+                file: documentFile,
+            })
+        );
+
+        if (uploadResult.error) {
+            window.alert(
+                "Customer was saved, but the document upload failed. Please upload it again from the customer's overview."
             );
         }
-    };
+    }
 
+    setIsCustomerModalOpen(false);
+    dispatch(
+        getCustomers({
+            search: search.trim(),
+            page,
+            page_size: rowsPerPage,
+        })
+    );
+    fetchSummary();
+};
+const fetchSummary = () =>
+    dispatch(
+        getCustomerSummary({
+            start_date: startDate || undefined,
+            end_date: endDate || undefined,
+        })
+    );
+
+useEffect(() => {
+    fetchSummary();
+}, [dispatch, startDate, endDate]);
     const handleCloseCustomerModal = () => {
         setIsCustomerModalOpen(false);
         setEditingCustomer(null);
@@ -243,7 +270,7 @@ export const useCustomerList = () => {
         // data
         customers,
         totalPages,
-          totalRecords: totalItems,  
+        totalRecords: totalItems,
         currentPage,
         loading,
         selectedCustomer,

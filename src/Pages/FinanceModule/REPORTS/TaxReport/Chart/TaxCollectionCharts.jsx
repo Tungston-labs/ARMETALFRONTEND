@@ -1,245 +1,317 @@
-import React, { useMemo } from "react";
-import {
-  ResponsiveContainer,
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-} from "recharts";
+import React, { useMemo, useState } from "react";
 
 import {
-  DashboardContainer,
+  ChartsPanel,
   ChartSection,
-  SectionHeader,
-  SectionTitle,
-  Dropdown,
-  ChartWrapper,
-  CustomTooltipContainer,
-  TooltipMonth,
-  TooltipLabel,
-  TooltipValue,
+  ChartHeader,
+  ChartTitle,
+  ChartSelect,
+  ChartSvg,
+  ChartDivider,
   Legend,
   LegendItem,
   LegendColor,
 } from "./TaxCollectionCharts.styles";
 
-// Current year and the two before it
-const buildYearOptions = () => {
-  const current = new Date().getFullYear();
-  return [current, current - 1, current - 2];
+const MONTHS = [
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
+];
+
+// Replace these sample values with your API response if the chart
+// already receives tax collection data from the backend.
+const monthlyTax = {
+  2024: [18, 24, 21, 32, 28, 38, 34, 43, 39, 48, 44, 55],
+  2025: [22, 28, 25, 36, 32, 42, 39, 48, 45, 54, 50, 62],
+  2026: [25, 31, 29, 40, 36, 46, 42, 53, 48, 58, 55, 66],
 };
 
-const formatMoney = (value) =>
-  Number(value || 0).toLocaleString("en-US", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
-
-// 1,500 -> "1.5K", 2,000,000 -> "2M"
-const formatAxis = (value) => {
-  const n = Number(value || 0);
-  if (n >= 1000000) return `${+(n / 1000000).toFixed(1)}M`;
-  if (n >= 1000) return `${+(n / 1000).toFixed(1)}K`;
-  return `${n}`;
+const comparisonData = {
+  2024: {
+    current: [18, 24, 21, 32, 28, 38, 34, 43, 39, 48, 44, 55],
+    previous: [15, 20, 18, 27, 25, 33, 30, 37, 35, 42, 40, 49],
+  },
+  2025: {
+    current: [22, 28, 25, 36, 32, 42, 39, 48, 45, 54, 50, 62],
+    previous: [18, 24, 21, 32, 28, 38, 34, 43, 39, 48, 44, 55],
+  },
+  2026: {
+    current: [25, 31, 29, 40, 36, 46, 42, 53, 48, 58, 55, 66],
+    previous: [22, 28, 25, 36, 32, 42, 39, 48, 45, 54, 50, 62],
+  },
 };
 
-const capitalize = (month = "") =>
-  month.charAt(0) + month.slice(1).toLowerCase();
+const CHART = {
+  width: 600,
+  height: 230,
+  left: 42,
+  right: 16,
+  top: 16,
+  bottom: 34,
+};
 
-const MonthlyTaxTooltip = ({ active, payload }) => {
-  if (!active || !payload?.length) return null;
+const COLORS = {
+  current: "#6558D3",
+  previous: "#28A7A1",
+};
 
-  const { month, output } = payload[0].payload;
+function getX(index, count) {
+  const plotWidth = CHART.width - CHART.left - CHART.right;
+  return CHART.left + (index / Math.max(count - 1, 1)) * plotWidth;
+}
+
+function getY(value, maxValue) {
+  const plotHeight = CHART.height - CHART.top - CHART.bottom;
+  return CHART.top + plotHeight - (value / maxValue) * plotHeight;
+}
+
+function makeLinePath(values, maxValue) {
+  return values
+    .map((value, index) => {
+      const x = getX(index, values.length);
+      const y = getY(value, maxValue);
+      return `${index === 0 ? "M" : "L"} ${x} ${y}`;
+    })
+    .join(" ");
+}
+
+function GridLines({ maxValue, step }) {
+  const ticks = [];
+
+  for (let value = 0; value <= maxValue; value += step) {
+    const y = getY(value, maxValue);
+
+    ticks.push(
+      <g key={value}>
+        <line
+          className="grid-line"
+          x1={CHART.left}
+          y1={y}
+          x2={CHART.width - CHART.right}
+          y2={y}
+        />
+        <text
+          className="axis-label"
+          x={CHART.left - 9}
+          y={y + 3}
+          textAnchor="end"
+        >
+          {value}
+        </text>
+      </g>,
+    );
+  }
+
+  return <>{ticks}</>;
+}
+
+function MonthLabels() {
+  return (
+    <>
+      {MONTHS.map((month, index) => (
+        <text
+          key={month}
+          className="month-label"
+          x={getX(index, MONTHS.length)}
+          y={CHART.height - 10}
+          textAnchor="middle"
+        >
+          {month}
+        </text>
+      ))}
+    </>
+  );
+}
+
+function ChartPoints({ values, color, maxValue }) {
+  return (
+    <>
+      {values.map((value, index) => (
+        <circle
+          key={`${index}-${value}`}
+          className="chart-point"
+          cx={getX(index, values.length)}
+          cy={getY(value, maxValue)}
+          r="3.5"
+          fill={color}
+        >
+          <title>{`${MONTHS[index]}: ${value}`}</title>
+        </circle>
+      ))}
+    </>
+  );
+}
+
+function LineChart({ values }) {
+  const maxValue = Math.max(20, Math.ceil(Math.max(...values) / 20) * 20);
+  const step = maxValue / 4;
 
   return (
-    <CustomTooltipContainer>
-      <TooltipMonth>{capitalize(month)}</TooltipMonth>
-      <TooltipLabel>Tax Collected</TooltipLabel>
-      <TooltipValue>SAR {formatMoney(output)}</TooltipValue>
-    </CustomTooltipContainer>
+    <ChartSvg
+      viewBox={`0 0 ${CHART.width} ${CHART.height}`}
+      role="img"
+      aria-label="Monthly tax collection trend chart"
+    >
+      <GridLines maxValue={maxValue} step={step} />
+      <MonthLabels />
+
+      <path
+        className="chart-line"
+        d={makeLinePath(values, maxValue)}
+        stroke={COLORS.current}
+      />
+
+      <ChartPoints values={values} color={COLORS.current} maxValue={maxValue} />
+    </ChartSvg>
   );
-};
+}
 
-const ComparisonTooltip = ({ active, payload }) => {
-  if (!active || !payload?.length) return null;
-
-  const { month, output, input } = payload[0].payload;
+function ComparisonChart({ currentValues, previousValues }) {
+  const allValues = [...currentValues, ...previousValues];
+  const maxValue = Math.max(20, Math.ceil(Math.max(...allValues) / 20) * 20);
+  const step = maxValue / 4;
 
   return (
-    <CustomTooltipContainer>
-      <TooltipMonth>{capitalize(month)}</TooltipMonth>
-      <TooltipLabel>Output Tax: SAR {formatMoney(output)}</TooltipLabel>
-      <TooltipValue>Input Tax: SAR {formatMoney(input)}</TooltipValue>
-    </CustomTooltipContainer>
-  );
-};
+    <ChartSvg
+      viewBox={`0 0 ${CHART.width} ${CHART.height}`}
+      role="img"
+      aria-label="Current and previous year tax collection comparison chart"
+    >
+      <GridLines maxValue={maxValue} step={step} />
+      <MonthLabels />
 
-/**
- * Props (from the Tax Report page / Redux):
- *  - monthlyTax:   { year, data: [{ month, monthName, outputTax, inputTax }] }
- *  - year:         selected chart year (sent to the API as chart_year)
- *  - onYearChange: called with the new year; the page refetches the report
- *  - loading:      true while the report is loading
- */
-const TaxCollectionCharts = ({
-  monthlyTax = { year: null, data: [] },
-  year,
-  onYearChange,
-  loading = false,
-}) => {
-  const years = useMemo(buildYearOptions, []);
+      <path
+        className="chart-line"
+        d={makeLinePath(previousValues, maxValue)}
+        stroke={COLORS.previous}
+      />
 
-  // One series with all 12 months, used by both charts
-  const chartData = useMemo(
-    () =>
-      (monthlyTax.data || []).map((item) => ({
-        month: (item.monthName || "").toUpperCase(),
-        output: item.outputTax,
-        input: item.inputTax,
-      })),
-    [monthlyTax.data]
+      <path
+        className="chart-line"
+        d={makeLinePath(currentValues, maxValue)}
+        stroke={COLORS.current}
+      />
+
+      <ChartPoints
+        values={previousValues}
+        color={COLORS.previous}
+        maxValue={maxValue}
+      />
+
+      <ChartPoints
+        values={currentValues}
+        color={COLORS.current}
+        maxValue={maxValue}
+      />
+    </ChartSvg>
   );
+}
+
+function ChartLegend({ items }) {
+  return (
+    <Legend>
+      {items.map((item) => (
+        <LegendItem key={item.label}>
+          <LegendColor $color={item.color} />
+          <span>{item.label}</span>
+        </LegendItem>
+      ))}
+    </Legend>
+  );
+}
+
+export default function TaxCollectionCharts() {
+  const [selectedYear, setSelectedYear] = useState("2026");
+
+  const availableYears = useMemo(
+    () => Object.keys(monthlyTax).sort((a, b) => Number(b) - Number(a)),
+    [],
+  );
+
+  const selectedMonthlyData =
+    monthlyTax[selectedYear] || monthlyTax[availableYears[0]];
+
+  const selectedComparison =
+    comparisonData[selectedYear] || comparisonData[availableYears[0]];
 
   return (
-    <DashboardContainer>
-      {/* Monthly Tax Collection (output tax collected per month) */}
+    <ChartsPanel>
       <ChartSection>
-        <SectionHeader>
-          <SectionTitle>Monthly Tax Collection</SectionTitle>
+        <ChartHeader>
+          <ChartTitle>Monthly Tax Collection</ChartTitle>
 
-          <Dropdown
-            aria-label="Select tax collection year"
-            value={year}
-            onChange={(event) => onYearChange?.(Number(event.target.value))}
-            disabled={loading}
+          <ChartSelect
+            aria-label="Select year for monthly tax collection"
+            value={selectedYear}
+            onChange={(event) => setSelectedYear(event.target.value)}
           >
-            {years.map((item) => (
-              <option key={item} value={item}>
-                {item}
+            {availableYears.map((year) => (
+              <option key={year} value={year}>
+                {year}
               </option>
             ))}
-          </Dropdown>
-        </SectionHeader>
+          </ChartSelect>
+        </ChartHeader>
 
-        <ChartWrapper>
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart
-              data={chartData}
-              margin={{ top: 10, right: 10, left: 0, bottom: 8 }}
-            >
-              <CartesianGrid stroke="#e8e8e8" vertical horizontal />
+        <LineChart values={selectedMonthlyData} />
 
-              <XAxis
-                dataKey="month"
-                axisLine={false}
-                tickLine={false}
-                tick={{ fill: "#555", fontSize: 12 }}
-                dy={8}
-              />
-
-              <YAxis
-                allowDecimals={false}
-                axisLine={false}
-                tickLine={false}
-                tickFormatter={formatAxis}
-                tick={{ fill: "#555", fontSize: 12 }}
-                width={55}
-              />
-
-              <Tooltip content={<MonthlyTaxTooltip />} cursor={false} />
-
-              <Line
-                type="monotone"
-                dataKey="output"
-                stroke="#FF7900"
-                strokeWidth={2}
-                dot={{ r: 3, fill: "#3454B9", stroke: "#3454B9" }}
-                activeDot={{
-                  r: 4,
-                  fill: "#3454B9",
-                  stroke: "#fff",
-                  strokeWidth: 1,
-                }}
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        </ChartWrapper>
+        <ChartLegend
+          items={[
+            {
+              label: `Tax Collection ${selectedYear}`,
+              color: COLORS.current,
+            },
+          ]}
+        />
       </ChartSection>
 
-      {/* Output Tax vs Input Tax (same year, all months) */}
-      <ChartSection $last>
-        <SectionHeader>
-          <SectionTitle>
-            Output Tax vs Input Tax{year ? ` (${year})` : ""}
-          </SectionTitle>
-        </SectionHeader>
+      <ChartDivider />
 
-        <ChartWrapper>
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart
-              data={chartData}
-              margin={{ top: 10, right: 10, left: 0, bottom: 8 }}
-            >
-              <CartesianGrid stroke="#e8e8e8" vertical horizontal />
+      <ChartSection>
+        <ChartHeader>
+          <ChartTitle>Tax Collection Comparison</ChartTitle>
 
-              <XAxis
-                dataKey="month"
-                axisLine={false}
-                tickLine={false}
-                tick={{ fill: "#555", fontSize: 12 }}
-                dy={8}
-              />
+          <ChartSelect
+            aria-label="Select year for tax collection comparison"
+            value={selectedYear}
+            onChange={(event) => setSelectedYear(event.target.value)}
+          >
+            {availableYears.map((year) => (
+              <option key={year} value={year}>
+                {year}
+              </option>
+            ))}
+          </ChartSelect>
+        </ChartHeader>
 
-              <YAxis
-                allowDecimals={false}
-                axisLine={false}
-                tickLine={false}
-                tickFormatter={formatAxis}
-                tick={{ fill: "#555", fontSize: 12 }}
-                width={58}
-              />
+        <ComparisonChart
+          currentValues={selectedComparison.current}
+          previousValues={selectedComparison.previous}
+        />
 
-              <Tooltip content={<ComparisonTooltip />} cursor={false} />
-
-              <Line
-                type="linear"
-                dataKey="output"
-                name="Output Tax"
-                stroke="#3154c5"
-                strokeWidth={2}
-                dot={{ r: 3, fill: "#3154c5" }}
-                activeDot={{ r: 4 }}
-              />
-
-              <Line
-                type="linear"
-                dataKey="input"
-                name="Input Tax"
-                stroke="#FF7900"
-                strokeWidth={2}
-                dot={{ r: 3, fill: "#FF7900" }}
-                activeDot={{ r: 4 }}
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        </ChartWrapper>
-
-        <Legend>
-          <LegendItem>
-            <LegendColor $color="#3154c5" />
-            Output Tax
-          </LegendItem>
-
-          <LegendItem>
-            <LegendColor $color="#FF7900" />
-            Input Tax
-          </LegendItem>
-        </Legend>
+        <ChartLegend
+          items={[
+            {
+              label: selectedYear,
+              color: COLORS.current,
+            },
+            {
+              label: String(Number(selectedYear) - 1),
+              color: COLORS.previous,
+            },
+          ]}
+        />
       </ChartSection>
-    </DashboardContainer>
+    </ChartsPanel>
   );
-};
-
-export default TaxCollectionCharts;
+}

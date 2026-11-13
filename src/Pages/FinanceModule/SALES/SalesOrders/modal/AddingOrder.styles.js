@@ -397,14 +397,15 @@ export const DeleteButton = styled.button`
 ========================= */
 
 export const PaymentSection = styled.div`
-    width: 100%;
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: 28px;
+  box-sizing: border-box;
 
-    display: grid;
-    grid-template-columns: minmax(0, 1.6fr) minmax(300px, 1fr);
-
-    gap: 60px;
-
-    margin-top: 28px;
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
 `;
 
 export const PaymentLeft = styled.div`
@@ -425,9 +426,17 @@ export const PaymentGrid = styled.div`
 `;
 
 export const PaymentRight = styled.div`
-    width: 100%;
+  grid-column: 2;
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  justify-self: end;
+  padding-top: 2px;
 
-    padding-top: 2px;
+  @media (max-width: 768px) {
+    grid-column: 1;
+    width: 100%;
+  }
 `;
 
 export const SummaryRow = styled.div`
@@ -492,57 +501,132 @@ export const TotalAmount = styled.div`
 ========================= */
 
 export const ButtonWrapper = styled.div`
-    width: 100%;
-
-    display: flex;
-    justify-content: flex-end;
-    align-items: center;
-
-    gap: 12px;
-
-    margin-top: 30px;
+  width: 100%;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 30px;
 `;
 
 export const CancelButton = styled.button`
-    width: 100px;
-    height: 38px;
+  min-width: 100px;
+  height: 38px;
+  padding: 0 14px;
+  border: 1px solid #3049a3;
+  border-radius: 4px;
+  background: #ffffff;
+  color: #111111;
+  font-family: "Poppins", sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
 
-    border: 1px solid #3049a3;
-    border-radius: 4px;
+  &:hover {
+    background: #f5f7ff;
+  }
+`;
 
-    background: #ffffff;
-    color: #111111;
+export const DraftButton = styled.button`
+  min-width: 110px;
+  height: 38px;
+  padding: 0 14px;
+  border: 1px solid #3049a3;
+  border-radius: 4px;
+  background: #ffffff;
+  color: #334155;
+  font-family: "Poppins", sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
 
-    font-family: "Poppins", sans-serif;
-    font-size: 12px;
-    font-weight: 500;
+  &:hover {
+    background: #f1f5f9;
+  }
 
-    cursor: pointer;
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+`;
 
-    &:hover {
-        background: #f5f7ff;
-    }
+export const DownloadButton = styled.button`
+  min-width: 100px;
+  height: 38px;
+  padding: 0 14px;
+  border: 1px solid #3049a3;
+  border-radius: 4px;
+  background: #ffffff;
+  color: #3049a3;
+  font-family: "Poppins", sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+
+  &:hover {
+    background: #f5f7ff;
+  }
 `;
 
 export const PreviewButton = styled.button`
-    width: 100px;
-    height: 38px;
+  min-width: 100px;
+  height: 38px;
+  padding: 0 14px;
+  border: 1px solid #3049a3;
+  border-radius: 4px;
+  background: #3049a3;
+  color: #ffffff;
+  font-family: "Poppins", sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
 
-    border: 1px solid #3049a3;
-    border-radius: 4px;
+  &:hover {
+    background: #263b88;
+  }
 
-    background: #3049a3;
-    color: #ffffff;
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+`;
 
-    font-family: "Poppins", sans-serif;
-    font-size: 12px;
-    font-weight: 500;
+export const SendButton = styled.button`
+  min-width: 150px;
+  height: 38px;
+  padding: 0 14px;
+  border: 1px solid #16804a;
+  border-radius: 4px;
+  background: #3250B5;
+  color: #ffffff;
+  font-family: "Poppins", sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
 
-    cursor: pointer;
+  .loading-icon {
+  width: 15px;
+  height: 15px;
+  animation: hourglass-spin 2s linear infinite;
+}
 
-    &:hover {
-        background: #263b88;
-    }
+@keyframes hourglass-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(180deg);
+  }
+}
+  &:hover {
+    background:#3250B5;
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
 `;
 
 /* =========================
@@ -573,3 +657,23 @@ export const UploadBox = styled.div`
     }
 `;
 
+
+export const Required = styled.span`
+    margin-left: 3px;
+    color: #e53935;
+
+    &::after {
+        content: "*";
+    }
+`;
+
+export const ErrorText = styled.span`
+    display: block;
+    margin-top: 4px;
+
+    font-family: "Poppins", sans-serif;
+    font-size: 12px;
+    line-height: 16px;
+
+    color: #e53935;
+`;
