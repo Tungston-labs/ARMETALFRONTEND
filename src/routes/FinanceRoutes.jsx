@@ -162,6 +162,7 @@ import CashFlow from "../Pages/FinanceModule/REPORTS/CashFlow/CashFlow.jsx";
 import RecurringBill from "../Pages/FinanceModule/SALES/Recurring Billing/modal/RecurringBill.jsx";
 import AddQuotation from "../Pages/FinanceModule/SALES/Quotations/modal/AddQuotation.jsx";
 import Quotationlist from "../Pages/FinanceModule/SALES/Quotations/Quotationlist.jsx";
+import WarehouseList from "../Pages/FinanceModule/PRODUCTS/Warehouse/WarehouseList.jsx";
 
 const FinanceRoutes = () => {
   return (
@@ -170,11 +171,11 @@ const FinanceRoutes = () => {
           PRODUCTS
       ===================================================== */}
 
-      <Route path="Categories-List" element={<CategoriesList />} />
-      <Route path="Product-List" element={<ProductList />} />
-      <Route path="Warehouse-List" element={<Warehouse />} />
+      <Route path="/product/Categories-List" element={<CategoriesList />} />
+      <Route path="/product/Product-List" element={<ProductList />} />
+      <Route path="/product/Warehouse" element={<WarehouseList />} />
       <Route path="warehouse/:id" element={<WarehouseDetails />} />
-      <Route path="Inventory-List" element={<InventoryList />} />
+      <Route path="/product/Inventory-List" element={<InventoryList />} />
 
       {/* =====================================================
           PURCHASES - BILLS
