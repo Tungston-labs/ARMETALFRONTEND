@@ -38,6 +38,22 @@ export const FormGrid = styled.div`
   column-gap: 24px;
   row-gap: 10px;
 
+  @media (max-width: 900px) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  @media (max-width: 560px) {
+    grid-template-columns: 1fr;
+  }
+`;
+
+export const FormGridThree = styled.div`
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  column-gap: 24px;
+  row-gap: 10px;
+  margin-top: 16px;
 
   @media (max-width: 900px) {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -45,8 +61,6 @@ export const FormGrid = styled.div`
 
   @media (max-width: 560px) {
     grid-template-columns: 1fr;
-
-  
   }
 `;
 

@@ -331,7 +331,12 @@ useEffect(() => {
     const picked = availableQuotations.find(
       (q) => String(q.id) === String(value)
     );
-    setOrderNumber(picked?.quotation_number || picked?.number || "");
+    setOrderNumber(
+      picked?.quote_number ||
+        picked?.quotation_number ||
+        picked?.number ||
+        "",
+    );
     if (value) {
       dispatch(getQuotationById(value));
     }
@@ -585,7 +590,10 @@ useEffect(() => {
                   </option>
                   {availableQuotations.map((q) => (
                     <option key={q.id} value={q.id}>
-                      {q.quotation_number || q.number || `Quotation #${q.id}`}
+                      {q.quote_number ||
+                        q.quotation_number ||
+                        q.number ||
+                        `Quotation #${q.id}`}
                     </option>
                   ))}
                 </Select>

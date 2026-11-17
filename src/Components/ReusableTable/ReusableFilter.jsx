@@ -43,6 +43,7 @@ const ReusableFilter = ({
   statuses = [],
   onStatus,
   showStatus = false,
+  statusPlaceholder = "All Status",
 
   // ================= GENERIC FILTERS =================
   filters = [],
@@ -220,7 +221,7 @@ const ReusableFilter = ({
             }
           >
             <option value="">
-              All Status
+              {statusPlaceholder || "All Status"}
             </option>
 
             {statuses.map((item, index) => {
