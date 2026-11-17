@@ -280,6 +280,12 @@ const FinanceRoutes = () => {
 
       <Route path="delivery/notes/edit/:id" element={<Createdeliverynotes />} />
 
+      <Route path="sales/delivery-notes" element={<DeliveryNotes />} />
+
+      <Route path="sales/delivery-notes/add" element={<Createdeliverynotes />} />
+
+      <Route path="sales/delivery-notes/edit/:id" element={<Createdeliverynotes />} />
+
       {/* =====================================================
           SALES - PAYMENTS
       ===================================================== */}

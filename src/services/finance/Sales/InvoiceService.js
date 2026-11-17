@@ -20,6 +20,8 @@ export const fetchSalesOrderDetailForInvoice = async (salesOrderId) => {
     return response.data;
 };
 
+
+
 // POST: /api/finance/invoice/
 export const createInvoice = async (invoiceData) => {
     const response = await API.post(

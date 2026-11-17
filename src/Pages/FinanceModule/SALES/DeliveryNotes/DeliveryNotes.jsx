@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { FiDownload } from "react-icons/fi";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
+import styled from "styled-components";
 
 import ReusableHeader from "../../../../Components/ReusableTable/ReusableHeader";
 import ReusableFilter from "../../../../Components/ReusableTable/ReusableFilter";
@@ -15,6 +16,7 @@ import {
   DateInput,
   DateSeparator,
   ExportButton,
+  CompactTableWrapper,
 } from "./DeliveryNotes.style";
 
 import {
@@ -25,8 +27,28 @@ import {
   fetchDeliveryNotes,
   fetchDeliveryNoteKpi,
   removeDeliveryNote,
+  patchExistingDeliveryNote,
 } from "../../../../Redux/finance/Sales/deliveryNotesSlice";
 import { fetchWarehouses } from "../../../../Redux/finance/Product/warehouseSlice";
+import { getCustomers as getCustomerList } from "../../../../Redux/finance/Sales/CustomerSlice";
+
+const ClearFilterBtn = styled.button`
+  height: 38px;
+  padding: 0 18px;
+  background: #3b5cb8;
+  color: #ffffff;
+  border: none;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s ease;
+
+  &:hover {
+    background: #2e49a5;
+  }
+`;
 
 const getCurrentMonthRange = () => {
   const now = new Date();
@@ -68,16 +90,16 @@ const DeliveryNotes = () => {
     error,
   } = useSelector((state) => state.deliveryNotes || {});
 
-  // Must live INSIDE the component (hooks can't run at module level)
   const { warehouses = [] } = useSelector((state) => state.warehouse || {});
+  const customerState = useSelector((state) => state?.customer?.customers ?? []);
 
   const currentMonth = useMemo(getCurrentMonthRange, []);
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
   const [customer, setCustomer] = useState("");
   const [warehouse, setWarehouse] = useState("");
-  const [startDate, setStartDate] = useState();
-  const [endDate, setEndDate] = useState();
+  const [startDate, setStartDate] = useState(currentMonth.start);
+  const [endDate, setEndDate] = useState(currentMonth.end);
   const [dateFilterChanged, setDateFilterChanged] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const rowsPerPage = 10;
@@ -114,9 +136,9 @@ const DeliveryNotes = () => {
     dispatch(fetchDeliveryNoteKpi());
   }, [dispatch]);
 
-  // Load warehouses once for the filter dropdown
   useEffect(() => {
     dispatch(fetchWarehouses({ page: 1, page_size: 100 }));
+    dispatch(getCustomerList());
   }, [dispatch]);
 
   const warehouseOptions = useMemo(
@@ -126,6 +148,24 @@ const DeliveryNotes = () => {
         value: w.id,
       })),
     [warehouses],
+  );
+
+  const customerList = useMemo(() => {
+    const list =
+      customerState?.results ??
+      customerState?.data ??
+      customerState?.customers ??
+      customerState;
+    return Array.isArray(list) ? list : [];
+  }, [customerState]);
+
+  const customerOptions = useMemo(
+    () =>
+      customerList.map((c) => ({
+        label: c.customer_name || c.name || `Customer #${c.id}`,
+        value: c.id,
+      })),
+    [customerList],
   );
 
   const handleDelete = useCallback(
@@ -148,6 +188,38 @@ const DeliveryNotes = () => {
     [dispatch, apiParams],
   );
 
+  const handleOrderRefClick = useCallback(
+    (row) => {
+      const soId = row?.sales_order || row?.sales_order_id;
+      if (soId) {
+        navigate(`/sales/orders/edit/${soId}`);
+      } else {
+        navigate("/sales/orders");
+      }
+    },
+    [navigate],
+  );
+
+  const handleStatusChange = useCallback(
+    async (row, nextStatus) => {
+      const id = row?.id ?? row?.pk;
+      if (!id || !nextStatus) return;
+      try {
+        await dispatch(
+          patchExistingDeliveryNote({
+            id,
+            payload: { delivery_status: nextStatus, status: nextStatus },
+          }),
+        ).unwrap();
+        dispatch(fetchDeliveryNotes(apiParams));
+        dispatch(fetchDeliveryNoteKpi());
+      } catch (statusError) {
+        console.error("Update delivery note status failed:", statusError);
+      }
+    },
+    [dispatch, apiParams],
+  );
+
   const rows = useMemo(
     () => (Array.isArray(deliveryNotes) ? deliveryNotes : []),
     [deliveryNotes],
@@ -162,7 +234,7 @@ const DeliveryNotes = () => {
     total: getCount(
       kpi,
       ["total_delivery_notes", "total_deliveries", "total"],
-      totalItems,
+      totalItems || rows.length,
     ),
     inTransit: getCount(
       kpi,
@@ -196,15 +268,6 @@ const DeliveryNotes = () => {
           .includes("partial"),
       ),
     ),
-    cancelled: getCount(
-      kpi,
-      ["cancelled", "cancelled_count"],
-      fallbackCount((row) =>
-        String(read(row, "status", "delivery_status"))
-          .toLowerCase()
-          .includes("cancel"),
-      ),
-    ),
   });
 
   const handleExport = () => {
@@ -220,7 +283,7 @@ const DeliveryNotes = () => {
       "Status",
     ];
     const csvRows = rows.map((row) => [
-      read(row, "delivery_note_number", "deliveryNoteNumber"),
+      read(row, "delivery_note_number", "deliveryNoteNumber", "dn_number"),
       typeof row.customer === "object"
         ? read(row.customer, "name", "customer_name")
         : read(row, "customer", "customer_name"),
@@ -229,6 +292,7 @@ const DeliveryNotes = () => {
         "sales_order_reference",
         "salesOrderReference",
         "order_reference",
+        "so_ref",
       ),
       read(row, "dispatch_date", "dispatchDate"),
       read(
@@ -238,7 +302,7 @@ const DeliveryNotes = () => {
         "delivery_date",
       ),
       read(row, "warehouse_name", "warehouse", "dispatch_location"),
-      `${read(row, "delivered_quantity", "total_delivered", "already_delivered") || 0}/${read(row, "ordered_quantity", "total_ordered", "ordered_qty") || 0}`,
+      read(row, "items_delivered_ordered", "items_summary"),
       read(row, "delivery_type", "deliveryType"),
       read(row, "status", "delivery_status"),
     ]);
@@ -259,8 +323,8 @@ const DeliveryNotes = () => {
   };
 
   const columns = useMemo(
-    () => deliveryNoteColumns(handleDelete),
-    [handleDelete],
+    () => deliveryNoteColumns(handleDelete, handleOrderRefClick),
+    [handleDelete, handleOrderRefClick],
   );
 
   const clearFilters = () => {
@@ -278,9 +342,9 @@ const DeliveryNotes = () => {
     <div style={{ padding: 20 }}>
       <ReusableHeader
         title="Delivery Notes"
-        breadcrumbs={["Sales", "Delivery Notes"]}
+        breadcrumbs={["Dashboard", "Sales", "Delivery Notes"]}
         buttonText="+ Create Delivery Note"
-        onButtonClick={() => navigate("add")}
+        onButtonClick={() => navigate("/delivery/notes/add")}
       >
         <ExportButton type="button" onClick={handleExport}>
           <FiDownload />
@@ -326,6 +390,7 @@ const DeliveryNotes = () => {
         searchPlaceholder="Search"
         showSearch
         status={status}
+        statusPlaceholder="Delivery Status"
         statuses={[
           "Draft",
           "In Transit",
@@ -340,7 +405,16 @@ const DeliveryNotes = () => {
         }}
         showStatus
         filters={[
-          
+          {
+            key: "customer",
+            value: customer,
+            onChange: (value) => {
+              setCustomer(value);
+              setCurrentPage(1);
+            },
+            options: customerOptions,
+            placeholder: "All Customer",
+          },
           {
             key: "warehouse",
             value: warehouse,
@@ -349,10 +423,14 @@ const DeliveryNotes = () => {
               setCurrentPage(1);
             },
             options: warehouseOptions,
-            placeholder: "All Warehouse",
+            placeholder: "Warehouse",
           },
         ]}
-        
+        rightButton={
+          <ClearFilterBtn type="button" onClick={clearFilters}>
+            Clear Filter
+          </ClearFilterBtn>
+        }
       />
 
       {loading && <div style={{ padding: 20 }}>Loading delivery notes...</div>}
@@ -361,7 +439,16 @@ const DeliveryNotes = () => {
           {typeof error === "string" ? error : "Failed to load delivery notes"}
         </div>
       )}
-      {!loading && <ReusableTable columns={columns} data={rows} />}
+      {!loading && (
+        <CompactTableWrapper>
+          <ReusableTable
+            columns={columns}
+            data={rows}
+            autoLayout
+            emptyMessage="No delivery notes found"
+          />
+        </CompactTableWrapper>
+      )}
       <ReusablePagination
         currentPage={currentPage}
         totalPages={Math.max(

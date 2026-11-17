@@ -163,9 +163,20 @@ const AddQuotation = ({
     });
     const discount = toNum(form.discount);
     const roundOff = toNum(form.round_off);
-    const grandTotal = Math.max(0, subTotal + totalVat - discount + roundOff);
-    return { lines, subTotal, totalVat, discount, roundOff, grandTotal };
-  }, [form.items, form.discount, form.round_off]);
+    const negotiation = toNum(form.negotiation_amount);
+    const baseTotal = Math.max(0, subTotal + totalVat - discount + roundOff);
+    const grandTotal = Math.max(0, baseTotal - (negotiation > 0 ? negotiation : 0));
+    return {
+      lines,
+      subTotal,
+      totalVat,
+      discount,
+      roundOff,
+      baseTotal,
+      negotiation,
+      grandTotal,
+    };
+  }, [form.items, form.discount, form.round_off, form.negotiation_amount]);
 
   if (!isOpen) return null;
 
@@ -282,9 +293,8 @@ const AddQuotation = ({
       discount: totals.discount.toFixed(2),
       round_off: totals.roundOff.toFixed(2),
       quote_amount: totals.grandTotal.toFixed(2),
-      ...(form.negotiation_amount !== ""
-        ? { negotiation_amount: toNum(form.negotiation_amount).toFixed(2) }
-        : {}),
+      old_quote_amount: totals.negotiation > 0 ? totals.baseTotal.toFixed(2) : null,
+      negotiation_amount: totals.negotiation > 0 ? totals.negotiation.toFixed(2) : "0.00",
       notes: form.notes,
       items: cleanItems,
     };
@@ -637,6 +647,14 @@ const AddQuotation = ({
                 onChange={(e) => handleField("round_off", e.target.value)}
               />
             </SummaryRow>
+            {totals.negotiation > 0 && (
+              <SummaryRow>
+                <span>Negotiation Discount ({currency})</span>
+                <strong style={{ color: "#16a34a" }}>
+                  - {currency} {totals.negotiation.toFixed(2)}
+                </strong>
+              </SummaryRow>
+            )}
             <TotalBanner>
               <span>TOTAL AMOUNT</span>
               <span>

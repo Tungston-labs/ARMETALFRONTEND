@@ -142,3 +142,14 @@ export const getDeliveryNoteKpi = async () => {
 
   return response.data;
 };
+
+export const getDeliveryNotePrefill = async (salesOrderId) => {
+  const response = await axios.get(
+    `${DELIVERY_NOTES_URL}so-prefill/${salesOrderId}/`,
+    {
+      headers: getHeaders(),
+    },
+  );
+
+  return response.data;
+};

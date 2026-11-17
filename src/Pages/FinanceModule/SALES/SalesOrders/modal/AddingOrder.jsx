@@ -1,7 +1,14 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { FiChevronDown, FiPlus, FiX } from "react-icons/fi";
+import { getCompanySelf } from "../../../../../Redux/companySlice"
+import {
+  FiChevronDown,
+  FiPlus,
+  FiX,
+  FiUpload,
+  FiEdit3,
+} from "react-icons/fi";
 
 import {
   InvoiceContainer as OrderContainer,
@@ -40,6 +47,7 @@ import {
   getSalesOrderById,
   addSalesOrder,
   editSalesOrder,
+    getCustomers,  
   getCompanies,
   getWarehouses,
   getAvailableQuotations,
@@ -56,9 +64,9 @@ import {
   selectWarehouses,
   selectAvailableQuotations,
   selectSelectedQuotation,
+  updateSalesOrderPartial,
 } from "../../../../../Redux/finance/Sales/Salesorderslice";
 import { Hourglass } from "lucide-react";
-
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PHONE_PATTERN = /^[0-9+\-\s()]{7,20}$/;
 
@@ -209,6 +217,9 @@ const AddingOrder = () => {
   const [payment, setPayment] = useState(emptyForm.payment);
   const [summary, setSummary] = useState(emptyForm.summary);
   const [items, setItems] = useState(emptyForm.items);
+  const [isSendForApproval, setIsSendForApproval] = useState(false);
+  const company = useSelector((state) => state.company.company);
+
   const [errors, setErrors] = useState({});
 
   const clearError = (field) =>
@@ -219,14 +230,47 @@ const AddingOrder = () => {
       return next;
     });
 
-  // Lookups + converted quotations (the slice thunk requests status=converted)
-  useEffect(() => {
-    dispatch(getCompanies());
-    dispatch(getWarehouses());
-    if (!isEditMode) {
-      dispatch(getAvailableQuotations());
-    }
-  }, [dispatch, isEditMode]);
+
+    const handleSaveAsDraft = async () => {
+  const payload = buildPayload("Draft");
+
+  if (isEditMode) {
+    await dispatch(
+      updateSalesOrderPartial({
+        id: salesOrderId,
+        salesOrderData: payload,
+      })
+    ).unwrap();
+  } else {
+    await dispatch(addSalesOrder(payload)).unwrap();
+  }
+};
+
+const handleSendForApproval = async () => {
+  const payload = buildPayload("Pending Approval");
+
+  if (isEditMode) {
+    await dispatch(
+      updateSalesOrderPartial({
+        id: salesOrderId,
+        salesOrderData: payload,
+      })
+    ).unwrap();
+  } else {
+    await dispatch(addSalesOrder(payload)).unwrap();
+  }
+};
+
+useEffect(() => {
+  dispatch(getCompanySelf());
+  dispatch(getCompanies());
+  dispatch(getCustomers());
+  dispatch(getWarehouses());
+
+  if (!isEditMode) {
+    dispatch(getAvailableQuotations());
+  }
+}, [dispatch, isEditMode]);
 
   useEffect(() => {
     if (isEditMode) {
@@ -271,6 +315,20 @@ const AddingOrder = () => {
   }, [selectedSalesOrder]);
 
   // Create mode: a quotation was picked, so fill the form from it
+  useEffect(() => {
+  dispatch(getCompanySelf());
+}, [dispatch]);
+
+useEffect(() => {
+  if (!company || isEditMode) return;
+
+  setFrom({
+    name: company.name || "",
+    address: company.address || "",
+    phone: company.contact_number || "",
+    email: company.email || "",
+  });
+}, [company, isEditMode]);
   useEffect(() => {
     if (isEditMode || !selectedQuotation) return;
 
@@ -347,7 +405,12 @@ const AddingOrder = () => {
     const picked = availableQuotations.find(
       (q) => String(q.id) === String(value)
     );
-    setOrderNumber(getQuoteNumber(picked));
+    setOrderNumber(
+      picked?.quote_number ||
+        picked?.quotation_number ||
+        picked?.number ||
+        "",
+    );
     if (value) {
       dispatch(getQuotationById(value));
     }
@@ -472,6 +535,17 @@ const AddingOrder = () => {
     return payload;
   };
 
+  const buildPayload = (status) => ({
+  // Include your existing Sales Order payload fields here.
+
+  company_name: from.name || undefined,
+  company_email: from.email || undefined,
+  company_phone: from.phone || undefined,
+  company_address: from.address || undefined,
+
+  status,
+});
+
   const handleSave = () => {
     // In edit mode the validated fields are read-only, so only validate on create.
     if (!isEditMode && !validate()) return;
@@ -575,8 +649,10 @@ const AddingOrder = () => {
                   </option>
                   {availableQuotations.map((q) => (
                     <option key={q.id} value={q.id}>
-                      {getQuoteNumber(q) || `Quotation #${q.id}`}
-                      {q.customer_name ? ` - ${q.customer_name}` : ""}
+                      {q.quote_number ||
+                        q.quotation_number ||
+                        q.number ||
+                        `Quotation #${q.id}`}
                     </option>
                   ))}
                 </Select>
