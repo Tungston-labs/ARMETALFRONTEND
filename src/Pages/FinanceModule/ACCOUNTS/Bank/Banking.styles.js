@@ -4,7 +4,7 @@ export const BankingPage = styled.div`
   width: 100%;
   min-width: 0;
   min-height: 100%;
-  padding: 22px 3.35% 10px;
+  padding: 20px;
   box-sizing: border-box;
   background: #f4f7ff;
   color: #111;

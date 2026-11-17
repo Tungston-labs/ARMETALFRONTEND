@@ -8,6 +8,7 @@ import {
 } from "react-icons/fi";
 
 import InvoiceActions from "./action/InvoiceActions";
+import { formatDate } from "../../../../utils/Formatdate";
 
 export const getInvoiceStatusMeta = (row) => {
     const rawStatus =
@@ -66,19 +67,7 @@ export const getInvoiceStatusMeta = (row) => {
             };
     }
 };
-export const formatDate = (value) => {
-    if (!value) return "-";
 
-    const date = new Date(value);
-
-    if (Number.isNaN(date.getTime())) return value;
-
-    return date.toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-        year: "numeric",
-    });
-};
 export const getSalesInvoiceColumns = (onDelete) => [
     {
         header: "Invoice No",

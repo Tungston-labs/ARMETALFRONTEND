@@ -183,13 +183,13 @@ const AddingInvoice = () => {
           {typeof saveError === "string"
             ? saveError
             : saveError?.detail ||
-              saveError?.message ||
-              (typeof saveError === "object" &&
-                Object.values(saveError)
-                  .flat()
-                  .filter((v) => typeof v === "string")
-                  .join(" ")) ||
-              "Something went wrong saving this invoice."}
+            saveError?.message ||
+            (typeof saveError === "object" &&
+              Object.values(saveError)
+                .flat()
+                .filter((v) => typeof v === "string")
+                .join(" ")) ||
+            "Something went wrong saving this invoice."}
         </div>
       )}
 

@@ -98,7 +98,7 @@ const getSidebarData = (user) => {
           { title: "Categories", path: "/product/Categories-List" },
           { title: "Inventory", path: "/product/Inventory-List" },
           { title: "Warehouses", path: "/product/warehouse" },
-          
+
         ],
       });
     }
@@ -117,6 +117,37 @@ const getSidebarData = (user) => {
           { title: "Credit Notes", path: "/credit-notes" },
           { title: "Sales Returns", path: "/sales-return" },
           { title: "Recurring Billing", path: "/sales/recurring-billing" },
+        ],
+      });
+    }
+    if (modules.employee) {
+      items.push({
+        title: "PURCHASE",
+        icon: <PiUsersThreeLight />,
+        children: [
+          { title: "Vendor", path: "/purchase/vendors" },
+          { title: "Purchase Order", path: "/purchase/purchaseorder" },
+          { title: "Bills", path: "/purchases/bill" },
+          { title: "Payments", path: "/purchases/payments" },
+          { title: "Debit Notes", path: "/purchases/debit-notes" },
+          { title: "Vendor ledger", path: "/purchases/vendor-ledger" },
+        ],
+      });
+    }
+
+    if (modules.employee) {
+      items.push({
+        title: "ACCOUNTS",
+        icon: <PiUsersThreeLight />,
+        children: [
+          { title: "Chart of accounts", path: "/accounts/chartofaccounts" },
+          { title: "Journal Entries", path: "/accounts/journal-entries" },
+          { title: "General Ledger", path: "/accounts/generalledger" },
+          { title: "Trail balance", path: "/accounts/trialbalance" },
+          { title: "A/C Receivables", path: "/accounts/recievables" },
+          { title: "A/C Payables", path: "/accounts/payables" },
+          { title: "Banking", path: "/accounts/banking" },
+          { title: "Expenses", path: "/accounts/expenses" },
         ],
       });
     }

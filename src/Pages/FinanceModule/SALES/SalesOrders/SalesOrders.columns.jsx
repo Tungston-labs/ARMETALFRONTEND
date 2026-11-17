@@ -9,12 +9,13 @@ import {
 } from "react-icons/fi";
 
 import OrderActions from "./action/OrderAction";
+import { formatDate } from "../../../../utils/Formatdate";
 
 export const ORDER_STATUS_OPTIONS = [
+    { value: "draft", label: "Draft" },
     { value: "pending", label: "Pending" },
     { value: "confirmed", label: "Confirmed" },
     { value: "processing", label: "Processing" },
-    { value: "rejected", label: "Rejected" },
 ];
 
 export const PAYMENT_TERMS_OPTIONS = [
@@ -40,6 +41,48 @@ export const formatStatusLabel = (value = "") =>
         .map((word) => word[0].toUpperCase() + word.slice(1))
         .join(" ");
 
+        const STATUS_COLORS = {
+    // order status
+    draft:               { bg: "#F3F4F6", color: "#6B7280" },
+    pending:             { bg: "#FFF4E5", color: "#F59E0B" },
+    confirmed:           { bg: "#E8F1FF", color: "#3478F6" },
+    processing:          { bg: "#F1E8FF", color: "#8B5CF6" },
+
+    // delivery status
+    partially_delivered: { bg: "#E0F7FA", color: "#0891B2" },
+    completed:           { bg: "#E8F8EF", color: "#22A06B" },
+    cancelled:           { bg: "#FFE8E8", color: "#EF4444" },
+
+    // invoice status
+    partially_invoiced:  { bg: "#E0F7FA", color: "#0891B2" },
+    invoiced:            { bg: "#E8F8EF", color: "#22A06B" },
+    overdue:             { bg: "#FFE8E8", color: "#EF4444" },
+};
+
+const DEFAULT_STATUS_COLOR = { bg: "#F3F4F6", color: "#6B7280" };
+
+export const StatusBadge = ({ value }) => {
+    if (!value) return "-";
+
+    const { bg, color } = STATUS_COLORS[value] || DEFAULT_STATUS_COLOR;
+
+    return (
+        <span
+            style={{
+                display: "inline-block",
+                padding: "4px 12px",
+                borderRadius: "999px",
+                backgroundColor: bg,
+                color,
+                fontSize: "12px",
+                fontWeight: 600,
+                whiteSpace: "nowrap",
+            }}
+        >
+            {formatStatusLabel(value)}
+        </span>
+    );
+};
 export const formatCurrency = (value) => {
     const amount = Number(value);
     if (Number.isNaN(amount)) return value ?? "-";
@@ -48,19 +91,7 @@ export const formatCurrency = (value) => {
         maximumFractionDigits: 2,
     });
 };
-export const formatDate = (value) => {
-    if (!value) return "-";
 
-    const date = new Date(value);
-
-    if (Number.isNaN(date.getTime())) return value;
-
-    return date.toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-        year: "numeric",
-    });
-};
 export const getSalesOrderColumns = ({ onDelete }) => [
     {
         header: "SO Number",
@@ -94,17 +125,17 @@ export const getSalesOrderColumns = ({ onDelete }) => [
     {
         header: "Order Status",
         accessor: "order_status",
-        render: (row) => formatStatusLabel(row.order_status),
+        render: (row) => <StatusBadge value={row.order_status} />,
     },
     {
         header: "Delivery Status",
         accessor: "delivery_status",
-        render: (row) => formatStatusLabel(row.delivery_status),
+        render: (row) => <StatusBadge value={row.delivery_status} />,
     },
-     {
+    {
         header: "Invoice Status",
         accessor: "invoice_status",
-        render: (row) => formatStatusLabel(row.invoice_status),
+        render: (row) => <StatusBadge value={row.invoice_status} />,
     },
     {
         header: "Action",

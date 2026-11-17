@@ -60,7 +60,6 @@ export const FormGroup = styled.div`
 
 export const Label = styled.label`
     margin-bottom: 7px;
-
     font-family: "Poppins", sans-serif;
     font-size: 14px;
     font-weight: 400;

@@ -9,6 +9,7 @@ import {
 } from "react-icons/fi";
 
 import SalesReturnAction from "./action/SalesReturnAction";
+import { formatDate } from "../../../../utils/Formatdate";
 
 /* --------------------------------------------------
    Status Options
@@ -123,30 +124,6 @@ export const formatCurrency = (value) => {
   });
 };
 
-export const formatDate = (value) => {
-  if (!value) {
-    return "-";
-  }
-
-  // Avoid timezone shifting for date-only API values.
-  const dateString = String(value).split("T")[0];
-  const parts = dateString.split("-");
-
-  const date =
-    parts.length === 3
-      ? new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]))
-      : new Date(value);
-
-  if (Number.isNaN(date.getTime())) {
-    return value;
-  }
-
-  return date.toLocaleDateString("en-US", {
-    month: "long",
-    day: "numeric",
-    year: "numeric",
-  });
-};
 
 /* --------------------------------------------------
    Sales Return Table Columns

@@ -1,12 +1,10 @@
 import React, { useEffect, useMemo, useState, useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
-
 import ReusableHeader from "../../../../Components/ReusableTable/ReusableHeader";
 import ReusableFilter from "../../../../Components/ReusableTable/ReusableFilter";
 import ReusableTable from "../../../../Components/ReusableTable/ReusableTable";
 import ReusablePagination from "../../../../Components/Pagination/ReusablePagination";
 import StatsCards from "../../../../Components/StatsCards/StatsCards";
-
 import { ExportButton } from "./Expenses.styles";
 
 import { TbFileInvoice, TbArrowUp, TbArrowDown } from "react-icons/tb";
@@ -28,9 +26,6 @@ import {
 
 const PAGE_SIZE = 10;
 
-// Same list as the modal, so the filter and the form never drift apart.
-// There is no "All Categories" entry here: ReusableFilter adds that first
-// option itself, using the filter's `placeholder`.
 const CATEGORY_OPTIONS = EXPENSE_CATEGORIES;
 
 const labelFor = (options, value) =>
@@ -95,7 +90,6 @@ const Expenses = () => {
     const [currentPage, setCurrentPage] = useState(1);
     const [isAddExpenseOpen, setIsAddExpenseOpen] = useState(false);
 
-    // Debounce the search box so we don't hit the API on every keystroke
     useEffect(() => {
         const t = setTimeout(() => setDebouncedSearch(search), 400);
         return () => clearTimeout(t);
@@ -117,8 +111,6 @@ const Expenses = () => {
         dispatch(getExpenses(params))
             .unwrap()
             .catch(() => {
-                // DRF returns 404 "Invalid page" when the current page no
-                // longer exists (e.g. after deleting the last row on it).
                 if (params.page > 1) setCurrentPage(1);
             });
     }, [dispatch, params]);
@@ -188,20 +180,14 @@ const Expenses = () => {
         URL.revokeObjectURL(url);
     };
 
-    // Modal calls this with the API-ready payload. If it throws, the modal
-    // shows the error and stays open.
     const handleSubmitExpense = async (payload) => {
         await dispatch(createExpense(payload)).unwrap();
 
         setIsAddExpenseOpen(false);
-
-        // Reload so KPI cards + pagination reflect the new record
         if (currentPage !== 1) setCurrentPage(1);
         else loadExpenses();
     };
 
-    // Used by the Actions column (currently commented out below)
-    // eslint-disable-next-line no-unused-vars
     const handleMarkUnpaid = async (id) => {
         try {
             await dispatch(markExpenseUnpaid(id)).unwrap();
@@ -211,14 +197,12 @@ const Expenses = () => {
         }
     };
 
-    // eslint-disable-next-line no-unused-vars
     const handleDelete = async (id) => {
         if (!window.confirm("Delete this expense?")) return;
 
         try {
             await dispatch(deleteExpense(id)).unwrap();
 
-            // If that was the only row on this page, go back one page
             if (expenses.length === 1 && currentPage > 1) {
                 setCurrentPage(currentPage - 1);
             } else {
@@ -229,9 +213,6 @@ const Expenses = () => {
         }
     };
 
-    /* ----------------------------- KPI cards ----------------------------- */
-    // Keys match the API: total_expense, this_month_expense, already_paid,
-    // still_pay, biggest_cost
     const biggestCost = getBiggestCost(dashboard?.biggest_cost);
 
     const statsCards = [
@@ -272,8 +253,6 @@ const Expenses = () => {
         },
     ];
 
-    /* ------------------------------ Columns ------------------------------ */
-    // ReusableTable expects `accessor` and `header` (not key/label)
     const expenseColumns = useMemo(
         () => [
             { accessor: "expense_id", header: "Expense ID" },
@@ -382,18 +361,12 @@ const Expenses = () => {
                 ]}
             />
 
-            {/* Error */}
-            {error && (
-                <p style={{ color: "#e03131", margin: "8px 0" }}>
-                    {getErrorMessage(error)}
-                </p>
-            )}
-
-            {/* Table */}
+           
             <ReusableTable
                 columns={expenseColumns}
                 data={expenses}
                 loading={loading}
+                autoLayout
             />
 
             {/* Pagination */}
