@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
@@ -15,6 +16,14 @@ import {
     clearSelectedSalesOrder,
 } from "../../../../../Redux/finance/Sales/InvoiceSlice";
 
+// Change this path if your actual slice filename is different.
+import {
+    fetchDeliveryNotes,
+    fetchDeliveryNoteById,
+    clearSelectedDeliveryNote,
+} from "../../../../../Redux/finance/Sales/DeliveryNotesSlice";
+
+
 export const defaultItem = () => ({
     id: Date.now(),
     product: "",
@@ -29,17 +38,40 @@ export const defaultItem = () => ({
     amount: "",
 });
 
+
 export const emptyForm = {
     invoiceNumber: "",
     salesOrderRef: "",
+    deliveryNoteRef: "",
     paymentStatus: "",
-    from: { name: "", address: "", phone: "", email: "" },
-    billTo: { client: "", address: "", phone: "", email: "" },
-    payment: { accountHolder: "", accountNumber: "", iban: "" },
-    summary: { subTotal: "", vat: "", discount: "", roundOff: "", total: "" },
+    from: {
+        name: "",
+        address: "",
+        phone: "",
+        email: "",
+    },
+    billTo: {
+        client: "",
+        address: "",
+        phone: "",
+        email: "",
+    },
+    payment: {
+        accountHolder: "",
+        accountNumber: "",
+        iban: "",
+    },
+    summary: {
+        subTotal: "",
+        vat: "",
+        discount: "",
+        roundOff: "",
+        total: "",
+    },
     amountPaid: "",
     items: [defaultItem()],
 };
+
 
 const normalizePaymentStatus = (status = "") => {
     const value = String(status).trim().toLowerCase();
@@ -52,7 +84,10 @@ const normalizePaymentStatus = (status = "") => {
         return "partially_paid";
     }
 
-    if (value === "unpaid" || value === "pending") {
+    if (
+        value === "unpaid" ||
+        value === "pending"
+    ) {
         return "pending";
     }
 
@@ -63,65 +98,151 @@ const normalizePaymentStatus = (status = "") => {
     return value;
 };
 
+
 const mapInvoiceToFormData = (invoice) => {
     if (!invoice) return null;
 
     return {
         invoiceNumber: invoice.invoice_number || "",
+
         salesOrderRef:
             invoice.sales_order ||
             invoice.sales_order_id ||
             invoice.so_ref ||
             invoice.so_number ||
             "",
+
+        deliveryNoteRef:
+            invoice.delivery_note ||
+            invoice.delivery_note_id ||
+            invoice.delivery_note_reference ||
+            "",
+
         invoiceDate: invoice.invoice_date || "",
         dueDate: invoice.due_date || "",
-        paymentStatus: normalizePaymentStatus(invoice.payment_status || ""),
+
+        paymentStatus: normalizePaymentStatus(
+            invoice.payment_status || ""
+        ),
+
         from: {
-            name: invoice?.from?.name || invoice.company_name || "",
-            address: invoice?.from?.address || invoice.company_address || "",
-            phone: invoice?.from?.phone || invoice.company_phone || "",
-            email: invoice?.from?.email || invoice.company_email || "",
+            name:
+                invoice?.from?.name ||
+                invoice.company_name ||
+                "",
+            address:
+                invoice?.from?.address ||
+                invoice.company_address ||
+                "",
+            phone:
+                invoice?.from?.phone ||
+                invoice.company_phone ||
+                "",
+            email:
+                invoice?.from?.email ||
+                invoice.company_email ||
+                "",
         },
+
         billTo: {
             client:
                 invoice?.bill_to?.client ||
                 invoice.customer ||
                 invoice.customer_id ||
                 "",
-            address: invoice?.bill_to?.address || invoice.customer_address || "",
-            phone: invoice?.bill_to?.phone || invoice.customer_phone || "",
-            email: invoice?.bill_to?.email || invoice.customer_email || "",
+            address:
+                invoice?.bill_to?.address ||
+                invoice.customer_address ||
+                "",
+            phone:
+                invoice?.bill_to?.phone ||
+                invoice.customer_phone ||
+                "",
+            email:
+                invoice?.bill_to?.email ||
+                invoice.customer_email ||
+                "",
         },
+
         payment: {
             accountHolder:
-                invoice?.payment?.account_holder || invoice.account_holder || "",
+                invoice?.payment?.account_holder ||
+                invoice.account_holder ||
+                "",
             accountNumber:
-                invoice?.payment?.account_number || invoice.account_number || "",
-            iban: invoice?.payment?.iban || invoice.iban || "",
+                invoice?.payment?.account_number ||
+                invoice.account_number ||
+                "",
+            iban:
+                invoice?.payment?.iban ||
+                invoice.iban ||
+                "",
         },
+
         summary: {
-            subTotal: invoice.subtotal ?? invoice.sub_total ?? "",
-            vat: invoice.total_vat ?? invoice.vat ?? "",
-            discount: invoice.discount ?? "",
-            roundOff: invoice.round_off ?? "",
-            total: invoice.total_amount ?? invoice.amount ?? "",
+            subTotal:
+                invoice.subtotal ??
+                invoice.sub_total ??
+                "",
+            vat:
+                invoice.total_vat ??
+                invoice.vat ??
+                "",
+            discount:
+                invoice.discount ?? "",
+            roundOff:
+                invoice.round_off ?? "",
+            total:
+                invoice.total_amount ??
+                invoice.amount ??
+                "",
         },
-        amountPaid: invoice.amount_paid ?? invoice.paid_amount ?? "",
+
+        amountPaid:
+            invoice.amount_paid ??
+            invoice.paid_amount ??
+            "",
+
         items:
             Array.isArray(invoice.items) && invoice.items.length > 0
                 ? invoice.items.map((item, idx) => ({
                     id: item.id ?? Date.now() + idx,
                     product: item.product || "",
                     slNo: String(idx + 1).padStart(2, "0"),
-                    service: item.product_name || item.service_name || item.service || "",
-                    particular: item.particular || item.description || "",
-                    qty: item.quantity ?? item.qty ?? "",
-                    hsCode: item.hs_code || "",
-                    rate: item.rate || "",
-                    vat: item.vat_percentage ?? item.vat ?? "",
-                    vatAmount: item.vat_amount || "",
-                    amount: item.amount || "",
+
+                    service:
+                        item.product_name ||
+                        item.service_name ||
+                        item.service ||
+                        "",
+
+                    particular:
+                        item.particular ||
+                        item.description ||
+                        "",
+
+                    qty:
+                        item.quantity ??
+                        item.qty ??
+                        "",
+
+                    hsCode:
+                        item.hs_code ||
+                        "",
+
+                    rate:
+                        item.rate ?? "",
+
+                    vat:
+                        item.vat_percentage ??
+                        item.vat ??
+                        "",
+
+                    vatAmount:
+                        item.vat_amount ?? "",
+
+                    amount:
+                        item.amount ?? "",
                 }))
                 : [defaultItem()],
     };
@@ -132,6 +253,7 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PHONE_RE = /^[+]?[\d\s-]{7,20}$/;
 const IBAN_RE = /^[A-Za-z0-9]{5,34}$/;
 
+
 const PAYMENT_TERMS_DAYS = {
     due_on_receipt: 0,
     net_7: 7,
@@ -141,18 +263,31 @@ const PAYMENT_TERMS_DAYS = {
     net_60: 60,
 };
 
+
 const addDaysToDateString = (dateStr, days) => {
     if (!dateStr) return dateStr;
+
     const date = new Date(`${dateStr}T00:00:00`);
+
     if (Number.isNaN(date.getTime())) return dateStr;
+
     date.setDate(date.getDate() + days);
+
     return date.toISOString().split("T")[0];
 };
 
-const capitalize = (str) => str.charAt(0).toUpperCase() + str.slice(1);
 
-const isValidEmail = (value) => EMAIL_RE.test(String(value).trim());
-const isValidPhone = (value) => PHONE_RE.test(String(value).trim());
+const capitalize = (str) =>
+    str.charAt(0).toUpperCase() + str.slice(1);
+
+
+const isValidEmail = (value) =>
+    EMAIL_RE.test(String(value).trim());
+
+
+const isValidPhone = (value) =>
+    PHONE_RE.test(String(value).trim());
+
 
 const BACKEND_FIELD_MAP = {
     due_date: "dueDate",
@@ -161,6 +296,7 @@ const BACKEND_FIELD_MAP = {
     payment_status: "paymentStatus",
     amount_paid: "amountPaid",
     sales_order: "salesOrderRef",
+    delivery_note: "deliveryNoteRef",
     company_name: "fromName",
     company_email: "fromEmail",
     company_phone: "fromPhone",
@@ -172,23 +308,32 @@ const BACKEND_FIELD_MAP = {
     iban: "iban",
 };
 
+
 const extractMessage = (value) => {
     if (Array.isArray(value)) return value.join(" ");
     if (typeof value === "string") return value;
     return "";
 };
 
+
 const mapBackendErrors = (payload) => {
     if (!payload || typeof payload !== "object") return {};
+
     const mapped = {};
+
     Object.entries(payload).forEach(([key, value]) => {
         const message = extractMessage(value);
+
         if (!message) return;
+
         const localKey = BACKEND_FIELD_MAP[key] || key;
+
         mapped[localKey] = message;
     });
+
     return mapped;
 };
+
 
 const validateItems = (items) => {
     const itemErrors = {};
@@ -196,8 +341,12 @@ const validateItems = (items) => {
 
     items.forEach((item) => {
         const rowErrors = {};
+
         const hasAnyValue = Boolean(
-            item.service?.trim() || item.particular?.trim() || item.qty !== "" || item.rate !== ""
+            item.service?.trim() ||
+            item.particular?.trim() ||
+            item.qty !== "" ||
+            item.rate !== ""
         );
 
         if (!hasAnyValue) return;
@@ -207,18 +356,37 @@ const validateItems = (items) => {
         }
 
         const qtyNum = Number(item.qty);
-        if (item.qty === "" || Number.isNaN(qtyNum) || qtyNum <= 0) {
+
+        if (
+            item.qty === "" ||
+            Number.isNaN(qtyNum) ||
+            qtyNum <= 0
+        ) {
             rowErrors.qty = "Enter a valid quantity";
         }
 
         const rateNum = Number(item.rate);
-        if (item.rate === "" || Number.isNaN(rateNum) || rateNum < 0) {
+
+        if (
+            item.rate === "" ||
+            Number.isNaN(rateNum) ||
+            rateNum < 0
+        ) {
             rowErrors.rate = "Enter a valid rate";
         }
 
-        if (item.vat !== "" && item.vat !== undefined && item.vat !== null) {
+        if (
+            item.vat !== "" &&
+            item.vat !== undefined &&
+            item.vat !== null
+        ) {
             const vatNum = Number(item.vat);
-            if (Number.isNaN(vatNum) || vatNum < 0 || vatNum > 100) {
+
+            if (
+                Number.isNaN(vatNum) ||
+                vatNum < 0 ||
+                vatNum > 100
+            ) {
                 rowErrors.vat = "VAT must be 0-100";
             }
         }
@@ -230,18 +398,100 @@ const validateItems = (items) => {
         }
     });
 
-    return { itemErrors, hasValidItem };
+    return {
+        itemErrors,
+        hasValidItem,
+    };
 };
 
+
+// Handles either an object relation or a plain ID.
+const getRelationId = (value) => {
+    if (value && typeof value === "object") {
+        return value.id ?? value.pk ?? "";
+    }
+
+    return value ?? "";
+};
+
+
+// Convert Delivery Note item format into Invoice item format.
+const mapDeliveryNoteItems = (deliveryNoteItems) => {
+    if (
+        !Array.isArray(deliveryNoteItems) ||
+        deliveryNoteItems.length === 0
+    ) {
+        return [defaultItem()];
+    }
+
+    return deliveryNoteItems.map((item, idx) => ({
+        id: item.id ?? Date.now() + idx,
+
+        product: getRelationId(item.product),
+
+        slNo: String(idx + 1).padStart(2, "0"),
+
+        service:
+            item.product_name ||
+            item.service_name ||
+            item.service ||
+            item.product_details?.name ||
+            item.product_details?.product_name ||
+            "",
+
+        particular:
+            item.particular ||
+            item.description ||
+            item.remarks ||
+            "",
+
+        qty:
+            item.quantity ??
+            item.qty ??
+            "",
+
+        hsCode:
+            item.hs_code ||
+            "",
+
+        rate:
+            item.rate ??
+            item.unit_price ??
+            item.price ??
+            "",
+
+        vat:
+            item.vat_percentage ??
+            item.vat ??
+            "",
+
+        vatAmount:
+            item.vat_amount ??
+            "",
+
+        amount:
+            item.amount ??
+            item.total_amount ??
+            "",
+    }));
+};
 
 
 export const useAddingInvoice = () => {
     const { id } = useParams();
+
     const navigate = useNavigate();
     const dispatch = useDispatch();
+
     const isEditMode = Boolean(id);
+
+    // Keep your existing view-mode handling if you have a separate view route.
+    const isViewMode = false;
+
     const today = new Date().toISOString().split("T")[0];
 
+
+    // INVOICE REDUX STATE
     const {
         salesOrders,
         selectedSalesOrder,
@@ -254,36 +504,75 @@ export const useAddingInvoice = () => {
         error: saveError,
     } = useSelector((state) => state.invoice);
 
-    const [invoiceNumber, setInvoiceNumber] = useState(emptyForm.invoiceNumber);
-    const [salesOrderRef, setSalesOrderRef] = useState(emptyForm.salesOrderRef);
+
+    // DELIVERY NOTE REDUX STATE
+    const deliveryNotes = useSelector(
+        (state) => state.deliveryNotes?.deliveryNotes || []
+    );
+
+    const selectedDeliveryNote = useSelector(
+        (state) => state.deliveryNotes?.selectedDeliveryNote || null
+    );
+
+
+    // FORM STATES
+    const [invoiceNumber, setInvoiceNumber] = useState(
+        emptyForm.invoiceNumber
+    );
+
+    const [salesOrderRef, setSalesOrderRef] = useState(
+        emptyForm.salesOrderRef
+    );
+
+    const [deliveryNoteRef, setDeliveryNoteRef] = useState(
+        emptyForm.deliveryNoteRef
+    );
+
     const [invoiceDate, setInvoiceDate] = useState(today);
     const [dueDate, setDueDate] = useState(today);
-    const [paymentStatus, setPaymentStatus] = useState(emptyForm.paymentStatus);
-    const [amountPaid, setAmountPaid] = useState(emptyForm.amountPaid);
+
+    const [paymentStatus, setPaymentStatus] = useState(
+        emptyForm.paymentStatus
+    );
+
+    const [amountPaid, setAmountPaid] = useState(
+        emptyForm.amountPaid
+    );
+
     const [from, setFrom] = useState(emptyForm.from);
     const [billTo, setBillTo] = useState(emptyForm.billTo);
     const [payment, setPayment] = useState(emptyForm.payment);
+
     const [summary, setSummary] = useState(emptyForm.summary);
     const [items, setItems] = useState(emptyForm.items);
-    const [showPreview, setShowPreview] = useState(false);
+
     const [savingAction, setSavingAction] = useState("");
     const [errors, setErrors] = useState({});
 
-    /* ---- initial data loads ---- */
+
+    // INITIAL DATA LOADS
     useEffect(() => {
         dispatch(clearInvoiceError());
+
         dispatch(getInvoiceCompanyDetails());
         dispatch(getInvoiceCustomers());
+
+        // Load Delivery Note dropdown data.
+        dispatch(fetchDeliveryNotes());
+
         if (!isEditMode) {
             dispatch(getInvoiceSalesOrders());
         }
+
         return () => {
             dispatch(clearSelectedInvoice());
             dispatch(clearSelectedSalesOrder());
+            dispatch(clearSelectedDeliveryNote());
         };
     }, [dispatch, isEditMode]);
 
 
+    // LOAD INVOICE FOR EDIT MODE
     useEffect(() => {
         if (isEditMode) {
             dispatch(clearInvoiceError());
@@ -292,136 +581,296 @@ export const useAddingInvoice = () => {
     }, [dispatch, id, isEditMode]);
 
 
+    // COMPANY DETAILS
     useEffect(() => {
         if (!companyDetails || isEditMode) return;
 
         setFrom((prev) => ({
-            name: companyDetails.name || companyDetails.company_name || prev.name,
-            address: companyDetails.address || prev.address,
-            phone: companyDetails.phone || prev.phone,
-            email: companyDetails.email || prev.email,
+            name:
+                companyDetails.name ||
+                companyDetails.company_name ||
+                prev.name,
+
+            address:
+                companyDetails.address ||
+                prev.address,
+
+            phone:
+                companyDetails.phone ||
+                prev.phone,
+
+            email:
+                companyDetails.email ||
+                prev.email,
         }));
     }, [companyDetails, isEditMode]);
 
 
+    // LOAD EXISTING INVOICE DETAILS
     useEffect(() => {
         if (!selectedInvoice) return;
 
         const mapped = mapInvoiceToFormData(selectedInvoice);
+
         setInvoiceNumber(mapped.invoiceNumber);
+
         setSalesOrderRef(mapped.salesOrderRef);
+        setDeliveryNoteRef(String(mapped.deliveryNoteRef || ""));
+
         setInvoiceDate(mapped.invoiceDate || today);
         setDueDate(mapped.dueDate);
+
         setPaymentStatus(mapped.paymentStatus);
         setAmountPaid(mapped.amountPaid);
+
         setFrom(mapped.from);
         setBillTo(mapped.billTo);
         setPayment(mapped.payment);
+
         setSummary(mapped.summary);
         setItems(mapped.items);
+
         setErrors({});
     }, [selectedInvoice]);
 
 
-   useEffect(() => {
-    if (isEditMode || !selectedSalesOrder) return;
+    // SALES ORDER DETAILS AUTO POPULATION
+    useEffect(() => {
+        if (isEditMode || !selectedSalesOrder) return;
 
-    console.log("Selected Sales Order:", selectedSalesOrder);
+        const order =
+            selectedSalesOrder.data ||
+            selectedSalesOrder;
 
-    // Handle either direct response or nested data response
-    const order = selectedSalesOrder.data || selectedSalesOrder;
+        setBillTo({
+            client: getRelationId(order.customer),
+            address: order.customer_address || "",
+            phone: order.customer_phone || "",
+            email: order.customer_email || "",
+        });
 
-    setBillTo({
-        client: order.customer ?? "",
-        address: order.customer_address ?? "",
-        phone: order.customer_phone ?? "",
-        email: order.customer_email ?? "",
-    });
+        if (order.payment_terms in PAYMENT_TERMS_DAYS) {
+            const days = PAYMENT_TERMS_DAYS[order.payment_terms];
 
-    // Payment terms and due date
-    if (order.payment_terms in PAYMENT_TERMS_DAYS) {
-        const days = PAYMENT_TERMS_DAYS[order.payment_terms];
-        setDueDate(addDaysToDateString(invoiceDate, days));
-    } else if (order.due_date && order.due_date >= invoiceDate) {
-        setDueDate(order.due_date);
-    }
+            setDueDate(
+                addDaysToDateString(invoiceDate, days)
+            );
+        } else if (
+            order.due_date &&
+            order.due_date >= invoiceDate
+        ) {
+            setDueDate(order.due_date);
+        }
 
-    // Populate sales order items
-    if (Array.isArray(order.items) && order.items.length > 0) {
-        setItems(
-            order.items.map((item, idx) => ({
-                id: item.id ?? Date.now() + idx,
-                product: item.product || "",
-                slNo: String(idx + 1).padStart(2, "0"),
-                service:
-                    item.product_name ||
-                    item.service_name ||
-                    item.service ||
-                    "",
-                particular: item.particular || item.description || "",
-                qty: item.quantity ?? item.qty ?? "",
-                hsCode: item.hs_code || "",
-                rate: item.rate ?? "",
-                vat: item.vat_percentage ?? item.vat ?? "",
-                vatAmount: item.vat_amount ?? "",
-                amount: item.amount ?? "",
-            }))
+        if (Array.isArray(order.items) && order.items.length > 0) {
+            setItems(
+                order.items.map((item, idx) => ({
+                    id: item.id ?? Date.now() + idx,
+
+                    product: getRelationId(item.product),
+
+                    slNo: String(idx + 1).padStart(2, "0"),
+
+                    service:
+                        item.product_name ||
+                        item.service_name ||
+                        item.service ||
+                        "",
+
+                    particular:
+                        item.particular ||
+                        item.description ||
+                        "",
+
+                    qty:
+                        item.quantity ??
+                        item.qty ??
+                        "",
+
+                    hsCode:
+                        item.hs_code || "",
+
+                    rate:
+                        item.rate ?? "",
+
+                    vat:
+                        item.vat_percentage ??
+                        item.vat ??
+                        "",
+
+                    vatAmount:
+                        item.vat_amount ?? "",
+
+                    amount:
+                        item.amount ?? "",
+                }))
+            );
+        }
+    }, [selectedSalesOrder, isEditMode, invoiceDate]);
+
+
+    // DELIVERY NOTE DETAILS AUTO POPULATION
+    useEffect(() => {
+        if (isEditMode || !selectedDeliveryNote) return;
+
+        console.log(
+            "Selected Delivery Note:",
+            selectedDeliveryNote
         );
-    }
-}, [selectedSalesOrder, isEditMode, invoiceDate]);
 
-    /* ---- error helpers ---- */
+        const note =
+            selectedDeliveryNote.data ||
+            selectedDeliveryNote;
+
+        const customer =
+            typeof note.customer === "object" &&
+            note.customer !== null
+                ? note.customer
+                : {};
+
+        const billToData =
+            note.bill_to ||
+            note.billTo ||
+            {};
+
+        // CUSTOMER DETAILS
+        const customerId =
+            note.customer_id ||
+            getRelationId(note.customer) ||
+            getRelationId(billToData.client);
+
+        setBillTo({
+            client: customerId,
+
+            address:
+                note.customer_address ||
+                customer.billing_address ||
+                customer.address ||
+                billToData.address ||
+                "",
+
+            phone:
+                note.customer_phone ||
+                customer.phno ||
+                customer.phone ||
+                billToData.phone ||
+                "",
+
+            email:
+                note.customer_email ||
+                customer.admin_email ||
+                customer.email ||
+                billToData.email ||
+                "",
+        });
+
+        // SALES ORDER REFERENCE FROM DELIVERY NOTE
+        const soReference =
+            note.sales_order_id ||
+            getRelationId(note.sales_order) ||
+            note.so_ref ||
+            note.sales_order_reference ||
+            "";
+
+        if (soReference) {
+            setSalesOrderRef(String(soReference));
+        }
+
+        // DELIVERY DATE / DUE DATE
+        if (note.due_date) {
+            setDueDate(note.due_date);
+        }
+
+        // INVOICE ITEMS FROM DELIVERY NOTE
+        const noteItems =
+            note.items ||
+            note.delivery_items ||
+            note.delivery_note_items ||
+            [];
+
+        if (Array.isArray(noteItems) && noteItems.length > 0) {
+            setItems(mapDeliveryNoteItems(noteItems));
+        }
+
+    }, [selectedDeliveryNote, isEditMode]);
+
+
+    // ERROR HELPERS
     const clearError = (field) => {
         setErrors((prev) => {
             if (!prev[field]) return prev;
+
             const next = { ...prev };
             delete next[field];
+
             return next;
         });
     };
 
+
     const clearItemError = (itemId, field) => {
         setErrors((prev) => {
-            if (!prev.items || !prev.items[itemId] || !prev.items[itemId][field]) return prev;
+            if (
+                !prev.items ||
+                !prev.items[itemId] ||
+                !prev.items[itemId][field]
+            ) {
+                return prev;
+            }
+
             const nextItems = { ...prev.items };
             const nextRow = { ...nextItems[itemId] };
+
             delete nextRow[field];
+
             if (Object.keys(nextRow).length === 0) {
                 delete nextItems[itemId];
             } else {
                 nextItems[itemId] = nextRow;
             }
-            const next = { ...prev, items: nextItems };
-            if (Object.keys(nextItems).length === 0) delete next.items;
+
+            const next = {
+                ...prev,
+                items: nextItems,
+            };
+
+            if (Object.keys(nextItems).length === 0) {
+                delete next.items;
+            }
+
             return next;
         });
     };
 
-    const handleInvoiceNumberChange = (value) => {
-        setInvoiceNumber(value);
-        clearError("invoiceNumber");
-    };
 
+    // FIELD HANDLERS
     const handleInvoiceDateChange = (value) => {
         setInvoiceDate(value);
+
         clearError("invoiceDate");
         clearError("dueDate");
     };
+
 
     const handleDueDateChange = (value) => {
         setDueDate(value);
         clearError("dueDate");
     };
 
+
     const handlePaymentStatusChange = (value) => {
         setPaymentStatus(value);
+
         const total = toDecimal(summary.total);
 
         if (value === "paid" && total !== undefined) {
             setAmountPaid(String(total));
         }
 
-        if (value === "pending") {
+        if (
+            value === "pending" ||
+            value === "unpaid"
+        ) {
             setAmountPaid("0");
         }
 
@@ -429,32 +878,79 @@ export const useAddingInvoice = () => {
         clearError("amountPaid");
     };
 
+
     const handleAmountPaidChange = (value) => {
         setAmountPaid(value);
         clearError("amountPaid");
     };
 
+
+    // DISCOUNT HANDLER
+    const handleDiscountChange = (value) => {
+        setSummary((prev) => ({
+            ...prev,
+            discount: value,
+        }));
+
+        clearError("discount");
+    };
+
+
     const updateFrom = (field, value) => {
-        setFrom((prev) => ({ ...prev, [field]: value }));
+        setFrom((prev) => ({
+            ...prev,
+            [field]: value,
+        }));
+
         clearError(`from${capitalize(field)}`);
     };
 
+
     const updateBillTo = (field, value) => {
-        setBillTo((prev) => ({ ...prev, [field]: value }));
+        setBillTo((prev) => ({
+            ...prev,
+            [field]: value,
+        }));
+
         clearError(`billTo${capitalize(field)}`);
     };
 
+
     const updatePayment = (field, value) => {
-        setPayment((prev) => ({ ...prev, [field]: value }));
+        setPayment((prev) => ({
+            ...prev,
+            [field]: value,
+        }));
+
         clearError(field);
     };
 
+
+    // SALES ORDER SELECTION
     const handleSalesOrderChange = (e) => {
-    const value = e.target.value;
+        const value = e.target.value;
 
-    setSalesOrderRef(value);
+        setSalesOrderRef(value);
 
-    if (!value) {
+        // Clear Delivery Note selection.
+        setDeliveryNoteRef("");
+        dispatch(clearSelectedDeliveryNote());
+
+        if (!value) {
+            dispatch(clearSelectedSalesOrder());
+
+            setBillTo({
+                client: "",
+                address: "",
+                phone: "",
+                email: "",
+            });
+
+            setItems([defaultItem()]);
+
+            return;
+        }
+
         dispatch(clearSelectedSalesOrder());
 
         setBillTo({
@@ -464,28 +960,47 @@ export const useAddingInvoice = () => {
             email: "",
         });
 
-        setItems([defaultItem()]);
-        return;
-    }
+        dispatch(getInvoiceSalesOrderById(value));
+    };
 
-    // Clear previous selection while fetching the new order
-    dispatch(clearSelectedSalesOrder());
 
-    setBillTo({
-        client: "",
-        address: "",
-        phone: "",
-        email: "",
-    });
+    // DELIVERY NOTE SELECTION
+    const handleDeliveryNoteChange = (e) => {
+        const value = e.target.value;
 
-    dispatch(getInvoiceSalesOrderById(value));
-};
+        setDeliveryNoteRef(value);
 
+        clearError("deliveryNoteRef");
+
+        // Clear Sales Order selection and previous details.
+        dispatch(clearSelectedSalesOrder());
+        dispatch(clearSelectedDeliveryNote());
+
+        if (!value) {
+            setBillTo({
+                client: "",
+                address: "",
+                phone: "",
+                email: "",
+            });
+
+            setItems([defaultItem()]);
+
+            return;
+        }
+
+        // Fetch selected Delivery Note details.
+        dispatch(fetchDeliveryNoteById(value));
+    };
+
+
+    // CUSTOMER SELECTION
     const handleCustomerChange = (e) => {
         const customerId = e.target.value;
 
         const selectedCustomer = customers.find(
-            (customer) => String(customer.id) === String(customerId)
+            (customer) =>
+                String(customer.id) === String(customerId)
         );
 
         if (!selectedCustomer) return;
@@ -496,9 +1011,12 @@ export const useAddingInvoice = () => {
             phone: selectedCustomer.phno || "",
             email: selectedCustomer.admin_email || "",
         });
+
         clearError("billToClient");
     };
 
+
+    // ADD ITEM
     const addItem = () => {
         setItems((prev) => [
             ...prev,
@@ -518,82 +1036,153 @@ export const useAddingInvoice = () => {
         ]);
     };
 
+
+    // REMOVE ITEM
     const removeItem = (itemId) => {
-        setItems((prev) => prev.filter((item) => item.id !== itemId));
+        setItems((prev) =>
+            prev.filter((item) => item.id !== itemId)
+        );
+
         setErrors((prev) => {
-            if (!prev.items || !prev.items[itemId]) return prev;
+            if (!prev.items || !prev.items[itemId]) {
+                return prev;
+            }
+
             const nextItems = { ...prev.items };
+
             delete nextItems[itemId];
-            const next = { ...prev, items: nextItems };
-            if (Object.keys(nextItems).length === 0) delete next.items;
+
+            const next = {
+                ...prev,
+                items: nextItems,
+            };
+
+            if (Object.keys(nextItems).length === 0) {
+                delete next.items;
+            }
+
             return next;
         });
     };
 
+
+    // UPDATE ITEM
     const updateItem = (itemId, field, value) => {
         setItems((prev) =>
             prev.map((item) =>
-                item.id === itemId ? { ...item, [field]: value } : item
+                item.id === itemId
+                    ? { ...item, [field]: value }
+                    : item
             )
         );
+
         clearItemError(itemId, field);
-        if (errors.itemsGeneral) clearError("itemsGeneral");
+
+        if (errors.itemsGeneral) {
+            clearError("itemsGeneral");
+        }
     };
 
-    const handleCancel = () => navigate("/sales/invoices");
+
+    const handleCancel = () => {
+        navigate("/sales/invoices");
+    };
+
 
     const toDecimal = (value) => {
-        if (value === "" || value === null || value === undefined) return undefined;
+        if (
+            value === "" ||
+            value === null ||
+            value === undefined
+        ) {
+            return undefined;
+        }
+
         const num = Number(value);
+
         return Number.isNaN(num) ? undefined : num;
     };
 
+
+    // BUILD API PAYLOAD
     const buildApiPayload = () => {
-        // invoice_number is NOT sent: the backend auto-generates it
         const payload = {
             sales_order: salesOrderRef || null,
+
+            // Confirm this field name against your Invoice serializer.
+            // Remove or rename it if your backend uses another field.
+            delivery_note: deliveryNoteRef || null,
+
             invoice_date: invoiceDate,
             due_date: dueDate || undefined,
             payment_status: paymentStatus || undefined,
+
             company_name: from.name || undefined,
             company_email: from.email || undefined,
             company_phone: from.phone || undefined,
             company_address: from.address || undefined,
+
             customer: billTo.client || undefined,
             customer_email: billTo.email || undefined,
             customer_phone: billTo.phone || undefined,
             customer_address: billTo.address || undefined,
-            account_holder: payment.accountHolder || undefined,
-            account_number: payment.accountNumber || undefined,
-            iban: payment.iban || undefined,
-            amount_paid: toDecimal(amountPaid),
-            discount: toDecimal(summary.discount),
-            round_off: toDecimal(summary.roundOff),
+
+            account_holder:
+                payment.accountHolder || undefined,
+
+            account_number:
+                payment.accountNumber || undefined,
+
+            iban:
+                payment.iban || undefined,
+
+            amount_paid:
+                toDecimal(amountPaid),
+
+            discount:
+                toDecimal(summary.discount),
+
+            round_off:
+                toDecimal(summary.roundOff),
         };
 
         Object.keys(payload).forEach((key) => {
-            if (payload[key] === undefined) delete payload[key];
+            if (payload[key] === undefined) {
+                delete payload[key];
+            }
         });
 
         return payload;
     };
+
+
+    // VALIDATION
     const validate = () => {
         const newErrors = {};
 
         if (!invoiceDate) {
-            newErrors.invoiceDate = "Invoice date is required";
+            newErrors.invoiceDate =
+                "Invoice date is required";
         }
 
         if (!paymentStatus) {
-            newErrors.paymentStatus = "Select a payment status";
+            newErrors.paymentStatus =
+                "Select a payment status";
         }
 
         const paidAmount = toDecimal(amountPaid);
         const totalAmount = toDecimal(summary.total);
 
-        if (paymentStatus === "paid" && totalAmount !== undefined) {
-            if (paidAmount === undefined || paidAmount < totalAmount) {
-                newErrors.amountPaid = "Paid invoices must have the full amount paid";
+        if (
+            paymentStatus === "paid" &&
+            totalAmount !== undefined
+        ) {
+            if (
+                paidAmount === undefined ||
+                paidAmount < totalAmount
+            ) {
+                newErrors.amountPaid =
+                    "Paid invoices must have the full amount paid";
             }
         }
 
@@ -601,61 +1190,99 @@ export const useAddingInvoice = () => {
             if (
                 paidAmount === undefined ||
                 paidAmount <= 0 ||
-                (totalAmount !== undefined && paidAmount >= totalAmount)
+                (
+                    totalAmount !== undefined &&
+                    paidAmount >= totalAmount
+                )
             ) {
-                newErrors.amountPaid = "Enter a paid amount less than the invoice total";
+                newErrors.amountPaid =
+                    "Enter a paid amount less than the invoice total";
             }
         }
 
-        if (dueDate && invoiceDate && dueDate < invoiceDate) {
-            newErrors.dueDate = "Due date cannot be before invoice date";
+        if (
+            dueDate &&
+            invoiceDate &&
+            dueDate < invoiceDate
+        ) {
+            newErrors.dueDate =
+                "Due date cannot be before invoice date";
         }
 
         if (!isEditMode) {
             if (!from.name.trim()) {
-                newErrors.fromName = "Company name is required";
+                newErrors.fromName =
+                    "Company name is required";
             }
 
             if (!from.email.trim()) {
-                newErrors.fromEmail = "Email is required";
+                newErrors.fromEmail =
+                    "Email is required";
             } else if (!isValidEmail(from.email)) {
-                newErrors.fromEmail = "Enter a valid email address";
+                newErrors.fromEmail =
+                    "Enter a valid email address";
             }
 
-            if (from.phone.trim() && !isValidPhone(from.phone)) {
-                newErrors.fromPhone = "Enter a valid phone number";
+            if (
+                from.phone.trim() &&
+                !isValidPhone(from.phone)
+            ) {
+                newErrors.fromPhone =
+                    "Enter a valid phone number";
             }
 
             if (!billTo.client) {
-                newErrors.billToClient = "Select a client";
+                newErrors.billToClient =
+                    "Select a client";
             }
 
-            if (billTo.email.trim() && !isValidEmail(billTo.email)) {
-                newErrors.billToEmail = "Enter a valid email address";
+            if (
+                billTo.email.trim() &&
+                !isValidEmail(billTo.email)
+            ) {
+                newErrors.billToEmail =
+                    "Enter a valid email address";
             }
 
-            if (billTo.phone.trim() && !isValidPhone(billTo.phone)) {
-                newErrors.billToPhone = "Enter a valid phone number";
+            if (
+                billTo.phone.trim() &&
+                !isValidPhone(billTo.phone)
+            ) {
+                newErrors.billToPhone =
+                    "Enter a valid phone number";
             }
 
-            const { itemErrors, hasValidItem } = validateItems(items);
+            const {
+                itemErrors,
+                hasValidItem,
+            } = validateItems(items);
+
             if (Object.keys(itemErrors).length > 0) {
                 newErrors.items = itemErrors;
             }
+
             if (!hasValidItem) {
-                newErrors.itemsGeneral = "Add at least one item with a service, quantity and rate";
+                newErrors.itemsGeneral =
+                    "Add at least one item with a service, quantity and rate";
             }
         }
 
-        if (payment.iban.trim() && !IBAN_RE.test(payment.iban.trim())) {
-            newErrors.iban = "Enter a valid IBAN";
+        if (
+            payment.iban.trim() &&
+            !IBAN_RE.test(payment.iban.trim())
+        ) {
+            newErrors.iban =
+                "Enter a valid IBAN";
         }
 
         return newErrors;
     };
 
+
+    // SAVE INVOICE
     const handleSave = () => {
         const validationErrors = validate();
+
         setErrors(validationErrors);
 
         if (Object.keys(validationErrors).length > 0) {
@@ -663,8 +1290,12 @@ export const useAddingInvoice = () => {
         }
 
         const payload = buildApiPayload();
+
         const action = isEditMode
-            ? updateInvoicePartial({ id, invoiceData: payload })
+            ? updateInvoicePartial({
+                id,
+                invoiceData: payload,
+            })
             : addInvoice(payload);
 
         dispatch(action).then((result) => {
@@ -672,70 +1303,99 @@ export const useAddingInvoice = () => {
                 navigate("/sales/invoices");
                 return;
             }
-            const backendErrors = mapBackendErrors(result.payload);
+
+            const backendErrors = mapBackendErrors(
+                result.payload
+            );
+
             if (Object.keys(backendErrors).length > 0) {
-                setErrors((prev) => ({ ...prev, ...backendErrors }));
+                setErrors((prev) => ({
+                    ...prev,
+                    ...backendErrors,
+                }));
             }
         });
     };
 
-    const isSaving = isEditMode ? updateLoading : createLoading;
-    const notFound = isEditMode && !detailLoading && !selectedInvoice && Boolean(saveError);
 
-    /* ---- everything the UI layer needs ---- */
+    const isSaving = isEditMode
+        ? updateLoading
+        : createLoading;
+
+    const notFound =
+        isEditMode &&
+        !detailLoading &&
+        !selectedInvoice &&
+        Boolean(saveError);
+
+
     return {
         id,
         navigate,
-        isEditMode,
 
-        // redux-derived data
+        isEditMode,
+        isViewMode,
+
+        // Redux data
         salesOrders,
+        deliveryNotes,
         selectedSalesOrder,
+        selectedDeliveryNote,
         selectedInvoice,
         companyDetails,
         customers,
+
         detailLoading,
         createLoading,
         updateLoading,
         saveError,
 
-        // form state
+        // Form state
         invoiceNumber,
         salesOrderRef,
+        deliveryNoteRef,
+
         invoiceDate,
         dueDate,
         paymentStatus,
         amountPaid,
+
         from,
         billTo,
         payment,
         summary,
         items,
 
-        // validation
+        // Validation
         errors,
 
-        // derived flags
+        // Derived
         isSaving,
         notFound,
 
-        // handlers
-        handleInvoiceNumberChange,
+        // Handlers
         handleInvoiceDateChange,
         handleDueDateChange,
         handlePaymentStatusChange,
         handleAmountPaidChange,
+        handleDiscountChange,
+
         updateFrom,
         updateBillTo,
         updatePayment,
+
         handleSalesOrderChange,
+        handleDeliveryNoteChange,
         handleCustomerChange,
+
         addItem,
         removeItem,
         updateItem,
+
         handleCancel,
         handleSave,
     };
 };
+
 
 export default useAddingInvoice;

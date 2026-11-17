@@ -454,9 +454,25 @@ export const SummaryRow = styled.div`
         white-space: nowrap;
     }
 
-    .discount {
-        color: #20a34a;
-    }
+    .discount-input {
+  width: 100px;
+  height: 30px;
+  padding: 0 8px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  background: #ffffff;
+  color: #20a34a;
+  font-family: "Poppins", sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: right;
+  outline: none;
+}
+
+.discount-input:focus {
+  border-color: #20a34a;
+  box-shadow: 0 0 3px rgba(32, 163, 74, 0.2);
+}
 `;
 
 export const TotalAmount = styled.div`

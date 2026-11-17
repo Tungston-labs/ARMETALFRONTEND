@@ -1,3 +1,4 @@
+
 import React from "react";
 import {
   FiChevronDown,
@@ -33,10 +34,10 @@ import {
   CancelButton,
   PreviewButton,
 } from "./AddingInvoice.styles";
+
 import ReusableHeader from "../../../../../Components/ReusableTable/ReusableHeader";
 import useAddingInvoice from "./Useaddinginvoice";
 
-/* Small presentational-only helpers, kept local since they are pure UI */
 const UploadBox = ({ children }) => (
   <div
     style={{
@@ -54,7 +55,11 @@ const UploadBox = ({ children }) => (
 );
 
 const errorStyle = { borderColor: "#c0392b" };
-const lockedStyle = { background: "#f5f5f5", cursor: "not-allowed" };
+const lockedStyle = {
+  background: "#f5f5f5",
+  cursor: "not-allowed",
+};
+
 const ErrorText = ({ children }) =>
   children ? (
     <span
@@ -74,38 +79,55 @@ const AddingInvoice = () => {
     id,
     isEditMode,
     isViewMode,
+
     salesOrders,
+    deliveryNotes,
     customers,
+
     detailLoading,
     saveError,
     invoiceNumber,
+
     salesOrderRef,
+    deliveryNoteRef,
+
     invoiceDate,
     dueDate,
     paymentStatus,
     amountPaid,
+
     from,
     billTo,
     payment,
     summary,
     items,
+
     errors,
     isSaving,
     notFound,
+
     handleInvoiceDateChange,
     handleDueDateChange,
     handlePaymentStatusChange,
     handleAmountPaidChange,
+
+    handleDiscountChange,
+
     updateFrom,
     updateBillTo,
     updatePayment,
+
     handleSalesOrderChange,
+    handleDeliveryNoteChange,
     handleCustomerChange,
+
     addItem,
     removeItem,
     updateItem,
+
     handleCancel,
     handleSave,
+
     selectedInvoice,
     navigate,
   } = useAddingInvoice();
@@ -113,8 +135,8 @@ const AddingInvoice = () => {
   const pageTitle = isViewMode
     ? "Invoice Details"
     : isEditMode
-    ? "Edit Invoice"
-    : "Generate New Invoice";
+      ? "Edit Invoice"
+      : "Generate New Invoice";
 
   if (detailLoading && isEditMode && !selectedInvoice) {
     return (
@@ -154,7 +176,7 @@ const AddingInvoice = () => {
         breadcrumbs={["Sales", "Invoices"]}
         showBack
         onBack={() => navigate("/sales/invoices")}
-      ></ReusableHeader>
+      />
 
       {saveError && (
         <div style={{ padding: "0 20px", color: "#c0392b" }}>
@@ -173,60 +195,58 @@ const AddingInvoice = () => {
 
       <InvoiceForm>
         <FormGrid>
+          {/* SALES ORDER REFERENCE */}
           <FormGroup>
             <Label>SALES ORDER REFERENCE</Label>
-            {isEditMode ? (
-              <Input value={salesOrderRef} readOnly style={lockedStyle} />
-            ) : (
-              <>
-                <SelectWrapper>
-                  <Select
-                    value={salesOrderRef}
-                    onChange={handleSalesOrderChange}
-                    style={errors.salesOrderRef ? errorStyle : undefined}
-                  >
-                    <option value="" disabled>
-                      Select Sales Order
-                    </option>
-                    {salesOrders.map((order) => (
-                      <option key={order.id} value={order.id}>
-                        {order.so_number || order.order_number || `Sales Order #${order.id}`}
-                      </option>
-                    ))}
-                  </Select>
-                  <FiChevronDown />
-                </SelectWrapper>
-                <ErrorText>{errors.salesOrderRef}</ErrorText>
-              </>
-            )}
+
+            <SelectWrapper>
+              <Select
+                value={salesOrderRef}
+                onChange={handleSalesOrderChange}
+                disabled={isEditMode || isViewMode}
+              >
+                <option value="">Select Sales Order</option>
+
+                {salesOrders.map((order) => (
+                  <option key={order.id} value={order.id}>
+                    {order.so_number ||
+                      order.order_number ||
+                      `Sales Order #${order.id}`}
+                  </option>
+                ))}
+              </Select>
+              <FiChevronDown />
+            </SelectWrapper>
           </FormGroup>
- <FormGroup>
-            <Label>Delivery Note REFERENCE</Label>
-            {isEditMode ? (
-              <Input value={salesOrderRef} readOnly style={lockedStyle} />
-            ) : (
-              <>
-                <SelectWrapper>
-                  <Select
-                    value={salesOrderRef}
-                    onChange={handleSalesOrderChange}
-                    style={errors.salesOrderRef ? errorStyle : undefined}
-                  >
-                    <option value="" disabled>
-                      Select Sales Order
-                    </option>
-                    {salesOrders.map((order) => (
-                      <option key={order.id} value={order.id}>
-                        {order.so_number || order.order_number || `Sales Order #${order.id}`}
-                      </option>
-                    ))}
-                  </Select>
-                  <FiChevronDown />
-                </SelectWrapper>
-                <ErrorText>{errors.salesOrderRef}</ErrorText>
-              </>
-            )}
+
+          {/* DELIVERY NOTE REFERENCE */}
+          <FormGroup>
+            <Label>DELIVERY NOTE REFERENCE</Label>
+
+            <SelectWrapper>
+              <Select
+                value={deliveryNoteRef}
+                onChange={handleDeliveryNoteChange}
+                disabled={isEditMode || isViewMode}
+                style={errors.deliveryNoteRef ? errorStyle : undefined}
+              >
+                <option value="">Select Delivery Note</option>
+
+                {deliveryNotes.map((note) => (
+                  <option key={note.id} value={String(note.id)}>
+                    {note.dn_number ||
+                      note.deliveryNoteNumber ||
+                      note.delivery_note_number ||
+                      `Delivery Note #${note.id}`}
+                  </option>
+                ))}
+              </Select>
+              <FiChevronDown />
+            </SelectWrapper>
+
+            <ErrorText>{errors.deliveryNoteRef}</ErrorText>
           </FormGroup>
+
           <FormGroup>
             <Label>INVOICE NUMBER</Label>
             <Input
@@ -276,9 +296,7 @@ const AddingInvoice = () => {
                 disabled={isViewMode}
                 style={errors.paymentStatus ? errorStyle : undefined}
               >
-                <option value="" disabled>
-                  Select Payment Status
-                </option>
+                <option value="">Select Payment Status</option>
                 <option value="paid">Paid</option>
                 <option value="unpaid">Pending</option>
                 <option value="partially_paid">Partially Paid</option>
@@ -300,7 +318,8 @@ const AddingInvoice = () => {
               readOnly={
                 isViewMode ||
                 paymentStatus === "paid" ||
-                paymentStatus === "unpaid"
+                paymentStatus === "unpaid" ||
+                paymentStatus === "pending"
               }
               style={errors.amountPaid ? errorStyle : undefined}
             />
@@ -362,9 +381,8 @@ const AddingInvoice = () => {
                 disabled={isEditMode}
                 style={errors.billToClient ? errorStyle : undefined}
               >
-                <option value="" disabled>
-                  Company/Client Name
-                </option>
+                <option value="">Company/Client Name</option>
+
                 {customers.map((customer) => (
                   <option key={customer.id} value={customer.id}>
                     {customer.name ||
@@ -415,7 +433,8 @@ const AddingInvoice = () => {
 
         <InvoiceItemsHeader>
           <SectionTitle>INVOICE ITEMS</SectionTitle>
-          {!isEditMode && (
+
+          {!isEditMode && !isViewMode && (
             <AddItemButton onClick={addItem}>
               <FiPlus />
               ADD ITEM
@@ -436,85 +455,111 @@ const AddingInvoice = () => {
                 <th>HS Code</th>
                 <th>Rate</th>
                 <th>VAT (%)</th>
-                <th>VAT </th>
+                <th>VAT</th>
                 <th>Amount</th>
-                {!isEditMode && <th>Action</th>}
+                {!isEditMode && !isViewMode && <th>Action</th>}
               </tr>
             </thead>
 
             <tbody>
               {items.map((item) => {
                 const rowErrors = errors.items?.[item.id] || {};
+
                 return (
                   <tr key={item.id}>
                     <td>{item.slNo}</td>
+
                     <td>
                       <input
                         placeholder="App Design"
                         value={item.service}
-                        onChange={(e) => updateItem(item.id, "service", e.target.value)}
-                        readOnly={isEditMode}
+                        onChange={(e) =>
+                          updateItem(item.id, "service", e.target.value)
+                        }
+                        readOnly={isEditMode || isViewMode}
                         style={rowErrors.service ? errorStyle : undefined}
                       />
                       <ErrorText>{rowErrors.service}</ErrorText>
                     </td>
+
                     <td>
                       <input
                         placeholder="Wireframe Of 15 Pages"
                         value={item.particular}
-                        onChange={(e) => updateItem(item.id, "particular", e.target.value)}
-                        readOnly={isEditMode}
+                        onChange={(e) =>
+                          updateItem(item.id, "particular", e.target.value)
+                        }
+                        readOnly={isEditMode || isViewMode}
                       />
                     </td>
+
                     <td>
                       <input
                         value={item.qty}
-                        onChange={(e) => updateItem(item.id, "qty", e.target.value)}
-                        readOnly={isEditMode}
+                        onChange={(e) =>
+                          updateItem(item.id, "qty", e.target.value)
+                        }
+                        readOnly={isEditMode || isViewMode}
                         style={rowErrors.qty ? errorStyle : undefined}
                       />
                       <ErrorText>{rowErrors.qty}</ErrorText>
                     </td>
+
                     <td>
                       <input
                         value={item.hsCode}
-                        onChange={(e) => updateItem(item.id, "hsCode", e.target.value)}
-                        readOnly={isEditMode}
+                        onChange={(e) =>
+                          updateItem(item.id, "hsCode", e.target.value)
+                        }
+                        readOnly={isEditMode || isViewMode}
                       />
                     </td>
+
                     <td>
                       <input
                         value={item.rate}
-                        onChange={(e) => updateItem(item.id, "rate", e.target.value)}
-                        readOnly={isEditMode}
+                        onChange={(e) =>
+                          updateItem(item.id, "rate", e.target.value)
+                        }
+                        readOnly={isEditMode || isViewMode}
                         style={rowErrors.rate ? errorStyle : undefined}
                       />
                       <ErrorText>{rowErrors.rate}</ErrorText>
                     </td>
+
                     <td>
                       <input
                         value={item.vat}
-                        onChange={(e) => updateItem(item.id, "vat", e.target.value)}
-                        readOnly={isEditMode}
+                        onChange={(e) =>
+                          updateItem(item.id, "vat", e.target.value)
+                        }
+                        readOnly={isEditMode || isViewMode}
                         style={rowErrors.vat ? errorStyle : undefined}
                       />
                       <ErrorText>{rowErrors.vat}</ErrorText>
                     </td>
+
                     <td>
                       <input
                         value={item.vatAmount}
-                        onChange={(e) => updateItem(item.id, "vatAmount", e.target.value)}
-                        readOnly={isEditMode}
+                        onChange={(e) =>
+                          updateItem(item.id, "vatAmount", e.target.value)
+                        }
+                        readOnly={isEditMode || isViewMode}
                       />
                     </td>
+
                     <td>
                       <input
                         value={item.amount}
-                        onChange={(e) => updateItem(item.id, "amount", e.target.value)}
-                        readOnly={isEditMode}
+                        onChange={(e) =>
+                          updateItem(item.id, "amount", e.target.value)
+                        }
+                        readOnly={isEditMode || isViewMode}
                       />
                     </td>
-                    {!isEditMode && (
+
+                    {!isEditMode && !isViewMode && (
                       <td>
                         <DeleteButton onClick={() => removeItem(item.id)}>
                           <FiX />
@@ -541,8 +586,10 @@ const AddingInvoice = () => {
                 <Input
                   placeholder="TUNGSTON LABS"
                   value={payment.accountHolder}
-                  onChange={(e) => updatePayment("accountHolder", e.target.value)}
-                  readOnly={isEditMode}
+                  onChange={(e) =>
+                    updatePayment("accountHolder", e.target.value)
+                  }
+                  readOnly={isEditMode || isViewMode}
                 />
               </FormGroup>
 
@@ -551,8 +598,10 @@ const AddingInvoice = () => {
                 <Input
                   placeholder="12534789652135"
                   value={payment.accountNumber}
-                  onChange={(e) => updatePayment("accountNumber", e.target.value)}
-                  readOnly={isEditMode}
+                  onChange={(e) =>
+                    updatePayment("accountNumber", e.target.value)
+                  }
+                  readOnly={isEditMode || isViewMode}
                 />
               </FormGroup>
 
@@ -562,7 +611,7 @@ const AddingInvoice = () => {
                   placeholder="2654559"
                   value={payment.iban}
                   onChange={(e) => updatePayment("iban", e.target.value)}
-                  readOnly={isEditMode}
+                  readOnly={isEditMode || isViewMode}
                   style={errors.iban ? errorStyle : undefined}
                 />
                 <ErrorText>{errors.iban}</ErrorText>
@@ -582,21 +631,33 @@ const AddingInvoice = () => {
               <span>Sub Total</span>
               <strong>{summary.subTotal || "0"}</strong>
             </SummaryRow>
+
             <SummaryRow>
               <span>Total VAT (15%)</span>
               <strong>{summary.vat || "0"}</strong>
             </SummaryRow>
+
             <SummaryRow>
               <span>Discount</span>
-              <strong className="discount">{summary.discount || "0"}</strong>
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                value={summary.discount ?? ""}
+                onChange={(e) => handleDiscountChange(e.target.value)}
+                className="discount-input"
+                readOnly={isViewMode}
+              />
             </SummaryRow>
+
             <SummaryRow>
               <span>Round Off</span>
               <strong>{summary.roundOff || "0"}</strong>
             </SummaryRow>
+
             <TotalAmount>
               <span>TOTAL AMOUNT</span>
-              <strong>{summary.total || " 0"}</strong>
+              <strong>{summary.total || "0"}</strong>
             </TotalAmount>
           </PaymentRight>
         </PaymentSection>
@@ -607,8 +668,13 @@ const AddingInvoice = () => {
           ) : (
             <>
               <CancelButton onClick={handleCancel}>CANCEL</CancelButton>
+
               <PreviewButton onClick={handleSave} disabled={isSaving}>
-                {isSaving ? "SAVING..." : isEditMode ? "UPDATE" : "PREVIEW"}
+                {isSaving
+                  ? "SAVING..."
+                  : isEditMode
+                    ? "UPDATE"
+                    : "PREVIEW"}
               </PreviewButton>
             </>
           )}
