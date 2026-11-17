@@ -1,4 +1,8 @@
 import API from "../../api";
+import {
+    listQuotationService,
+    getQuotationService,
+} from "./quotationService";
 
 // GET: /api/finance/sales-order/
 export const fetchSalesOrders = async (params = {}) => {
@@ -55,25 +59,22 @@ export const fetchWarehouses = async (
     return response.data;
 };
 
-// GET: /api/finance/sales-order/quotations/
+// GET: /api/finance/quotation/?status=converted
+// Converted quotations (via "Convert SO") that can be used to create a sales order
 export const fetchAvailableQuotations = async (
     params = {}
 ) => {
-    const response = await API.get(
-        "/finance/sales-order/quotations/",
-        { params }
-    );
-
-    return response.data;
+    return listQuotationService({
+        status: "converted",
+        page_size: 100,
+        ...params,
+    });
 };
 
-// GET: /api/finance/sales-order/quotations/{id}/
+// GET: /api/finance/quotation/{id}/
+// Used to auto-fill the sales order form after a quotation is picked
 export const fetchQuotationById = async (id) => {
-    const response = await API.get(
-        `/finance/sales-order/quotations/${id}/`
-    );
-
-    return response.data;
+    return getQuotationService(id);
 };
 
 // GET: /api/finance/sales-order/{id}/

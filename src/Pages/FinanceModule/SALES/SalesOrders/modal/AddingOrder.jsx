@@ -1,13 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import {
-  FiChevronDown,
-  FiPlus,
-  FiX,
-  FiUpload,
-  FiEdit3,
-} from "react-icons/fi";
+import { FiChevronDown, FiPlus, FiX } from "react-icons/fi";
 
 import {
   InvoiceContainer as OrderContainer,
@@ -27,13 +21,11 @@ import {
   DeleteButton,
   PaymentSection,
   PaymentLeft,
-  PaymentGrid,
   PaymentRight,
   SummaryRow,
   TotalAmount,
   ButtonWrapper,
   CancelButton,
-  PreviewButton,
   Required,
   ErrorText,
   DraftButton,
@@ -49,7 +41,6 @@ import {
   addSalesOrder,
   editSalesOrder,
   getCompanies,
-  getCustomers,
   getWarehouses,
   getAvailableQuotations,
   getQuotationById,
@@ -62,7 +53,6 @@ import {
   selectSalesOrderUpdateLoading,
   selectSalesOrderError,
   selectCompanies,
-  selectCustomers,
   selectWarehouses,
   selectAvailableQuotations,
   selectSelectedQuotation,
@@ -71,8 +61,6 @@ import { Hourglass } from "lucide-react";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PHONE_PATTERN = /^[0-9+\-\s()]{7,20}$/;
-
-
 
 const defaultItem = () => ({
   id: Date.now(),
@@ -100,11 +88,21 @@ const emptyForm = {
   items: [defaultItem()],
 };
 
+// The quotation list/detail API uses `quote_number`; older code used
+// `quotation_number` or `number`. Accept all of them.
+const getQuoteNumber = (q) =>
+  q?.quote_number || q?.quotation_number || q?.number || "";
+
 const mapOrderToFormData = (order) => {
   if (!order) return null;
 
   return {
-    orderNumber: order.order_number || order.quotation_number || "",
+     orderNumber:
+      order.quote_reference ||
+      order.quote_number ||
+      order.quotation_number ||
+      order.order_number ||
+      "",
     soNumber: order.so_number || "",
     orderDate: order.order_date || "",
     deliveryDate: order.delivery_date || "",
@@ -113,11 +111,29 @@ const mapOrderToFormData = (order) => {
     warehouse: order.warehouse || "",
     orderStatus: (order.order_status || order.status || "").toLowerCase(),
 
-    from: {
-      name: order?.from?.name || order.from_name || "",
-      address: order?.from?.address || order.from_address || "",
-      phone: order?.from?.phone || order.from_phone || "",
-      email: order?.from?.email || order.from_email || "",
+     from: {
+      name:
+        order?.from?.name ||
+        order.company_name ||
+        order.from_company_name ||
+        order.from_name ||
+        "",
+      address:
+        order?.from?.address ||
+        order.company_address ||
+        order.from_address ||
+        "",
+      phone:
+        order?.from?.phone ||
+        order.company_phone ||
+        order.from_phone_number ||
+        order.from_phone ||
+        "",
+      email:
+        order?.from?.email ||
+        order.company_email ||
+        order.from_email ||
+        "",
     },
 
     billTo: {
@@ -144,17 +160,17 @@ const mapOrderToFormData = (order) => {
     items:
       Array.isArray(order.items) && order.items.length > 0
         ? order.items.map((item, idx) => ({
-          id: item.id ?? Date.now() + idx,
-          slNo: String(idx + 1).padStart(2, "0"),
-          service: item.service_name || "",
-          particular: item.description || "",
-          qty: item.quantity ?? "",
-          hsCode: item.hs_code || "",
-          rate: item.rate || "",
-          vat: item.vat_percentage || "",
-          vatAmount: item.vat_amount || "",
-          amount: item.amount || "",
-        }))
+            id: item.id ?? Date.now() + idx,
+            slNo: String(idx + 1).padStart(2, "0"),
+            service: item.service_name || "",
+            particular: item.description || "",
+            qty: item.quantity ?? "",
+            hsCode: item.hs_code || "",
+            rate: item.rate || "",
+            vat: item.vat_percentage || "",
+            vatAmount: item.vat_amount || "",
+            amount: item.amount || "",
+          }))
         : [defaultItem()],
   };
 };
@@ -172,12 +188,13 @@ const AddingOrder = () => {
   const updateLoading = useSelector(selectSalesOrderUpdateLoading);
   const saveError = useSelector(selectSalesOrderError);
   const companies = useSelector(selectCompanies);
-  const customers = useSelector(selectCustomers);
   const warehouses = useSelector(selectWarehouses);
   const availableQuotations = useSelector(selectAvailableQuotations);
   const selectedQuotation = useSelector(selectSelectedQuotation);
+
   const [quotationId, setQuotationId] = useState("");
   const [companyId, setCompanyId] = useState("");
+  const [customerName, setCustomerName] = useState("");
   const [orderNumber, setOrderNumber] = useState(emptyForm.orderNumber);
   const [soNumber, setSoNumber] = useState(emptyForm.soNumber);
   const [orderDate, setOrderDate] = useState(today);
@@ -188,10 +205,10 @@ const AddingOrder = () => {
   const [orderStatus, setOrderStatus] = useState(emptyForm.orderStatus);
   const [from, setFrom] = useState(emptyForm.from);
   const [billTo, setBillTo] = useState(emptyForm.billTo);
+  // eslint-disable-next-line no-unused-vars
   const [payment, setPayment] = useState(emptyForm.payment);
   const [summary, setSummary] = useState(emptyForm.summary);
   const [items, setItems] = useState(emptyForm.items);
-  const [isSendForApproval, setIsSendForApproval] = useState(false);
   const [errors, setErrors] = useState({});
 
   const clearError = (field) =>
@@ -202,9 +219,9 @@ const AddingOrder = () => {
       return next;
     });
 
+  // Lookups + converted quotations (the slice thunk requests status=converted)
   useEffect(() => {
     dispatch(getCompanies());
-    dispatch(getCustomers());
     dispatch(getWarehouses());
     if (!isEditMode) {
       dispatch(getAvailableQuotations());
@@ -222,6 +239,7 @@ const AddingOrder = () => {
     };
   }, [dispatch, id, isEditMode]);
 
+  // Edit mode: load the existing order into the form
   useEffect(() => {
     if (!selectedSalesOrder) return;
 
@@ -241,39 +259,86 @@ const AddingOrder = () => {
       ...mapped.billTo,
       client: selectedSalesOrder.customer ?? mapped.billTo.client,
     });
+    setCustomerName(
+      selectedSalesOrder.customer_name ||
+        selectedSalesOrder.bill_to_name ||
+        ""
+    );
     setPayment(mapped.payment);
     setSummary(mapped.summary);
     setItems(mapped.items);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedSalesOrder]);
 
+  // Create mode: a quotation was picked, so fill the form from it
   useEffect(() => {
     if (isEditMode || !selectedQuotation) return;
 
-    setCompanyId(selectedQuotation.company ?? "");
+    const q = selectedQuotation;
+
+    setCompanyId(q.company ?? "");
+
+    setFrom((prev) => ({
+      ...prev,
+      name: q.from_company_name || prev.name,
+      address: q.from_address || prev.address,
+      phone: q.from_phone_number || prev.phone,
+      email: q.from_email || prev.email,
+    }));
+
     setBillTo((prev) => ({
       ...prev,
-      client: selectedQuotation.customer ?? prev.client,
+      client: q.customer ?? prev.client,
+      address: q.bill_to_address || prev.address,
+      phone: q.bill_to_phone || prev.phone,
+      email: q.finance_contact_email || prev.email,
     }));
-    setWarehouse(selectedQuotation.warehouse ?? "");
-    if (
-      Array.isArray(selectedQuotation.items) &&
-      selectedQuotation.items.length > 0
-    ) {
+
+    setCustomerName(q.customer_name || q.bill_to_name || "");
+    setWarehouse(q.warehouse ?? "");
+
+    // Payment terms: only works if the API returns it
+    const terms = String(q.payment_terms ?? "")
+      .toLowerCase()
+      .replace(/\s+/g, "_");
+    if (terms) setPaymentTerms(terms);
+
+    setSummary((prev) => ({
+      ...prev,
+      subTotal: q.sub_total ?? "",
+      vat: q.total_vat ?? "",
+      discount: q.discount ?? "",
+      roundOff: q.round_off ?? "",
+      total: q.quote_amount ?? "",
+    }));
+
+    // clear any validation errors on the fields we just filled
+    [
+      "billTo",
+      "billToAddress",
+      "billToPhone",
+      "billToEmail",
+      "paymentTerms",
+      "warehouse",
+    ].forEach(clearError);
+
+    if (Array.isArray(q.items) && q.items.length > 0) {
       setItems(
-        selectedQuotation.items.map((item, idx) => ({
+        q.items.map((item, idx) => ({
           id: item.id ?? Date.now() + idx,
           slNo: String(idx + 1).padStart(2, "0"),
-          service: item.service_name || item.service || "",
-          particular: item.description || item.particular || "",
-          qty: item.quantity ?? item.qty ?? "",
+          service: item.service_name || item.product_name || "",
+          particular: item.description || "",
+          qty: item.quantity ?? "",
           hsCode: item.hs_code || "",
           rate: item.rate || "",
-          vat: item.vat_percentage ?? item.vat ?? "",
+          vat: item.vat_percentage ?? "",
           vatAmount: item.vat_amount || "",
           amount: item.amount || "",
         }))
       );
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedQuotation, isEditMode]);
 
   const handleQuotationChange = (e) => {
@@ -282,7 +347,7 @@ const AddingOrder = () => {
     const picked = availableQuotations.find(
       (q) => String(q.id) === String(value)
     );
-    setOrderNumber(picked?.quotation_number || picked?.number || "");
+    setOrderNumber(getQuoteNumber(picked));
     if (value) {
       dispatch(getQuotationById(value));
     }
@@ -325,30 +390,7 @@ const AddingOrder = () => {
     const num = Number(value);
     return Number.isNaN(num) ? undefined : num;
   };
-  const handleSaveDraft = async () => {
-    try {
-      // Replace with your draft-save API function.
-      await handleSaveAsDraft();
 
-      console.log("Draft saved successfully");
-    } catch (error) {
-      console.error("Failed to save draft:", error);
-    }
-  };
-
-  const handleDownload = () => {
-    // Connect your existing PDF/Excel download function here.
-    handleDownloadDocument();
-  };
-
-  const handleSendClick = async () => {
-    if (!isSendForApproval) {
-      setIsSendForApproval(true);
-      return;
-    }
-
-    await handleSendForApproval();
-  };
   // ============================================================
   // VALIDATION
   // ============================================================
@@ -365,7 +407,8 @@ const AddingOrder = () => {
 
     if (!warehouse) e.warehouse = "Please select a warehouse";
     if (!paymentTerms) e.paymentTerms = "Please select payment terms";
-    if (!billTo.client) e.billTo = "Please select a client";
+    if (!billTo.client)
+      e.billTo = "Please select a quotation to choose the client";
     if (!t(billTo.address)) e.billToAddress = "Address is required";
 
     if (!t(billTo.phone)) e.billToPhone = "Phone number is required";
@@ -446,6 +489,11 @@ const AddingOrder = () => {
     });
   };
 
+  // SAVE DRAFT and SEND both save the order for now. Replace handleSaveDraft
+  // with a draft-specific call if your backend has one.
+  const handleSaveDraft = () => handleSave();
+  const handleDownload = () => window.print();
+
   const isSaving = isEditMode ? updateLoading : createLoading;
   const notFound =
     isEditMode && !orderLoading && !selectedSalesOrder && Boolean(saveError);
@@ -505,9 +553,9 @@ const AddingOrder = () => {
           {typeof saveError === "string"
             ? saveError
             : saveError?.detail ||
-            saveError?.message ||
-            saveError?.order_status?.[0] ||
-            "Unable to update Sales Order. Please try again."}
+              saveError?.message ||
+              saveError?.order_status?.[0] ||
+              "Unable to update Sales Order. Please try again."}
         </div>
       )}
 
@@ -521,11 +569,14 @@ const AddingOrder = () => {
               <SelectWrapper>
                 <Select value={quotationId} onChange={handleQuotationChange}>
                   <option value="" disabled>
-                    Select Quotation
+                    {availableQuotations.length === 0
+                      ? "No converted quotations"
+                      : "Select Quotation"}
                   </option>
                   {availableQuotations.map((q) => (
                     <option key={q.id} value={q.id}>
-                      {q.quotation_number || q.number || `Quotation #${q.id}`}
+                      {getQuoteNumber(q) || `Quotation #${q.id}`}
+                      {q.customer_name ? ` - ${q.customer_name}` : ""}
                     </option>
                   ))}
                 </Select>
@@ -574,9 +625,9 @@ const AddingOrder = () => {
                 <option value="" disabled>
                   Select Order Status
                 </option>
+                <option value="draft">Draft</option>
                 <option value="pending">Pending</option>
                 <option value="confirmed">Confirmed</option>
-                <option value="rejected">Rejected</option>
                 <option value="processing">Processing</option>
               </Select>
               <FiChevronDown />
@@ -601,22 +652,7 @@ const AddingOrder = () => {
               />
             </CalendarInput>
             {errors.deliveryDate && <ErrorText>{errors.deliveryDate}</ErrorText>}
-
           </FormGroup>
-
-          {/* <FormGroup>
-            <Label>DUE DATE</Label>
-            <CalendarInput>
-              <Input
-                type="date"
-                value={dueDate}
-                min={orderDate}
-                onChange={(e) => setDueDate(e.target.value)}
-                readOnly={isEditMode}
-                disabled={isEditMode}
-              />
-            </CalendarInput>
-          </FormGroup> */}
 
           <FormGroup>
             <Label>
@@ -643,9 +679,7 @@ const AddingOrder = () => {
               </Select>
               <FiChevronDown />
             </SelectWrapper>
-
             {errors.paymentTerms && <ErrorText>{errors.paymentTerms}</ErrorText>}
-
           </FormGroup>
 
           <FormGroup>
@@ -672,11 +706,7 @@ const AddingOrder = () => {
               </Select>
               <FiChevronDown />
             </SelectWrapper>
-            {errors.warehouse && (
-              <span style={errorStyle}>{errors.warehouse}</span>
-            )}
             {errors.warehouse && <ErrorText>{errors.warehouse}</ErrorText>}
-
           </FormGroup>
           <br />
           <FormGroup>
@@ -746,32 +776,18 @@ const AddingOrder = () => {
             />
           </FormGroup>
 
+          {/* BILL TO: filled from the selected quotation (read-only) */}
           <FormGroup>
             <Label>
               BILL TO <Required />
             </Label>
-            <SelectWrapper>
-              <Select
-                value={billTo.client}
-                onChange={(e) => {
-                  setBillTo({ ...billTo, client: e.target.value });
-                  clearError("billTo");
-                }}
-                disabled={isEditMode}
-              >
-                <option value="" disabled>
-                  Company/Client Name
-                </option>
-                {customers.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name || c.customer_name || `Customer #${c.id}`}
-                  </option>
-                ))}
-              </Select>
-              <FiChevronDown />
-            </SelectWrapper>
+            <Input
+              placeholder="Select a quotation to fill client"
+              value={customerName}
+              readOnly
+              disabled
+            />
             {errors.billTo && <ErrorText>{errors.billTo}</ErrorText>}
-
           </FormGroup>
 
           <FormGroup>
@@ -787,9 +803,7 @@ const AddingOrder = () => {
               }}
               readOnly={isEditMode}
             />
-
             {errors.billToAddress && <ErrorText>{errors.billToAddress}</ErrorText>}
-
           </FormGroup>
 
           <FormGroup>
@@ -805,9 +819,7 @@ const AddingOrder = () => {
               }}
               readOnly={isEditMode}
             />
-
             {errors.billToPhone && <ErrorText>{errors.billToPhone}</ErrorText>}
-
           </FormGroup>
 
           <FormGroup>
@@ -824,7 +836,6 @@ const AddingOrder = () => {
               readOnly={isEditMode}
             />
             {errors.billToEmail && <ErrorText>{errors.billToEmail}</ErrorText>}
-
           </FormGroup>
         </FormGrid>
 
@@ -947,17 +958,16 @@ const AddingOrder = () => {
         </OrderTableWrapper>
 
         <PaymentSection>
-           <PaymentLeft>
-    <NotesTitle>NOTES</NotesTitle>
-    <NotesBox>
-      <span>
-        Above information is not an invoice and only an estimate of services.
-      </span>
-      <strong>
-        PLEASE CONFIRM YOUR ACCEPTANCE OF THIS QUOTE
-      </strong>
-    </NotesBox>
-  </PaymentLeft>
+          <PaymentLeft>
+            <NotesTitle>NOTES</NotesTitle>
+            <NotesBox>
+              <span>
+                Above information is not an invoice and only an estimate of
+                services.
+              </span>
+              <strong>PLEASE CONFIRM YOUR ACCEPTANCE OF THIS QUOTE</strong>
+            </NotesBox>
+          </PaymentLeft>
           <PaymentRight>
             <SummaryRow>
               <span>Sub Total</span>
@@ -984,7 +994,7 @@ const AddingOrder = () => {
                 style={{
                   maxWidth: "150px",
                   textAlign: "left",
-                  color: "#03AC17"
+                  color: "#03AC17",
                 }}
               />
             </SummaryRow>
@@ -1016,21 +1026,14 @@ const AddingOrder = () => {
             DOWNLOAD
           </DownloadButton>
 
-
-          <SendButton
-            type="button"
-            onClick={handleSendClick}
-            disabled={isSaving}
-          >
+          <SendButton type="button" onClick={handleSave} disabled={isSaving}>
             {isSaving ? (
               <>
                 <Hourglass className="loading-icon" />
-                SENDING...
+                SAVING...
               </>
-            ) : isSendForApproval ? (
-              "SEND FOR APPROVAL"
             ) : (
-              "SEND"
+              "SAVE ORDER"
             )}
           </SendButton>
         </ButtonWrapper>

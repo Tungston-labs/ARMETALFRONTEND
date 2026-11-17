@@ -1,361 +1,32 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { FiChevronLeft, FiPlus, FiX } from "react-icons/fi";
-import { IoHomeOutline } from "react-icons/io5";
-import styled from "styled-components";
+import { FiPlus, FiX } from "react-icons/fi";
+import {
+  Container,
+  Card,
+  Grid4,
+  FieldGroup,
+  Label,
+  Input,
+  Select,
+  ItemsHeader,
+  SectionHeading,
+  AddItemBtn,
+  TableWrap,
+  ItemsTable,
+  RemoveBtn,
+  BottomGrid,
+  TextArea,
+  SummaryCard,
+  SummaryRow,
+  TotalBanner,
+  ActionsBar,
+  ButtonGroup,
+  OutlineBtn,
+  PrimaryBtn,
+} from "./AddQuotation.style";
 
 import API from "../../../../../services/api";
-
-const Container = styled.div`
-  width: 100%;
-  max-width: 100%;
-  min-height: 100vh;
-  background: #f5f6fa;
-  padding: 20px;
-  box-sizing: border-box;
-
-  @media (max-width: 768px) {
-    padding: 14px;
-  }
-`;
-
-const HeaderBar = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 18px;
-  min-width: 0;
-
-  @media (max-width: 768px) {
-    padding-top: 50px;
-  }
-`;
-
-const BackChevronButton = styled.button`
-  background: transparent;
-  border: none;
-  padding: 4px 2px;
-  margin: 0;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  color: #111827;
-  cursor: pointer;
-  flex-shrink: 0;
-  border-radius: 4px;
-  transition: color 0.2s ease, background-color 0.2s ease;
-
-  &:hover {
-    color: #3250bc;
-    background: rgba(50, 80, 188, 0.08);
-  }
-`;
-
-const HeaderTitleGroup = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  min-width: 0;
-`;
-
-const HeaderTitle = styled.h2`
-  margin: 0;
-  font-size: clamp(19px, 1.8vw, 24px);
-  font-weight: 500;
-  line-height: 1.3;
-  color: #3250bc;
-`;
-
-const HeaderBreadcrumb = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 12px;
-  color: #374151;
-  flex-wrap: wrap;
-
-  span.active {
-    color: #3250bc;
-  }
-`;
-
-const Card = styled.form`
-  background: #ffffff;
-  border-radius: 8px;
-  border: 1px solid #e5e7eb;
-  padding: 24px;
-  box-sizing: border-box;
-
-  @media (max-width: 768px) {
-    padding: 16px;
-  }
-`;
-
-const Grid4 = styled.div`
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 16px;
-  margin-bottom: 18px;
-
-  @media (max-width: 1024px) {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  @media (max-width: 576px) {
-    grid-template-columns: 1fr;
-  }
-`;
-
-const FieldGroup = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  min-width: 0;
-`;
-
-const Label = styled.label`
-  font-size: 12px;
-  font-weight: 500;
-  color: #374151;
-  text-transform: uppercase;
-
-  span {
-    color: #dc2626;
-    margin-left: 2px;
-  }
-`;
-
-const Input = styled.input`
-  height: 38px;
-  padding: 0 10px;
-  border: 1px solid #d1d5db;
-  border-radius: 4px;
-  font-size: 13px;
-  color: #111827;
-  background: #ffffff;
-  width: 100%;
-  box-sizing: border-box;
-  outline: none;
-
-  &:focus {
-    border-color: #3857b9;
-  }
-`;
-
-const Select = styled.select`
-  height: 38px;
-  padding: 0 10px;
-  border: 1px solid #d1d5db;
-  border-radius: 4px;
-  font-size: 13px;
-  color: #111827;
-  background: #ffffff;
-  width: 100%;
-  box-sizing: border-box;
-  outline: none;
-
-  &:focus {
-    border-color: #3857b9;
-  }
-`;
-
-const ItemsHeader = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin: 22px 0 12px;
-  gap: 12px;
-  flex-wrap: wrap;
-`;
-
-const SectionHeading = styled.h3`
-  margin: 0;
-  font-size: 14px;
-  font-weight: 600;
-  color: #111827;
-  text-transform: uppercase;
-`;
-
-const AddItemBtn = styled.button`
-  height: 36px;
-  padding: 0 14px;
-  background: #f58220;
-  color: #ffffff;
-  border: none;
-  border-radius: 4px;
-  font-size: 12.5px;
-  font-weight: 600;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  cursor: pointer;
-
-  &:hover {
-    background: #df7113;
-  }
-`;
-
-const TableWrap = styled.div`
-  width: 100%;
-  overflow-x: auto;
-  border: 1px dashed #d1d5db;
-  border-radius: 4px;
-`;
-
-const ItemsTable = styled.table`
-  width: 100%;
-  border-collapse: collapse;
-
-  th {
-    background: #233c8b;
-    color: #ffffff;
-    font-size: 12px;
-    font-weight: 600;
-    padding: 10px 8px;
-    text-align: left;
-    white-space: nowrap;
-  }
-
-  td {
-    padding: 8px 6px;
-    border-bottom: 1px solid #e5e7eb;
-    font-size: 12.5px;
-    vertical-align: middle;
-  }
-
-  input,
-  select {
-    height: 34px;
-    padding: 0 8px;
-    border: 1px solid #d1d5db;
-    border-radius: 4px;
-    font-size: 12.5px;
-    width: 100%;
-    min-width: 72px;
-    box-sizing: border-box;
-    background: #ffffff;
-  }
-`;
-
-const RemoveBtn = styled.button`
-  width: 26px;
-  height: 26px;
-  border-radius: 50%;
-  border: 1px solid #ef4444;
-  background: #ffffff;
-  color: #ef4444;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-
-  &:hover {
-    background: #fef2f2;
-  }
-`;
-
-const BottomGrid = styled.div`
-  display: grid;
-  grid-template-columns: minmax(0, 1.3fr) minmax(0, 0.9fr);
-  gap: 24px;
-  margin-top: 22px;
-  align-items: start;
-
-  @media (max-width: 900px) {
-    grid-template-columns: 1fr;
-  }
-`;
-
-const TextArea = styled.textarea`
-  width: 100%;
-  min-height: 90px;
-  padding: 10px 12px;
-  border: 1px solid #d1d5db;
-  border-radius: 4px;
-  font-size: 13px;
-  font-family: inherit;
-  box-sizing: border-box;
-  resize: vertical;
-`;
-
-const SummaryCard = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-`;
-
-const SummaryRow = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  font-size: 13px;
-  color: #374151;
-
-  strong {
-    font-weight: 600;
-    color: #111827;
-  }
-`;
-
-const TotalBanner = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background: #f58220;
-  color: #ffffff;
-  padding: 11px 14px;
-  border-radius: 4px;
-  font-size: 14px;
-  font-weight: 600;
-  margin-top: 4px;
-`;
-
-const ActionsBar = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-top: 24px;
-  flex-wrap: wrap;
-`;
-
-const ButtonGroup = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-`;
-
-const OutlineBtn = styled.button`
-  height: 38px;
-  padding: 0 18px;
-  background: #ffffff;
-  color: #111827;
-  border: 1px solid #111827;
-  border-radius: 4px;
-  font-size: 12.5px;
-  font-weight: 500;
-  cursor: pointer;
-
-  &:hover:not(:disabled) {
-    background: #f3f4f6;
-  }
-`;
-
-const PrimaryBtn = styled.button`
-  height: 38px;
-  padding: 0 20px;
-  background: #3857b9;
-  color: #ffffff;
-  border: none;
-  border-radius: 4px;
-  font-size: 12.5px;
-  font-weight: 500;
-  cursor: pointer;
-
-  &:hover:not(:disabled) {
-    background: #2e49a5;
-  }
-`;
+import ReusableHeader from "../../../../../Components/ReusableTable/ReusableHeader";
 
 const createEmptyItem = () => ({
   product: "",
@@ -371,6 +42,42 @@ const toNum = (v) => {
   const n = Number(v);
   return Number.isFinite(n) ? n : 0;
 };
+
+// Builds the form state from an existing quotation (edit) or blank (create).
+const buildForm = (data, defaultCustomerId, today) => ({
+  quote_number: data?.quote_number || "",
+  issue_date: String(data?.issue_date || today).slice(0, 10),
+  valid_till: String(data?.valid_till || today).slice(0, 10),
+  status: String(data?.status || "draft").toLowerCase(),
+  from_company_name: data?.from_company_name || "Tungston Labs",
+  from_address: data?.from_address || "",
+  from_phone_number: data?.from_phone_number || "",
+  from_email: data?.from_email || "",
+  customer: data?.customer || defaultCustomerId || "",
+  bill_to_name: data?.bill_to_name || data?.customer_name || "",
+  bill_to_address: data?.bill_to_address || "",
+  bill_to_phone: data?.bill_to_phone || "",
+  finance_contact_email: data?.finance_contact_email || "",
+  discount: String(data?.discount ?? "0"),
+  round_off: String(data?.round_off ?? "0"),
+  negotiation_amount:
+    data?.negotiation_amount !== undefined && data?.negotiation_amount !== null
+      ? String(data.negotiation_amount)
+      : "",
+  notes: data?.notes || "",
+  items:
+    Array.isArray(data?.items) && data.items.length > 0
+      ? data.items.map((it) => ({
+          product: it.product || "",
+          service_name: it.service_name || it.product_name || "",
+          description: it.description || "",
+          quantity: String(it.quantity ?? "1"),
+          hs_code: it.hs_code || "",
+          rate: String(it.rate ?? "0"),
+          vat_percentage: String(it.vat_percentage ?? "15"),
+        }))
+      : [createEmptyItem()],
+});
 
 const AddQuotation = ({
   isOpen = true,
@@ -388,41 +95,16 @@ const AddQuotation = ({
   const [products, setProducts] = useState([]);
   const [formError, setFormError] = useState("");
 
-  const [form, setForm] = useState({
-    quote_number: initialData?.quote_number || "",
-    issue_date: String(initialData?.issue_date || today).slice(0, 10),
-    valid_till: String(initialData?.valid_till || today).slice(0, 10),
-    status: String(initialData?.status || "draft").toLowerCase(),
-    from_company_name: initialData?.from_company_name || "Tungston Labs",
-    from_address: initialData?.from_address || "",
-    from_phone_number: initialData?.from_phone_number || "",
-    from_email: initialData?.from_email || "",
-    customer: initialData?.customer || defaultCustomerId || "",
-    bill_to_name: initialData?.bill_to_name || initialData?.customer_name || "",
-    bill_to_address: initialData?.bill_to_address || "",
-    bill_to_phone: initialData?.bill_to_phone || "",
-    finance_contact_email: initialData?.finance_contact_email || "",
-    discount: String(initialData?.discount ?? "0"),
-    round_off: String(initialData?.round_off ?? "0"),
-    negotiation_amount:
-      initialData?.negotiation_amount !== undefined &&
-      initialData?.negotiation_amount !== null
-        ? String(initialData.negotiation_amount)
-        : "",
-    notes: initialData?.notes || "",
-    items:
-      Array.isArray(initialData?.items) && initialData.items.length > 0
-        ? initialData.items.map((it) => ({
-            product: it.product || "",
-            service_name: it.service_name || it.product_name || "",
-            description: it.description || "",
-            quantity: String(it.quantity ?? "1"),
-            hs_code: it.hs_code || "",
-            rate: String(it.rate ?? "0"),
-            vat_percentage: String(it.vat_percentage ?? "15"),
-          }))
-        : [createEmptyItem()],
-  });
+  const [form, setForm] = useState(() =>
+    buildForm(initialData, defaultCustomerId, today)
+  );
+
+  // Re-fill the form when the quotation being edited loads or changes.
+  // Keyed on the id so parent re-renders don't wipe what the user is typing.
+  useEffect(() => {
+    setForm(buildForm(initialData, defaultCustomerId, today));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialData?.id]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -522,7 +204,8 @@ const AddQuotation = ({
         ...next[index],
         product: productId,
         service_name: prod?.product_name || next[index].service_name,
-        description: prod?.description || prod?.product_name || next[index].description,
+        description:
+          prod?.description || prod?.product_name || next[index].description,
         hs_code: prod?.hsn_sac_code || next[index].hs_code,
         rate: prod?.selling_price ?? next[index].rate,
         vat_percentage: prod?.tax_rate ?? next[index].vat_percentage,
@@ -611,29 +294,12 @@ const AddQuotation = ({
 
   return (
     <Container>
-      <HeaderBar>
-        <BackChevronButton
-          type="button"
-          onClick={onCancel}
-          aria-label="Back to quotations"
-        >
-          <FiChevronLeft size={24} strokeWidth={2.2} />
-        </BackChevronButton>
-
-        <HeaderTitleGroup>
-          <HeaderTitle>
-            {isEdit ? "Edit Quotation" : "Generate New Quotation"}
-          </HeaderTitle>
-          <HeaderBreadcrumb>
-            <IoHomeOutline size={13} />
-            <span>Dashboard</span>
-            <span>›</span>
-            <span>Sales</span>
-            <span>›</span>
-            <span className="active">Quotations</span>
-          </HeaderBreadcrumb>
-        </HeaderTitleGroup>
-      </HeaderBar>
+      <ReusableHeader
+        title={isEdit ? "Edit Quotation" : "Generate New Quotation"}
+        breadcrumbs={["Dashboard", "Sales", "Quotations"]}
+        showBack
+        onBack={onCancel}
+      />
 
       <Card
         onSubmit={(e) => {
@@ -648,6 +314,7 @@ const AddQuotation = ({
               placeholder="Auto-generated if blank"
               value={form.quote_number}
               onChange={(e) => handleField("quote_number", e.target.value)}
+              readOnly={isEdit}
             />
           </FieldGroup>
 
@@ -997,13 +664,15 @@ const AddQuotation = ({
             <OutlineBtn type="button" onClick={onCancel} disabled={submitting}>
               CANCEL
             </OutlineBtn>
-            <OutlineBtn
-              type="button"
-              onClick={() => submitWithStatus("draft")}
-              disabled={submitting}
-            >
-              SAVE DRAFT
-            </OutlineBtn>
+            {!isEdit && (
+              <OutlineBtn
+                type="button"
+                onClick={() => submitWithStatus("draft")}
+                disabled={submitting}
+              >
+                SAVE DRAFT
+              </OutlineBtn>
+            )}
             <PrimaryBtn type="submit" disabled={submitting}>
               {submitting
                 ? "SAVING..."

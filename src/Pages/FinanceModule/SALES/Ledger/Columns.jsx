@@ -87,13 +87,13 @@ const TransactionTypeBadge = ({ type, children }) => {
 
 export const getCustomerLedgerColumns = () => [
     {
-        header: "Date",
-        accessor: "transaction_date",
-        render: (row) => formatDate(row.transaction_date),
+        header: "Customer",
+        accessor: "customer_name",
+        render: (row) => formatDate(row.customer_name),
     },
 
     {
-        header: "Type",
+        header: "Opening Balance",
         accessor: "transaction_type_display",
         render: (row) => (
             <TransactionTypeBadge type={row.transaction_type}>
@@ -103,45 +103,41 @@ export const getCustomerLedgerColumns = () => [
     },
 
     {
-        header: "Reference",
+        header: "Total Debit",
         accessor: "reference_number",
         render: (row) => row.reference_number || "—",
     },
 
     {
-        header: "Customer",
+        header: "Total Credit",
         accessor: "customer_name",
     },
 
     {
-        header: "Description",
+        header: "Closing Balance",
         accessor: "description",
         sortable: false,
         render: (row) => row.description || "—",
     },
 
     {
-        header: "Debit",
+        header: "Due Date",
         accessor: "debit",
         render: (row) => formatAmount(row.debit),
     },
 
     {
-        header: "Credit",
+        header: "Status",
         accessor: "credit",
         render: (row) => formatAmount(row.credit),
     },
 
-    {
-        header: "Balance",
-        accessor: "balance",
-        render: (row) => formatAmount(row.balance),
-    },
+   
 ];
 
 export const dashboardSummaryStats = (data = {}) => [
     {
-        title: "Total Receivable",
+        title: "Total Customer",
         count: formatAmount(data.total_receivable),
         icon: <FiDollarSign />,
         backgroundColor: "#EEF2FF",
@@ -165,7 +161,7 @@ export const dashboardSummaryStats = (data = {}) => [
     },
 
     {
-        title: "Total Credit",
+        title: "Total Outstanding",
         count: formatAmount(data.total_credit),
         icon: <FiCheckCircle />,
         backgroundColor: "#E0F3F7",
@@ -173,7 +169,7 @@ export const dashboardSummaryStats = (data = {}) => [
     },
 
     {
-        title: "Overdue",
+        title: "Overdue Accounts",
         count: formatAmount(data.overdue_amount),
         icon: <FiArrowUpCircle />,
         backgroundColor: "#FDECEC",

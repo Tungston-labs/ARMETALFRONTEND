@@ -210,7 +210,7 @@ export const PageContainer = styled.div`
     flex-direction: column;
     gap: 16px;
 
-    padding: 20px 24px;
+    padding: 20px;
     box-sizing: border-box;
 `;
 

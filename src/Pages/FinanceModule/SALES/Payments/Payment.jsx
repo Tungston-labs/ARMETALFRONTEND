@@ -469,13 +469,7 @@ const Payment = () => {
         onStatus={handleStatus}
         showStatus
         filters={[
-          {
-            key: "customer",
-            value: customer,
-            onChange: handleCustomer,
-            options: customerOptions,
-            placeholder: "All Customer",
-          },
+          
           {
             key: "paymentType",
             value: paymentType,

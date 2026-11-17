@@ -267,9 +267,7 @@ const FinanceRoutes = () => {
 
       {/* <Route path="Quotation-List" element={<QuotationsList />} /> */}
       <Route path="sales/add-Quotation" element={<AddQuotation />} />
-
-
-
+       <Route path="sales/edit-Quotation/:id" element={<AddQuotation />} />
       <Route path="sales/Quotationlist" element={<QuotationsList />} />
 
       {/* =====================================================

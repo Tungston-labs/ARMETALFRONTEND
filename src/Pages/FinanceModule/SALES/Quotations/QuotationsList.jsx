@@ -431,9 +431,8 @@ const QuotationsList = () => {
         </HeaderActionsRow>
       </ReusableHeader>
 
-      <CompactStatsWrapper>
         <StatsCards cards={quotationCards} loading={loading} />
-      </CompactStatsWrapper>
+
 
       {error && (
         <div role="alert" style={{ margin: "12px 0", color: "#b42318", fontSize: 13 }}>

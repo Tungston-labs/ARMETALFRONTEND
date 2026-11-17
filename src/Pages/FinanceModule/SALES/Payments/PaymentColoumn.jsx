@@ -1,7 +1,13 @@
 import React from "react";
 import { FiEye } from "react-icons/fi";
 import Paymentactions from "./action/Paymentaction";
-
+import {
+  FiDollarSign,
+  FiCalendar,
+  FiCreditCard,
+  FiAlertCircle,
+  FiTrendingUp,
+} from "react-icons/fi";
 /* =========================================================
    FORMAT STATUS LABEL
 ========================================================= */
@@ -171,37 +177,37 @@ const getStatusColor = (status) => {
 
 export const buildPaymentStats = (kpi = {}) => [
   {
-    title: "Total Collections",
+    title: "Total Payments",
     count: formatCurrency(kpi.totalCollections),
-    icon: <span />,
+    icon: <FiDollarSign />,
     backgroundColor: "#e8f8f0",
     iconColor: "#008000",
   },
   {
-    title: "This Month Collections",
+    title: "Amount Received",
     count: formatCurrency(kpi.thisMonthCollections),
-    icon: <span />,
+    icon: <FiCalendar />,
     backgroundColor: "#e9efff",
     iconColor: "#3152b8",
   },
   {
-    title: "Outstanding Receivables",
+    title: "This Month Collection",
     count: formatCurrency(kpi.outstandingReceivables),
-    icon: <span />,
+    icon: <FiCreditCard />,
     backgroundColor: "#fff3df",
     iconColor: "#f59e0b",
   },
   {
-    title: "Overdue Receivables",
+    title: "Partially Paid Transaction",
     count: formatCurrency(kpi.overdueReceivables),
-    icon: <span />,
+    icon: <FiAlertCircle />,
     backgroundColor: "#ffe7e7",
     iconColor: "#ef4444",
   },
   {
-    title: "Collection Rate",
+    title: "Fully Paid Transaction",
     count: `${Number(kpi.collectionRate || 0)}%`,
-    icon: <span />,
+    icon: <FiTrendingUp />,
     backgroundColor: "#e5f6f8",
     iconColor: "#008000",
   },

@@ -6,7 +6,7 @@ import ReusableFilter from "../../../../Components/ReusableTable/ReusableFilter"
 import ReusableHeader from "../../../../Components/ReusableTable/ReusableHeader";
 
 import StatsCards from "../../../../Components/StatsCards/StatsCards";
-import AddLedgerModal from "./modal/AddNewLedger";
+// import AddLedgerModal from "./modal/AddNewLedger";
 
 import {
     DateInput,
@@ -78,8 +78,8 @@ const CustomerLedger = () => {
             <ReusableHeader
                 title="Customer Ledger"
                 breadcrumbs={["Sales", "Customer Ledger"]}
-                buttonText="+ NEW JOURNAL ENTRY"
-                onButtonClick={handleAddLedger}
+                // buttonText="+ NEW JOURNAL ENTRY"
+                // onButtonClick={handleAddLedger}
             >
                 <DateRangeWrapper>
                     <DatePickerContainer>
@@ -138,22 +138,22 @@ const CustomerLedger = () => {
                 statuses={statusOptions}
                 onStatus={handleStatusChange}
                 showStatus
-                filters={[
-                    {
-                        key: "transactionType",
-                        value: transactionType,
-                        onChange: handleTransactionTypeChange,
-                        options: transactionTypeOptions,
-                        placeholder: "All Transaction Types",
-                    },
-                    {
-                        key: "customer",
-                        value: customer,
-                        onChange: handleCustomerChange,
-                        options: customerOptions,
-                        placeholder: "All Customers",
-                    },
-                ]}
+                // filters={[
+                //     {
+                //         key: "transactionType",
+                //         value: transactionType,
+                //         onChange: handleTransactionTypeChange,
+                //         options: transactionTypeOptions,
+                //         placeholder: "All Transaction Types",
+                //     },
+                //     {
+                //         key: "customer",
+                //         value: customer,
+                //         onChange: handleCustomerChange,
+                //         options: customerOptions,
+                //         placeholder: "All Customers",
+                //     },
+                // ]}
             />
 
             <ReusableTable
@@ -201,14 +201,14 @@ const CustomerLedger = () => {
                 onPageChange={setCustomerSummaryCurrentPage}
             /> */}
 
-            {/* Modal */}
-            <AddLedgerModal
+     
+            {/* <AddLedgerModal
                 isOpen={isLedgerModalOpen}
                 onClose={handleCloseLedger}
                 onSave={handleSaveLedger}
                 customerOptions={customerOptions}
                 saving={createLoading}
-            />
+            /> */}
         </div>
     );
 };
