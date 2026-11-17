@@ -1,3 +1,5 @@
+import { formatDate } from "../../../../../utils/Formatdate";
+
 export const ordersColumns = [
   {
     header: "Order No",
@@ -12,12 +14,12 @@ export const ordersColumns = [
   {
     header: "Order Date",
     accessor: "order_date",
-    render: (row) => row.order_date || "-",
+    render: (row) => formatDate(row.order_date || "-"),
   },
   {
     header: "Delivery Date",
     accessor: "delivery_date",
-    render: (row) => row.delivery_date || "-",
+    render: (row) => formatDate(row.delivery_date || "-"),
   },
   {
     header: "Order Amount",

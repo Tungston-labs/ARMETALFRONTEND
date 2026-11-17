@@ -25,7 +25,7 @@ export const FormGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 20px 25px;
-
+margin-bottom: 15px;
   @media (max-width: 1100px) {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
@@ -47,10 +47,11 @@ export const FormGroup = styled.div`
 `;
 
 export const Label = styled.label`
-  font-size: 12px;
-  font-weight: 500;
-  margin-bottom: 10px;
-  color: #111;
+    margin-bottom: 7px;
+    font-family: "Poppins", sans-serif;
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 18px;
 `;
 
 const fieldStyles = `
@@ -81,16 +82,72 @@ const fieldStyles = `
 `;
 
 export const Input = styled.input`
-  ${fieldStyles}
+  width: 100%;
+    height: 38px;
+
+    box-sizing: border-box;
+
+    border: 1px solid #e2e5ea;
+    border-radius: 5px;
+
+    padding: 0 12px;
+
+    background: #ffffff;
+
+    color: #333333;
+
+    font-family: "Poppins", sans-serif;
+    font-size: 13px;
+    font-weight: 400;
+
+    outline: none;
+
+    transition: border-color 0.2s ease;
+
+    &::placeholder {
+        color: #9ca3af;
+    }
+
+    &:focus {
+        border-color: #3049a3;
+    }
 `;
 
 export const Select = styled.select`
-  ${fieldStyles}
+  width: 100%;
+    height: 38px;
+
+    box-sizing: border-box;
+
+    border: 1px solid #e2e5ea;
+    border-radius: 5px;
+
+    padding: 0 12px;
+
+    background: #ffffff;
+
+    color: #333333;
+
+    font-family: "Poppins", sans-serif;
+    font-size: 13px;
+    font-weight: 400;
+
+    outline: none;
+
+    transition: border-color 0.2s ease;
+
+    &::placeholder {
+        color: #9ca3af;
+    }
+
+    &:focus {
+        border-color: #3049a3;
+    }
   cursor: pointer;
 `;
 
 export const PreviewBanner = styled.div`
-  margin-top: 18px;
+  margin-top: 20px;
   padding: 11px 12px;
   background: #fff4e9;
   border: 1px solid #f0ddcb;
@@ -110,9 +167,17 @@ export const ItemsSection = styled.div`
 `;
 
 export const ItemsTitle = styled.h4`
-  font-size: 14px;
-  font-weight: 600;
-  margin: 0 0 15px;
+margin: 0;
+    font-family: "Poppins", sans-serif;
+    font-size: 16px;
+    font-weight: 500;
+    line-height: 20px;
+    color: #111111;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+margin-bottom: 12px;
+  
 `;
 
 export const TableWrapper = styled.div`

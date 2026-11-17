@@ -1,8 +1,6 @@
 import React, { useState } from "react";
 import {
   PageWrapper,
-  SectionTitle,
-  SectionDescription,
   FormGrid,
   FormGroup,
   Label,
@@ -26,6 +24,7 @@ import {
   CancelButton,
   ApprovalButton,
 } from "./RecurringBill.styles";
+import ReusableHeader from "../../../../../Components/ReusableTable/ReusableHeader";
 
 const RecurringBill = () => {
   const [form, setForm] = useState({
@@ -195,10 +194,11 @@ const RecurringBill = () => {
 
   return (
     <PageWrapper>
-      <SectionTitle>Recurring Bill Information</SectionTitle>
-      <SectionDescription>
-        Enable recurring option if this client will have recurring invoices.
-      </SectionDescription>
+        <ReusableHeader
+        title={"New Recurring Bill"}
+              breadcrumbs={["Sales", "Recurring Bill"]}
+              showBack
+            />
 
       <FormGrid>{fields.map(renderField)}</FormGrid>
 

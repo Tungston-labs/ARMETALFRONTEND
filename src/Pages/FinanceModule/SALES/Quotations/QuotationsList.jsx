@@ -453,7 +453,6 @@ const QuotationsList = () => {
         showDate={false}
       />
 
-      <CompactTableWrapper>
         <ReusableTable
           columns={columns}
           data={rows}
@@ -461,8 +460,6 @@ const QuotationsList = () => {
           emptyMessage="No quotations found"
           autoLayout
         />
-      </CompactTableWrapper>
-
       <ReusablePagination
         currentPage={currentPage}
         totalPages={Math.max(1, pagination.totalPages || 1)}

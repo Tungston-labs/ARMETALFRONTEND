@@ -1,5 +1,7 @@
+import { formatDate } from "../../../../../utils/Formatdate";
+
 export const ledgerColumns = [
-  { header: "Date", accessor: "transaction_date", render: (row) => row.transaction_date },
+  { header: "Date", accessor: "transaction_date", render: (row) => formatDate(row.transaction_date) },
   { header: "Document NO", accessor: "reference_number", render: (row) => row.reference_number || "-" },
   { header: "Description", accessor: "description", render: (row) => row.description || "-" },
   { header: "Type", accessor: "transaction_type_display", render: (row) => row.transaction_type_display || "-" },

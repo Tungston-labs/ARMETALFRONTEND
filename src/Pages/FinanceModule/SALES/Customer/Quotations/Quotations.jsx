@@ -326,14 +326,13 @@ const Quotations = () => {
         }
       />
 
-      <CompactCustomerTableWrapper>
+
         <ReusableTable
           columns={columns}
           data={quotations || []}
           loading={quotationsLoading}
           autoLayout
         />
-      </CompactCustomerTableWrapper>
 
       <ReusablePagination
         currentPage={currentPage}
