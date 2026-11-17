@@ -9,28 +9,8 @@ import {
 } from "react-icons/fi";
 
 import CreditAction from "./action/CreditAction";
+import { formatDate } from "../../../../utils/Formatdate";
 
-/* =========================================================
-   DATE
-========================================================= */
-
-const formatCreditDate = (date) => {
-  if (!date) {
-    return "-";
-  }
-
-  const parsedDate = new Date(date);
-
-  if (Number.isNaN(parsedDate.getTime())) {
-    return date;
-  }
-
-  return parsedDate.toLocaleDateString("en-US", {
-    month: "long",
-    day: "numeric",
-    year: "numeric",
-  });
-};
 
 /* =========================================================
    AMOUNT
@@ -121,7 +101,7 @@ export const creditNoteColumns = (onDelete) => [
     header: "Issue Date",
     accessor: "issueDate",
 
-    render: (row) => formatCreditDate(row?.issue_date || row?.issueDate),
+    render: (row) => formatDate(row?.issue_date || row?.issueDate),
   },
 
   {

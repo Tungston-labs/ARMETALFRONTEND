@@ -206,7 +206,8 @@ const Payment = () => {
     ===================================================== */
 
   const stats = useMemo(() => buildPaymentStats(kpi), [kpi]);
-
+const totalRecords =
+  pagination.totalItems ?? pagination.total ?? payments.length;
   /* =====================================================
        START DATE
     ===================================================== */
@@ -493,12 +494,13 @@ const Payment = () => {
         ]}
       />
 
-      <ReusableTable columns={columns} data={payments} loading={loading} />
+      <ReusableTable columns={columns} data={payments} loading={loading}/>
 
       <ReusablePagination
         currentPage={pagination.currentPage || currentPage}
         totalPages={pagination.totalPages || 1}
         onPageChange={setCurrentPage}
+         totalRecords={totalRecords}
       />
 
       <PaymentModal

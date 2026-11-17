@@ -113,8 +113,8 @@ const AddingInvoice = () => {
   const pageTitle = isViewMode
     ? "Invoice Details"
     : isEditMode
-    ? "Edit Invoice"
-    : "Generate New Invoice";
+      ? "Edit Invoice"
+      : "Generate New Invoice";
 
   if (detailLoading && isEditMode && !selectedInvoice) {
     return (
@@ -161,13 +161,13 @@ const AddingInvoice = () => {
           {typeof saveError === "string"
             ? saveError
             : saveError?.detail ||
-              saveError?.message ||
-              (typeof saveError === "object" &&
-                Object.values(saveError)
-                  .flat()
-                  .filter((v) => typeof v === "string")
-                  .join(" ")) ||
-              "Something went wrong saving this invoice."}
+            saveError?.message ||
+            (typeof saveError === "object" &&
+              Object.values(saveError)
+                .flat()
+                .filter((v) => typeof v === "string")
+                .join(" ")) ||
+            "Something went wrong saving this invoice."}
         </div>
       )}
 
@@ -200,8 +200,8 @@ const AddingInvoice = () => {
               </>
             )}
           </FormGroup>
- <FormGroup>
-            <Label>Delivery Note REFERENCE</Label>
+          <FormGroup>
+            <Label>DELIVERY NOTE REFERENCE</Label>
             {isEditMode ? (
               <Input value={salesOrderRef} readOnly style={lockedStyle} />
             ) : (

@@ -8,6 +8,7 @@ import {
   FiAlertCircle,
   FiTrendingUp,
 } from "react-icons/fi";
+import { formatDate } from "../../../../utils/Formatdate";
 /* =========================================================
    FORMAT STATUS LABEL
 ========================================================= */
@@ -40,25 +41,6 @@ export const formatCurrency = (value) => {
   })}`;
 };
 
-/* =========================================================
-   FORMAT PAYMENT DATE
-========================================================= */
-
-const formatPaymentDate = (value) => {
-  if (!value) return "-";
-
-  const date = new Date(value);
-
-  if (Number.isNaN(date.getTime())) {
-    return value;
-  }
-
-  return date.toLocaleDateString("en-US", {
-    month: "long",
-    day: "numeric",
-    year: "numeric",
-  });
-};
 
 /* =========================================================
    CUSTOMER NAME
@@ -306,7 +288,7 @@ export const getPaymentColumns = ({ onInfo }) => [
   {
     header: "Payment Date",
     accessor: "payment_date",
-    render: (row) => formatPaymentDate(row.payment_date),
+    render: (row) => formatDate(row.payment_date),
   },
 
   {

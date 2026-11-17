@@ -6,6 +6,7 @@ import {
     FiCheckCircle,
     FiFileText,
 } from "react-icons/fi";
+import { formatDate } from "../../../../utils/Formatdate";
 
 // Format amount without currency symbol
 export const formatAmount = (value) =>
@@ -14,22 +15,6 @@ export const formatAmount = (value) =>
         maximumFractionDigits: 2,
     });
 
-// Format date as: Sep 28, 2026
-export const formatDate = (value) => {
-    if (!value) return "—";
-
-    const date = new Date(value);
-
-    if (isNaN(date.getTime())) {
-        return value;
-    }
-
-    return date.toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-        year: "numeric",
-    });
-};
 
 const TRANSACTION_TYPE_COLORS = {
     opening_balance: {
@@ -123,7 +108,7 @@ export const getCustomerLedgerColumns = () => [
     {
         header: "Due Date",
         accessor: "debit",
-        render: (row) => formatAmount(row.debit),
+        render: (row) => formatDate(row.debit),
     },
 
     {

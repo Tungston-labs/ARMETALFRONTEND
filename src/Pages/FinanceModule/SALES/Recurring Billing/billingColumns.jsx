@@ -1,3 +1,4 @@
+import { formatDate } from "../../../../utils/Formatdate";
 import { ToggleSwitch } from "./RecurringBilling.styles";
 import RecurringBillingAction from "./action/RecurringBillingAction"; 
 
@@ -5,10 +6,10 @@ export const getBillingColumns = ({ onToggleAutoSend, onDelete } = {}) => [
   { header: "Plan No", accessor: "contract_number", render: (row) => row.contract_number || "-" },
   { header: "Customer", accessor: "customer_name", render: (row) => row.customer_name || "-" },
   { header: "Frequency", accessor: "frequency", render: (row) => row.frequency || "-" },
-  { header: "Start Date", accessor: "start_date", render: (row) => row.start_date || "-" },
+  { header: "Start Date", accessor: "start_date", render: (row) => formatDate(row.start_date || "-") },
   { header: "Billing Cycle", accessor: "billing_cycle", render: (row) => row.billing_cycle || "-" },
-  { header: "Invoice Date", accessor: "invoice_date", render: (row) => row.invoice_date || "-" },
-  { header: "Next Invoice Date", accessor: "next_invoice_date", render: (row) => row.next_invoice_date || "-" },
+  { header: "Invoice Date", accessor: "invoice_date", render: (row) => formatDate(row.invoice_date || "-") },
+  { header: "Next Invoice Date", accessor: "next_invoice_date", render: (row) => formatDate(row.next_invoice_date || "-") },
   {
     header: "Amount",
     accessor: "monthly_amount",
