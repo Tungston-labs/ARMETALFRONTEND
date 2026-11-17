@@ -2,7 +2,6 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { FiDownload } from "react-icons/fi";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import styled from "styled-components";
 
 import ReusableHeader from "../../../../Components/ReusableTable/ReusableHeader";
 import ReusableFilter from "../../../../Components/ReusableTable/ReusableFilter";
@@ -31,24 +30,6 @@ import {
 } from "../../../../Redux/finance/Sales/deliveryNotesSlice";
 import { fetchWarehouses } from "../../../../Redux/finance/Product/warehouseSlice";
 import { getCustomers as getCustomerList } from "../../../../Redux/finance/Sales/CustomerSlice";
-
-const ClearFilterBtn = styled.button`
-  height: 38px;
-  padding: 0 18px;
-  background: #3b5cb8;
-  color: #ffffff;
-  border: none;
-  border-radius: 4px;
-  font-size: 13px;
-  font-weight: 500;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: background 0.15s ease;
-
-  &:hover {
-    background: #2e49a5;
-  }
-`;
 
 const getCurrentMonthRange = () => {
   const now = new Date();
@@ -200,6 +181,7 @@ const DeliveryNotes = () => {
     [navigate],
   );
 
+  // eslint-disable-next-line no-unused-vars
   const handleStatusChange = useCallback(
     async (row, nextStatus) => {
       const id = row?.id ?? row?.pk;
@@ -327,22 +309,11 @@ const DeliveryNotes = () => {
     [handleDelete, handleOrderRefClick],
   );
 
-  const clearFilters = () => {
-    setSearch("");
-    setStatus("");
-    setCustomer("");
-    setWarehouse("");
-    setDateFilterChanged(false);
-    setStartDate(currentMonth.start);
-    setEndDate(currentMonth.end);
-    setCurrentPage(1);
-  };
-
   return (
     <div style={{ padding: 20 }}>
       <ReusableHeader
         title="Delivery Notes"
-        breadcrumbs={["Dashboard", "Sales", "Delivery Notes"]}
+        breadcrumbs={["Sales", "Delivery Notes"]}
         buttonText="+ Create Delivery Note"
         onButtonClick={() => navigate("/delivery/notes/add")}
       >
@@ -426,11 +397,6 @@ const DeliveryNotes = () => {
             placeholder: "Warehouse",
           },
         ]}
-        rightButton={
-          <ClearFilterBtn type="button" onClick={clearFilters}>
-            Clear Filter
-          </ClearFilterBtn>
-        }
       />
 
       {loading && <div style={{ padding: 20 }}>Loading delivery notes...</div>}

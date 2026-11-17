@@ -6,6 +6,7 @@ import {
   FiClock,
 } from "react-icons/fi";
 import DeliveryAction from "./Action/DeliveryAction";
+import { formatDate } from "../../../../utils/Formatdate";
 
 const value = (row, ...keys) => {
   for (const key of keys) {
@@ -17,13 +18,7 @@ const value = (row, ...keys) => {
 
 const dateLabel = (raw) => {
   if (!raw || raw === "-") return "--";
-  const date = new Date(raw);
-  if (Number.isNaN(date.getTime())) return raw;
-  return date.toLocaleDateString("en-US", {
-    month: "long",
-    day: "numeric",
-    year: "numeric",
-  });
+  return formatDate(raw) || "--";
 };
 
 const customerLabel = (row) => {
@@ -190,25 +185,19 @@ export const deliveryNoteColumns = (onDelete, onOrderRefClick) => [
     },
   },
   {
-    header: "Dispatch date",
-    accessor: "dispatch_date",
-    render: (row) =>
-      dateLabel(value(row, "dispatch_date", "dispatchDate")),
-  },
+  header: "Dispatch date",
+  accessor: "dispatch_date",
+  render: (row) => dateLabel(value(row, "dispatch_date", "dispatchDate")),
+},
+
   {
-    header: "Delivery date",
-    accessor: "expected_delivery_date",
-    render: (row) =>
-      dateLabel(
-        value(
-          row,
-          "expected_delivery_date",
-          "expectedDeliveryDate",
-          "delivery_date",
-          "deliveryDate",
-        ),
-      ),
-  },
+  header: "Delivery date",
+  accessor: "expected_delivery_date",
+  render: (row) =>
+    dateLabel(
+      value(row, "expected_delivery_date", "expectedDeliveryDate", "delivery_date", "deliveryDate"),
+    ),
+},
   {
     header: "Warehouse",
     accessor: "warehouse",

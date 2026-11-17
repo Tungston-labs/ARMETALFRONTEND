@@ -7,7 +7,6 @@ import {
   DeliveryNoteContainer,
   DeliveryNoteForm,
   FormGrid,
-  FormGridThree,
   FormGroup,
   Label,
   Input,
@@ -124,6 +123,7 @@ const Createdeliverynotes = () => {
   const customerState = useSelector(
     (state) => state?.customer?.customers ?? [],
   );
+  // eslint-disable-next-line no-unused-vars
   const productState = useSelector((state) => state?.product?.products ?? []);
   const { selectedDeliveryNote, detailsLoading, submitting, submitError } =
     useSelector((state) => state?.deliveryNotes ?? {});
@@ -141,17 +141,13 @@ const Createdeliverynotes = () => {
     return Array.isArray(list) ? list : [];
   }, [customerState]);
 
-  const products = useMemo(() => {
-    const list = productState?.results ?? productState?.data ?? productState;
-    return Array.isArray(list) ? list : [];
-  }, [productState]);
-
   /* ---------- Form state ---------- */
   const [deliveryNoteNumber, setDeliveryNoteNumber] = useState("");
   const [dispatchDate, setDispatchDate] = useState(today());
   const [expectedDeliveryDate, setExpectedDeliveryDate] = useState(today());
   const [status, setStatus] = useState("Draft");
   const [customerId, setCustomerId] = useState("");
+  const [customerLabel, setCustomerLabel] = useState("");
   const [orderReference, setOrderReference] = useState("");
   const [selectedOrderId, setSelectedOrderId] = useState(null);
   const [warehouse, setWarehouse] = useState("");
@@ -165,21 +161,27 @@ const Createdeliverynotes = () => {
   );
   const currency = selectedCustomerObj?.currency || "SAR";
 
-  const orderOptions = useMemo(() => {
-    const list = Array.isArray(salesOrders) ? salesOrders : [];
-    if (!customerId) return list;
-    return list.filter((o) => {
-      const oCustId = o.customer?.id ?? o.customer_id ?? o.customer;
-      if (oCustId && String(oCustId) === String(customerId)) return true;
-      if (selectedCustomerObj?.customer_name && o.customer_name) {
-        return (
-          o.customer_name.toLowerCase().trim() ===
-          selectedCustomerObj.customer_name.toLowerCase().trim()
-        );
-      }
-      return false;
-    });
-  }, [salesOrders, customerId, selectedCustomerObj]);
+  const selectedOrderObj = useMemo(
+    () =>
+      (Array.isArray(salesOrders) ? salesOrders : []).find(
+        (o) => (o.so_number || o.order_number) === orderReference,
+      ),
+    [salesOrders, orderReference],
+  );
+
+  // Customer is derived from the selected order, so it is display-only.
+  const customerName =
+    selectedCustomerObj?.customer_name ||
+    selectedCustomerObj?.name ||
+    selectedOrderObj?.customer_name ||
+    customerLabel ||
+    "";
+
+  // All sales orders are selectable; the customer follows the order.
+  const orderOptions = useMemo(
+    () => (Array.isArray(salesOrders) ? salesOrders : []),
+    [salesOrders],
+  );
 
   /* ---------- Load initial data ---------- */
   useEffect(() => {
@@ -225,6 +227,13 @@ const Createdeliverynotes = () => {
         ? (row.customer.id ?? row.customer.pk)
         : (row.customer_id ?? row.customer);
     setCustomerId(customer == null ? "" : String(customer));
+    setCustomerLabel(
+      row.customer_name ||
+        (row.customer && typeof row.customer === "object"
+          ? row.customer.customer_name || row.customer.name
+          : "") ||
+        "",
+    );
 
     const orderRef = String(
       first(
@@ -292,6 +301,9 @@ const Createdeliverynotes = () => {
     setOrderReference(selectedRef);
     if (!selectedRef) {
       setSelectedOrderId(null);
+      setCustomerId("");
+      setCustomerLabel("");
+      setWarehouse("");
       setItems([]);
       return;
     }
@@ -316,6 +328,7 @@ const Createdeliverynotes = () => {
         );
         if (foundCust) setCustomerId(String(foundCust.id));
       }
+      setCustomerLabel(matchedOrder.customer_name || "");
       if (matchedOrder.warehouse) {
         setWarehouse(String(matchedOrder.warehouse));
       }
@@ -327,6 +340,7 @@ const Createdeliverynotes = () => {
         const prefill = await getDeliveryNotePrefill(matchedOrder.id);
         if (prefill) {
           if (prefill.customer) setCustomerId(String(prefill.customer));
+          if (prefill.customer_name) setCustomerLabel(prefill.customer_name);
           if (prefill.warehouse) setWarehouse(String(prefill.warehouse));
           if (Array.isArray(prefill.items) && prefill.items.length) {
             setItems(
@@ -439,15 +453,16 @@ const Createdeliverynotes = () => {
   /* ---------- Submit Handler ---------- */
   const handleCreate = async () => {
     setFormError("");
-    if (!customerId) return setFormError("Please select a customer.");
+    if (!orderReference.trim())
+      return setFormError("Please select an order reference.");
+    if (!customerId)
+      return setFormError("The selected order has no customer linked.");
     if (!dispatchDate || !expectedDeliveryDate)
       return setFormError("Please select both dispatch and delivery dates.");
     if (expectedDeliveryDate < dispatchDate)
       return setFormError(
         "Expected delivery date cannot be earlier than dispatch date.",
       );
-    if (!orderReference.trim())
-      return setFormError("Please select an order reference.");
     if (!warehouse) return setFormError("Please select a warehouse.");
 
     if (!items.length) {
@@ -491,13 +506,8 @@ const Createdeliverynotes = () => {
       };
     });
 
+    // The DN number is generated by the backend, so it is never sent.
     const payload = {
-      ...(deliveryNoteNumber.trim()
-        ? {
-            dn_number: deliveryNoteNumber.trim(),
-            delivery_note_number: deliveryNoteNumber.trim(),
-          }
-        : {}),
       sales_order: selectedOrderId || undefined,
       so_ref: orderReference.trim(),
       sales_order_reference: orderReference.trim(),
@@ -561,14 +571,14 @@ const Createdeliverynotes = () => {
       {displayedError && <div className="form-error">{displayedError}</div>}
 
       <DeliveryNoteForm>
-        {/* ROW 1: 4 Columns matching UI */}
         <FormGrid>
           <FormGroup>
             <Label>DELIVERY NOTE NUMBER</Label>
             <Input
               value={deliveryNoteNumber}
-              onChange={(e) => setDeliveryNoteNumber(e.target.value)}
-              placeholder="DN 0123"
+              placeholder="Auto-generated after save"
+              readOnly
+              disabled
             />
           </FormGroup>
 
@@ -614,52 +624,6 @@ const Createdeliverynotes = () => {
               <FiChevronDown />
             </SelectWrapper>
           </FormGroup>
-        </FormGrid>
-
-        {/* ROW 2: 3 Columns matching UI */}
-        <FormGridThree>
-          <FormGroup>
-            <Label>CUSTOMER</Label>
-            <SelectWrapper>
-              <Select
-                value={customerId}
-                onChange={(e) => {
-                  const newCustId = e.target.value;
-                  setCustomerId(newCustId);
-                  if (orderReference) {
-                    const currentOrder = (Array.isArray(salesOrders) ? salesOrders : []).find(
-                      (o) => (o.so_number || o.order_number) === orderReference,
-                    );
-                    const oCustId =
-                      currentOrder?.customer?.id ??
-                      currentOrder?.customer_id ??
-                      currentOrder?.customer;
-                    if (newCustId && oCustId && String(oCustId) !== String(newCustId)) {
-                      setOrderReference("");
-                      setSelectedOrderId(null);
-                      setItems([]);
-                    }
-                  }
-                }}
-              >
-                <option value="">Select Customer</option>
-                {customers.map((c, index) => {
-                  const idVal = first(c, ["id", "pk"], index);
-                  const label = first(
-                    c,
-                    ["customer_name", "name", "company_name"],
-                    `Customer ${index + 1}`,
-                  );
-                  return (
-                    <option key={idVal} value={idVal}>
-                      {label}
-                    </option>
-                  );
-                })}
-              </Select>
-              <FiChevronDown />
-            </SelectWrapper>
-          </FormGroup>
 
           <FormGroup>
             <Label>ORDER REFERENCE</Label>
@@ -667,6 +631,7 @@ const Createdeliverynotes = () => {
               <Select
                 value={orderReference}
                 onChange={(e) => handleOrderChange(e.target.value)}
+                disabled={isEditMode}
               >
                 <option value="">Select Order Reference</option>
                 {orderOptions.map((order) => {
@@ -689,6 +654,16 @@ const Createdeliverynotes = () => {
           </FormGroup>
 
           <FormGroup>
+            <Label>CUSTOMER</Label>
+            <Input
+              value={customerName}
+              placeholder="Auto-filled from order reference"
+              readOnly
+              disabled
+            />
+          </FormGroup>
+
+          <FormGroup>
             <Label>WAREHOUSE / DISPATCH LOCATION</Label>
             <SelectWrapper>
               <Select
@@ -705,7 +680,7 @@ const Createdeliverynotes = () => {
               <FiChevronDown />
             </SelectWrapper>
           </FormGroup>
-        </FormGridThree>
+        </FormGrid>
 
         {/* ITEMS SECTION */}
         <ItemsTitle>ITEMS TO DELIVER</ItemsTitle>

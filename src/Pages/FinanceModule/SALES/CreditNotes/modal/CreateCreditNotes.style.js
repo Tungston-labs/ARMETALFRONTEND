@@ -3,60 +3,97 @@ import styled from "styled-components";
 export const InvoiceContainer = styled.div`
   width: 100%;
   min-height: 100%;
-  background: #ffffff;
+  padding: 24px;
   box-sizing: border-box;
+
+  background: #ffffff;
+  border: 1px solid #eeeeee;
+  border-radius: 6px;
 `;
 
 export const InvoiceForm = styled.div`
   width: 100%;
-  box-sizing: border-box;
+  margin-top: 22px;
 
-  padding: 8px 51px 35px;
+  /* Notes & reason detail block (plain textarea used in the component) */
+  .credit-note-notes {
+    width: 100%;
+    margin-top: 28px;
 
-  background: #ffffff;
+    label {
+      margin: 0 0 10px;
+      font-family: "Poppins", sans-serif;
+      font-size: 16px;
+      font-weight: 500;
+      line-height: 100%;
+      color: #111111;
+    }
 
-  @media (max-width: 1100px) {
-    padding: 8px 30px 30px;
-  }
+    textarea {
+      width: 100%;
+      min-height: 80px;
+      box-sizing: border-box;
+      padding: 10px 12px;
+      resize: vertical;
 
-  @media (max-width: 768px) {
-    padding: 8px 20px 30px;
+      border: 1px solid #e2e5ea;
+      border-radius: 5px;
+
+      background: #ffffff;
+      color: #4b5563;
+
+      font-family: "Poppins", sans-serif;
+      font-size: 12px;
+      line-height: 18px;
+
+      outline: none;
+
+      &::placeholder {
+        color: #9ca3af;
+      }
+
+      &:focus {
+        border-color: #3049a3;
+      }
+    }
   }
 `;
 
 export const SectionTitle = styled.h3`
   margin: 0;
-  padding: 0;
 
-  font-size: 12px;
-  font-weight: 600;
-  line-height: 18px;
+  font-family: "Poppins", sans-serif;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 20px;
 
   color: #111111;
 
-  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  svg {
+    width: 15px;
+    height: 15px;
+  }
 `;
 
+/* =========================
+   FORM
+========================= */
+
 export const FormGrid = styled.div`
-  display: grid;
-
-  grid-template-columns: repeat(
-    4,
-    minmax(0, 1fr)
-  );
-
-  column-gap: 25px;
-  row-gap: 13px;
-
   width: 100%;
 
-  box-sizing: border-box;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+
+  column-gap: 24px;
+  row-gap: 10px;
 
   @media (max-width: 1000px) {
-    grid-template-columns: repeat(
-      2,
-      minmax(0, 1fr)
-    );
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   @media (max-width: 600px) {
@@ -66,10 +103,10 @@ export const FormGrid = styled.div`
 
 export const FormGroup = styled.div`
   width: 100%;
-
   min-width: 0;
 
-  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
 
   &.remaining-balance {
     input {
@@ -87,80 +124,80 @@ export const FormGroup = styled.div`
 `;
 
 export const Label = styled.label`
-  display: block;
+  margin-bottom: 7px;
 
-  margin: 0 0 5px;
-
-  color: #111111;
-
-  font-size: 12px;
-  font-weight: 500;
-  line-height: 17px;
+  font-family: "Poppins", sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 18px;
 `;
 
 export const Input = styled.input`
   width: 100%;
-
-  height: 35px;
-
-  padding: 0 16px;
+  height: 38px;
 
   box-sizing: border-box;
 
-  border: 1px solid #e6e3e3;
+  border: 1px solid #e2e5ea;
+  border-radius: 5px;
 
-  border-radius: 4px;
+  padding: 0 12px;
 
   background: #ffffff;
 
-  color: #777777;
+  color: #333333;
 
-  font-family: inherit;
-
-  font-size: 12px;
-
+  font-family: "Poppins", sans-serif;
+  font-size: 13px;
   font-weight: 400;
 
   outline: none;
 
-  transition:
-    border-color 0.2s ease,
-    box-shadow 0.2s ease;
+  transition: border-color 0.2s ease;
 
   &::placeholder {
-    color: #999999;
-
-    opacity: 1;
+    color: #9ca3af;
   }
 
   &:focus {
-    border-color: #b8b8b8;
-
-    box-shadow: none;
+    border-color: #3049a3;
   }
 
-  &[type="date"] {
-    color: #777777;
+  &:disabled {
+    background: #f9fafb;
+    cursor: not-allowed;
   }
 `;
 
+/* =========================
+   DATE
+========================= */
+
+export const CalendarInput = styled.div`
+  position: relative;
+  width: 100%;
+`;
+
+/* =========================
+   SELECT
+========================= */
+
 export const SelectWrapper = styled.div`
   position: relative;
-
   width: 100%;
 
   svg {
     position: absolute;
 
+    right: 13px;
     top: 50%;
-    right: 15px;
-
-    width: 15px;
-    height: 15px;
 
     transform: translateY(-50%);
 
-    color: #111111;
+    width: 16px;
+    height: 16px;
+
+    color: #4b5563;
 
     pointer-events: none;
   }
@@ -168,357 +205,420 @@ export const SelectWrapper = styled.div`
 
 export const Select = styled.select`
   width: 100%;
-
-  height: 35px;
-
-  padding: 0 38px 0 16px;
+  height: 40px;
 
   box-sizing: border-box;
 
-  border: 1px solid #e6e3e3;
+  border: 1px solid #e2e5ea;
+  border-radius: 5px;
 
-  border-radius: 4px;
+  padding: 0 40px 0 12px;
 
   background: #ffffff;
 
-  color: #777777;
+  color: #4b5563;
 
-  font-family: inherit;
-
-  font-size: 12px;
-
+  font-family: "Poppins", sans-serif;
+  font-size: 13px;
   font-weight: 400;
 
-  outline: none;
-
   appearance: none;
-
-  -webkit-appearance: none;
-
-  -moz-appearance: none;
+  outline: none;
 
   cursor: pointer;
 
   &:focus {
-    border-color: #b8b8b8;
+    border-color: #3049a3;
+  }
+
+  &:disabled {
+    background: #f9fafb;
+    cursor: not-allowed;
   }
 `;
 
-export const CalendarInput = styled.div`
-  position: relative;
-
-  width: 100%;
-
-  input {
-    width: 100%;
-  }
-`;
+/* =========================
+   ITEMS HEADER
+========================= */
 
 export const InvoiceItemsHeader = styled.div`
-  display: flex;
-
-  align-items: center;
-
-  justify-content: space-between;
-
   width: 100%;
 
-  margin-top: 25px;
-
+  margin-top: 30px;
   margin-bottom: 12px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 `;
+
+export const AddItemButton = styled.button`
+  height: 36px;
+
+  padding: 0 16px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  gap: 7px;
+
+  border: none;
+  border-radius: 4px;
+
+  background: #f48211;
+  color: #ffffff;
+
+  font-family: "Poppins", sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+
+  cursor: pointer;
+
+  transition: background 0.2s ease;
+
+  svg {
+    width: 15px;
+    height: 15px;
+  }
+
+  &:hover {
+    background: #f48211;
+  }
+`;
+
+/* =========================
+   TABLE (7 columns)
+========================= */
 
 export const InvoiceTableWrapper = styled.div`
   width: 100%;
 
   overflow-x: auto;
 
-  border-bottom: 1px solid #eeeeee;
+  border: 1px solid #e5e7eb;
+  border-radius: 5px;
 
-  box-sizing: border-box;
-
-  &::-webkit-scrollbar {
-    height: 5px;
-  }
-
-  &::-webkit-scrollbar-thumb {
-    background: #d8d8d8;
-
-    border-radius: 5px;
-  }
+  scrollbar-width: thin;
 `;
 
 export const InvoiceTable = styled.table`
   width: 100%;
-
   min-width: 850px;
 
   border-collapse: collapse;
-
   table-layout: fixed;
 
-  font-family: inherit;
-
   thead {
-    background: #3149a0;
+    background: #2c469f;
   }
 
   th {
-    height: 35px;
-
-    padding: 0 8px;
+    height: 42px;
+    padding: 0 9px;
 
     color: #ffffff;
 
-    font-size: 12px;
-
+    font-family: "Poppins", sans-serif;
+    font-size: 14px;
     font-weight: 600;
+    line-height: 100%;
+    letter-spacing: 0%;
 
     text-align: center;
-
-    vertical-align: middle;
-
     white-space: nowrap;
   }
 
-  th:nth-child(1) {
-    width: 7%;
-  }
+  td {
+    height: 48px;
 
-  th:nth-child(2) {
-    width: 17%;
-  }
-
-  th:nth-child(3) {
-    width: 15%;
-  }
-
-  th:nth-child(4) {
-    width: 16%;
-  }
-
-  th:nth-child(5) {
-    width: 15%;
-  }
-
-  th:nth-child(6) {
-    width: 15%;
-  }
-
-  th:nth-child(7) {
-    width: 15%;
-  }
-
-  tbody tr {
-    height: 40px;
-  }
-
-  tbody td {
     padding: 5px 8px;
 
-    color: #777777;
+    border-bottom: 1px solid #eeeeee;
 
-    font-size: 12px;
+    color: #555555;
 
-    font-weight: 400;
-
-    text-align: center;
+    font-family: "Poppins", sans-serif;
+    font-size: 11px;
 
     vertical-align: middle;
-
-    border-bottom: 0;
   }
 
-  tbody td:first-child {
-    color: #777777;
+  tbody tr:last-child td {
+    border-bottom: none;
   }
 
-  tbody input {
+  th:nth-child(1),
+  td:nth-child(1) {
+    width: 7%;
+    text-align: center;
+  }
+
+  th:nth-child(2),
+  td:nth-child(2) {
+    width: 20%;
+  }
+
+  th:nth-child(3),
+  td:nth-child(3) {
+    width: 14%;
+  }
+
+  th:nth-child(4),
+  td:nth-child(4) {
+    width: 15%;
+  }
+
+  th:nth-child(5),
+  td:nth-child(5) {
+    width: 15%;
+  }
+
+  th:nth-child(6),
+  td:nth-child(6) {
+    width: 14%;
+  }
+
+  th:nth-child(7),
+  td:nth-child(7) {
+    width: 15%;
+  }
+
+  input {
     width: 100%;
-
-    max-width: 100%;
-
-    height: 26px;
-
-    padding: 0 8px;
+    height: 32px;
 
     box-sizing: border-box;
 
-    border: 1px solid #e5e5e5;
+    padding: 0 8px;
 
-    border-radius: 0;
+    border: 1px solid #e3e5e8;
+    border-radius: 3px;
 
     background: #ffffff;
 
-    color: #777777;
+    color: #4b5563;
 
-    font-family: inherit;
-
-    font-size: 12px;
+    font-family: "Poppins", sans-serif;
+    font-size: 11px;
 
     outline: none;
 
-    text-align: center;
+    &:focus {
+      border-color: #3049a3;
+    }
+
+    &::placeholder {
+      color: #9ca3af;
+    }
+
+    &:read-only {
+      background: #f9fafb;
+    }
   }
 
-  tbody td:nth-child(2) input {
-    text-align: left;
-  }
-
-  tbody td:nth-child(7) input {
+  /* Credit Total column stays highlighted */
+  td:nth-child(7) input {
     color: #ef1d1d;
-
     font-weight: 500;
-  }
-
-  tbody input:focus {
-    border-color: #c8c8c8;
   }
 `;
 
-export const PaymentSection = styled.div`
+export const DeleteButton = styled.button`
+  width: 28px;
+  height: 28px;
+
+  margin: 0 auto;
+
   display: flex;
+  align-items: center;
+  justify-content: center;
 
+  border: 1px solid #ff3b30;
+  border-radius: 50%;
+
+  background: #ffffff;
+  color: #ff3b30;
+
+  cursor: pointer;
+
+  transition: all 0.2s ease;
+
+  svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  &:hover {
+    background: #fff1f0;
+  }
+`;
+
+/* =========================
+   PAYMENT / SUMMARY SECTION
+========================= */
+
+export const PaymentSection = styled.div`
   width: 100%;
-
-  min-height: 132px;
-
-  margin-top: 0;
-
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+  margin-top: 28px;
   box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
 `;
 
 export const PaymentLeft = styled.div`
-  flex: 1;
-
+  width: 100%;
   min-width: 0;
 `;
 
-export const PaymentRight = styled.div`
-  width: 390px;
+export const NotesTitle = styled.h4`
+  margin: 0 0 10px;
 
-  max-width: 390px;
+  font-family: "Poppins", sans-serif;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 100%;
+  letter-spacing: 0%;
 
-  margin-left: auto;
+  color: #111111;
+`;
 
-  padding: 13px 14px 23px;
-
+export const NotesBox = styled.div`
+  width: 100%;
+  min-height: 50px;
   box-sizing: border-box;
+  padding: 7px 10px;
 
-  background: #f7f7fb;
+  border: 1px solid #e2e5ea;
+  border-radius: 5px;
 
-  @media (max-width: 600px) {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 3px;
+
+  span {
+    font-family: "Poppins", sans-serif;
+    font-size: 11px;
+    font-weight: 400;
+    line-height: 100%;
+    color: #999999;
+    margin-bottom: 5px;
+  }
+
+  strong {
+    font-family: "Poppins", sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 100%;
+    color: #111111;
+  }
+`;
+
+export const PaymentRight = styled.div`
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  justify-self: stretch;
+
+  @media (max-width: 768px) {
     width: 100%;
-
-    max-width: 100%;
   }
 `;
 
 export const SummaryRow = styled.div`
+  min-height: 32px;
+
   display: flex;
-
   align-items: center;
-
   justify-content: space-between;
 
-  min-height: 25px;
+  gap: 20px;
+
+  font-family: "Poppins", sans-serif;
+  font-size: 12px;
 
   color: #111111;
 
-  font-size: 12px;
-
-  font-weight: 400;
-
   span {
-    color: #111111;
+    color: #4b5563;
   }
 
   strong {
+    font-weight: 600;
     color: #111111;
-
-    font-size: 12px;
-
-    font-weight: 500;
+    white-space: nowrap;
   }
 `;
 
 export const TotalAmount = styled.div`
-  display: flex;
-
-  align-items: center;
-
-  justify-content: space-between;
-
   width: 100%;
+  height: 42px;
 
-  min-height: 36px;
-
-  margin-top: 7px;
-
-  padding: 0 14px;
+  margin-top: 10px;
+  padding: 0 16px;
 
   box-sizing: border-box;
 
-  background: #ff8500;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 
+  border-radius: 5px;
+
+  background: #ff8500;
   color: #ffffff;
 
-  border-radius: 4px;
-
+  font-family: "Poppins", sans-serif;
   font-size: 12px;
-
   font-weight: 600;
 
-  span,
+  span {
+    color: #ffffff;
+  }
+
   strong {
     color: #ffffff;
-
-    font-size: 12px;
-
+    font-size: 14px;
     font-weight: 600;
   }
 `;
 
+/* =========================
+   BUTTONS
+========================= */
+
 export const ButtonWrapper = styled.div`
-  display: flex;
-
-  align-items: center;
-
-  justify-content: flex-end;
-
-  gap: 11px;
-
   width: 100%;
-
-  margin-top: 13px;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 30px;
 `;
 
 export const CancelButton = styled.button`
-  width: 99px;
+  min-width: 100px;
+  height: 38px;
+  padding: 0 14px;
 
-  height: 36px;
-
-  padding: 0;
-
-  border: 1px solid #3149a0;
-
+  border: 1px solid #3049a3;
   border-radius: 4px;
 
   background: #ffffff;
-
   color: #111111;
 
-  font-family: inherit;
-
+  font-family: "Poppins", sans-serif;
   font-size: 12px;
-
   font-weight: 500;
 
   cursor: pointer;
-
-  transition:
-    background 0.2s ease,
-    color 0.2s ease;
 
   &:hover {
     background: #f5f7ff;
@@ -526,84 +626,152 @@ export const CancelButton = styled.button`
 
   &:disabled {
     opacity: 0.6;
+    cursor: not-allowed;
+  }
+`;
 
+export const DraftButton = styled.button`
+  min-width: 110px;
+  height: 38px;
+  padding: 0 14px;
+
+  border: 1px solid #3049a3;
+  border-radius: 4px;
+
+  background: #ffffff;
+  color: #334155;
+
+  font-family: "Poppins", sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+
+  cursor: pointer;
+
+  &:hover {
+    background: #f1f5f9;
+  }
+
+  &:disabled {
+    opacity: 0.6;
     cursor: not-allowed;
   }
 `;
 
 export const PreviewButton = styled.button`
-  width: 99px;
+  min-width: 100px;
+  height: 38px;
+  padding: 0 14px;
 
-  height: 36px;
-
-  padding: 0;
-
-  border: 1px solid #3149a0;
-
+  border: 1px solid #3049a3;
   border-radius: 4px;
 
-  background: #3149a0;
-
+  background: #3049a3;
   color: #ffffff;
 
-  font-family: inherit;
-
+  font-family: "Poppins", sans-serif;
   font-size: 12px;
-
   font-weight: 500;
 
   cursor: pointer;
 
-  transition:
-    background 0.2s ease,
-    opacity 0.2s ease;
-
   &:hover {
-    background: #293f8e;
+    background: #263b88;
   }
 
   &:disabled {
-    opacity: 0.65;
-
+    opacity: 0.6;
     cursor: not-allowed;
   }
 `;
 
+/* =========================
+   VALIDATION
+========================= */
+
+export const Required = styled.span`
+  margin-left: 3px;
+  color: #e53935;
+
+  &::after {
+    content: "*";
+  }
+`;
+
+export const ErrorText = styled.span`
+  display: block;
+  margin-top: 4px;
+
+  font-family: "Poppins", sans-serif;
+  font-size: 12px;
+  line-height: 16px;
+
+  color: #e53935;
+`;
+
+/* =========================
+   NOTES TEXTAREA
+========================= */
+
+export const CreditNotesTextArea = styled.textarea`
+  width: 100%;
+  min-height: 80px;
+
+  padding: 10px 12px;
+
+  box-sizing: border-box;
+
+  resize: vertical;
+
+  border: 1px solid #e2e5ea;
+  border-radius: 5px;
+
+  background: #ffffff;
+
+  color: #4b5563;
+
+  font-family: "Poppins", sans-serif;
+  font-size: 12px;
+  line-height: 18px;
+
+  outline: none;
+
+  &::placeholder {
+    color: #9ca3af;
+  }
+
+  &:focus {
+    border-color: #3049a3;
+  }
+`;
+
+/* =========================
+   ROW ACTIONS (list page)
+========================= */
+
 export const ActionWrapper = styled.div`
   display: flex;
-
   align-items: center;
-
   justify-content: left;
-
   gap: 6px;
-
   overflow: visible;
-
   position: relative;
 `;
 
 export const ActionButton = styled.button`
   width: 25px;
-
   height: 25px;
 
   padding: 0;
-
   margin: 0;
 
   border: none;
-
   border-radius: 50%;
 
   background: #f3f4f6;
-
   color: #374151;
 
   display: flex;
-
   align-items: center;
-
   justify-content: center;
 
   cursor: pointer;
@@ -611,14 +779,12 @@ export const ActionButton = styled.button`
   flex-shrink: 0;
 
   position: relative;
-
   z-index: 10;
 
   transition: all 0.2s ease;
 
   &:hover {
     background: #e5e7eb;
-
     transform: scale(1.08);
   }
 
@@ -629,22 +795,17 @@ export const ActionButton = styled.button`
 
 export const FloatingAction = styled.button`
   width: 24px;
-
   height: 24px;
 
   padding: 0;
-
   margin: 0;
 
   border: none;
-
   border-radius: 50%;
 
-  display: ${({ $open }) =>
-        $open ? "flex" : "none"};
+  display: ${({ $open }) => ($open ? "flex" : "none")};
 
   align-items: center;
-
   justify-content: center;
 
   cursor: pointer;
@@ -656,22 +817,22 @@ export const FloatingAction = styled.button`
     opacity 0.2s ease;
 
   ${({ $position }) =>
-        $position === "view" &&
-        `
+    $position === "view" &&
+    `
       background: #e8f1ff;
       color: #3478f6;
     `}
 
   ${({ $position }) =>
-        $position === "edit" &&
-        `
+    $position === "edit" &&
+    `
       background: #fef3c7;
       color: #d97706;
     `}
 
   ${({ $position }) =>
-        $position === "delete" &&
-        `
+    $position === "delete" &&
+    `
       background: #ffe8e8;
       color: #dc2626;
     `}
@@ -682,49 +843,5 @@ export const FloatingAction = styled.button`
 
   svg {
     display: block;
-  }
-`;
-
-export const CreditNotesTextArea = styled.textarea`
-  width: 52%;
-
-  min-height: 42px;
-
-  padding: 8px 10px;
-
-  box-sizing: border-box;
-
-  resize: vertical;
-
-  border: 1px solid #e6e3e3;
-
-  border-radius: 4px;
-
-  background: #ffffff;
-
-  color: #777777;
-
-  font-family: inherit;
-
-  font-size: 11px;
-
-  font-weight: 400;
-
-  line-height: 16px;
-
-  outline: none;
-
-  &::placeholder {
-    color: #999999;
-
-    opacity: 1;
-  }
-
-  &:focus {
-    border-color: #b8b8b8;
-  }
-
-  @media (max-width: 768px) {
-    width: 100%;
   }
 `;

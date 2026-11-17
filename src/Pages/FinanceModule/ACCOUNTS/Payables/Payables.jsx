@@ -110,7 +110,7 @@ const Payables = () => {
 
             {loading && <p>Loading...</p>}
 
-            <ReusableTable columns={payableColumns} data={payables} />
+            <ReusableTable columns={payableColumns} data={payables}  autoLayout />
 
             <ReusablePagination
                 currentPage={pagination.currentPage}

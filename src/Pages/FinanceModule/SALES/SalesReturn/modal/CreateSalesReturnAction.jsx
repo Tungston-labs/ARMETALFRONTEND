@@ -1,14 +1,9 @@
 import React, { useEffect, useMemo, useState } from "react";
 import styled from "styled-components";
-
 import { FiChevronDown, FiX, FiPlus } from "react-icons/fi";
-
 import { useNavigate, useParams } from "react-router-dom";
-
 import { useDispatch, useSelector } from "react-redux";
-
 import ReusableHeader from "../../../../../Components/ReusableTable/ReusableHeader";
-
 import {
   InvoiceContainer as ReturnContainer,
   InvoiceForm as ReturnForm,
@@ -802,17 +797,16 @@ const CreateSalesReturnAction = () => {
 
       <ReturnForm>
         <FormGrid>
-          <FormGroup>
-            <Label>RETURN NUMBER</Label>
+         <FormGroup>
+  <Label>RETURN NUMBER</Label>
 
-            <Input
-              value={returnNumber}
-              onChange={(e) => setReturnNumber(e.target.value)}
-              placeholder="SR 0123"
-              readOnly
-            />
-          </FormGroup>
-
+  <Input
+    value={returnNumber}
+    placeholder="Auto-generated after save"
+    readOnly
+    disabled
+  />
+</FormGroup>
           <FormGroup>
             <Label>
               AGAINST INVOICE <span style={{ color: "red" }}>*</span>

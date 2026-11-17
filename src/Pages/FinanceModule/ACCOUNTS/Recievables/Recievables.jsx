@@ -213,6 +213,7 @@ const Recievables = () => {
                 data={tableData}
                 loading={loading}
                 emptyMessage="No invoices found"
+                autoLayout
             />
 
             <ReusablePagination

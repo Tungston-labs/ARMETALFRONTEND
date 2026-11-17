@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 
 import ReusablePagination from "../../../../Components/Pagination/ReusablePagination";
 import ReusableTable from "../../../../Components/ReusableTable/ReusableTable";
@@ -13,23 +13,21 @@ import {
     DatePickerContainer,
     DateRangeWrapper,
     DateSeparator,
-    SummaryHeader,
-    SummarySearch,
-    SummaryTitle,
+    ExportButton,
+    // SummaryHeader,
+    // SummarySearch,
+    // SummaryTitle,
 } from "./CustomerLedger.styles";
 
 import useCustomerLedger from "./Usecustomerledger";
+import { FiDownload } from "react-icons/fi";
 
 const CustomerLedger = () => {
     const {
         search,
         status,
-        transactionType,
-        customer,
         startDate,
         endDate,
-
-        isLedgerModalOpen,
 
         currentPage,
         totalPages,
@@ -42,44 +40,71 @@ const CustomerLedger = () => {
 
         cards,
         loading,
-        createLoading,
         dashboardSummaryLoading,
-        customerSummaryLoading,
         error,
 
         statusOptions,
-        transactionTypeOptions,
-        customerOptions,
-
-        // Customer summary
-        customerSummarySearch,
-        handleCustomerSummarySearch,
-        customerSummaryData,
-        customerSummaryColumns,
-        customerSummaryCurrentPage,
-        customerSummaryTotalPages,
-        customerSummaryTotalItems,
-        setCustomerSummaryCurrentPage,
 
         handleStartDateChange,
         handleEndDateChange,
-        handleAddLedger,
-        handleCloseLedger,
-        handleSaveLedger,
         handleSearch,
         handleStatusChange,
-        handleTransactionTypeChange,
-        handleCustomerChange,
     } = useCustomerLedger();
+
+    /* =====================================================
+       EXPORT (CSV of the rows currently shown)
+    ====================================================== */
+
+    const [exportLoading, setExportLoading] = useState(false);
+
+    const handleExport = () => {
+        const rows = Array.isArray(ledgerData) ? ledgerData : [];
+
+        if (!rows.length) {
+            window.alert("No ledger data to export.");
+            return;
+        }
+
+        setExportLoading(true);
+
+        try {
+            // Only data columns: skip the Action column and non-text headers
+            const cols = (ledgerColumns || []).filter(
+                (col) =>
+                    col?.accessor &&
+                    col.accessor !== "actions" &&
+                    typeof col.header === "string",
+            );
+
+            const escape = (value) =>
+                `"${String(value ?? "").replace(/"/g, '""')}"`;
+
+            const csv = [
+                cols.map((col) => escape(col.header)).join(","),
+                ...rows.map((row) =>
+                    cols.map((col) => escape(row?.[col.accessor])).join(","),
+                ),
+            ].join("\n");
+
+            const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+
+            link.href = url;
+            link.download = "customer-ledger.csv";
+            link.click();
+
+            URL.revokeObjectURL(url);
+        } finally {
+            setExportLoading(false);
+        }
+    };
 
     return (
         <div style={{ padding: 20 }}>
-            {/* Header */}
             <ReusableHeader
                 title="Customer Ledger"
                 breadcrumbs={["Sales", "Customer Ledger"]}
-                // buttonText="+ NEW JOURNAL ENTRY"
-                // onButtonClick={handleAddLedger}
             >
                 <DateRangeWrapper>
                     <DatePickerContainer>
@@ -102,6 +127,15 @@ const CustomerLedger = () => {
                         />
                     </DatePickerContainer>
                 </DateRangeWrapper>
+                <ExportButton
+                    type="button"
+                    onClick={handleExport}
+                    disabled={exportLoading}
+                >
+                    <FiDownload />
+
+                    <span>{exportLoading ? "EXPORTING..." : "EXPORT"}</span>
+                </ExportButton>
             </ReusableHeader>
 
             {/* Error */}
@@ -138,22 +172,6 @@ const CustomerLedger = () => {
                 statuses={statusOptions}
                 onStatus={handleStatusChange}
                 showStatus
-                // filters={[
-                //     {
-                //         key: "transactionType",
-                //         value: transactionType,
-                //         onChange: handleTransactionTypeChange,
-                //         options: transactionTypeOptions,
-                //         placeholder: "All Transaction Types",
-                //     },
-                //     {
-                //         key: "customer",
-                //         value: customer,
-                //         onChange: handleCustomerChange,
-                //         options: customerOptions,
-                //         placeholder: "All Customers",
-                //     },
-                // ]}
             />
 
             <ReusableTable
@@ -168,47 +186,6 @@ const CustomerLedger = () => {
                 totalRecords={totalItems}
                 onPageChange={setCurrentPage}
             />
-
-            {/* =====================================================
-                TABLE 2 - SUMMARY BY CUSTOMER
-            ====================================================== */}
-
-            {/* <SummaryHeader>
-                <SummaryTitle>
-                    Summary by Customer
-                </SummaryTitle>
-
-                <SummarySearch
-                    type="text"
-                    value={customerSummarySearch}
-                    onChange={(e) =>
-                        handleCustomerSummarySearch(e.target.value)
-                    }
-                    placeholder="Search Customer"
-                />
-            </SummaryHeader>
-
-            <ReusableTable
-                columns={customerSummaryColumns}
-                data={customerSummaryData}
-                loading={customerSummaryLoading}
-            />
-
-            <ReusablePagination
-                currentPage={customerSummaryCurrentPage}
-                totalPages={customerSummaryTotalPages}
-                totalRecords={customerSummaryTotalItems}
-                onPageChange={setCustomerSummaryCurrentPage}
-            /> */}
-
-     
-            {/* <AddLedgerModal
-                isOpen={isLedgerModalOpen}
-                onClose={handleCloseLedger}
-                onSave={handleSaveLedger}
-                customerOptions={customerOptions}
-                saving={createLoading}
-            /> */}
         </div>
     );
 };
