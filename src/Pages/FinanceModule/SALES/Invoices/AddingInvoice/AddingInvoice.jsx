@@ -328,7 +328,7 @@ const AddingInvoice = () => {
             </SelectWrapper>
             <ErrorText>{errors.paymentStatus}</ErrorText>
           </FormGroup>
-
+{/* 
           <FormGroup>
             <Label>AMOUNT PAID</Label>
             <Input
@@ -347,7 +347,7 @@ const AddingInvoice = () => {
               style={errors.amountPaid ? errorStyle : undefined}
             />
             <ErrorText>{errors.amountPaid}</ErrorText>
-          </FormGroup>
+          </FormGroup> */}
 
           <FormGroup>
             <Label>FROM</Label>
