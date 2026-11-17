@@ -108,22 +108,33 @@ const getInvoiceReference = (row) => {
    PAYMENT STATUS
 ========================================================= */
 
-const getPaymentStatus = (row) => {
-  const status = String(row.status || row.payment_status || "")
+export const getPaymentStatus = (row) => {
+  const paymentType = String(row?.payment_type || "")
+    .toLowerCase()
+    .replace(/\s+/g, "_");
+  const status = String(row?.status || row?.payment_status || "")
     .toLowerCase()
     .replace(/\s+/g, "_");
 
+  if (
+    paymentType === "partial_payment" ||
+    paymentType === "partial" ||
+    status === "partially_paid" ||
+    status === "partial"
+  ) {
+    return "Partially Paid";
+  }
+
+  if (
+    paymentType === "full_payment" ||
+    status === "completed" ||
+    status === "fully_paid" ||
+    status === "paid"
+  ) {
+    return "Fully Paid";
+  }
+
   switch (status) {
-    case "completed":
-    case "fully_paid":
-    case "paid":
-      return "Fully Paid";
-
-    case "partially_paid":
-    case "partial":
-    case "partially_completed":
-      return "Partially Paid";
-
     case "pending":
       return "Pending";
 
@@ -135,7 +146,7 @@ const getPaymentStatus = (row) => {
       return "Overdue";
 
     default:
-      return formatStatusLabel(status) || "-";
+      return formatStatusLabel(status || paymentType) || "-";
   }
 };
 
@@ -268,7 +279,7 @@ export const PAYMENT_METHOD_OPTIONS = [
    TABLE COLUMNS
 ========================================================= */
 
-export const getPaymentColumns = ({ onInfo }) => [
+export const getPaymentColumns = ({ onInfo, onEdit, onDelete, onDownload }) => [
   {
     header: "Payment no.",
     accessor: "receipt_no",
@@ -343,9 +354,17 @@ export const getPaymentColumns = ({ onInfo }) => [
   },
 
   {
-  header: "Action",
-  accessor: "actions",
-  sortable: false,
-  render: (row) => <Paymentactions row={row} onInfo={onInfo} />,
-},
+    header: "Action",
+    accessor: "actions",
+    sortable: false,
+    render: (row) => (
+      <Paymentactions
+        row={row}
+        onInfo={onInfo}
+        onEdit={onEdit}
+        onDelete={onDelete}
+        onDownload={onDownload}
+      />
+    ),
+  },
 ];

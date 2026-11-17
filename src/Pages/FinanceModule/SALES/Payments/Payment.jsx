@@ -33,12 +33,15 @@ import {
   fetchPaymentKPI,
   fetchPaymentById,
   createPayment,
+  updatePayment,
+  deletePayment,
   exportPayments,
   selectPayments,
   selectPaymentPagination,
   selectPaymentKPI,
   selectPaymentLoading,
   selectPaymentCreateLoading,
+  selectPaymentUpdateLoading,
   selectPaymentError,
 } from "../../../../Redux/finance/Sales/paymentSlice";
 import { getCustomers } from "../../../../Redux/finance/Sales/CustomerSlice";
@@ -104,6 +107,7 @@ const Payment = () => {
   const kpi = useSelector(selectPaymentKPI);
   const loading = useSelector(selectPaymentLoading);
   const createLoading = useSelector(selectPaymentCreateLoading);
+  const updateLoading = useSelector(selectPaymentUpdateLoading);
   const error = useSelector(selectPaymentError);
   const customers = useSelector((state) => state.customer?.customers || []);
   const invoices = useSelector((state) => state.invoice?.invoices || []);
@@ -121,6 +125,8 @@ const Payment = () => {
   const [currentPage, setCurrentPage] = useState(1);
 
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [selectedPayment, setSelectedPayment] = useState(null);
+  const [isViewOnly, setIsViewOnly] = useState(false);
 
   const debouncedSearch = useDebouncedValue(search);
 
@@ -257,7 +263,21 @@ const Payment = () => {
     ===================================================== */
 
   const handleRecordPayment = () => {
+    setSelectedPayment(null);
+    setIsViewOnly(false);
     setIsPaymentModalOpen(true);
+  };
+
+  const handleEditPayment = (payment) => {
+    setSelectedPayment(payment);
+    setIsViewOnly(false);
+    setIsPaymentModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsPaymentModalOpen(false);
+    setSelectedPayment(null);
+    setIsViewOnly(false);
   };
 
   /* =====================================================
@@ -268,10 +288,19 @@ const Payment = () => {
     const payload = normalizePaymentPayload(formData);
 
     try {
-      const result = await dispatch(createPayment(payload)).unwrap();
+      let result;
+      if (selectedPayment?.id) {
+        result = await dispatch(
+          updatePayment({ id: selectedPayment.id, data: payload })
+        ).unwrap();
+      } else {
+        result = await dispatch(createPayment(payload)).unwrap();
+      }
 
       if (result) {
         setIsPaymentModalOpen(false);
+        setSelectedPayment(null);
+        setIsViewOnly(false);
       }
 
       setCurrentPage(1);
@@ -320,7 +349,7 @@ const Payment = () => {
       dispatch(fetchPaymentKPI());
       dispatch(getInvoices());
     } catch (err) {
-      console.error("Payment creation failed:", err);
+      console.error("Payment save failed:", err);
     }
   };
 
@@ -371,15 +400,56 @@ const Payment = () => {
   };
 
   /* =====================================================
-       VIEW PAYMENT
+       VIEW / DELETE / DOWNLOAD PAYMENT
     ===================================================== */
 
   const handlePaymentInfo = (payment) => {
-    if (!payment?.id) {
-      return;
-    }
+    if (!payment?.id) return;
+    setSelectedPayment(payment);
+    setIsViewOnly(true);
+    setIsPaymentModalOpen(true);
+  };
 
-    dispatch(fetchPaymentById(payment.id));
+  const handleDeletePayment = async (payment) => {
+    if (!payment?.id) return;
+    const confirmed = window.confirm(
+      `Are you sure you want to delete payment ${payment.receipt_number || payment.receipt_no || ""}?`
+    );
+    if (!confirmed) return;
+
+    try {
+      await dispatch(deletePayment(payment.id)).unwrap();
+      dispatch(
+        fetchPayments({
+          page: currentPage,
+          ...(debouncedSearch ? { search: debouncedSearch } : {}),
+          ...(status ? { status } : {}),
+          ...(customer ? { customer } : {}),
+          ...(paymentType ? { payment_type: paymentType } : {}),
+          ...(paymentMethod ? { payment_method: paymentMethod } : {}),
+          ...(startDate ? { payment_date_after: startDate } : {}),
+          ...(endDate ? { payment_date_before: endDate } : {}),
+        })
+      );
+      dispatch(fetchPaymentKPI());
+      dispatch(getInvoices());
+    } catch (err) {
+      console.error("Failed to delete payment:", err);
+      alert(
+        typeof err === "string"
+          ? err
+          : err?.detail || err?.message || "Failed to delete payment."
+      );
+    }
+  };
+
+  const handleDownloadPayment = (payment) => {
+    if (!payment?.id) return;
+    dispatch(
+      exportPayments({
+        id: payment.id,
+      })
+    );
   };
 
   /* =====================================================
@@ -390,8 +460,11 @@ const Payment = () => {
     () =>
       getPaymentColumns({
         onInfo: handlePaymentInfo,
+        onEdit: handleEditPayment,
+        onDelete: handleDeletePayment,
+        onDownload: handleDownloadPayment,
       }),
-    [],
+    [currentPage, debouncedSearch, status, customer, paymentType, paymentMethod, startDate, endDate],
   );
 
   /* =====================================================
@@ -513,12 +586,14 @@ const Payment = () => {
 
       <PaymentModal
         isOpen={isPaymentModalOpen}
-        onClose={() => setIsPaymentModalOpen(false)}
+        onClose={handleCloseModal}
         onSave={handleSavePayment}
-        submitting={createLoading}
+        submitting={createLoading || updateLoading}
         error={error}
         customers={customers}
         invoices={invoices}
+        initialData={selectedPayment}
+        isViewOnly={isViewOnly}
       />
     </div>
   );

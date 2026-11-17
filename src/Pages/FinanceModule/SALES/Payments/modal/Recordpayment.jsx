@@ -79,6 +79,7 @@ const PaymentModal = ({
   onSave,
   submitting = false,
   initialData = null,
+  isViewOnly = false,
   error = null,
   customers = [],
   invoices = [],
@@ -93,9 +94,48 @@ const PaymentModal = ({
 
     if (initialData) {
       const invoiceNo = initialData.invoice_no || initialData.invoice_number || "";
-      const invTotal = initialData.invoice_amount ?? initialData.total_amount ?? "";
-      const invPaid = initialData.already_paid ?? initialData.amount_paid ?? "";
-      const invBal = initialData.outstanding_amount ?? initialData.balance_due ?? "";
+      let invTotal = initialData.invoice_amount ?? initialData.total_amount ?? "";
+      let invPaid = initialData.already_paid ?? initialData.amount_paid ?? "";
+      let invBal = initialData.outstanding_amount ?? initialData.balance_due ?? "";
+
+      const rawInvoiceId =
+        initialData.invoice_id ??
+        initialData.invoice?.id ??
+        (typeof initialData.invoice === "number" ? initialData.invoice : "");
+
+      if (rawInvoiceId && (!invTotal || !invBal)) {
+        const matched = invoices.find((i) => String(i.id) === String(rawInvoiceId));
+        if (matched) {
+          const t = matched.total_amount ?? matched.amount_to_be_paid ?? "";
+          const p = matched.amount_paid ?? matched.paid_amount ?? "";
+          const b = matched.balance ?? (Number(t || 0) - Number(p || 0));
+          if (!invTotal) invTotal = t;
+          if (!invPaid) invPaid = p;
+          if (!invBal) invBal = b;
+        }
+      }
+
+      const pType =
+        initialData.payment_type_display ||
+        (initialData.payment_type === "full_payment"
+          ? "Full Payment"
+          : initialData.payment_type === "partial_payment"
+          ? "Partial Payment"
+          : initialData.payment_type === "advance_payment"
+          ? "Advance Payment"
+          : initialData.payment_type || "Full Payment");
+
+      const pMethod =
+        initialData.payment_method_display ||
+        (initialData.payment_method === "bank_transfer"
+          ? "Bank Transfer"
+          : initialData.payment_method === "cheque"
+          ? "Cheque"
+          : initialData.payment_method === "online_payment"
+          ? "Online Payment"
+          : initialData.payment_method === "cash"
+          ? "Cash"
+          : initialData.payment_method || "Bank Transfer");
 
       setFormData({
         customerId:
@@ -107,18 +147,15 @@ const PaymentModal = ({
           initialData.customer?.customer_name ||
           initialData.customer?.name ||
           (typeof initialData.customer === "string" ? initialData.customer : ""),
-        invoiceId:
-          initialData.invoice_id ??
-          initialData.invoice?.id ??
-          (typeof initialData.invoice === "number" ? initialData.invoice : ""),
+        invoiceId: rawInvoiceId,
         invoiceNo,
         invoiceAmount: invTotal,
         alreadyPaid: invPaid,
         outstandingAmount: invBal,
         paymentDate:
           initialData.payment_date || new Date().toISOString().split("T")[0],
-        paymentType: initialData.payment_type || "Full Payment",
-        paymentMethod: initialData.payment_method || "Bank Transfer",
+        paymentType: pType,
+        paymentMethod: pMethod,
         amountReceived: initialData.amount_received ?? initialData.amount ?? "",
         referenceNumber:
           initialData.transaction_id || initialData.reference_number || "",
@@ -137,7 +174,7 @@ const PaymentModal = ({
       paymentDate: new Date().toISOString().split("T")[0],
     });
     setValidationError("");
-  }, [isOpen, initialData]);
+  }, [isOpen, initialData, invoices]);
 
   // Customer's invoices with outstanding balance
   const customerInvoices = useMemo(() => {
@@ -298,13 +335,23 @@ const PaymentModal = ({
     <ModalOverlay onClick={onClose}>
       <ModalContainer onClick={(e) => e.stopPropagation()}>
         <ModalHeader>
-          <Title>Record Payment</Title>
+          <Title>
+            {isViewOnly
+              ? "Payment Details"
+              : initialData
+              ? "Edit Payment"
+              : "Record Payment"}
+          </Title>
           <Subtitle>
             Monitor customer collections, track payment transactions, manage outstanding balances.
           </Subtitle>
         </ModalHeader>
 
         <form onSubmit={handleSubmit}>
+          <fieldset
+            disabled={isViewOnly}
+            style={{ border: "none", padding: 0, margin: 0 }}
+          >
           <FormGrid>
             {/* ROW 1 */}
             {/* 1. CUSTOMER */}
@@ -548,6 +595,7 @@ const PaymentModal = ({
               />
             </NotesGroup>
           </FormGrid>
+          </fieldset>
 
           {(validationError || error) && (
             <div className="payment-error">
@@ -563,13 +611,19 @@ const PaymentModal = ({
 
           <ButtonWrapper>
             <CancelButton type="button" onClick={onClose} disabled={submitting}>
-              CANCEL
+              {isViewOnly ? "CLOSE" : "CANCEL"}
             </CancelButton>
 
-            <SaveButton type="submit" disabled={submitting}>
-              <FiCreditCard size={16} />
-              {submitting ? "RECORDING..." : "RECORD PAYMENT"}
-            </SaveButton>
+            {!isViewOnly && (
+              <SaveButton type="submit" disabled={submitting}>
+                <FiCreditCard size={16} />
+                {submitting
+                  ? "SAVING..."
+                  : initialData
+                  ? "UPDATE PAYMENT"
+                  : "RECORD PAYMENT"}
+              </SaveButton>
+            )}
           </ButtonWrapper>
         </form>
       </ModalContainer>
