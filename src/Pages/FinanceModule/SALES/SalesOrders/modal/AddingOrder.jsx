@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { getCompanySelf } from "../../../../../Redux/companySlice"
@@ -100,6 +100,32 @@ const emptyForm = {
   items: [defaultItem()],
 };
 
+const extractErrorMessage = (err) => {
+  if (!err) return "";
+  if (typeof err === "string") return err;
+  if (typeof err?.detail === "string") return err.detail;
+  if (typeof err?.message === "string") return err.message;
+  if (Array.isArray(err?.detail) && typeof err.detail[0] === "string") return err.detail[0];
+  if (Array.isArray(err?.order_status) && typeof err.order_status[0] === "string") return err.order_status[0];
+  if (typeof err === "object") {
+    const messages = [];
+    for (const [key, val] of Object.entries(err)) {
+      if (typeof val === "string") messages.push(`${key}: ${val}`);
+      else if (Array.isArray(val) && typeof val[0] === "string") messages.push(`${key}: ${val[0]}`);
+      else if (typeof val === "object" && val !== null) {
+        messages.push(`${key}: ${JSON.stringify(val)}`);
+      }
+    }
+    if (messages.length > 0) return messages.join(" | ");
+    try {
+      return JSON.stringify(err);
+    } catch {
+      return "An unexpected error occurred.";
+    }
+  }
+  return "Unable to save Sales Order. Please try again.";
+};
+
 const mapOrderToFormData = (order) => {
   if (!order) return null;
 
@@ -191,7 +217,7 @@ const AddingOrder = () => {
   const [payment, setPayment] = useState(emptyForm.payment);
   const [summary, setSummary] = useState(emptyForm.summary);
   const [items, setItems] = useState(emptyForm.items);
-  const [isSendForApproval, setIsSendForApproval] = useState(false);
+  const [submitError, setSubmitError] = useState(null);
   const company = useSelector((state) => state.company.company);
 
   const [errors, setErrors] = useState({});
@@ -205,35 +231,51 @@ const AddingOrder = () => {
     });
 
 
-    const handleSaveAsDraft = async () => {
-  const payload = buildPayload("Draft");
+  const handleSaveAsDraft = async () => {
+    setSubmitError(null);
+    if (!isEditMode && !validate()) return;
+    const payload = buildPayload("pending");
 
-  if (isEditMode) {
-    await dispatch(
-      updateSalesOrderPartial({
-        id: salesOrderId,
-        salesOrderData: payload,
-      })
-    ).unwrap();
-  } else {
-    await dispatch(addSalesOrder(payload)).unwrap();
-  }
-};
+    try {
+      if (isEditMode) {
+        await dispatch(
+          updateSalesOrderPartial({
+            id,
+            salesOrderData: payload,
+          })
+        ).unwrap();
+      } else {
+        await dispatch(addSalesOrder(payload)).unwrap();
+      }
+      navigate("/sales/orders");
+    } catch (err) {
+      console.error("Failed to save draft:", err);
+      setSubmitError(err);
+    }
+  };
 
-const handleSendForApproval = async () => {
-  const payload = buildPayload("Pending Approval");
+  const handleSendForApproval = async () => {
+    setSubmitError(null);
+    if (!isEditMode && !validate()) return;
+    const payload = buildPayload("confirmed");
 
-  if (isEditMode) {
-    await dispatch(
-      updateSalesOrderPartial({
-        id: salesOrderId,
-        salesOrderData: payload,
-      })
-    ).unwrap();
-  } else {
-    await dispatch(addSalesOrder(payload)).unwrap();
-  }
-};
+    try {
+      if (isEditMode) {
+        await dispatch(
+          updateSalesOrderPartial({
+            id,
+            salesOrderData: payload,
+          })
+        ).unwrap();
+      } else {
+        await dispatch(addSalesOrder(payload)).unwrap();
+      }
+      navigate("/sales/orders");
+    } catch (err) {
+      console.error("Failed to submit sales order:", err);
+      setSubmitError(err);
+    }
+  };
 
 useEffect(() => {
   dispatch(getCompanySelf());
@@ -258,7 +300,7 @@ useEffect(() => {
   }, [dispatch, id, isEditMode]);
 
   useEffect(() => {
-    if (!selectedSalesOrder) return;
+    if (!isEditMode || !selectedSalesOrder) return;
 
     const mapped = mapOrderToFormData(selectedSalesOrder);
     setQuotationId(selectedSalesOrder.quotation ?? "");
@@ -302,25 +344,70 @@ useEffect(() => {
     setBillTo((prev) => ({
       ...prev,
       client: selectedQuotation.customer ?? prev.client,
+      address: selectedQuotation.customer_address || prev.address,
+      phone: selectedQuotation.customer_phone || prev.phone,
+      email: selectedQuotation.customer_email || prev.email,
     }));
     setWarehouse(selectedQuotation.warehouse ?? "");
+
+    const quoteDiscount =
+      Number(selectedQuotation.discount) > 0
+        ? String(selectedQuotation.discount)
+        : Number(selectedQuotation.negotiation_amount) > 0
+        ? String(selectedQuotation.negotiation_amount)
+        : "";
+
+    const quoteRoundOff = selectedQuotation.round_off
+      ? String(selectedQuotation.round_off)
+      : "";
+
+    setSummary((prev) => ({
+      ...prev,
+      discount: quoteDiscount || prev.discount || "",
+      roundOff: quoteRoundOff || prev.roundOff || "",
+    }));
+
     if (
       Array.isArray(selectedQuotation.items) &&
       selectedQuotation.items.length > 0
     ) {
       setItems(
-        selectedQuotation.items.map((item, idx) => ({
-          id: item.id ?? Date.now() + idx,
-          slNo: String(idx + 1).padStart(2, "0"),
-          service: item.service_name || item.service || "",
-          particular: item.description || item.particular || "",
-          qty: item.quantity ?? item.qty ?? "",
-          hsCode: item.hs_code || "",
-          rate: item.rate || "",
-          vat: item.vat_percentage ?? item.vat ?? "",
-          vatAmount: item.vat_amount || "",
-          amount: item.amount || "",
-        }))
+        selectedQuotation.items.map((item, idx) => {
+          const qty = item.quantity ?? item.qty ?? "";
+          const rate = item.rate ?? "";
+          const vat = item.vat_percentage ?? item.vat ?? "";
+          const qNum = Number(qty) || 0;
+          const rNum = Number(rate) || 0;
+          const vNum = Number(vat) || 0;
+          const base = qNum * rNum;
+          const vatAmt =
+            item.vat_amount !== undefined &&
+            item.vat_amount !== null &&
+            item.vat_amount !== ""
+              ? item.vat_amount
+              : ((base * vNum) / 100).toFixed(2);
+          const totalAmt =
+            item.amount !== undefined &&
+            item.amount !== null &&
+            item.amount !== ""
+              ? item.amount
+              : (base + Number(vatAmt)).toFixed(2);
+
+          return {
+            id: item.id ?? Date.now() + idx,
+            quotation_item: item.id,
+            product: item.product,
+            slNo: String(idx + 1).padStart(2, "0"),
+            service: item.service_name || item.service || "",
+            particular: item.description || item.particular || "",
+            qty: String(qty),
+            hsCode: item.hs_code || "",
+            rate: String(rate),
+            vat: String(vat),
+            vatAmount: String(vatAmt),
+            amount: String(totalAmt),
+          };
+        })
       );
     }
   }, [selectedQuotation, isEditMode]);
@@ -366,9 +453,20 @@ useEffect(() => {
 
   const updateItem = (itemId, field, value) => {
     setItems((prev) =>
-      prev.map((item) =>
-        item.id === itemId ? { ...item, [field]: value } : item
-      )
+      prev.map((item) => {
+        if (item.id !== itemId) return item;
+        const next = { ...item, [field]: value };
+        if (field === "qty" || field === "rate" || field === "vat") {
+          const q = Number(field === "qty" ? value : next.qty) || 0;
+          const r = Number(field === "rate" ? value : next.rate) || 0;
+          const v = Number(field === "vat" ? value : next.vat) || 0;
+          const base = q * r;
+          const vatAmt = (base * v) / 100;
+          next.vatAmount = vatAmt ? vatAmt.toFixed(2) : "0.00";
+          next.amount = (base + vatAmt) ? (base + vatAmt).toFixed(2) : "0.00";
+        }
+        return next;
+      })
     );
   };
 
@@ -393,15 +491,6 @@ useEffect(() => {
   const handleDownload = () => {
     // Connect your existing PDF/Excel download function here.
     handleDownloadDocument();
-  };
-
-  const handleSendClick = async () => {
-    if (!isSendForApproval) {
-      setIsSendForApproval(true);
-      return;
-    }
-
-    await handleSendForApproval();
   };
   // ============================================================
   // VALIDATION
@@ -460,6 +549,8 @@ useEffect(() => {
       discount: toDecimal(summary.discount),
       round_off: toDecimal(summary.roundOff),
       items: items.map((item) => ({
+        product: item.product || undefined,
+        quotation_item: item.quotation_item || undefined,
         service_name: item.service,
         description: item.particular,
         quantity: toDecimal(item.qty),
@@ -483,16 +574,13 @@ useEffect(() => {
     return payload;
   };
 
-  const buildPayload = (status) => ({
-  // Include your existing Sales Order payload fields here.
-
-  company_name: from.name || undefined,
-  company_email: from.email || undefined,
-  company_phone: from.phone || undefined,
-  company_address: from.address || undefined,
-
-  status,
-});
+  const buildPayload = (status) => {
+    const payload = buildApiPayload();
+    if (status) {
+      payload.order_status = status.toLowerCase().replace(/[\s-]+/g, "_");
+    }
+    return payload;
+  };
 
   const handleSave = () => {
     // In edit mode the validated fields are read-only, so only validate on create.
@@ -510,6 +598,50 @@ useEffect(() => {
       }
     });
   };
+
+  const totals = useMemo(() => {
+    let subTotal = 0;
+    let totalVat = 0;
+
+    items.forEach((item) => {
+      const q = Number(item.qty) || 0;
+      const r = Number(item.rate) || 0;
+      const v = Number(item.vat) || 0;
+      const lineBase = q * r;
+      const lineVat =
+        item.vatAmount !== "" &&
+        item.vatAmount !== undefined &&
+        item.vatAmount !== null
+          ? Number(item.vatAmount) || 0
+          : (lineBase * v) / 100;
+
+      subTotal += lineBase;
+      totalVat += lineVat;
+    });
+
+    const discount = Number(summary.discount) || 0;
+    const roundOff = Number(summary.roundOff) || 0;
+    const total = Math.max(0, subTotal + totalVat - discount + roundOff);
+
+    return {
+      subTotal,
+      totalVat,
+      discount,
+      roundOff,
+      total,
+    };
+  }, [items, summary.discount, summary.roundOff]);
+
+  const currency =
+    selectedQuotation?.currency ||
+    selectedSalesOrder?.currency ||
+    "SAR";
+
+  const formatAmount = (val) =>
+    Number(val || 0).toLocaleString("en-US", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
 
   const isSaving = isEditMode ? updateLoading : createLoading;
   const notFound =
@@ -555,7 +687,7 @@ useEffect(() => {
         onBack={() => navigate("/sales/orders")}
       ></ReusableHeader>
 
-      {saveError && (
+      {(submitError || saveError) && (
         <div
           style={{
             margin: "0 20px 16px",
@@ -567,12 +699,7 @@ useEffect(() => {
             fontSize: "14px",
           }}
         >
-          {typeof saveError === "string"
-            ? saveError
-            : saveError?.detail ||
-            saveError?.message ||
-            saveError?.order_status?.[0] ||
-            "Unable to update Sales Order. Please try again."}
+          {extractErrorMessage(submitError || saveError)}
         </div>
       )}
 
@@ -1029,11 +1156,11 @@ useEffect(() => {
           <PaymentRight>
             <SummaryRow>
               <span>Sub Total</span>
-              <strong>{summary.subTotal || "SAR 0"}</strong>
+              <strong>{currency} {formatAmount(totals.subTotal)}</strong>
             </SummaryRow>
             <SummaryRow>
               <span>Total VAT (15%)</span>
-              <strong>{summary.vat || "SAR 0"}</strong>
+              <strong>{currency} {formatAmount(totals.totalVat)}</strong>
             </SummaryRow>
             <SummaryRow>
               <span>Discount</span>
@@ -1041,6 +1168,7 @@ useEffect(() => {
               <Input
                 type="number"
                 min="0"
+                step="any"
                 placeholder="Enter discount"
                 value={summary.discount}
                 onChange={(e) =>
@@ -1052,17 +1180,17 @@ useEffect(() => {
                 style={{
                   maxWidth: "150px",
                   textAlign: "left",
-                  color: "#03AC17"
+                  color: "#03AC17",
                 }}
               />
             </SummaryRow>
             <SummaryRow>
               <span>Round Off</span>
-              <strong>{summary.roundOff || "SAR 0"}</strong>
+              <strong>{currency} {formatAmount(totals.roundOff)}</strong>
             </SummaryRow>
             <TotalAmount>
               <span>TOTAL AMOUNT</span>
-              <strong>{summary.total || "SAR 0"}</strong>
+              <strong>{currency} {formatAmount(totals.total)}</strong>
             </TotalAmount>
           </PaymentRight>
         </PaymentSection>
@@ -1087,7 +1215,7 @@ useEffect(() => {
 
           <SendButton
             type="button"
-            onClick={handleSendClick}
+            onClick={handleSendForApproval}
             disabled={isSaving}
           >
             {isSaving ? (
@@ -1095,10 +1223,8 @@ useEffect(() => {
                 <Hourglass className="loading-icon" />
                 SENDING...
               </>
-            ) : isSendForApproval ? (
-              "SEND FOR APPROVAL"
             ) : (
-              "SEND"
+              "SEND FOR APPROVAL"
             )}
           </SendButton>
         </ButtonWrapper>

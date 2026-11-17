@@ -103,6 +103,14 @@ export const FormGroup = styled.div`
   min-width: 0;
 `;
 
+export const NotesGroup = styled(FormGroup)`
+  grid-column: span 2;
+
+  @media (max-width: 1100px) {
+    grid-column: span 1;
+  }
+`;
+
 export const Label = styled.label`
   display: block;
   margin-bottom: 10px;

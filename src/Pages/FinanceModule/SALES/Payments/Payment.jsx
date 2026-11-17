@@ -42,6 +42,7 @@ import {
   selectPaymentError,
 } from "../../../../Redux/finance/Sales/paymentSlice";
 import { getCustomers } from "../../../../Redux/finance/Sales/CustomerSlice";
+import { getInvoices } from "../../../../Redux/finance/Sales/InvoiceSlice";
 import { normalizePaymentPayload } from "./paymentPayload";
 
 /* =========================================================
@@ -105,6 +106,7 @@ const Payment = () => {
   const createLoading = useSelector(selectPaymentCreateLoading);
   const error = useSelector(selectPaymentError);
   const customers = useSelector((state) => state.customer?.customers || []);
+  const invoices = useSelector((state) => state.invoice?.invoices || []);
 
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
@@ -141,6 +143,7 @@ const Payment = () => {
 
   useEffect(() => {
     dispatch(getCustomers());
+    dispatch(getInvoices());
   }, [dispatch]);
 
   /* =====================================================
@@ -315,6 +318,7 @@ const Payment = () => {
       );
 
       dispatch(fetchPaymentKPI());
+      dispatch(getInvoices());
     } catch (err) {
       console.error("Payment creation failed:", err);
     }
@@ -514,6 +518,7 @@ const Payment = () => {
         submitting={createLoading}
         error={error}
         customers={customers}
+        invoices={invoices}
       />
     </div>
   );
