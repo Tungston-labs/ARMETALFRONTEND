@@ -711,3 +711,35 @@ export const PreviewGrid = styled.div`
         color: #6b7280;
     }
 `;
+export const DraftButton = styled.button`
+  padding: 10px 20px;
+  border: 1px solid #64748b;
+  border-radius: 6px;
+  background: #fff;
+  color: #475569;
+  font-weight: 600;
+  cursor: pointer;
+
+  &:hover {
+    background: #f1f5f9;
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+`;
+
+export const DownloadButton = styled.button`
+  padding: 10px 20px;
+  border: 1px solid #2563eb;
+  border-radius: 6px;
+  background: #fff;
+  color: #2563eb;
+  font-weight: 600;
+  cursor: pointer;
+
+  &:hover {
+    background: #eff6ff;
+  }
+`;

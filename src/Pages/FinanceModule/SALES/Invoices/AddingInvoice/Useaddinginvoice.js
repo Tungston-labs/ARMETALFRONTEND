@@ -1,8 +1,8 @@
-
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 
+// Make sure this casing matches the real filename of your invoice slice.
 import {
     addInvoice,
     updateInvoicePartial,
@@ -16,12 +16,11 @@ import {
     clearSelectedSalesOrder,
 } from "../../../../../Redux/finance/Sales/InvoiceSlice";
 
-// Change this path if your actual slice filename is different.
 import {
     fetchDeliveryNotes,
     fetchDeliveryNoteById,
     clearSelectedDeliveryNote,
-} from "../../../../../Redux/finance/Sales/DeliveryNotesSlice";
+} from "../../../../../Redux/finance/Sales/deliveryNotesSlice";
 
 
 export const defaultItem = () => ({
@@ -73,6 +72,8 @@ export const emptyForm = {
 };
 
 
+// The dropdown sends "unpaid" for Pending, so "pending" is normalised to
+// "unpaid" to keep the select and the saved value in sync.
 const normalizePaymentStatus = (status = "") => {
     const value = String(status).trim().toLowerCase();
 
@@ -84,11 +85,8 @@ const normalizePaymentStatus = (status = "") => {
         return "partially_paid";
     }
 
-    if (
-        value === "unpaid" ||
-        value === "pending"
-    ) {
-        return "pending";
+    if (value === "unpaid" || value === "pending") {
+        return "unpaid";
     }
 
     if (value === "paid") {
@@ -287,6 +285,21 @@ const isValidEmail = (value) =>
 
 const isValidPhone = (value) =>
     PHONE_RE.test(String(value).trim());
+
+
+const toDecimal = (value) => {
+    if (
+        value === "" ||
+        value === null ||
+        value === undefined
+    ) {
+        return undefined;
+    }
+
+    const num = Number(value);
+
+    return Number.isNaN(num) ? undefined : num;
+};
 
 
 const BACKEND_FIELD_MAP = {
@@ -546,7 +559,6 @@ export const useAddingInvoice = () => {
     const [summary, setSummary] = useState(emptyForm.summary);
     const [items, setItems] = useState(emptyForm.items);
 
-    const [savingAction, setSavingAction] = useState("");
     const [errors, setErrors] = useState({});
 
 
@@ -557,8 +569,8 @@ export const useAddingInvoice = () => {
         dispatch(getInvoiceCompanyDetails());
         dispatch(getInvoiceCustomers());
 
-        // Load Delivery Note dropdown data.
-        dispatch(fetchDeliveryNotes());
+        // Load Delivery Note dropdown data (all pages worth).
+        dispatch(fetchDeliveryNotes({ page_size: 200 }));
 
         if (!isEditMode) {
             dispatch(getInvoiceSalesOrders());
@@ -631,10 +643,14 @@ export const useAddingInvoice = () => {
         setItems(mapped.items);
 
         setErrors({});
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [selectedInvoice]);
 
 
     // SALES ORDER DETAILS AUTO POPULATION
+    // invoiceDate is read through a ref-like closure on purpose and is NOT a
+    // dependency, otherwise changing the date would overwrite the user's
+    // Bill To and items every time.
     useEffect(() => {
         if (isEditMode || !selectedSalesOrder) return;
 
@@ -706,17 +722,13 @@ export const useAddingInvoice = () => {
                 }))
             );
         }
-    }, [selectedSalesOrder, isEditMode, invoiceDate]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [selectedSalesOrder, isEditMode]);
 
 
     // DELIVERY NOTE DETAILS AUTO POPULATION
     useEffect(() => {
         if (isEditMode || !selectedDeliveryNote) return;
-
-        console.log(
-            "Selected Delivery Note:",
-            selectedDeliveryNote
-        );
 
         const note =
             selectedDeliveryNote.data ||
@@ -791,8 +803,38 @@ export const useAddingInvoice = () => {
         if (Array.isArray(noteItems) && noteItems.length > 0) {
             setItems(mapDeliveryNoteItems(noteItems));
         }
-
     }, [selectedDeliveryNote, isEditMode]);
+
+
+    // LIVE TOTALS (create mode only; saved invoices keep their stored totals)
+    useEffect(() => {
+        if (isEditMode) return;
+
+        let sub = 0;
+        let vat = 0;
+
+        items.forEach((item) => {
+            const qty = Number(item.qty) || 0;
+            const rate = Number(item.rate) || 0;
+            const pct = Number(item.vat) || 0;
+            const base = qty * rate;
+
+            sub += base;
+            vat += (base * pct) / 100;
+        });
+
+        const discount = Number(summary.discount) || 0;
+        const hasAmounts = sub > 0 || vat > 0;
+
+        setSummary((prev) => ({
+            ...prev,
+            subTotal: hasAmounts ? sub.toFixed(2) : "",
+            vat: hasAmounts ? vat.toFixed(2) : "",
+            total: hasAmounts
+                ? Math.max(0, sub + vat - discount).toFixed(2)
+                : "",
+        }));
+    }, [items, summary.discount, isEditMode]);
 
 
     // ERROR HELPERS
@@ -1089,21 +1131,6 @@ export const useAddingInvoice = () => {
     };
 
 
-    const toDecimal = (value) => {
-        if (
-            value === "" ||
-            value === null ||
-            value === undefined
-        ) {
-            return undefined;
-        }
-
-        const num = Number(value);
-
-        return Number.isNaN(num) ? undefined : num;
-    };
-
-
     // BUILD API PAYLOAD
     const buildApiPayload = () => {
         const payload = {
@@ -1318,6 +1345,14 @@ export const useAddingInvoice = () => {
     };
 
 
+    // SAVE DRAFT, PREVIEW and DOWNLOAD
+    // Draft and Preview both save for now. Replace them with dedicated
+    // calls if your backend has draft / preview endpoints.
+    const handleSaveDraft = () => handleSave();
+    const handlePreview = () => handleSave();
+    const handleDownload = () => window.print();
+
+
     const isSaving = isEditMode
         ? updateLoading
         : createLoading;
@@ -1394,6 +1429,9 @@ export const useAddingInvoice = () => {
 
         handleCancel,
         handleSave,
+        handleSaveDraft,
+        handlePreview,
+        handleDownload,
     };
 };
 

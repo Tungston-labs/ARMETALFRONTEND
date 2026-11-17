@@ -1,4 +1,3 @@
-
 import React from "react";
 import {
   FiChevronDown,
@@ -33,6 +32,8 @@ import {
   ButtonWrapper,
   CancelButton,
   PreviewButton,
+  DraftButton,
+  DownloadButton,
 } from "./AddingInvoice.styles";
 
 import ReusableHeader from "../../../../../Components/ReusableTable/ReusableHeader";
@@ -126,7 +127,9 @@ const AddingInvoice = () => {
     updateItem,
 
     handleCancel,
-    handleSave,
+    handleSaveDraft,
+    handlePreview,
+    handleDownload,
 
     selectedInvoice,
     navigate,
@@ -183,13 +186,13 @@ const AddingInvoice = () => {
           {typeof saveError === "string"
             ? saveError
             : saveError?.detail ||
-            saveError?.message ||
-            (typeof saveError === "object" &&
-              Object.values(saveError)
-                .flat()
-                .filter((v) => typeof v === "string")
-                .join(" ")) ||
-            "Something went wrong saving this invoice."}
+              saveError?.message ||
+              (typeof saveError === "object" &&
+                Object.values(saveError)
+                  .flat()
+                  .filter((v) => typeof v === "string")
+                  .join(" ")) ||
+              "Something went wrong saving this invoice."}
         </div>
       )}
 
@@ -214,6 +217,17 @@ const AddingInvoice = () => {
                       `Sales Order #${order.id}`}
                   </option>
                 ))}
+
+                {/* Keeps the saved order visible in edit mode, where the
+                    sales order list is not loaded */}
+                {salesOrderRef &&
+                  !salesOrders.some(
+                    (order) => String(order.id) === String(salesOrderRef),
+                  ) && (
+                    <option value={salesOrderRef}>
+                      {`Sales Order #${salesOrderRef}`}
+                    </option>
+                  )}
               </Select>
               <FiChevronDown />
             </SelectWrapper>
@@ -240,6 +254,15 @@ const AddingInvoice = () => {
                       `Delivery Note #${note.id}`}
                   </option>
                 ))}
+
+                {deliveryNoteRef &&
+                  !deliveryNotes.some(
+                    (note) => String(note.id) === String(deliveryNoteRef),
+                  ) && (
+                    <option value={String(deliveryNoteRef)}>
+                      {`Delivery Note #${deliveryNoteRef}`}
+                    </option>
+                  )}
               </Select>
               <FiChevronDown />
             </SelectWrapper>
@@ -664,17 +687,39 @@ const AddingInvoice = () => {
 
         <ButtonWrapper>
           {isViewMode ? (
-            <CancelButton onClick={handleCancel}>BACK</CancelButton>
+            <>
+              <CancelButton type="button" onClick={handleCancel}>
+                BACK
+              </CancelButton>
+
+              <DownloadButton type="button" onClick={handleDownload}>
+                DOWNLOAD
+              </DownloadButton>
+            </>
           ) : (
             <>
-              <CancelButton onClick={handleCancel}>CANCEL</CancelButton>
+              <CancelButton type="button" onClick={handleCancel}>
+                CANCEL
+              </CancelButton>
 
-              <PreviewButton onClick={handleSave} disabled={isSaving}>
-                {isSaving
-                  ? "SAVING..."
-                  : isEditMode
-                    ? "UPDATE"
-                    : "PREVIEW"}
+              <DraftButton
+                type="button"
+                onClick={handleSaveDraft}
+                disabled={isSaving}
+              >
+                SAVE DRAFT
+              </DraftButton>
+
+              <DownloadButton type="button" onClick={handleDownload}>
+                DOWNLOAD
+              </DownloadButton>
+
+              <PreviewButton
+                type="button"
+                onClick={handlePreview}
+                disabled={isSaving}
+              >
+                {isSaving ? "SAVING..." : "PREVIEW"}
               </PreviewButton>
             </>
           )}
