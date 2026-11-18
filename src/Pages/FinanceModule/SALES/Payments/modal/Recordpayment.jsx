@@ -115,6 +115,23 @@ const PaymentModal = ({
         }
       }
 
+      const originalPaymentAmount = Number(
+        initialData.amount_received ?? initialData.amount ?? 0
+      );
+
+      // In edit mode (unless view-only), adjust alreadyPaid and outstandingAmount
+      // so this payment's own amount is not double-counted as already paid.
+      if (!isViewOnly && originalPaymentAmount > 0) {
+        if (invPaid !== "") {
+          invPaid = Math.max(0, Number(invPaid) - originalPaymentAmount);
+        }
+        if (invTotal !== "" && invPaid !== "") {
+          invBal = Math.max(0, Number(invTotal) - Number(invPaid));
+        } else if (invBal !== "") {
+          invBal = Number(invBal) + originalPaymentAmount;
+        }
+      }
+
       const pType =
         initialData.payment_type_display ||
         (initialData.payment_type === "full_payment"
@@ -160,7 +177,7 @@ const PaymentModal = ({
         referenceNumber:
           initialData.transaction_id || initialData.reference_number || "",
         bankName: initialData.bank_name || "",
-        accountHolder: initialData.account_holder || "",
+        accountHolder: initialData.accountHolder || initialData.account_holder || "",
         iban: initialData.iban || "",
         notes: initialData.notes || "",
       });
@@ -174,7 +191,7 @@ const PaymentModal = ({
       paymentDate: new Date().toISOString().split("T")[0],
     });
     setValidationError("");
-  }, [isOpen, initialData, invoices]);
+  }, [isOpen, initialData, invoices, isViewOnly]);
 
   // Customer's invoices with outstanding balance
   const customerInvoices = useMemo(() => {
@@ -193,6 +210,12 @@ const PaymentModal = ({
         return false;
       }
 
+      const isCurrentInvoice =
+        Boolean(initialData) &&
+        (String(invoice.id) === String(initialData.invoice_id) ||
+          String(invoice.id) === String(initialData.invoice?.id) ||
+          String(invoice.id) === String(initialData.invoice));
+
       const status = String(invoice.payment_status || invoice.status || "")
         .trim()
         .toLowerCase();
@@ -200,9 +223,13 @@ const PaymentModal = ({
       const paid = Number(invoice.amount_paid ?? invoice.paid_amount ?? 0);
       const balance = Number(invoice.balance ?? (total - paid));
 
-      return status !== "paid" && balance > 0;
+      const effectiveBalance = isCurrentInvoice && !isViewOnly
+        ? balance + Number(initialData.amount_received ?? initialData.amount ?? 0)
+        : balance;
+
+      return (status !== "paid" || (isCurrentInvoice && !isViewOnly)) && effectiveBalance > 0;
     });
-  }, [invoices, formData.customerId, formData.customer]);
+  }, [invoices, formData.customerId, formData.customer, initialData, isViewOnly]);
 
   if (!isOpen) return null;
 
@@ -241,6 +268,16 @@ const PaymentModal = ({
         }
       }
 
+      if (name === "amountReceived") {
+        const numVal = Number(value);
+        const numOut = Number(prev.outstandingAmount);
+        if (numOut > 0 && numVal >= numOut) {
+          next.paymentType = "Full Payment";
+        } else if (numOut > 0 && numVal > 0 && numVal < numOut) {
+          next.paymentType = "Partial Payment";
+        }
+      }
+
       return next;
     });
 
@@ -261,11 +298,28 @@ const PaymentModal = ({
     const invTotal = invoice
       ? invoice.total_amount ?? invoice.amount_to_be_paid ?? ""
       : "";
-    const invPaid = invoice
+    const rawPaid = invoice
       ? invoice.amount_paid ?? invoice.paid_amount ?? "0.00"
       : "";
+
+    const isCurrentInvoice =
+      Boolean(initialData) &&
+      (String(invoiceId) === String(initialData.invoice_id) ||
+        String(invoiceId) === String(initialData.invoice?.id) ||
+        String(invoiceId) === String(initialData.invoice));
+
+    const currentPaymentAmount = isCurrentInvoice && !isViewOnly
+      ? Number(initialData.amount_received ?? initialData.amount ?? 0)
+      : 0;
+
+    const invPaid = isCurrentInvoice && !isViewOnly
+      ? Math.max(0, Number(rawPaid || 0) - currentPaymentAmount)
+      : rawPaid;
+
     const invBalance = invoice
-      ? invoice.balance ?? (Number(invTotal || 0) - Number(invPaid || 0))
+      ? (invTotal !== "" && invPaid !== ""
+          ? Math.max(0, Number(invTotal) - Number(invPaid))
+          : invoice.balance ?? "")
       : "";
 
     setFormData((prev) => ({
@@ -316,7 +370,9 @@ const PaymentModal = ({
       formData.outstandingAmount !== "" &&
       Number(formData.amountReceived) > Number(formData.outstandingAmount)
     ) {
-      setValidationError("Amount Received cannot exceed the balance due.");
+      setValidationError(
+        `Amount Received cannot exceed the balance due (SAR ${money(formData.outstandingAmount)}).`
+      );
       return;
     }
 
@@ -406,12 +462,23 @@ const PaymentModal = ({
                 {formData.invoiceId && !hasInvoiceInList && (
                   <option value={formData.invoiceId}>
                     {formData.invoiceNo || `Invoice #${formData.invoiceId}`}
+                    {formData.outstandingAmount !== ""
+                      ? ` - SAR ${money(formData.outstandingAmount)}`
+                      : ""}
                   </option>
                 )}
                 {customerInvoices.map((inv) => {
                   const total = Number(inv.total_amount ?? inv.amount_to_be_paid ?? 0);
                   const paid = Number(inv.amount_paid ?? inv.paid_amount ?? 0);
-                  const bal = Number(inv.balance ?? (total - paid));
+                  let bal = Number(inv.balance ?? (total - paid));
+                  const isCurrentInvoice =
+                    Boolean(initialData) &&
+                    (String(inv.id) === String(initialData.invoice_id) ||
+                      String(inv.id) === String(initialData.invoice?.id) ||
+                      String(inv.id) === String(initialData.invoice));
+                  if (isCurrentInvoice && !isViewOnly) {
+                    bal += Number(initialData.amount_received ?? initialData.amount ?? 0);
+                  }
                   return (
                     <option key={inv.id} value={inv.id}>
                       {inv.invoice_number || `INV-${inv.id}`} - SAR {money(bal)}
