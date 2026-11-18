@@ -1,75 +1,58 @@
-import React, { useEffect, useRef, useState } from "react";
-import { FiMoreVertical, FiEdit2, FiTrash2 } from "react-icons/fi";
-import { useNavigate } from "react-router-dom";
+
+import React from "react";
+import { FiEye, FiDownload, FiX } from "react-icons/fi";
 import {
     ActionWrapper,
     ActionButton,
-    FloatingAction,
 } from "./OrderAction.styles";
-import { IoEllipsisVerticalCircleOutline } from "react-icons/io5";
 
-const OrderActions = ({ row, onDelete }) => {
-    const [open, setOpen] = useState(false);
-    const navigate = useNavigate();
-    const wrapperRef = useRef(null);
-
-    useEffect(() => {
-        const handleClickOutside = (e) => {
-            if (wrapperRef.current && !wrapperRef.current.contains(e.target)) {
-                setOpen(false);
-            }
-        };
-
-        document.addEventListener("mousedown", handleClickOutside);
-        return () => document.removeEventListener("mousedown", handleClickOutside);
-    }, []);
-
-    const handleEdit = (order) => {
-        navigate(`/sales/orders/edit/${order.id}`, {
-            state: { orderData: order },
-        });
-    };
-
+const OrderActions = ({
+    row,
+    onView,
+    onDownload,
+    onDelete,
+    showDelete = false,
+}) => {
     return (
-        <ActionWrapper ref={wrapperRef}>
+        <ActionWrapper>
+            {/* VIEW */}
             <ActionButton
                 type="button"
+                title="View"
                 onClick={(e) => {
                     e.stopPropagation();
-                    setOpen((prev) => !prev);
+                    onView?.(row);
                 }}
-                title="Actions"
             >
-                <IoEllipsisVerticalCircleOutline size={14} />
+                <FiEye size={13} />
             </ActionButton>
 
-            <FloatingAction
+            {/* DOWNLOAD */}
+            <ActionButton
                 type="button"
-                $open={open}
-                $position="edit"
-                title="Edit Order"
+                title="Download"
                 onClick={(e) => {
                     e.stopPropagation();
-                    handleEdit(row);
-                    setOpen(false);
+                    onDownload?.(row);
                 }}
             >
-                <FiEdit2 size={12} />
-            </FloatingAction>
+                <FiDownload size={13} />
+            </ActionButton>
 
-            <FloatingAction
-                type="button"
-                $open={open}
-                $position="delete"
-                title="Delete Order"
-                onClick={(e) => {
-                    e.stopPropagation();
-                    onDelete?.(row);
-                    setOpen(false);
-                }}
-            >
-                <FiTrash2 size={12} />
-            </FloatingAction>
+            {/* DELETE */}
+            {showDelete && (
+                <ActionButton
+                    type="button"
+                    $danger
+                    title="Delete"
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        onDelete?.(row);
+                    }}
+                >
+                    <FiX size={15} />
+                </ActionButton>
+            )}
         </ActionWrapper>
     );
 };

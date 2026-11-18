@@ -583,7 +583,7 @@ const CustomerModal = ({
                                 aria-invalid={!!errors.industry}
                             >
                                 <option value="">Select Industry</option>
-                                <option value="it_software">IT & Software</option>
+                                <option value="technology">IT & Software</option>
                                 <option value="manufacturing">Manufacturing</option>
                                 <option value="construction">Construction & Real Estate</option>
                                 <option value="trading">Trading</option>

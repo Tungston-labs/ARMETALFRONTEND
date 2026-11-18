@@ -150,11 +150,24 @@ const SalesOrder = () => {
 
         setDeleteError(errorMessage);
     };
-    const columns = useMemo(
-        () => getSalesOrderColumns({ onDelete: handleDelete }),
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-        []
-    );
+    const handleView = (order) => {
+    navigate(`/sales/orders/${order.id}`); 
+};
+
+const handleDownload = (order) => {
+    console.log("Download", order.id);
+};
+
+   const columns = useMemo(
+    () =>
+        getSalesOrderColumns({
+            onView: handleView,
+            onDownload: handleDownload,
+            onDelete: handleDelete,
+        }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    []
+);
 
     return (
         <div style={{ padding: 20 }}>
