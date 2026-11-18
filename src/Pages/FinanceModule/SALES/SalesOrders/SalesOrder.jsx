@@ -31,13 +31,6 @@ import {
     selectSalesOrderLoading,
 } from "../../../../Redux/finance/Sales/Salesorderslice";
 
-const INVOICE_STATUS_OPTIONS = [
-    { label: "Draft", value: "draft" },
-    { label: "Pending", value: "pending" },
-    { label: "Partially Invoiced", value: "partially_invoiced" },
-    { label: "Invoiced", value: "invoiced" },
-    { label: "Overdue", value: "overdue" },
-];
 const getCurrentMonthRange = () => {
     const today = new Date(2026, 8, 21);
     const year = today.getFullYear();
@@ -79,7 +72,6 @@ const SalesOrder = () => {
     const [startDate, setStartDate] = useState("");
     const [endDate, setEndDate] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
-    const [invoiceStatus, setInvoiceStatus] = useState("");
 
     const [orderToDelete, setOrderToDelete] = useState(null);
     const [deleteError, setDeleteError] = useState("");
@@ -205,30 +197,13 @@ const SalesOrder = () => {
                 showSearch
 
                 status={orderStatus}
-                statuses={ORDER_STATUS_OPTIONS.map((s) => s.label)}
+                statuses={ORDER_STATUS_OPTIONS}
                 onStatus={(value) => {
-                    const match = ORDER_STATUS_OPTIONS.find(
-                        (s) => s.label === value
-                    );
-                    setOrderStatus(match ? match.value : "");
+                    setOrderStatus(value || "");
                     setCurrentPage(1);
                 }}
-                Placeholder="Order Status"
+                statusPlaceholder="All Status"
                 showStatus
-
-                filters={[
-                    
-                    {
-                        key: "invoiceStatus",
-                        value: invoiceStatus,
-                        onChange: (value) => {
-                            setInvoiceStatus(value);
-                            setCurrentPage(1);
-                        },
-                        options: INVOICE_STATUS_OPTIONS,
-                        placeholder: "All Invoice Status",
-                    },
-                ]}
             />
 
             <ReusableTable

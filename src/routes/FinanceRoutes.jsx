@@ -166,247 +166,245 @@ import WarehouseList from "../Pages/FinanceModule/PRODUCTS/Warehouse/WarehouseLi
 import QuotationsList from "../Pages/FinanceModule/SALES/Quotations/QuotationsList.jsx";
 
 const FinanceRoutes = () => {
-  return (
-    <>
-      {/* =====================================================
+    return (
+        <>
+            {/* =====================================================
           PRODUCTS
       ===================================================== */}
 
-      <Route path="/product/Categories-List" element={<CategoriesList />} />
-      <Route path="/product/Product-List" element={<ProductList />} />
-      <Route path="/product/Warehouse" element={<WarehouseList />} />
-      <Route path="warehouse/:id" element={<WarehouseDetails />} />
-      <Route path="/product/Inventory-List" element={<InventoryList />} />
+            <Route path="/product/Categories-List" element={<CategoriesList />} />
+            <Route path="/product/Product-List" element={<ProductList />} />
+            <Route path="/product/Warehouse" element={<WarehouseList />} />
+            <Route path="warehouse/:id" element={<WarehouseDetails />} />
+            <Route path="/product/Inventory-List" element={<InventoryList />} />
 
-      {/* =====================================================
+            {/* =====================================================
           PURCHASES - BILLS
       ===================================================== */}
 
-      <Route path="purchases/bill" element={<Bill />} />
-      <Route path="purchases/bill/add" element={<CreateBill />} />
-      <Route path="purchases/bill/edit/:id" element={<CreateBill />} />
+            <Route path="purchases/bill" element={<Bill />} />
+            <Route path="purchases/bill/add" element={<CreateBill />} />
+            <Route path="purchases/bill/edit/:id" element={<CreateBill />} />
 
-      {/* =====================================================
+            {/* =====================================================
           PURCHASES - PAYMENTS
       ===================================================== */}
 
-      <Route path="purchases/payments" element={<PurchasePaymentPage />} />
+            <Route path="purchases/payments" element={<PurchasePaymentPage />} />
 
-      {/* =====================================================
+            {/* =====================================================
           PURCHASES - DEBIT NOTES
       ===================================================== */}
 
-      <Route path="purchases/debit-notes" element={<PurchaseDebitNotes />} />
+            <Route path="purchases/debit-notes" element={<PurchaseDebitNotes />} />
 
-      <Route path="purchases/debit-notes/add" element={<CreateDebitNote />} />
+            <Route path="purchases/debit-notes/add" element={<CreateDebitNote />} />
 
-      <Route
-        path="purchases/debit-notes/edit/:id"
-        element={<CreateDebitNote />}
-      />
+            <Route
+                path="purchases/debit-notes/edit/:id"
+                element={<CreateDebitNote />}
+            />
 
-      {/* =====================================================
+            {/* =====================================================
           SALES - CUSTOMERS
       ===================================================== */}
 
-      <Route path="sales/customers" element={<CustomerList />} />
+            <Route path="sales/customers" element={<CustomerList />} />
 
-      <Route path="sales/customers/:customerId" element={<CompanyLayout />}>
-        <Route index element={<Overview />} />
+            <Route path="sales/customers/:customerId" element={<CompanyLayout />}>
+                <Route index element={<Overview />} />
 
-        <Route path="overview" element={<Overview />} />
+                <Route path="overview" element={<Overview />} />
 
-        <Route path="quotations" element={<Quotations />} />
+                <Route path="quotations" element={<Quotations />} />
 
-        <Route path="orders" element={<Orders />} />
+                <Route path="orders" element={<Orders />} />
 
-        <Route path="invoices" element={<Invoices />} />
+                <Route path="invoices" element={<Invoices />} />
 
-        <Route path="payments" element={<Payments />} />
+                <Route path="payments" element={<Payments />} />
 
-        <Route path="ledger" element={<Ledger />} />
+                <Route path="ledger" element={<Ledger />} />
 
-        <Route path="credit-notes" element={<CreditNotes />} />
-      </Route>
+                <Route path="credit-notes" element={<CreditNotes />} />
+            </Route>
 
-      {/* =====================================================
+            {/* =====================================================
           SALES - ORDERS
       ===================================================== */}
 
-      <Route path="sales/orders" element={<SalesOrder />} />
+            <Route path="sales/orders" element={<SalesOrder />} />
 
-      <Route path="sales/orders/add" element={<AddingOrder />} />
+            <Route path="sales/orders/add" element={<AddingOrder />} />
 
-      <Route path="sales/orders/edit/:id" element={<AddingOrder />} />
+            <Route path="sales/orders/edit/:id" element={<AddingOrder />} />
 
-      {/* =====================================================
+            {/* =====================================================
           SALES - INVOICES
       ===================================================== */}
 
-      <Route path="sales/invoices" element={<SalesInvoices />} />
-      <Route path="sales/invoices/add" element={<AddingInvoice />} />
-      <Route path="sales/invoices/edit/:id" element={<AddingInvoice />} />
-     <Route path="sales/invoices/view/:id" element={<AddingInvoice />} />
-      {/* =====================================================
+            <Route path="sales/invoices" element={<SalesInvoices />} />
+            <Route path="sales/invoices/add" element={<AddingInvoice />} />
+            <Route path="sales/invoices/edit/:id" element={<AddingInvoice />} />
+            <Route path="sales/invoices/view/:id" element={<AddingInvoice />} />
+            {/* =====================================================
           SALES - RECURRING BILLING
       ===================================================== */}
 
-      <Route path="sales/recurring-billing" element={<RecurringBilling />} />
-      <Route path="sales/recurring-billing/add" element={<RecurringBill />} />
-      <Route path="sales/recurring-billing/;id" element={<RecurringBilling />} />
+            <Route path="sales/recurring-billing" element={<RecurringBilling />} />
+            <Route path="sales/recurring-billing/add" element={<RecurringBill />} />
+            <Route path="sales/recurring-billing/;id" element={<RecurringBilling />} />
 
-      {/* =====================================================
+            {/* =====================================================
           SALES - CUSTOMER LEDGER
       ===================================================== */}
 
-      <Route path="sales/customer-ledger" element={<CustomerLedger />} />
+            <Route path="sales/customer-ledger" element={<CustomerLedger />} />
 
-      {/* =====================================================
+            {/* =====================================================
           SALES - QUOTATIONS
       ===================================================== */}
 
-      {/* <Route path="Quotation-List" element={<QuotationsList />} /> */}
-      <Route path="sales/add-Quotation" element={<AddQuotation />} />
+            {/* <Route path="Quotation-List" element={<QuotationsList />} /> */}
+            <Route path="sales/add-Quotation" element={<AddQuotation />} />
+            <Route path="sales/edit-Quotation/:id" element={<AddQuotation />} />
+            <Route path="sales/Quotationlist" element={<QuotationsList />} />
 
-
-
-      <Route path="sales/Quotationlist" element={<QuotationsList />} />
-
-      {/* =====================================================
+            {/* =====================================================
           SALES - DELIVERY NOTES
       ===================================================== */}
 
-      <Route path="delivery/notes" element={<DeliveryNotes />} />
+            <Route path="delivery/notes" element={<DeliveryNotes />} />
 
-      <Route path="delivery/notes/add" element={<Createdeliverynotes />} />
+            <Route path="delivery/notes/add" element={<Createdeliverynotes />} />
 
-      <Route path="delivery/notes/edit/:id" element={<Createdeliverynotes />} />
+            <Route path="delivery/notes/edit/:id" element={<Createdeliverynotes />} />
 
-      <Route path="sales/delivery-notes" element={<DeliveryNotes />} />
+            <Route path="sales/delivery-notes" element={<DeliveryNotes />} />
 
-      <Route path="sales/delivery-notes/add" element={<Createdeliverynotes />} />
+            <Route path="sales/delivery-notes/add" element={<Createdeliverynotes />} />
 
-      <Route path="sales/delivery-notes/edit/:id" element={<Createdeliverynotes />} />
+            <Route path="sales/delivery-notes/edit/:id" element={<Createdeliverynotes />} />
 
-      {/* =====================================================
+            {/* =====================================================
           SALES - PAYMENTS
       ===================================================== */}
 
-      <Route path="sales/payments" element={<PaymentPage />} />
+            <Route path="sales/payments" element={<PaymentPage />} />
 
-      {/* =====================================================
+            {/* =====================================================
           SALES - CREDIT NOTES
       ===================================================== */}
 
-      <Route path="credit-notes" element={<SalesCreditNotes />} />
+            <Route path="credit-notes" element={<SalesCreditNotes />} />
 
-      <Route path="credit-notes/add" element={<CreateCreditNotes />} />
+            <Route path="credit-notes/add" element={<CreateCreditNotes />} />
 
-      <Route path="credit-notes/edit/:id" element={<CreateCreditNotes />} />
+            <Route path="credit-notes/edit/:id" element={<CreateCreditNotes />} />
 
-      {/* =====================================================
+            {/* =====================================================
           SALES - CREDIT NOTE ACTION
       ===================================================== */}
 
-      <Route path="credit-notes/action/:id" element={<CreditAction />} />
+            <Route path="credit-notes/action/:id" element={<CreditAction />} />
 
-      {/* =====================================================
+            {/* =====================================================
           SALES - SALES RETURN
       ===================================================== */}
 
-      <Route path="sales-return" element={<SalesReturn />} />
+            <Route path="sales-return" element={<SalesReturn />} />
 
-      <Route path="sales-return/add" element={<CreateSalesReturnAction />} />
+            <Route path="sales-return/add" element={<CreateSalesReturnAction />} />
 
-      <Route path="sales-return/edit/:id" element={<SalesReturnAction />} />
+            <Route path="sales-return/edit/:id" element={<SalesReturnAction />} />
 
-      {/* =====================================================
+            {/* =====================================================
           PURCHASES - VENDORS
       ===================================================== */}
 
-      <Route path="purchase/vendors" element={<Vendors />} />
+            <Route path="purchase/vendors" element={<Vendors />} />
 
-      {/* =====================================================
+            {/* =====================================================
           PURCHASES - PURCHASE ORDERS
       ===================================================== */}
 
-      <Route path="purchase/purchaseorder" element={<PurchaseOrders />} />
+            <Route path="purchase/purchaseorder" element={<PurchaseOrders />} />
 
-      <Route
-        path="purchases/purchase-orders/add"
-        element={<AddingPurchaseOrder />}
-      />
+            <Route
+                path="purchases/purchase-orders/add"
+                element={<AddingPurchaseOrder />}
+            />
 
-      <Route
-        path="purchases/purchase-orders/edit/:id"
-        element={<AddingPurchaseOrder />}
-      />
+            <Route
+                path="purchases/purchase-orders/edit/:id"
+                element={<AddingPurchaseOrder />}
+            />
 
-      {/* =====================================================
+            {/* =====================================================
           PURCHASES - VENDOR LEDGER
       ===================================================== */}
 
-      <Route path="purchases/vendor-ledger" element={<VendorLedger />} />
+            <Route path="purchases/vendor-ledger" element={<VendorLedger />} />
 
-      {/* =====================================================
+            {/* =====================================================
           PURCHASES - VENDOR DETAILS
       ===================================================== */}
 
-      <Route path="purchase/vendors/:vendorId" element={<VendorLayout />}>
-        <Route index element={<VendorOverview />} />
+            <Route path="purchase/vendors/:vendorId" element={<VendorLayout />}>
+                <Route index element={<VendorOverview />} />
 
-        <Route path="overview" element={<VendorOverview />} />
+                <Route path="overview" element={<VendorOverview />} />
 
-        <Route path="purchase-orders" element={<VendorPurchaseOrders />} />
+                <Route path="purchase-orders" element={<VendorPurchaseOrders />} />
 
-        <Route path="bills" element={<VendorBills />} />
+                <Route path="bills" element={<VendorBills />} />
 
-        <Route path="payments" element={<VendorPayments />} />
+                <Route path="payments" element={<VendorPayments />} />
 
-        <Route path="ledger" element={<VendorLedgerTab />} />
+                <Route path="ledger" element={<VendorLedgerTab />} />
 
-        <Route path="debit-notes" element={<VendorDebitNotes />} />
-      </Route>
+                <Route path="debit-notes" element={<VendorDebitNotes />} />
+            </Route>
 
-      {/* =====================================================
+            {/* =====================================================
           ACCOUNTS - CHART OF ACCOUNTS
       ===================================================== */}
 
-      <Route path="accounts/chartofaccounts" element={<ChartOfAccounts />} />
+            <Route path="accounts/chartofaccounts" element={<ChartOfAccounts />} />
 
-      {/* =====================================================
+            {/* =====================================================
           ACCOUNTS - JOURNAL ENTRIES
       ===================================================== */}
 
-      <Route path="accounts/journal-entries" element={<JournalEntries />} />
+            <Route path="accounts/journal-entries" element={<JournalEntries />} />
 
-      <Route
-        path="accounts/journal-entries/add"
-        element={<NewJournalentry />}
-      />
+            <Route
+                path="accounts/journal-entries/add"
+                element={<NewJournalentry />}
+            />
 
-      <Route path="accounts/journal-entries/edit/:id" element={<NewJournalentry />}
-      />
-      <Route path="accounts/generalledger" element={<GeneralLedger />} />
-      <Route path="accounts/expenses" element={<Expenses />} />
-      <Route path="accounts/payables" element={<Payables />} />
-      <Route path="accounts/recievables" element={<Recievables />} />
-      <Route path="accounts/banking" element={<Banking />} />
+            <Route path="accounts/journal-entries/edit/:id" element={<NewJournalentry />}
+            />
+            <Route path="accounts/generalledger" element={<GeneralLedger />} />
+            <Route path="accounts/expenses" element={<Expenses />} />
+            <Route path="accounts/payables" element={<Payables />} />
+            <Route path="accounts/recievables" element={<Recievables />} />
+            <Route path="accounts/banking" element={<Banking />} />
             <Route path="accounts/trialbalance" element={<TrialBalance />} />
 
-      {/* Report Section */}
-      <Route path="reports/sales-report" element={<SalesReports />} />
-      <Route path="reports/purchase-report" element={<PurchaseReports />} />
-      <Route path="reports/payment-report" element={<PaymentReports />} />
-      <Route path="reports/inventory-report" element={<InventoryReports />} />
-      <Route path="reports/tax-report" element={<TaxReport />} />
-         <Route path="reports/customer-report" element={<CustomerReport />} />
-         <Route path="reports/expense-report" element={<ExpenseReport />} />
-         <Route path="reports/vendor-report" element={<VendorReport />} />
-         <Route path="reports/profit-loss" element={<ProfitLoss />} />
-          <Route path="reports/cash-flow" element={<CashFlow />} />
-    </>
-  );
+            {/* Report Section */}
+            <Route path="reports/sales-report" element={<SalesReports />} />
+            <Route path="reports/purchase-report" element={<PurchaseReports />} />
+            <Route path="reports/payment-report" element={<PaymentReports />} />
+            <Route path="reports/inventory-report" element={<InventoryReports />} />
+            <Route path="reports/tax-report" element={<TaxReport />} />
+            <Route path="reports/customer-report" element={<CustomerReport />} />
+            <Route path="reports/expense-report" element={<ExpenseReport />} />
+            <Route path="reports/vendor-report" element={<VendorReport />} />
+            <Route path="reports/profit-loss" element={<ProfitLoss />} />
+            <Route path="reports/cash-flow" element={<CashFlow />} />
+        </>
+    );
 };
 
 export default FinanceRoutes;

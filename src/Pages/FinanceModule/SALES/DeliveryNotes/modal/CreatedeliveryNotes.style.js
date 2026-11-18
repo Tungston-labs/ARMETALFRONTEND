@@ -32,80 +32,63 @@ export const DeliveryNoteForm = styled.div`
 ========================= */
 
 export const FormGrid = styled.div`
-  width: 100%;
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  column-gap: 24px;
-  row-gap: 10px;
+   width: 100%;
 
-  @media (max-width: 900px) {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
 
-  @media (max-width: 560px) {
-    grid-template-columns: 1fr;
-  }
+    column-gap: 24px;
+    row-gap: 10px;
 `;
 
-export const FormGridThree = styled.div`
-  width: 100%;
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  column-gap: 24px;
-  row-gap: 10px;
-  margin-top: 16px;
 
-  @media (max-width: 900px) {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  @media (max-width: 560px) {
-    grid-template-columns: 1fr;
-  }
-`;
 
 export const FormGroup = styled.div`
   width: 100%;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
+    min-width: 0;
+
+    display: flex;
+    flex-direction: column;
 `;
 
 export const Label = styled.label`
-  margin-bottom: 7px;
-
-  font-family: "Poppins", sans-serif;
-  font-size: 14px;
-  font-weight: 400;
-  line-height: 18px;
+   margin-bottom: 7px;
+    font-family: "Poppins", sans-serif;
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 18px;
 `;
 
 export const Input = styled.input`
-  width: 100%;
-  height: 38px;
-  box-sizing: border-box;
+   width: 100%;
+    height: 38px;
 
-  border: 1px solid #e2e5ea;
-  border-radius: 5px;
-  padding: 0 12px;
+    box-sizing: border-box;
 
-  background: #ffffff;
-  color: #333333;
+    border: 1px solid #e2e5ea;
+    border-radius: 5px;
 
-  font-family: "Poppins", sans-serif;
-  font-size: 13px;
-  font-weight: 400;
+    padding: 0 12px;
 
-  outline: none;
-  transition: border-color 0.2s ease;
+    background: #ffffff;
 
-  &::placeholder {
-    color: #9ca3af;
-  }
+    color: #333333;
 
-  &:focus {
-    border-color: #3049a3;
-  }
+    font-family: "Poppins", sans-serif;
+    font-size: 13px;
+    font-weight: 400;
+
+    outline: none;
+
+    transition: border-color 0.2s ease;
+
+    &::placeholder {
+        color: #9ca3af;
+    }
+
+    &:focus {
+        border-color: #3049a3;
+    }
 `;
 
 /* =========================

@@ -2,17 +2,9 @@ import React from "react";
 import { PiDownloadSimple } from "react-icons/pi";
 import { FiEdit2 } from "react-icons/fi";
 import { IoClose } from "react-icons/io5";
+import { formatDate } from "../../../../../utils/Formatdate";
 
-const formatDate = (dateStr) => {
-  if (!dateStr) return "—";
-  const d = new Date(dateStr);
-  if (Number.isNaN(d.getTime())) return String(dateStr);
-  return d.toLocaleDateString("en-US", {
-    month: "long",
-    day: "numeric",
-    year: "numeric",
-  });
-};
+
 
 const formatCurrency = (value, currency = "SAR") => {
   if (value === null || value === undefined || value === "") return "------";

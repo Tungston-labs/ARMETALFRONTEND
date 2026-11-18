@@ -6,7 +6,7 @@ import ReusableFilter from "../../../../Components/ReusableTable/ReusableFilter"
 import ReusableTable from "../../../../Components/ReusableTable/ReusableTable";
 import ReusablePagination from "../../../../Components/Pagination/ReusablePagination";
 import StatsCards from "../../../../Components/StatsCards/StatsCards";
-
+import { useNavigate } from "react-router-dom";
 import ProductServiceModal from "./modal/AddingRecurringBilling";
 
 import {
@@ -17,6 +17,7 @@ import {
 } from "./RecurringBilling.styles";
 
 const RecurringBilling = () => {
+    const navigate = useNavigate();
     const {
         billing,
         billingTotalPages,
@@ -57,7 +58,7 @@ const RecurringBilling = () => {
                     title="Recurring Billing"
                     breadcrumbs={["Sales", "Recurring Billing"]}
                     buttonText="+ ADD NEW RECURRING BILLING"
-                    onButtonClick={() => setShowProductServiceModal(true)}
+                    onButtonClick={() => navigate("/sales/recurring-billing/add")}
                 >
                     <DateRangeWrapper>
                         <DatePickerContainer>

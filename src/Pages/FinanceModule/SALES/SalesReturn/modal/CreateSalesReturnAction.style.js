@@ -525,7 +525,7 @@ export const CancelButton = styled.button`
 `;
 
 export const PreviewButton = styled.button`
-    width: 100px;
+    /* width: 100px; */
     height: 38px;
 
     border: 1px solid #3049a3;

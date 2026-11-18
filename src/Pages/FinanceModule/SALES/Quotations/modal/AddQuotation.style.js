@@ -62,50 +62,12 @@ export const FormGroup = styled.div`
   flex-direction: column;
 `;
 
-export const Label = styled.label`
-  margin-bottom: 7px;
-
-  font-family: "Poppins", sans-serif;
-  font-size: 14px;
-  font-weight: 400;
-  line-height: 18px;
-`;
 
 export const Required = styled.span`
   color: #ef4444;
 `;
 
 
-export const Input = styled.input`
-  width: 100%;
-  height: 38px;
-
-  box-sizing: border-box;
-
-  border: 1px solid #e2e5ea;
-  border-radius: 5px;
-
-  padding: 0 12px;
-
-  background: #ffffff;
-  color: #333333;
-
-  font-family: "Poppins", sans-serif;
-  font-size: 13px;
-  font-weight: 400;
-
-  outline: none;
-  transition: border-color 0.2s ease;
-  color-scheme: light;
-
-  &::placeholder {
-    color: #9ca3af;
-  }
-
-  &:focus {
-    border-color: #3049a3;
-  }
-`;
 
 /* =========================
    SELECT
@@ -132,47 +94,6 @@ export const SelectWrap = styled.div`
   }
 `;
 
-export const Select = styled.select`
-  width: 100%;
-  height: 40px;
-
-  box-sizing: border-box;
-
-  border: 1px solid #e2e5ea;
-  border-radius: 5px;
-
-  padding: 0 40px 0 12px;
-
-  background: #ffffff;
-  color: #4b5563;
-
-  font-family: "Poppins", sans-serif;
-  font-size: 13px;
-  font-weight: 400;
-
-  appearance: none;
-  outline: none;
-  cursor: pointer;
-
-  &:focus {
-    border-color: #3049a3;
-  }
-`;
-
-/* =========================
-   ITEMS HEADER
-========================= */
-
-export const ItemsHeader = styled.div`
-  width: 100%;
-
-  margin-top: 30px;
-  margin-bottom: 12px;
-
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-`;
 
 export const AddItemButton = styled.button`
   height: 36px;
@@ -206,166 +127,7 @@ export const AddItemButton = styled.button`
   }
 `;
 
-/* =========================
-   TABLE
-========================= */
 
-export const TableWrap = styled.div`
-  width: 100%;
-
-  overflow-x: auto;
-
-  border: 1px solid #e5e7eb;
-  border-radius: 5px;
-
-  scrollbar-width: thin;
-`;
-
-export const ItemsTable = styled.table`
-  width: 100%;
-  min-width: 1050px;
-
-  border-collapse: collapse;
-  table-layout: fixed;
-
-  thead {
-    background: #2c469f;
-  }
-
-  th {
-    height: 42px;
-    padding: 0 9px;
-
-    color: #ffffff;
-
-    font-family: "Poppins", sans-serif;
-    font-size: 11px;
-    font-weight: 600;
-
-    text-align: left;
-    white-space: nowrap;
-  }
-
-  td {
-    height: 48px;
-    padding: 5px 8px;
-
-    border-bottom: 1px solid #eeeeee;
-
-    color: #555555;
-
-    font-family: "Poppins", sans-serif;
-    font-size: 11px;
-
-    vertical-align: middle;
-  }
-
-  tbody tr:last-child td {
-    border-bottom: none;
-  }
-
-  th:nth-child(1),
-  td:nth-child(1) {
-    width: 6%;
-    text-align: center;
-  }
-  th:nth-child(2),
-  td:nth-child(2) {
-    width: 11%;
-  }
-  th:nth-child(3),
-  td:nth-child(3) {
-    width: 19%;
-  }
-  th:nth-child(4),
-  td:nth-child(4) {
-    width: 7%;
-  }
-  th:nth-child(5),
-  td:nth-child(5) {
-    width: 9%;
-  }
-  th:nth-child(6),
-  td:nth-child(6) {
-    width: 10%;
-  }
-  th:nth-child(7),
-  td:nth-child(7) {
-    width: 8%;
-  }
-  th:nth-child(8),
-  td:nth-child(8) {
-    width: 10%;
-  }
-  th:nth-child(9),
-  td:nth-child(9) {
-    width: 11%;
-  }
-  th:nth-child(10),
-  td:nth-child(10) {
-    width: 7%;
-    text-align: center;
-  }
-
-  input {
-    width: 100%;
-    height: 32px;
-
-    box-sizing: border-box;
-
-    padding: 0 8px;
-
-    border: 1px solid #e3e5e8;
-    border-radius: 3px;
-
-    background: #ffffff;
-    color: #4b5563;
-
-    font-family: "Poppins", sans-serif;
-    font-size: 11px;
-
-    outline: none;
-
-    &:focus {
-      border-color: #3049a3;
-    }
-
-    &::placeholder {
-      color: #9ca3af;
-    }
-  }
-
-  select {
-    width: 100%;
-    height: 32px;
-
-    box-sizing: border-box;
-
-    padding: 0 8px;
-
-    border: 1px solid #e3e5e8;
-    border-radius: 3px;
-
-    background: #ffffff;
-    color: #4b5563;
-
-    font-family: "Poppins", sans-serif;
-    font-size: 11px;
-
-    outline: none;
-
-    &:focus {
-      border-color: #3049a3;
-    }
-
-    &::placeholder {
-      color: #9ca3af;
-    }
-  }
-  .calculated {
-    white-space: nowrap;
-  }
-`;
 
 export const DeleteButton = styled.button`
   width: 28px;
@@ -458,30 +220,6 @@ export const Summary = styled.div`
   padding-top: 2px;
 `;
 
-export const SummaryRow = styled.div`
-  min-height: 32px;
-
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-
-  gap: 20px;
-
-  font-family: "Poppins", sans-serif;
-  font-size: 12px;
-
-  color: #111111;
-
-  span {
-    color: #4b5563;
-  }
-
-  strong {
-    font-weight: 600;
-    color: #111111;
-    white-space: nowrap;
-  }
-`;
 
 export const DiscountInput = styled.input`
   width: 90px;
@@ -626,4 +364,305 @@ export const ErrorMessage = styled.div`
   color: #c0392b;
   font-family: "Poppins", sans-serif;
   font-size: 12px;
+`;
+
+
+export const Container = styled.div`
+  padding: 20px;
+  background: #ffffff;
+  @media (max-width: 768px) {
+    padding: 14px;
+  }
+`;
+
+export const Card = styled.form`
+  background: #ffffff;
+  /* border: 1px solid #e5e7eb; */
+  /* padding: 24px; */
+
+  @media (max-width: 768px) {
+    padding: 16px;
+  }
+`;
+
+export const Grid4 = styled.div`
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 10px;
+
+  @media (max-width: 1024px) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  @media (max-width: 576px) {
+    grid-template-columns: 1fr;
+  }
+`;
+
+export const FieldGroup = styled.div`
+  display: flex;
+  flex-direction: column;
+  /* gap: 6px; */
+  min-width: 0;
+`;
+
+export const Label = styled.label`
+    margin-bottom: 7px;
+    font-family: "Poppins", sans-serif;
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 18px;
+
+    span{
+      color: red;
+    }
+`;
+
+export const Input = styled.input`
+ width: 100%;
+    height: 38px;
+
+    box-sizing: border-box;
+
+    border: 1px solid #e2e5ea;
+    border-radius: 5px;
+
+    padding: 0 12px;
+
+    background: #ffffff;
+
+    color: #333333;
+
+    font-family: "Poppins", sans-serif;
+    font-size: 13px;
+    font-weight: 400;
+
+    outline: none;
+
+    transition: border-color 0.2s ease;
+
+    &::placeholder {
+        color: #9ca3af;
+    }
+
+    &:focus {
+        border-color: #3049a3;
+    }
+`;
+
+export const Select = styled.select`
+  height: 38px;
+  padding: 0 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  font-size: 13px;
+  color: #111827;
+  background: #ffffff;
+  width: 100%;
+  box-sizing: border-box;
+  outline: none;
+
+  &:focus {
+    border-color: #3857b9;
+  }
+`;
+
+export const ItemsHeader = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 22px 0 12px;
+  gap: 12px;
+  flex-wrap: wrap;
+`;
+
+export const SectionHeading = styled.h3`
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #111827;
+  text-transform: uppercase;
+`;
+
+export const AddItemBtn = styled.button`
+  height: 36px;
+  padding: 0 14px;
+  background: #f58220;
+  color: #ffffff;
+  border: none;
+  border-radius: 4px;
+  font-size: 12.5px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+
+  &:hover {
+    background: #df7113;
+  }
+`;
+
+export const TableWrap = styled.div`
+  width: 100%;
+  overflow-x: auto;
+  border: 1px dashed #d1d5db;
+  border-radius: 4px;
+`;
+
+export const ItemsTable = styled.table`
+  width: 100%;
+  border-collapse: collapse;
+
+  th {
+    background: #233c8b;
+    color: #ffffff;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 10px 8px;
+    text-align: left;
+    white-space: nowrap;
+  }
+
+  td {
+    padding: 8px 6px;
+    border-bottom: 1px solid #e5e7eb;
+    font-size: 12.5px;
+    vertical-align: middle;
+  }
+
+  input,
+  select {
+    height: 34px;
+    padding: 0 8px;
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+    font-size: 12.5px;
+    width: 100%;
+    min-width: 72px;
+    box-sizing: border-box;
+    background: #ffffff;
+  }
+`;
+
+export const RemoveBtn = styled.button`
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 1px solid #ef4444;
+  background: #ffffff;
+  color: #ef4444;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+
+  &:hover {
+    background: #fef2f2;
+  }
+`;
+
+export const BottomGrid = styled.div`
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 0.9fr);
+  gap: 24px;
+  margin-top: 22px;
+  align-items: start;
+
+  @media (max-width: 900px) {
+    grid-template-columns: 1fr;
+  }
+`;
+
+export const TextArea = styled.textarea`
+  width: 100%;
+  min-height: 90px;
+  padding: 10px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  font-size: 13px;
+  font-family: inherit;
+  box-sizing: border-box;
+  resize: vertical;
+`;
+
+export const SummaryCard = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+`;
+
+export const SummaryRow = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 13px;
+  color: #374151;
+
+  strong {
+    font-weight: 600;
+    color: #111827;
+  }
+`;
+
+export const TotalBanner = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #f58220;
+  color: #ffffff;
+  padding: 11px 14px;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 600;
+  margin-top: 4px;
+`;
+
+export const ActionsBar = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 24px;
+  flex-wrap: wrap;
+`;
+
+export const ButtonGroup = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+`;
+
+export const OutlineBtn = styled.button`
+  height: 38px;
+  padding: 0 18px;
+  background: #ffffff;
+  color: #111827;
+  border: 1px solid #111827;
+  border-radius: 4px;
+  font-size: 12.5px;
+  font-weight: 500;
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    background: #f3f4f6;
+  }
+`;
+
+export const PrimaryBtn = styled.button`
+  height: 38px;
+  padding: 0 20px;
+  background: #3857b9;
+  color: #ffffff;
+  border: none;
+  border-radius: 4px;
+  font-size: 12.5px;
+  font-weight: 500;
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    background: #2e49a5;
+  }
 `;

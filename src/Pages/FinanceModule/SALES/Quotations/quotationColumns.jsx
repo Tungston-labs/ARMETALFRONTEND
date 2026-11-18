@@ -7,6 +7,7 @@ import {
   SmallIconButton,
   StatusText,
 } from "./QuotationsList.styles";
+import { formatDate } from "../../../../utils/Formatdate";
 
 const formatDisplayDate = (dateStr) => {
   if (!dateStr || dateStr === "-") return "—";
@@ -46,12 +47,12 @@ export const quotationColumns = ({
   {
     header: "Issue Date",
     accessor: "issueDate",
-    render: (row) => formatDisplayDate(row.issueDate),
+    render: (row) => formatDate(row.issueDate),
   },
   {
     header: "Valid Till",
     accessor: "validTill",
-    render: (row) => formatDisplayDate(row.validTill),
+    render: (row) => formatDate(row.validTill),
   },
   {
     header: "Old Quote Amt",

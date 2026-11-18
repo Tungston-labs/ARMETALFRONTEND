@@ -114,8 +114,8 @@ const SalesReturn = () => {
   const [customer, setCustomer] = useState("");
   const [reason, setReason] = useState("");
 
-  const [startDate, setStartDate] = useState(currentMonth.start);
-  const [endDate, setEndDate] = useState(currentMonth.end);
+  const [startDate, setStartDate] = useState();
+  const [endDate, setEndDate] = useState();
 
   const [currentPage, setCurrentPage] = useState(1);
 

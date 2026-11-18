@@ -206,12 +206,8 @@ export const InlineStatusSelect = styled.select`
 `;
 
 export const PageContainer = styled.div`
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-
-    padding: 20px 24px;
-    box-sizing: border-box;
+    padding: 20px;
+  
 `;
 
 export const HeaderActionsRow = styled.div`

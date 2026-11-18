@@ -431,9 +431,8 @@ const QuotationsList = () => {
         </HeaderActionsRow>
       </ReusableHeader>
 
-      <CompactStatsWrapper>
         <StatsCards cards={quotationCards} loading={loading} />
-      </CompactStatsWrapper>
+
 
       {error && (
         <div role="alert" style={{ margin: "12px 0", color: "#b42318", fontSize: 13 }}>
@@ -454,7 +453,6 @@ const QuotationsList = () => {
         showDate={false}
       />
 
-      <CompactTableWrapper>
         <ReusableTable
           columns={columns}
           data={rows}
@@ -462,8 +460,6 @@ const QuotationsList = () => {
           emptyMessage="No quotations found"
           autoLayout
         />
-      </CompactTableWrapper>
-
       <ReusablePagination
         currentPage={currentPage}
         totalPages={Math.max(1, pagination.totalPages || 1)}

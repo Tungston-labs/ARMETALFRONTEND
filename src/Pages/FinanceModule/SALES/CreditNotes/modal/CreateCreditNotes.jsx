@@ -1,11 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
-
 import { useLocation, useNavigate, useParams } from "react-router-dom";
-
 import { useDispatch, useSelector } from "react-redux";
-
 import { FiChevronDown } from "react-icons/fi";
-
 import {
   InvoiceContainer as OrderContainer,
   InvoiceForm as OrderForm,
@@ -28,6 +24,8 @@ import {
   ButtonWrapper,
   CancelButton,
   PreviewButton,
+  NotesTitle,
+  CreditNotesTextArea,
 } from "./CreateCreditNotes.style";
 
 import ReusableHeader from "../../../../../Components/ReusableTable/ReusableHeader";
@@ -39,19 +37,11 @@ import {
   fetchInvoiceCreditNoteDetails,
 } from "../../../../../Redux/finance/Sales/creditNoteSlice";
 
+import { getInvoices } from "../../../../../Redux/finance/Sales/InvoiceSlice";
 import { getCustomers as getCustomerList } from "../../../../../Redux/finance/Sales/CustomerSlice";
-
 import { getProducts } from "../../../../../Redux/finance/Product/ProductSlice";
 
-/* =========================================================
-   CONSTANTS
-========================================================= */
-
 const today = new Date().toISOString().split("T")[0];
-
-/* =========================================================
-   DATE
-========================================================= */
 
 const toInputDate = (value) => {
   if (!value) {
@@ -79,10 +69,6 @@ const toInputDate = (value) => {
   return parsed.toISOString().split("T")[0];
 };
 
-/* =========================================================
-   NUMBER
-========================================================= */
-
 const toNumber = (value) => {
   if (value === null || value === undefined || value === "") {
     return 0;
@@ -103,9 +89,6 @@ const toNumber = (value) => {
   return Number.isFinite(number) ? number : 0;
 };
 
-/* =========================================================
-   ID
-========================================================= */
 
 const normalizeId = (value) => {
   if (value === null || value === undefined || value === "") {
@@ -131,37 +114,21 @@ const normalizeId = (value) => {
   return stringValue;
 };
 
-/* =========================================================
-   DEFAULT ITEM
-========================================================= */
 
 const createDefaultItem = (index = 1) => ({
   id: Date.now() + index,
-
   slNo: String(index).padStart(2, "0"),
-
   product: "",
-
   productId: null,
-
   invoicedQty: 0,
-
   alreadyCredited: 0,
-
   creditingNow: 0,
-
   availableQty: 0,
-
   unitPrice: 0,
-
   creditTotal: 0,
 });
 
 const getDefaultItems = () => [createDefaultItem(1)];
-
-/* =========================================================
-   PRODUCT ID
-========================================================= */
 
 const getProductId = (item, products = []) => {
   const rawProduct =
@@ -211,9 +178,6 @@ const getProductId = (item, products = []) => {
   return null;
 };
 
-/* =========================================================
-   ERROR
-========================================================= */
 
 const formatBackendError = (error) => {
   if (!error) {
@@ -245,9 +209,13 @@ const formatBackendError = (error) => {
   return String(error);
 };
 
-/* =========================================================
-   API FORM MAPPING
-========================================================= */
+
+const getInvoiceRef = (invoice) =>
+  invoice?.invoice_number ||
+  invoice?.invoice_reference ||
+  invoice?.number ||
+  "";
+
 
 const mapRowToFormData = (row) => {
   if (!row) {
@@ -614,12 +582,21 @@ const CreateCreditNotes = ({ onCancel }) => {
 
   const products = useSelector((state) => state?.product?.products || []);
 
+
+  const invoicesFromStore = useSelector((state) => state?.invoice?.invoices);
+
+  const invoices = useMemo(
+    () => (Array.isArray(invoicesFromStore) ? invoicesFromStore : []),
+    [invoicesFromStore],
+  );
+
   const {
     selectedCreditNote,
     detailsLoading,
     submitting,
     submitError,
 
+    // eslint-disable-next-line no-unused-vars
     invoiceDetailsLoading,
     invoiceDetailsError,
   } = useSelector((state) => state.creditNotes);
@@ -649,7 +626,7 @@ const CreateCreditNotes = ({ onCancel }) => {
   const [remainingBalance, setRemainingBalance] = useState("");
 
   const [thisCreditNote, setThisCreditNote] = useState("");
-
+const [status, setStatus] = useState("Price Adjustment");
   const [from, setFrom] = useState({
     name: "",
     address: "",
@@ -698,7 +675,7 @@ const CreateCreditNotes = ({ onCancel }) => {
     "";
 
   /* =======================================================
-     FETCH CUSTOMER + PRODUCT
+     FETCH CUSTOMER + PRODUCT + INVOICES
   ======================================================= */
 
   useEffect(() => {
@@ -706,6 +683,12 @@ const CreateCreditNotes = ({ onCancel }) => {
 
     dispatch(
       getProducts({
+        page_size: 200,
+      }),
+    );
+
+    dispatch(
+      getInvoices({
         page_size: 200,
       }),
     );
@@ -801,10 +784,12 @@ const CreateCreditNotes = ({ onCancel }) => {
 
   /* =======================================================
      LOAD ORIGINAL INVOICE
+     Accepts the reference directly because state has not
+     updated yet when the dropdown fires onChange.
   ======================================================= */
 
-  const handleLoadInvoice = async () => {
-    const invoice = invoiceReference.trim();
+  const handleLoadInvoice = async (ref = invoiceReference) => {
+    const invoice = String(ref || "").trim();
 
     if (!invoice) {
       return;
@@ -863,6 +848,36 @@ const CreateCreditNotes = ({ onCancel }) => {
     } catch (error) {
       console.error("Invoice details loading failed:", error);
     }
+  };
+
+  const handleInvoiceChange = (event) => {
+    const value = event.target.value;
+
+    setInvoiceReference(value);
+
+    setValidationError("");
+
+    if (!value) {
+      setItems(getDefaultItems());
+
+      setInvoiceValue("");
+
+      setAlreadyCredited("");
+
+      setRemainingBalance("");
+
+      setBillTo({
+        client: "",
+        clientId: null,
+        address: "",
+        phone: "",
+        email: "",
+      });
+
+      return;
+    }
+
+    handleLoadInvoice(value);
   };
 
   /* =======================================================
@@ -1061,7 +1076,7 @@ const CreateCreditNotes = ({ onCancel }) => {
       <OrderContainer>
         <ReusableHeader
           title="Edit Credit Note"
-          breadcrumbs={["Dashboard", "Sales", "Credit Notes"]}
+          breadcrumbs={["Sales", "Credit Notes"]}
           showBack
           onBack={() => navigate("/credit-notes")}
         />
@@ -1085,7 +1100,7 @@ const CreateCreditNotes = ({ onCancel }) => {
     <OrderContainer>
       <ReusableHeader
         title={isEditMode ? "Edit Credit Note" : "Create Credit Note"}
-        breadcrumbs={["Dashboard", "Sales", "Credit Notes"]}
+        breadcrumbs={["Sales", "Credit Notes"]}
         showBack
         onBack={() => navigate("/credit-notes")}
       />
@@ -1109,36 +1124,48 @@ const CreateCreditNotes = ({ onCancel }) => {
 
       <OrderForm>
         <FormGrid>
-          <FormGroup>
-            <Label>CREDIT NOTE NUMBER</Label>
+        <FormGroup>
+  <Label>CREDIT NOTE NUMBER</Label>
 
-            <Input
-              placeholder="SR 0123"
-              value={creditNoteNumber}
-              onChange={(e) => setCreditNoteNumber(e.target.value)}
-            />
-          </FormGroup>
+  <Input
+    placeholder="Auto-generated after save"
+    value={creditNoteNumber}
+    readOnly
+    disabled
+  />
+</FormGroup>
 
           <FormGroup>
             <Label>INVOICE REFERENCE</Label>
 
-            <Input
-              placeholder="INV 0123 - Chicking"
-              value={invoiceReference}
-              onChange={(e) => {
-                setInvoiceReference(e.target.value);
+            <SelectWrapper>
+              <Select
+                value={invoiceReference}
+                onChange={handleInvoiceChange}
+                disabled={isEditMode}
+              >
+                <option value="">Select Invoice</option>
 
-                setValidationError("");
-              }}
-              onBlur={handleLoadInvoice}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
+                {invoices.map((invoice, index) => {
+                  const ref = getInvoiceRef(invoice);
 
-                  handleLoadInvoice();
-                }
-              }}
-            />
+                  return (
+                    <option key={invoice?.id ?? `${ref}-${index}`} value={ref}>
+                      {ref}
+                    </option>
+                  );
+                })}
+
+                {invoiceReference &&
+                  !invoices.some(
+                    (invoice) => getInvoiceRef(invoice) === invoiceReference,
+                  ) && (
+                    <option value={invoiceReference}>{invoiceReference}</option>
+                  )}
+              </Select>
+
+              <FiChevronDown />
+            </SelectWrapper>
           </FormGroup>
 
           <FormGroup>
@@ -1162,13 +1189,9 @@ const CreateCreditNotes = ({ onCancel }) => {
                 onChange={(e) => setReason(e.target.value)}
               >
                 <option value="Sales Return">Sales Return</option>
-
                 <option value="Price Adjustment">Price Adjustment</option>
-
                 <option value="Damaged Goods">Damaged Goods</option>
-
                 <option value="Discount Adjustment">Discount Adjustment</option>
-
                 <option value="Pricing Error">Pricing Error</option>
               </Select>
 
@@ -1206,15 +1229,21 @@ const CreateCreditNotes = ({ onCancel }) => {
             />
           </FormGroup>
 
-          <FormGroup className="this-credit-note">
-            <Label>THIS CREDIT NOTE</Label>
+         <FormGroup>
+  <Label>STATUS</Label>
 
-            <Input
-              placeholder="SAR 4,200"
-              value={thisCreditNote}
-              onChange={(e) => setThisCreditNote(e.target.value)}
-            />
-          </FormGroup>
+  <SelectWrapper>
+    <Select value={status} onChange={(e) => setStatus(e.target.value)}>
+      <option value="Price Adjustment">Price Adjustment</option>
+      <option value="Sales Return">Sales Return</option>
+      <option value="Damaged Goods">Damaged Goods</option>
+      <option value="Discount Adjustment">Discount Adjustment</option>
+      <option value="Pricing Error">Pricing Error</option>
+    </Select>
+
+    <FiChevronDown />
+  </SelectWrapper>
+</FormGroup>
 
           <FormGroup>
             <Label>FROM</Label>
@@ -1434,55 +1463,51 @@ const CreateCreditNotes = ({ onCancel }) => {
         </OrderTableWrapper>
 
         <PaymentSection>
-          <PaymentLeft>
-            <div />
-          </PaymentLeft>
+  <PaymentLeft>
+    <NotesTitle>NOTES &amp; REASON DETAIL</NotesTitle>
 
-          <PaymentRight>
-            <SummaryRow>
-              <span>Subtotal</span>
+    <CreditNotesTextArea
+      value={notes}
+      onChange={(e) => setNotes(e.target.value)}
+      placeholder="Price correction agreed with customer after post-delivery review — original invoice priced at incorrect rate for [Product]. Revised price approved by [Sales Manager name] on [date]. Adjustment applies to lines 1 & 2 only."
+    />
+  </PaymentLeft>
 
-              <strong>
-                SAR{" "}
-                {subtotal.toLocaleString("en-US", {
-                  maximumFractionDigits: 2,
-                })}
-              </strong>
-            </SummaryRow>
+  <PaymentRight>
+    <SummaryRow>
+      <span>Subtotal</span>
 
-            <SummaryRow>
-              <span>Tax (15% VAT)</span>
+      <strong>
+        SAR{" "}
+        {subtotal.toLocaleString("en-US", {
+          maximumFractionDigits: 2,
+        })}
+      </strong>
+    </SummaryRow>
 
-              <strong>
-                SAR{" "}
-                {tax.toLocaleString("en-US", {
-                  maximumFractionDigits: 2,
-                })}
-              </strong>
-            </SummaryRow>
+    <SummaryRow>
+      <span>Tax (15% VAT)</span>
 
-            <TotalAmount>
-              <span>Total Credit Amount</span>
+      <strong>
+        SAR{" "}
+        {tax.toLocaleString("en-US", {
+          maximumFractionDigits: 2,
+        })}
+      </strong>
+    </SummaryRow>
 
-              <strong>
-                SAR{" "}
-                {totalCreditAmount.toLocaleString("en-US", {
-                  maximumFractionDigits: 2,
-                })}
-              </strong>
-            </TotalAmount>
-          </PaymentRight>
-        </PaymentSection>
+    <TotalAmount>
+      <span>Total Credit Amount</span>
 
-        <div className="credit-note-notes">
-          <Label>Notes & reason detail</Label>
-
-          <textarea
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            placeholder="Price correction agreed with customer after post-delivery review — original invoice priced at incorrect rate for [Product]. Revised price approved by [Sales Manager name] on [date]. Adjustment applies to lines 1 & 2 only."
-          />
-        </div>
+      <strong>
+        SAR{" "}
+        {totalCreditAmount.toLocaleString("en-US", {
+          maximumFractionDigits: 2,
+        })}
+      </strong>
+    </TotalAmount>
+  </PaymentRight>
+</PaymentSection>
 
         <ButtonWrapper>
           <CancelButton type="button" onClick={handleCancel}>

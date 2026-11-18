@@ -115,9 +115,9 @@ const SalesCreditNotes = () => {
   const [status, setStatus] = useState("");
   const [reason, setReason] = useState("");
 
-  const [startDate, setStartDate] = useState(currentMonth.start);
+  const [startDate, setStartDate] = useState();
 
-  const [endDate, setEndDate] = useState(currentMonth.end);
+  const [endDate, setEndDate] = useState();
 
   const [dateFilterChanged, setDateFilterChanged] = useState(false);
 
