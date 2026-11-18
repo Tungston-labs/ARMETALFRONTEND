@@ -117,7 +117,9 @@ const Createdeliverynotes = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const dispatch = useDispatch();
-  const isEditMode = Boolean(id);
+  const isViewMode =
+    location.pathname.includes("/view/") || Boolean(location.state?.isView);
+  const isEditMode = Boolean(id) && !isViewMode;
 
   /* ---------- Redux state ---------- */
   const customerState = useSelector(
@@ -192,15 +194,15 @@ const Createdeliverynotes = () => {
   }, [dispatch]);
 
   useEffect(() => {
-    if (isEditMode && id) dispatch(fetchDeliveryNoteById(id));
-  }, [dispatch, id, isEditMode]);
+    if ((isEditMode || isViewMode) && id) dispatch(fetchDeliveryNoteById(id));
+  }, [dispatch, id, isEditMode, isViewMode]);
 
   const routeData = location.state?.deliveryNoteData || null;
 
-  /* ---------- Edit mode populate ---------- */
+  /* ---------- Edit/View mode populate ---------- */
   useEffect(() => {
     const row = selectedDeliveryNote || routeData;
-    if (!isEditMode || !row) return;
+    if ((!isEditMode && !isViewMode) || !row) return;
 
     setDeliveryNoteNumber(
       first(row, ["delivery_note_number", "deliveryNoteNumber", "dn_number"], ""),
@@ -294,7 +296,7 @@ const Createdeliverynotes = () => {
       );
     }
     setNotes(first(row, ["notes", "instructions"], ""));
-  }, [isEditMode, selectedDeliveryNote, routeData]);
+  }, [isEditMode, isViewMode, selectedDeliveryNote, routeData]);
 
   /* ---------- Sales Order Selection & Items Prefill ---------- */
   const handleOrderChange = async (selectedRef) => {
@@ -551,7 +553,7 @@ const Createdeliverynotes = () => {
   const displayedError =
     formError || (typeof submitError === "string" ? submitError : "");
 
-  if (isEditMode && detailsLoading && !selectedDeliveryNote) {
+  if ((isEditMode || isViewMode) && detailsLoading && !selectedDeliveryNote) {
     return (
       <DeliveryNoteContainer>
         <div style={{ padding: 20 }}>Loading delivery note...</div>
@@ -562,7 +564,13 @@ const Createdeliverynotes = () => {
   return (
     <DeliveryNoteContainer>
       <ReusableHeader
-        title={isEditMode ? "Edit Delivery Note" : "Generate Delivery Notes"}
+        title={
+          isViewMode
+            ? "View Delivery Note"
+            : isEditMode
+            ? "Edit Delivery Note"
+            : "Generate Delivery Notes"
+        }
         breadcrumbs={["Sales", "Delivery Notes"]}
         showBack
         onBack={() => navigate("/delivery/notes")}
@@ -588,6 +596,8 @@ const Createdeliverynotes = () => {
               type="date"
               value={dispatchDate}
               onChange={(e) => setDispatchDate(e.target.value)}
+              readOnly={isViewMode}
+              disabled={isViewMode}
             />
           </FormGroup>
 
@@ -598,6 +608,8 @@ const Createdeliverynotes = () => {
               min={dispatchDate}
               value={expectedDeliveryDate}
               onChange={(e) => setExpectedDeliveryDate(e.target.value)}
+              readOnly={isViewMode}
+              disabled={isViewMode}
             />
           </FormGroup>
 
@@ -607,6 +619,7 @@ const Createdeliverynotes = () => {
               <Select
                 value={status}
                 onChange={(e) => setStatus(e.target.value)}
+                disabled={isViewMode}
               >
                 {[
                   "Draft",
@@ -631,7 +644,7 @@ const Createdeliverynotes = () => {
               <Select
                 value={orderReference}
                 onChange={(e) => handleOrderChange(e.target.value)}
-                disabled={isEditMode}
+                disabled={isEditMode || isViewMode}
               >
                 <option value="">Select Order Reference</option>
                 {orderOptions.map((order) => {
@@ -669,6 +682,7 @@ const Createdeliverynotes = () => {
               <Select
                 value={warehouse}
                 onChange={(e) => setWarehouse(e.target.value)}
+                disabled={isViewMode}
               >
                 <option value="">Select Warehouse</option>
                 {warehouseList.map((w) => (
@@ -740,7 +754,13 @@ const Createdeliverynotes = () => {
                         onChange={(e) =>
                           handleDeliveringNowChange(index, e.target.value)
                         }
-                        style={{ textAlign: "center", fontWeight: 600, borderColor: "#3049a3" }}
+                        readOnly={isViewMode}
+                        disabled={isViewMode}
+                        style={
+                          isViewMode
+                            ? { background: "#f9fafb", textAlign: "center", cursor: "default" }
+                            : { textAlign: "center", fontWeight: 600, borderColor: "#3049a3" }
+                        }
                       />
                     </td>
                     <td>
@@ -777,6 +797,8 @@ const Createdeliverynotes = () => {
           <NotesTextarea
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
+            readOnly={isViewMode}
+            disabled={isViewMode}
             placeholder="Remaining packaging units to be dispatched with next batch from Jeddah DC — awaiting stock replenishment."
           />
         </NotesSection>
@@ -787,21 +809,23 @@ const Createdeliverynotes = () => {
             type="button"
             onClick={() => navigate("/delivery/notes")}
           >
-            CANCEL
+            {isViewMode ? "BACK" : "CANCEL"}
           </CancelButton>
-          <CreateButton
-            type="button"
-            onClick={handleCreate}
-            disabled={submitting}
-          >
-            {submitting
-              ? isEditMode
-                ? "UPDATING..."
-                : "CREATING..."
-              : isEditMode
-                ? "UPDATE"
-                : "CREATE"}
-          </CreateButton>
+          {!isViewMode && (
+            <CreateButton
+              type="button"
+              onClick={handleCreate}
+              disabled={submitting}
+            >
+              {submitting
+                ? isEditMode
+                  ? "UPDATING..."
+                  : "CREATING..."
+                : isEditMode
+                  ? "UPDATE"
+                  : "CREATE"}
+            </CreateButton>
+          )}
         </ButtonWrapper>
       </DeliveryNoteForm>
     </DeliveryNoteContainer>
