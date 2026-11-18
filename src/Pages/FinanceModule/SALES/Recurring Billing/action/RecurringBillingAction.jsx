@@ -23,14 +23,14 @@ const RecurringBillingAction = ({ row, onView, onDelete, onDownload }) => {
             return;
         }
         // Default: go to the invoice view page
-        navigate(`/sales/invoices/view/${row.id}`, {
+        navigate(`/sales/recurring-billing/view/${row.id}`, {
             state: { invoiceData: row },
         });
     };
 
     const handleEdit = (e) => {
         e.stopPropagation();
-        navigate(`/sales/invoices/edit/${row.id}`, {
+        navigate(`/sales/recurring-billing/edit/${row.id}`, {
             state: { invoiceData: row },
         });
     };

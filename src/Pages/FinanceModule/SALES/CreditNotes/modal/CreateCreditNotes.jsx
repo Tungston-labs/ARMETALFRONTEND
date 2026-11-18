@@ -1102,7 +1102,7 @@ const [status, setStatus] = useState("Price Adjustment");
         title={isEditMode ? "Edit Credit Note" : "Create Credit Note"}
         breadcrumbs={["Sales", "Credit Notes"]}
         showBack
-        onBack={() => navigate("/credit-notes")}
+        onBack={() => navigate("/sales/credit-notes")}
       />
 
       {displayedError && (

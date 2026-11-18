@@ -1,16 +1,13 @@
 import React, { useState } from "react";
-import { FiDownload, FiEdit2, FiLoader, FiX } from "react-icons/fi";
-import { useNavigate } from "react-router-dom";
+import { FiEye, FiEdit2, FiDownload, FiLoader, FiX } from "react-icons/fi";
 import { ActionWrapper, IconButton } from "./Paymentaction.style";
 
-const Paymentactions = ({ row, onDelete, onDownload }) => {
-    const navigate = useNavigate();
+const Paymentactions = ({ row, onView, onEdit, onDelete, onDownload }) => {
     const [isDownloading, setIsDownloading] = useState(false);
 
     const handleDownload = async (e) => {
         e.stopPropagation();
         if (isDownloading || !row?.id) return;
-
         setIsDownloading(true);
         try {
             await onDownload?.(row);
@@ -21,49 +18,38 @@ const Paymentactions = ({ row, onDelete, onDownload }) => {
         }
     };
 
-    const handleEdit = (e) => {
+    const call = (fn) => (e) => {
         e.stopPropagation();
-        navigate(`/sales/orders/edit/${row.id}`, {
-            state: { orderData: row },
-        });
-    };
-
-    const handleDelete = (e) => {
-        e.stopPropagation();
-        onDelete?.(row);
+        fn?.(row);
     };
 
     return (
         <ActionWrapper>
-            <IconButton
-                type="button"
-                title="Download Payment"
-                onClick={handleDownload}
-                disabled={isDownloading}
-            >
-                {isDownloading ? (
-                    <FiLoader size={14} className="spin" />
-                ) : (
-                    <FiDownload size={14} />
-                )}
-            </IconButton>
-
-            <IconButton
-                type="button"
-                title="Edit Order"
-                onClick={handleEdit}
-            >
-                <FiEdit2 size={14} />
-            </IconButton>
-
-            <IconButton
-                type="button"
-                $danger
-                title="Delete Order"
-                onClick={handleDelete}
-            >
-                <FiX size={14} />
-            </IconButton>
+            {onView && (
+                <IconButton type="button" title="View Payment" onClick={call(onView)}>
+                    <FiEye size={14} />
+                </IconButton>
+            )}
+            {onEdit && (
+                <IconButton type="button" title="Edit Payment" onClick={call(onEdit)}>
+                    <FiEdit2 size={14} />
+                </IconButton>
+            )}
+            {onDownload && (
+                <IconButton
+                    type="button"
+                    title="Download Payment"
+                    onClick={handleDownload}
+                    disabled={isDownloading}
+                >
+                    {isDownloading ? <FiLoader size={14} className="spin" /> : <FiDownload size={14} />}
+                </IconButton>
+            )}
+            {onDelete && (
+                <IconButton type="button" $danger title="Delete Payment" onClick={call(onDelete)}>
+                    <FiX size={14} />
+                </IconButton>
+            )}
         </ActionWrapper>
     );
 };

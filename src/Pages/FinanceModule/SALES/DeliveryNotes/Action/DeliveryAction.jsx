@@ -46,7 +46,7 @@ const DeliveryAction = ({ row, onDelete }) => {
   const handleView = (e) => {
     e.stopPropagation();
     if (!row?.id) return;
-    navigate(`/delivery/notes/edit/${row.id}`, {
+    navigate(`/sales/delivery-notes/view/${row.id}`, {
       state: { deliveryNoteData: row },
     });
   };
@@ -54,7 +54,7 @@ const DeliveryAction = ({ row, onDelete }) => {
   const handleEdit = (e) => {
     e.stopPropagation();
     if (!row?.id) return;
-    navigate(`/delivery/notes/edit/${row.id}`, {
+    navigate(`/sales/delivery-notes/edit/${row.id}`, {
       state: { deliveryNoteData: row },
     });
   };
