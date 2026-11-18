@@ -92,7 +92,7 @@ export const formatCurrency = (value) => {
     });
 };
 
-export const getSalesOrderColumns = ({ onDelete }) => [
+export const getSalesOrderColumns = ({ onView, onDownload, onDelete }) => [
     {
         header: "SO Number",
         accessor: "so_number",
@@ -142,7 +142,13 @@ export const getSalesOrderColumns = ({ onDelete }) => [
         accessor: "actions",
         sortable: false,
         render: (row) => (
-            <OrderActions row={row} onDelete={() => onDelete(row)} />
+            <OrderActions
+                row={row}
+                onView={onView}
+                onDownload={onDownload}
+                onDelete={onDelete}
+                showDelete={true}
+            />
         ),
     },
 ];

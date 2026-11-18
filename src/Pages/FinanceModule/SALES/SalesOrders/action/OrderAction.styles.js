@@ -1,25 +1,28 @@
+
 import styled from "styled-components";
 
 export const ActionWrapper = styled.div`
     display: flex;
     align-items: center;
-    justify-content: left;
+    justify-content: flex-start;
     gap: 6px;
-    overflow: visible;
     position: relative;
+    overflow: visible;
 `;
 
 export const ActionButton = styled.button`
     width: 25px;
     height: 25px;
+    min-width: 25px;
     padding: 0;
     margin: 0;
 
-    border: 1px solid #ccc;
+    border: 1px solid #dedede;
     border-radius: 5px;
 
     background: #fff;
-    /* color: #374151; */
+    color: ${({ $danger }) =>
+        $danger ? "#ff0000" : "#333"};
 
     display: flex;
     align-items: center;
@@ -28,67 +31,14 @@ export const ActionButton = styled.button`
     cursor: pointer;
     flex-shrink: 0;
 
-    position: relative;
-    z-index: 10;
-
     transition: all 0.2s ease;
 
     &:hover {
-        background: #e5e7eb;
-        transform: scale(1.08);
-    }
+        background: ${({ $danger }) =>
+            $danger ? "#fff0f0" : "#f3f4f6"};
 
-    svg {
-        display: block;
-    }
-`;
-
-export const FloatingAction = styled.button`
-    width: 24px;
-    height: 24px;
-
-    padding: 0;
-    margin: 0;
-
-    border: none;
-    border-radius: 50%;
-
-    display: ${({ $open }) =>
-        $open ? "flex" : "none"};
-
-    align-items: center;
-    justify-content: center;
-
-    cursor: pointer;
-    flex-shrink: 0;
-
-    transition:
-        transform 0.2s ease,
-        opacity 0.2s ease;
-
-    ${({ $position }) =>
-        $position === "view" &&
-        `
-            background: #e8f1ff;
-            color: #3478f6;
-        `}
-
-    ${({ $position }) =>
-        $position === "edit" &&
-        `
-            background: #fef3c7;
-            color: #d97706;
-        `}
-
-    ${({ $position }) =>
-        $position === "delete" &&
-        `
-            background: #ffe8e8;
-            color: #dc2626;
-        `}
-
-    &:hover {
-        transform: scale(1.12);
+        border-color: ${({ $danger }) =>
+            $danger ? "#ff0000" : "#bdbdbd"};
     }
 
     svg {
