@@ -1,82 +1,53 @@
-import React, { useEffect, useRef, useState } from "react";
-import {
-    FiEye,
-    FiEdit2,
-    FiLoader,
-    FiDownload,
-    FiX,
-} from "react-icons/fi";
+import React, { useState } from "react";
+import { FiEye, FiEdit2, FiDownload, FiX, FiLoader } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { downloadInvoice } from "../../../../../Redux/finance/Sales/InvoiceSlice";
 
-import {
-    ActionWrapper,
-    ActionButton,
-    FloatingAction,
-} from "./InvoiceActions.styles";
+import { ActionWrapper, ActionButton } from "./InvoiceActions.styles";
 
-import { PiDotsThreeCircleVertical } from "react-icons/pi";
-
+// Which actions each payment status allows.
+// Delete is only offered when nothing has been paid yet.
 const ACTIONS_BY_STATUS = {
     paid: ["view", "download"],
-    pending: ["view", "download", "edit"],
-    unpaid: ["view", "download", "edit"],
-    partially_paid: ["view", "download", "edit"],
-    overdue: ["view", "download", "edit"],
+    partially_paid: ["view", "edit", "download"],
+    pending: ["view", "edit", "download", "delete"],
+    unpaid: ["view", "edit", "download", "delete"],
+    overdue: ["view", "edit", "download", "delete"],
 };
 
-const DEFAULT_ACTIONS = ["view", "download", "edit"];
+const DEFAULT_ACTIONS = ["view", "edit", "download"];
 
-const getViewPath = (id) => `/sales/invoices/view/${id}`;
-
-const InvoiceActions = ({ row, statusKey }) => {
-    const [open, setOpen] = useState(false);
+const InvoiceActions = ({ row, statusKey, onDelete }) => {
     const [isDownloading, setIsDownloading] = useState(false);
 
     const navigate = useNavigate();
     const dispatch = useDispatch();
-    const wrapperRef = useRef(null);
 
     const allowed = ACTIONS_BY_STATUS[statusKey] || DEFAULT_ACTIONS;
-    const can = (action) => allowed.includes(action);
+    // Delete also requires a handler to be passed in
+    const can = (action) =>
+        allowed.includes(action) && (action !== "delete" || !!onDelete);
 
-    useEffect(() => {
-        const handleClickOutside = (e) => {
-            if (
-                wrapperRef.current &&
-                !wrapperRef.current.contains(e.target)
-            ) {
-                setOpen(false);
-            }
-        };
-
-        document.addEventListener("mousedown", handleClickOutside);
-
-        return () =>
-            document.removeEventListener("mousedown", handleClickOutside);
-    }, []);
-
-    const handleView = () => {
-        navigate(getViewPath(row.id), {
+    const handleView = (e) => {
+        e.stopPropagation();
+        navigate(`/sales/invoices/view/${row.id}`, {
             state: { invoiceData: row },
         });
-        setOpen(false);
     };
 
-    const handleEdit = () => {
+    const handleEdit = (e) => {
+        e.stopPropagation();
         navigate(`/sales/invoices/edit/${row.id}`, {
             state: { invoiceData: row },
         });
-        setOpen(false);
     };
 
-    const handleDownload = async () => {
+    const handleDownload = async (e) => {
+        e.stopPropagation();
         if (isDownloading || !row?.id) return;
 
-        setOpen(false);
         setIsDownloading(true);
-
         try {
             await dispatch(downloadInvoice(row.id)).unwrap();
         } catch (err) {
@@ -86,77 +57,50 @@ const InvoiceActions = ({ row, statusKey }) => {
         }
     };
 
-    const handleClose = () => {
-        setOpen(false);
+    const handleDelete = (e) => {
+        e.stopPropagation();
+        onDelete?.(row);
     };
 
     return (
-        <ActionWrapper ref={wrapperRef}>
-            <ActionButton
-                type="button"
-                onClick={(e) => {
-                    e.stopPropagation();
-                    setOpen((prev) => !prev);
-                }}
-                title="Actions"
-                disabled={isDownloading}
-            >
-                {isDownloading ? (
-                    <FiLoader size={12} className="spin" />
-                ) : (
-                    <PiDotsThreeCircleVertical size={14} />
-                )}
-            </ActionButton>
-
-            {/* VIEW */}
+        <ActionWrapper>
             {can("view") && (
-                <FloatingAction
-                    type="button"
-                    $open={open}
-                    $position="view"
-                    title="View Invoice"
-                    onClick={handleView}
-                >
-                    <FiEye size={12} />
-                </FloatingAction>
+                <ActionButton type="button" title="View Invoice" onClick={handleView}>
+                    <FiEye size={13} />
+                </ActionButton>
             )}
 
-            {/* DOWNLOAD */}
+            {can("edit") && (
+                <ActionButton type="button" title="Edit Invoice" onClick={handleEdit}>
+                    <FiEdit2 size={13} />
+                </ActionButton>
+            )}
+
             {can("download") && (
-                <FloatingAction
+                <ActionButton
                     type="button"
-                    $open={open}
-                    $position="download"
                     title="Download Invoice"
                     onClick={handleDownload}
+                    disabled={isDownloading}
                 >
-                    <FiDownload size={12} />
-                </FloatingAction>
+                    {isDownloading ? (
+                        <FiLoader size={13} className="spin" />
+                    ) : (
+                        <FiDownload size={13} />
+                    )}
+                </ActionButton>
             )}
 
-            {/* EDIT */}
-            {can("edit") && (
-                <FloatingAction
+            {can("delete") && (
+                <ActionButton
                     type="button"
-                    $open={open}
-                    $position="edit"
-                    title="Edit Invoice"
-                    onClick={handleEdit}
+                    $danger
+                    title="Delete Invoice"
+                    onClick={handleDelete}
                 >
-                    <FiEdit2 size={12} />
-                </FloatingAction>
+                    <FiX size={15} />
+                </ActionButton>
             )}
-
-            {/* CLOSE */}
-            <FloatingAction
-                type="button"
-                $open={open}
-                $position="close"
-                title="Close Actions"
-                onClick={handleClose}
-            >
-                <FiX size={12} />
-            </FloatingAction>
         </ActionWrapper>
     );
 };

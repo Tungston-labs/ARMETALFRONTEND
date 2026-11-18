@@ -1,14 +1,11 @@
 import React from "react";
 
 import { FiEdit2, FiArchive } from "react-icons/fi";
-import { IoEllipsisVerticalCircleOutline } from "react-icons/io5";
 
 import {
     LinkName,
     BalanceAmount,
     ActionsCell,
-    MenuWrapper,
-    KebabButton,
     CircleIconButton,
     ArchivedBalance,
     ArchiveActionButton,
@@ -18,12 +15,8 @@ import { formatDate } from "../../../../utils/Formatdate";
 
 const money = (v) => `SAR ${Number(v || 0).toLocaleString("en-US")}`;
 
-
-
 export const getCustomerColumns = ({
     status,
-    openMenuId,
-    toggleActionsMenu,
     handleViewOverview,
     handleEditCustomer,
     handleArchiveCustomer,
@@ -141,50 +134,40 @@ export const getCustomerColumns = ({
                 </StatusBadge>
             ),
         },
-        {
-            accessor: "actions",
-            header: "Actions",
-            render: (row) => {
-                const rowId = row.id ?? row.customer_id;
-                const isMenuOpen = openMenuId === rowId;
+       {
+    accessor: "actions",
+    header: "Actions",
+    sortable: false,
+    render: (row) => (
+        <ActionsCell style={{ flexWrap: "nowrap" }}>
+            <CircleIconButton
+                type="button"
+                $variant="edit"
+                title="Edit Customer"
+                aria-label="Edit customer"
+                onClick={(e) => {
+                    e.stopPropagation();
+                    handleEditCustomer(row);
+                }}
+            >
+                <FiEdit2 size={13} />
+            </CircleIconButton>
 
-                return (
-                    <ActionsCell>
-                        <MenuWrapper data-menu-root>
-                            <KebabButton
-                                type="button"
-                                onClick={() => toggleActionsMenu(rowId)}
-                                aria-label="More actions"
-                                aria-expanded={isMenuOpen}
-                            >
-                                <IoEllipsisVerticalCircleOutline size={14} />
-                            </KebabButton>
-
-                            {isMenuOpen && (
-                                <>
-                                    <CircleIconButton
-                                        type="button"
-                                        $variant="edit"
-                                        onClick={() => handleEditCustomer(row)}
-                                        aria-label="Edit customer"
-                                    >
-                                        <FiEdit2 size={13} />
-                                    </CircleIconButton>
-
-                                    <CircleIconButton
-                                        type="button"
-                                        $variant="delete"
-                                        onClick={() => handleArchiveCustomer(row)}
-                                        aria-label="Archive customer"
-                                    >
-                                        <FiArchive size={13} />
-                                    </CircleIconButton>
-                                </>
-                            )}
-                        </MenuWrapper>
-                    </ActionsCell>
-                );
-            },
-        },
+            <CircleIconButton
+                type="button"
+                $variant="delete"
+                title="Archive Customer"
+                aria-label="Archive customer"
+                onClick={(e) => {
+                    e.stopPropagation();
+                    handleArchiveCustomer(row);
+                }}
+            >
+                <FiArchive size={13} />
+            </CircleIconButton>
+        </ActionsCell>
+    ),
+},
+    
     ];
 };

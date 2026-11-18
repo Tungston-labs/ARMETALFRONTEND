@@ -105,40 +105,34 @@ export const KebabButton = styled.button`
 `;
 
 export const CircleIconButton = styled.button`
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+  width: 26px;
+    height: 26px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid ${({ $danger }) => ($danger ? "#F5C2C4" : "#E5E7EB")};
+    border-radius: 6px;
+    background: #fff;
+    color: ${({ $danger }) => ($danger ? "#E5484D" : "#4B5563")};
+    cursor: pointer;
+    transition: background 0.15s;
 
-  width: 28px;
-  height: 28px;
-  flex-shrink: 0;
+    &:hover:not(:disabled) {
+        background: ${({ $danger }) => ($danger ? "#FDECEC" : "#F3F4F6")};
+    }
 
-  border: none;
-  border-radius: 999px;
+    &:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
 
-  cursor: pointer;
+    .spin {
+        animation: spin 1s linear infinite;
+    }
 
-  ${({ $variant }) =>
-    $variant === "edit" &&
-    css`
-      background: #fef3c7;
-      color: #b45309;
-
-      &:hover {
-        background: #fde68a;
-      }
-    `}
-
-  ${({ $variant }) =>
-    $variant === "delete" &&
-    css`
-      background: #fee2e2;
-      color: #dc2626;
-
-      &:hover {
-        background: #fecaca;
-      }
-    `}
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
 `;
 export const DateRangeWrapper = styled.div`
     display: flex;

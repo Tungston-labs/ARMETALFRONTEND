@@ -2,7 +2,10 @@ import { formatDate } from "../../../../utils/Formatdate";
 import { ToggleSwitch } from "./RecurringBilling.styles";
 import RecurringBillingAction from "./action/RecurringBillingAction"; 
 
-export const getBillingColumns = ({ onToggleAutoSend, onDelete } = {}) => [
+export const getBillingColumns = ({ onToggleAutoSend,
+  onView,
+  onDownload,
+  onDelete, } = {}) => [
   { header: "Plan No", accessor: "contract_number", render: (row) => row.contract_number || "-" },
   { header: "Customer", accessor: "customer_name", render: (row) => row.customer_name || "-" },
   { header: "Frequency", accessor: "frequency", render: (row) => row.frequency || "-" },
@@ -33,9 +36,17 @@ export const getBillingColumns = ({ onToggleAutoSend, onDelete } = {}) => [
     ),
   },
   { header: "Status", accessor: "recurrence_status", render: (row) => row.recurrence_status || "-" },
-  {
+   {
     header: "Action",
     accessor: "actions",
-    render: (row) => <RecurringBillingAction row={row} onDelete={onDelete} />,
+    sortable: false,
+    render: (row) => (
+      <RecurringBillingAction
+        row={row}
+        onView={onView}
+        onDownload={onDownload}
+        onDelete={onDelete}
+      />
+    ),
   },
 ];

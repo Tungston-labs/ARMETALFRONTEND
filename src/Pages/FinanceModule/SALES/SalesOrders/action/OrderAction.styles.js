@@ -11,37 +11,32 @@ export const ActionWrapper = styled.div`
 `;
 
 export const ActionButton = styled.button`
-    width: 25px;
-    height: 25px;
-    min-width: 25px;
-    padding: 0;
-    margin: 0;
-
-    border: 1px solid #dedede;
-    border-radius: 5px;
-
-    background: #fff;
-    color: ${({ $danger }) =>
-        $danger ? "#ff0000" : "#333"};
-
-    display: flex;
+   width: 26px;
+    height: 26px;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
-
+    border: 1px solid ${({ $danger }) => ($danger ? "#F5C2C4" : "#E5E7EB")};
+    border-radius: 6px;
+    background: #fff;
+    color: ${({ $danger }) => ($danger ? "#E5484D" : "#4B5563")};
     cursor: pointer;
-    flex-shrink: 0;
+    transition: background 0.15s;
 
-    transition: all 0.2s ease;
-
-    &:hover {
-        background: ${({ $danger }) =>
-            $danger ? "#fff0f0" : "#f3f4f6"};
-
-        border-color: ${({ $danger }) =>
-            $danger ? "#ff0000" : "#bdbdbd"};
+    &:hover:not(:disabled) {
+        background: ${({ $danger }) => ($danger ? "#FDECEC" : "#F3F4F6")};
     }
 
-    svg {
-        display: block;
+    &:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
+    .spin {
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        to { transform: rotate(360deg); }
     }
 `;

@@ -7,7 +7,7 @@ import ReusableTable from "../../../../Components/ReusableTable/ReusableTable";
 import ReusablePagination from "../../../../Components/Pagination/ReusablePagination";
 import StatsCards from "../../../../Components/StatsCards/StatsCards";
 import { useNavigate } from "react-router-dom";
-import ProductServiceModal from "./modal/AddingRecurringBilling";
+
 
 import {
     DateRangeWrapper,
@@ -109,14 +109,7 @@ const RecurringBilling = () => {
                 />
             </div>
 
-            <ProductServiceModal
-                isOpen={showProductServiceModal}
-                onClose={() => setShowProductServiceModal(false)}
-                onSubmit={handleSaveProductService}
-                customers={customers}
-                categories={categories}
-                products={products}
-            />
+            
         </>
     );
 };

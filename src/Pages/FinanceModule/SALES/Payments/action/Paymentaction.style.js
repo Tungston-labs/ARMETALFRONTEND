@@ -8,30 +8,32 @@ export const ActionWrapper = styled.div`
 `;
 
 export const IconButton = styled.button`
-    width: 28px;
-    height: 28px;
-    padding: 0;
-
-    display: flex;
+   width: 26px;
+    height: 26px;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
-    flex-shrink: 0;
-
-    border: 1px solid #e5e7eb;
-    border-radius: 4px;
-    background: #ffffff;
-    color: ${({ $danger }) => ($danger ? "#e5484d" : "#111111")};
-
+    border: 1px solid ${({ $danger }) => ($danger ? "#F5C2C4" : "#E5E7EB")};
+    border-radius: 6px;
+    background: #fff;
+    color: ${({ $danger }) => ($danger ? "#E5484D" : "#4B5563")};
     cursor: pointer;
-    transition: background 0.2s ease, border-color 0.2s ease;
+    transition: background 0.15s;
 
-    &:hover {
-        background: ${({ $danger }) => ($danger ? "#fdecec" : "#f5f7ff")};
-        border-color: ${({ $danger }) => ($danger ? "#f5c2c4" : "#3049a3")};
+    &:hover:not(:disabled) {
+        background: ${({ $danger }) => ($danger ? "#FDECEC" : "#F3F4F6")};
     }
 
     &:disabled {
         opacity: 0.6;
         cursor: not-allowed;
+    }
+
+    .spin {
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        to { transform: rotate(360deg); }
     }
 `;
