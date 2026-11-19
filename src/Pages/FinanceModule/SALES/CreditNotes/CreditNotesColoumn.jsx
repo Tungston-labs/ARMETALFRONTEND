@@ -17,8 +17,8 @@ import { formatDate } from "../../../../utils/Formatdate";
 ========================================================= */
 
 const formatAmount = (value) => {
-  if (value === null || value === undefined || value === "") {
-    return "SAR 0";
+  if (value === null || value === undefined || value === "" || value === "-") {
+    return "-";
   }
 
   const number = Number(
@@ -26,7 +26,10 @@ const formatAmount = (value) => {
   );
 
   if (!Number.isNaN(number)) {
-    return `SAR ${number.toLocaleString("en-US")}`;
+    return `SAR ${number.toLocaleString("en-US", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })}`;
   }
 
   const stringValue = String(value);
@@ -41,15 +44,21 @@ const formatAmount = (value) => {
 ========================================================= */
 
 const getCustomerName = (row) => {
-  const customer = row?.customer;
-
-  if (customer && typeof customer === "object") {
+  if (row?.customer && typeof row.customer === "object") {
     return (
-      customer?.name || customer?.customer_name || customer?.company_name || "-"
+      row.customer?.customer_name ||
+      row.customer?.name ||
+      row.customer?.company_name ||
+      "-"
     );
   }
 
-  return customer || row?.customer_name || "-";
+  return (
+    row?.customer_name ||
+    row?.customer_company ||
+    (typeof row?.customer === "string" ? row.customer : null) ||
+    "-"
+  );
 };
 
 /* =========================================================
@@ -60,6 +69,12 @@ const formatStatus = (value) => {
   if (!value) {
     return "-";
   }
+
+  const normalized = String(value).toLowerCase();
+  if (normalized === "open") return "Pending";
+  if (normalized === "closed" || normalized === "applied") return "Applied";
+  if (normalized === "partially_applied") return "Partially Applied";
+  if (normalized === "cancelled") return "Cancelled";
 
   return String(value)
     .replace(/_/g, " ")
@@ -72,16 +87,22 @@ const formatStatus = (value) => {
 
 export const creditNoteColumns = (onDelete) => [
   {
-    header: "Credit Note No",
+    header: "CN No",
     accessor: "creditNoteNumber",
+    width: "105px",
 
     render: (row) =>
-      row?.credit_note_number || row?.creditNoteNumber || row?.number || "-",
+      row?.cn_number ||
+      row?.credit_note_number ||
+      row?.creditNoteNumber ||
+      row?.number ||
+      "-",
   },
 
   {
     header: "Customer",
     accessor: "customer",
+    width: "160px",
 
     render: (row) => getCustomerName(row),
   },
@@ -89,17 +110,19 @@ export const creditNoteColumns = (onDelete) => [
   {
     header: "Invoice Ref",
     accessor: "invoiceReference",
+    width: "110px",
 
     render: (row) =>
+      row?.invoice_ref ||
       row?.invoice_reference ||
       row?.invoiceReference ||
-      row?.invoice_ref ||
       "-",
   },
 
   {
-    header: "Issue Date",
+    header: "Date Issued",
     accessor: "issueDate",
+    width: "110px",
 
     render: (row) => formatDate(row?.issue_date || row?.issueDate),
   },
@@ -107,13 +130,51 @@ export const creditNoteColumns = (onDelete) => [
   {
     header: "Reason",
     accessor: "reason",
+    width: "125px",
 
-    render: (row) => formatStatus(row?.reason),
+    render: (row) => {
+      const reasonMap = {
+        sales_return: "Sales Return",
+        price_adjustment: "Price Adjustment",
+        damaged_goods: "Damaged Goods",
+        discount_adjustment: "Discount Adjustment",
+        pricing_error: "Pricing Error",
+      };
+      return reasonMap[row?.reason] || formatStatus(row?.reason);
+    },
   },
 
   {
-    header: "Credit Amount",
+    header: (
+      <div style={{ lineHeight: "1.2", fontSize: "12px", whiteSpace: "normal" }}>
+        Invoice Amt
+        <div style={{ fontSize: "11px", opacity: 0.85 }}>(SAR)</div>
+      </div>
+    ),
+    accessor: "invoiceAmount",
+    width: "125px",
+
+    render: (row) => {
+      const val =
+        row?.invoice_amount ??
+        row?.invoice_value ??
+        row?.invoice?.total_amount;
+      if (val === null || val === undefined || val === "" || Number(val) === 0) {
+        return "-";
+      }
+      return formatAmount(val);
+    },
+  },
+
+  {
+    header: (
+      <div style={{ lineHeight: "1.2", fontSize: "12px", whiteSpace: "normal" }}>
+        Credit Amt
+        <div style={{ fontSize: "11px", opacity: 0.85 }}>(SAR)</div>
+      </div>
+    ),
     accessor: "creditAmount",
+    width: "125px",
 
     render: (row) =>
       formatAmount(
@@ -126,36 +187,57 @@ export const creditNoteColumns = (onDelete) => [
   },
 
   {
-    header: "Applied Amount",
-    accessor: "appliedAmount",
-
-    render: (row) =>
-      formatAmount(
-        row?.applied_amount ?? row?.appliedAmount ?? row?.already_credited,
-      ),
-  },
-
-  {
-    header: "Balance",
+    header: (
+      <div style={{ lineHeight: "1.2", fontSize: "12px", whiteSpace: "normal" }}>
+        After Applied
+        <div style={{ fontSize: "11px", opacity: 0.85 }}>(SAR)</div>
+      </div>
+    ),
     accessor: "balance",
+    width: "125px",
 
-    render: (row) =>
-      formatAmount(
-        row?.balance ?? row?.remaining_balance ?? row?.remainingBalance,
-      ),
+    render: (row) => {
+      const invAmt = Number(row?.invoice_amount ?? row?.invoice_value ?? 0);
+      const crAmt = Number(row?.credit_amount ?? 0);
+      const appliedAmt = Number(row?.applied_amount ?? 0);
+
+      if (invAmt > 0) {
+        const deduction = appliedAmt > 0 ? appliedAmt : crAmt;
+        const afterApplied = Math.max(0, invAmt - deduction);
+        return formatAmount(afterApplied);
+      }
+
+      const bal = row?.balance ?? row?.remaining_balance;
+      if (bal !== null && bal !== undefined && bal !== "") {
+        return formatAmount(bal);
+      }
+
+      return formatAmount(0);
+    },
   },
 
   {
     header: "Status",
     accessor: "status",
+    width: "95px",
 
-    render: (row) =>
-      formatStatus(row?.status || row?.credit_status || row?.creditStatus),
+    render: (row) => {
+      const raw = String(row?.status || "").toLowerCase();
+      const text = formatStatus(raw);
+      const color =
+        raw === "closed" || raw === "applied"
+          ? "#22a06b"
+          : raw === "open" || raw === "pending" || raw === "partially_applied"
+          ? "#f59e0b"
+          : "#6b7280";
+      return <span style={{ color, fontWeight: 500 }}>{text}</span>;
+    },
   },
 
   {
     header: "Action",
     accessor: "actions",
+    width: "145px",
     sortable: false,
 
     render: (row) => <CreditAction row={row} onDelete={onDelete} />,
