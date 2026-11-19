@@ -288,6 +288,8 @@ const mapRowToFormData = (row) => {
           const vatAmount = toNumber(item?.vat_amount ?? (qty * rate * (vatPct / 100)));
           const amount = toNumber(item?.amount ?? item?.credit_total ?? (qty * rate + vatAmount));
 
+          const itemInvoicedQty = toNumber(item?.invoiced_qty ?? item?.invoicedQuantity ?? item?.invoice_item_quantity ?? qty);
+
           return {
             id: item?.id ?? Date.now() + index,
             invoiceItemId: item?.invoice_item ?? item?.invoice_item_id ?? null,
@@ -303,10 +305,10 @@ const mapRowToFormData = (row) => {
               productObject?.id ??
               productObject?.pk ??
               (typeof item?.product === "number" ? item.product : null),
-            invoicedQty: qty,
+            invoicedQty: itemInvoicedQty,
             alreadyCredited: 0,
             creditingNow: qty,
-            availableQty: qty,
+            availableQty: itemInvoicedQty,
             rate,
             unitPrice: rate,
             vatPercentage: vatPct,
@@ -551,7 +553,7 @@ const buildPayload = ({
       const amount = toNumber(item?.creditTotal || (qty * rate + vatAmount));
 
       return {
-        invoice_item: item?.invoiceItemId || item?.id || null,
+        invoice_item: item?.invoiceItemId || (typeof item?.id === "number" && item.id < 1000000000000 ? item.id : null),
         product: getProductId(item, products),
         item_name: item?.product || `Item ${index + 1}`,
         description: item?.description || item?.product || "",
@@ -607,6 +609,14 @@ const CreateCreditNotes = ({ onCancel }) => {
   const dispatch = useDispatch();
 
   const isEditMode = Boolean(id);
+
+  const searchParams = new URLSearchParams(location.search);
+  const isViewOnly = Boolean(
+    location.state?.isViewOnly ||
+      location.state?.viewMode ||
+      searchParams.get("view") === "true" ||
+      location.pathname.includes("/credit-notes/view/"),
+  );
 
   /* =======================================================
      CUSTOMER
@@ -1109,6 +1119,19 @@ const CreateCreditNotes = ({ onCancel }) => {
       return false;
     }
 
+    const overInvoicedItem = creditedItems.find((item) => {
+      const maxLimit = item.invoicedQty > 0 ? item.invoicedQty : (item.availableQty > 0 ? item.availableQty : 0);
+      return maxLimit > 0 && toNumber(item.creditingNow) > toNumber(maxLimit);
+    });
+
+    if (overInvoicedItem) {
+      const maxLimit = overInvoicedItem.invoicedQty > 0 ? overInvoicedItem.invoicedQty : overInvoicedItem.availableQty;
+      setValidationError(
+        `Crediting quantity for '${overInvoicedItem.product || "item"}' cannot exceed purchased/invoiced quantity (${maxLimit}).`
+      );
+      return false;
+    }
+
     setValidationError("");
     return true;
   };
@@ -1184,11 +1207,17 @@ const CreateCreditNotes = ({ onCancel }) => {
      EDIT LOADING
   ======================================================= */
 
+  const pageTitle = isViewOnly
+    ? "View Credit Note"
+    : isEditMode
+      ? "Edit Credit Note"
+      : "Create Credit Note";
+
   if (isEditMode && detailsLoading && !selectedCreditNote) {
     return (
       <OrderContainer>
         <ReusableHeader
-          title="Edit Credit Note"
+          title={pageTitle}
           breadcrumbs={["Sales", "Credit Notes"]}
           showBack
           onBack={() => navigate("/credit-notes")}
@@ -1208,7 +1237,7 @@ const CreateCreditNotes = ({ onCancel }) => {
   return (
     <OrderContainer>
       <ReusableHeader
-        title={isEditMode ? "Edit Credit Note" : "Create Credit Note"}
+        title={pageTitle}
         breadcrumbs={["Sales", "Credit Notes"]}
         showBack
         onBack={() => navigate("/credit-notes")}
@@ -1252,7 +1281,7 @@ const CreateCreditNotes = ({ onCancel }) => {
               <Select
                 value={invoiceReference}
                 onChange={handleInvoiceChange}
-                disabled={isEditMode}
+                disabled={isEditMode || isViewOnly}
               >
                 <option value="">Select Invoice</option>
                 {invoices.map((invoice, index) => {
@@ -1290,7 +1319,8 @@ const CreateCreditNotes = ({ onCancel }) => {
               <Input
                 type="date"
                 value={issueDate}
-                onChange={(e) => setIssueDate(e.target.value)}
+                onChange={(e) => !isViewOnly && setIssueDate(e.target.value)}
+                readOnly={isViewOnly}
               />
             </CalendarInput>
           </FormGroup>
@@ -1302,7 +1332,8 @@ const CreateCreditNotes = ({ onCancel }) => {
             <SelectWrapper>
               <Select
                 value={reason}
-                onChange={(e) => setReason(e.target.value)}
+                onChange={(e) => !isViewOnly && setReason(e.target.value)}
+                disabled={isViewOnly}
               >
                 <option value="Price Adjustment">Price Adjustment</option>
                 <option value="Sales Return">Sales Return</option>
@@ -1347,7 +1378,8 @@ const CreateCreditNotes = ({ onCancel }) => {
             <SelectWrapper>
               <Select
                 value={status}
-                onChange={(e) => setStatus(e.target.value)}
+                onChange={(e) => !isViewOnly && setStatus(e.target.value)}
+                disabled={isViewOnly}
               >
                 <option value="open">Issued/Pending</option>
                 <option value="closed">Applied</option>
@@ -1365,7 +1397,9 @@ const CreateCreditNotes = ({ onCancel }) => {
             <Input
               placeholder="TUNGSTON LABS"
               value={from.name}
+              readOnly={isViewOnly}
               onChange={(e) =>
+                !isViewOnly &&
                 setFrom((previous) => ({
                   ...previous,
                   name: e.target.value,
@@ -1379,7 +1413,9 @@ const CreateCreditNotes = ({ onCancel }) => {
             <Input
               placeholder="Tungston Labs, Ullampilly Building,..."
               value={from.address}
+              readOnly={isViewOnly}
               onChange={(e) =>
+                !isViewOnly &&
                 setFrom((previous) => ({
                   ...previous,
                   address: e.target.value,
@@ -1393,7 +1429,9 @@ const CreateCreditNotes = ({ onCancel }) => {
             <Input
               placeholder="+91 97783 77526"
               value={from.phone}
+              readOnly={isViewOnly}
               onChange={(e) =>
+                !isViewOnly &&
                 setFrom((previous) => ({
                   ...previous,
                   phone: e.target.value,
@@ -1407,7 +1445,9 @@ const CreateCreditNotes = ({ onCancel }) => {
             <Input
               placeholder="info@tungstonlabs.com"
               value={from.email}
+              readOnly={isViewOnly}
               onChange={(e) =>
+                !isViewOnly &&
                 setFrom((previous) => ({
                   ...previous,
                   email: e.target.value,
@@ -1425,6 +1465,7 @@ const CreateCreditNotes = ({ onCancel }) => {
               <Select
                 value={billTo.clientId ?? billTo.client ?? ""}
                 onChange={handleCustomerChange}
+                disabled={isViewOnly}
               >
                 <option value="">Company/Client Name</option>
                 {customers.map((customer, index) => {
@@ -1451,7 +1492,9 @@ const CreateCreditNotes = ({ onCancel }) => {
             <Input
               placeholder="Company/Client aDDRESS"
               value={billTo.address}
+              readOnly={isViewOnly}
               onChange={(e) =>
+                !isViewOnly &&
                 setBillTo((previous) => ({
                   ...previous,
                   address: e.target.value,
@@ -1467,7 +1510,9 @@ const CreateCreditNotes = ({ onCancel }) => {
             <Input
               placeholder="Company/Client Phone Number"
               value={billTo.phone}
+              readOnly={isViewOnly}
               onChange={(e) =>
+                !isViewOnly &&
                 setBillTo((previous) => ({
                   ...previous,
                   phone: e.target.value,
@@ -1481,7 +1526,9 @@ const CreateCreditNotes = ({ onCancel }) => {
             <Input
               placeholder="Company/Client Email ID"
               value={billTo.email}
+              readOnly={isViewOnly}
               onChange={(e) =>
+                !isViewOnly &&
                 setBillTo((previous) => ({
                   ...previous,
                   email: e.target.value,
@@ -1534,11 +1581,24 @@ const CreateCreditNotes = ({ onCancel }) => {
                     <input
                       type="number"
                       min="0"
+                      max={item.invoicedQty > 0 ? item.invoicedQty : undefined}
                       value={item.creditingNow}
+                      readOnly={isViewOnly}
+                      disabled={isViewOnly}
                       onChange={(e) => {
+                        if (isViewOnly) return;
                         const raw = e.target.value;
                         const val = raw === "" ? 0 : Number(raw);
                         if (val < 0) return;
+                        const maxLimit = item.invoicedQty > 0 ? item.invoicedQty : (item.availableQty > 0 ? item.availableQty : 0);
+                        if (maxLimit > 0 && val > maxLimit) {
+                          setValidationError(
+                            `Crediting quantity for '${item.product || "item"}' cannot exceed invoiced quantity (${maxLimit}).`
+                          );
+                          updateItem(item.id, "creditingNow", maxLimit);
+                          return;
+                        }
+                        setValidationError("");
                         updateItem(item.id, "creditingNow", val);
                       }}
                       style={{
@@ -1548,6 +1608,8 @@ const CreateCreditNotes = ({ onCancel }) => {
                         border: "1px solid #e2e5ea",
                         borderRadius: "4px",
                         fontSize: "13px",
+                        background: isViewOnly ? "#f9fafb" : "#ffffff",
+                        cursor: isViewOnly ? "default" : "text",
                       }}
                     />
                   </td>
@@ -1607,7 +1669,8 @@ const CreateCreditNotes = ({ onCancel }) => {
             <NotesTitle>Notes &amp; reason detail</NotesTitle>
             <CreditNotesTextArea
               value={notes}
-              onChange={(e) => setNotes(e.target.value)}
+              readOnly={isViewOnly}
+              onChange={(e) => !isViewOnly && setNotes(e.target.value)}
               placeholder="Price correction agreed with customer after post-delivery review — original invoice priced at incorrect rate for [Product]. Revised price approved by [Sales Manager name] on [date]. Adjustment applies to lines 1 & 2 only."
             />
           </PaymentLeft>
@@ -1649,23 +1712,36 @@ const CreateCreditNotes = ({ onCancel }) => {
         </PaymentSection>
 
         <ButtonWrapper>
-          <CancelButton type="button" onClick={handleCancel}>
-            CANCEL
-          </CancelButton>
+          {isViewOnly ? (
+            <>
+              <CancelButton type="button" onClick={handleCancel}>
+                BACK
+              </CancelButton>
+              <PreviewButton type="button" onClick={() => window.print()}>
+                PRINT / EXPORT
+              </PreviewButton>
+            </>
+          ) : (
+            <>
+              <CancelButton type="button" onClick={handleCancel}>
+                CANCEL
+              </CancelButton>
 
-          <PreviewButton
-            type="button"
-            onClick={handleCreate}
-            disabled={submitting}
-          >
-            {submitting
-              ? isEditMode
-                ? "UPDATING..."
-                : "SAVING..."
-              : isEditMode
-                ? "UPDATE CREDIT NOTE"
-                : "SENT FOR APPROVAL"}
-          </PreviewButton>
+              <PreviewButton
+                type="button"
+                onClick={handleCreate}
+                disabled={submitting}
+              >
+                {submitting
+                  ? isEditMode
+                    ? "UPDATING..."
+                    : "SAVING..."
+                  : isEditMode
+                    ? "UPDATE CREDIT NOTE"
+                    : "SENT FOR APPROVAL"}
+              </PreviewButton>
+            </>
+          )}
         </ButtonWrapper>
       </OrderForm>
     </OrderContainer>

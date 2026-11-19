@@ -14,7 +14,7 @@ const CreditAction = ({ row, onDelete }) => {
     event.stopPropagation();
     const id = getId();
     if (!id) return;
-    navigate(`/credit-notes/edit/${id}`, {
+    navigate(`/credit-notes/view/${id}`, {
       state: {
         creditNoteData: row,
         isViewOnly: true,

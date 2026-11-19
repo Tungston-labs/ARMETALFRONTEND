@@ -306,6 +306,8 @@ const FinanceRoutes = () => {
 
             <Route path="credit-notes/edit/:id" element={<CreateCreditNotes />} />
 
+            <Route path="credit-notes/view/:id" element={<CreateCreditNotes />} />
+
             {/* =====================================================
           SALES - CREDIT NOTE ACTION
       ===================================================== */}
