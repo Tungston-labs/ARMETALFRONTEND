@@ -79,8 +79,8 @@ const DeliveryNotes = () => {
   const [status, setStatus] = useState("");
   const [customer, setCustomer] = useState("");
   const [warehouse, setWarehouse] = useState("");
-  const [startDate, setStartDate] = useState(currentMonth.start);
-  const [endDate, setEndDate] = useState(currentMonth.end);
+  const [startDate, setStartDate] = useState();
+  const [endDate, setEndDate] = useState();
   const [dateFilterChanged, setDateFilterChanged] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const rowsPerPage = 10;
@@ -315,7 +315,7 @@ const DeliveryNotes = () => {
         title="Delivery Notes"
         breadcrumbs={["Sales", "Delivery Notes"]}
         buttonText="+ Create Delivery Note"
-        onButtonClick={() => navigate("/delivery/notes/add")}
+        onButtonClick={() => navigate("/sales/delivery-notes/add")}
       >
         <ExportButton type="button" onClick={handleExport}>
           <FiDownload />

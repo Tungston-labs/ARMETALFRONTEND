@@ -151,7 +151,8 @@ const SalesOrder = () => {
         setDeleteError(errorMessage);
     };
     const handleView = (order) => {
-    navigate(`/sales/orders/${order.id}`); 
+    navigate(`/sales/orders/edit/${order.id}`); 
+        
 };
 
 const handleDownload = (order) => {

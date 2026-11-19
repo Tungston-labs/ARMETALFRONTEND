@@ -143,30 +143,33 @@ export const ConvertSOButton = styled.button`
 `;
 
 export const SmallIconButton = styled.button`
-    width: 28px;
-    height: 28px;
-
-    display: flex;
+   width: 26px;
+    height: 26px;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
-
-    border: 1px solid #e5e7eb;
+    border: 1px solid ${({ $danger }) => ($danger ? "#F5C2C4" : "#E5E7EB")};
     border-radius: 6px;
-
-    background: #ffffff;
-    color: ${({ $danger }) => ($danger ? "#dc2626" : "#374151")};
-
+    background: #fff;
+    color: ${({ $danger }) => ($danger ? "#E5484D" : "#4B5563")};
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: background 0.15s;
 
-    &:hover {
-        border-color: ${({ $danger }) => ($danger ? "#dc2626" : "#f78926")};
-        color: ${({ $danger }) => ($danger ? "#dc2626" : "#f78926")};
-        background: ${({ $danger }) => ($danger ? "#fef2f2" : "#fff8f2")};
+    &:hover:not(:disabled) {
+        background: ${({ $danger }) => ($danger ? "#FDECEC" : "#F3F4F6")};
     }
 
-    &:active {
-        transform: scale(0.96);
+    &:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
+    .spin {
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        to { transform: rotate(360deg); }
     }
 `;
 

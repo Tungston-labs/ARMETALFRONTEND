@@ -1240,7 +1240,7 @@ const CreateCreditNotes = ({ onCancel }) => {
         title={pageTitle}
         breadcrumbs={["Sales", "Credit Notes"]}
         showBack
-        onBack={() => navigate("/credit-notes")}
+        onBack={() => navigate("/sales/credit-notes")}
       />
 
       {displayedError && (

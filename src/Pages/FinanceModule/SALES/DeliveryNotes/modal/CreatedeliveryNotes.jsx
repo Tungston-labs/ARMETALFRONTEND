@@ -573,7 +573,7 @@ const Createdeliverynotes = () => {
         }
         breadcrumbs={["Sales", "Delivery Notes"]}
         showBack
-        onBack={() => navigate("/delivery/notes")}
+        onBack={() => navigate("/sales/delivery-notes")}
       />
 
       {displayedError && <div className="form-error">{displayedError}</div>}

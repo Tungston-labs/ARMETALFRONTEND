@@ -588,17 +588,8 @@ const AddQuotation = ({
         </TableWrap>
 
         <BottomGrid>
-          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            <FieldGroup>
-              <Label>Notes</Label>
-              <TextArea
-                placeholder="Above information is not an invoice and only an estimate of services."
-                value={form.notes}
-                onChange={(e) => handleField("notes", e.target.value)}
-              />
-            </FieldGroup>
-
-            <FieldGroup style={{ maxWidth: 260 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              <FieldGroup>
               <Label>Negotiation Amount ({currency})</Label>
               <Input
                 type="number"
@@ -611,6 +602,15 @@ const AddQuotation = ({
                 }
               />
             </FieldGroup>
+            <FieldGroup>
+              <Label>Notes</Label>
+              <TextArea
+                placeholder="Above information is not an invoice and only an estimate of services."
+                value={form.notes}
+                onChange={(e) => handleField("notes", e.target.value)}
+              />
+            </FieldGroup>
+
           </div>
 
           <SummaryCard>
@@ -626,7 +626,7 @@ const AddQuotation = ({
                 {currency} {totals.totalVat.toFixed(2)}
               </strong>
             </SummaryRow>
-            <SummaryRow>
+            {/* <SummaryRow>
               <span>Discount ({currency})</span>
               <Input
                 type="number"
@@ -636,8 +636,8 @@ const AddQuotation = ({
                 value={form.discount}
                 onChange={(e) => handleField("discount", e.target.value)}
               />
-            </SummaryRow>
-            <SummaryRow>
+            </SummaryRow> */}
+            {/* <SummaryRow>
               <span>Round Off ({currency})</span>
               <Input
                 type="number"
@@ -646,7 +646,7 @@ const AddQuotation = ({
                 value={form.round_off}
                 onChange={(e) => handleField("round_off", e.target.value)}
               />
-            </SummaryRow>
+            </SummaryRow> */}
             {totals.negotiation > 0 && (
               <SummaryRow>
                 <span>Negotiation Discount ({currency})</span>

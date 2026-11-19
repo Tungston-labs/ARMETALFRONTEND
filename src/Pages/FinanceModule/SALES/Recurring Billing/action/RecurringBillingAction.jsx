@@ -1,78 +1,45 @@
-import React, {
-    useEffect,
-    useRef,
-    useState,
-} from "react";
+import React, { useState } from "react";
 import {
-    FiMoreVertical,
+    FiEye,
     FiEdit2,
     FiTrash2,
     FiDownload,
     FiLoader,
 } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
-import {
-    ActionWrapper,
-    ActionButton,
-    FloatingAction,
-} from "./RecurringBillingAction.styles";
+import { ActionWrapper, ActionButton } from "./RecurringBillingAction.styles";
 
-const RecurringBillingAction = ({
-    row,
-    onDelete,
-    onDownload,
-}) => {
-    const [open, setOpen] = useState(false);
+const RecurringBillingAction = ({ row, onView, onDelete, onDownload }) => {
     const [isDeleting, setIsDeleting] = useState(false);
     const [isDownloading, setIsDownloading] = useState(false);
     const navigate = useNavigate();
-    const wrapperRef = useRef(null);
 
     const isBusy = isDeleting || isDownloading;
 
-    useEffect(() => {
-        const handleClickOutside = (e) => {
-            if (
-                wrapperRef.current &&
-                !wrapperRef.current.contains(e.target)
-            ) {
-                setOpen(false);
-            }
-        };
-
-        document.addEventListener("mousedown", handleClickOutside);
-
-        return () =>
-            document.removeEventListener("mousedown", handleClickOutside);
-    }, []);
-
-    const handleEdit = (invoice) => {
-        navigate(`/sales/invoices/edit/${invoice.id}`, {
-            state: { invoiceData: invoice },
+    const handleView = (e) => {
+        e.stopPropagation();
+        if (onView) {
+            onView(row);
+            return;
+        }
+        // Default: go to the invoice view page
+        navigate(`/sales/recurring-billing/view/${row.id}`, {
+            state: { invoiceData: row },
         });
     };
 
-    const handleDelete = async () => {
-        if (!onDelete || isBusy) return;
-
-        setOpen(false);
-        setIsDeleting(true);
-
-        try {
-            await onDelete(row);
-        } catch (err) {
-            console.error("Failed to delete invoice:", err);
-        } finally {
-            setIsDeleting(false);
-        }
+    const handleEdit = (e) => {
+        e.stopPropagation();
+        navigate(`/sales/recurring-billing/edit/${row.id}`, {
+            state: { invoiceData: row },
+        });
     };
 
-    const handleDownload = async () => {
+    const handleDownload = async (e) => {
+        e.stopPropagation();
         if (!onDownload || isBusy) return;
 
-        setOpen(false);
         setIsDownloading(true);
-
         try {
             await onDownload(row);
         } catch (err) {
@@ -82,75 +49,74 @@ const RecurringBillingAction = ({
         }
     };
 
-    return (
-        <ActionWrapper ref={wrapperRef}>
-            {/* MORE BUTTON */}
+    const handleDelete = async (e) => {
+        e.stopPropagation();
+        if (!onDelete || isBusy) return;
 
+        setIsDeleting(true);
+        try {
+            await onDelete(row);
+        } catch (err) {
+            console.error("Failed to delete invoice:", err);
+        } finally {
+            setIsDeleting(false);
+        }
+    };
+
+    return (
+        <ActionWrapper>
+            {/* VIEW */}
             <ActionButton
                 type="button"
-                onClick={(e) => {
-                    e.stopPropagation();
-                    setOpen((prev) => !prev);
-                }}
-                title="Actions"
+                title="View Invoice"
+                onClick={handleView}
                 disabled={isBusy}
             >
-                {isBusy ? (
-                    <FiLoader size={12} className="spin" />
-                ) : (
-                    <FiMoreVertical size={12} />
-                )}
+                <FiEye size={13} />
             </ActionButton>
 
             {/* EDIT */}
-
-            <FloatingAction
+            <ActionButton
                 type="button"
-                $open={open}
-                $position="edit"
                 title="Edit Invoice"
-                onClick={(e) => {
-                    e.stopPropagation();
-
-                    handleEdit(row);
-
-                    setOpen(false);
-                }}
+                onClick={handleEdit}
+                disabled={isBusy}
             >
-                <FiEdit2 size={12} />
-            </FloatingAction>
+                <FiEdit2 size={13} />
+            </ActionButton>
 
             {/* DOWNLOAD */}
-
-            <FloatingAction
-                type="button"
-                $open={open}
-                $position="download"
-                title="Download Invoice"
-                onClick={(e) => {
-                    e.stopPropagation();
-
-                    handleDownload();
-                }}
-            >
-                <FiDownload size={12} />
-            </FloatingAction>
+            {onDownload && (
+                <ActionButton
+                    type="button"
+                    title="Download Invoice"
+                    onClick={handleDownload}
+                    disabled={isBusy}
+                >
+                    {isDownloading ? (
+                        <FiLoader size={13} className="spin" />
+                    ) : (
+                        <FiDownload size={13} />
+                    )}
+                </ActionButton>
+            )}
 
             {/* DELETE */}
-
-            <FloatingAction
-                type="button"
-                $open={open}
-                $position="delete"
-                title="Delete Invoice"
-                onClick={(e) => {
-                    e.stopPropagation();
-
-                    handleDelete();
-                }}
-            >
-                <FiTrash2 size={12} />
-            </FloatingAction>
+            {onDelete && (
+                <ActionButton
+                    type="button"
+                    $danger
+                    title="Delete Invoice"
+                    onClick={handleDelete}
+                    disabled={isBusy}
+                >
+                    {isDeleting ? (
+                        <FiLoader size={13} className="spin" />
+                    ) : (
+                        <FiTrash2 size={13} />
+                    )}
+                </ActionButton>
+            )}
         </ActionWrapper>
     );
 };

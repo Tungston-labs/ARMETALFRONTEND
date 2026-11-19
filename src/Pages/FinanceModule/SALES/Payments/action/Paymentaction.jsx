@@ -14,7 +14,6 @@ const Paymentactions = ({ row, onInfo, onEdit, onDelete, onDownload }) => {
     const handleDownload = async (e) => {
         e.stopPropagation();
         if (isDownloading || !row?.id) return;
-
         setIsDownloading(true);
         try {
             await onDownload?.(row);

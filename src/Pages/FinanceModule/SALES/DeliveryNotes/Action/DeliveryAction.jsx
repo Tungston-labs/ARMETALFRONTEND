@@ -10,33 +10,34 @@ const ActionContainer = styled.div`
 `;
 
 const IconBtn = styled.button`
-  width: 28px;
-  height: 28px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid #e5e7eb;
-  border-radius: 4px;
-  background: #ffffff;
-  color: #4b5563;
-  cursor: pointer;
-  padding: 0;
-  transition: all 0.15s ease;
+  width: 26px;
+    height: 26px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid ${({ $danger }) => ($danger ? "#F5C2C4" : "#E5E7EB")};
+    border-radius: 6px;
+    background: #fff;
+    color: ${({ $danger }) => ($danger ? "#E5484D" : "#4B5563")};
+    cursor: pointer;
+    transition: background 0.15s;
 
-  &:hover {
-    background: #f9fafb;
-    border-color: #d1d5db;
-    color: #111827;
-  }
-
-  &.danger {
-    color: #ef4444;
-    &:hover {
-      background: #fef2f2;
-      border-color: #fca5a5;
-      color: #dc2626;
+    &:hover:not(:disabled) {
+        background: ${({ $danger }) => ($danger ? "#FDECEC" : "#F3F4F6")};
     }
-  }
+
+    &:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
+    .spin {
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
 `;
 
 const DeliveryAction = ({ row, onDelete }) => {
@@ -53,7 +54,7 @@ const DeliveryAction = ({ row, onDelete }) => {
   const handleEdit = (e) => {
     e.stopPropagation();
     if (!row?.id) return;
-    navigate(`/delivery/notes/edit/${row.id}`, {
+    navigate(`/sales/delivery-notes/edit/${row.id}`, {
       state: { deliveryNoteData: row },
     });
   };

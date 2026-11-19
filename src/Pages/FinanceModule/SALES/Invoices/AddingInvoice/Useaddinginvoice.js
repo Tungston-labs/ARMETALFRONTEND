@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 
-// Make sure this casing matches the real filename of your invoice slice.
 import {
     addInvoice,
     updateInvoicePartial,
@@ -22,10 +21,74 @@ import {
     clearSelectedDeliveryNote,
 } from "../../../../../Redux/finance/Sales/deliveryNotesSlice";
 
+// ======================================================
+// RELATION ID HELPERS
+// ======================================================
+
+const getRelationId = (value) => {
+    if (value && typeof value === "object") {
+        return (
+            value.id ??
+            value.pk ??
+            value.product_id ??
+            value.customer_id ??
+            ""
+        );
+    }
+
+    return value ?? "";
+};
+
+// Extract product ID from different possible API response formats.
+const getProductId = (item) => {
+    return (
+        getRelationId(item?.product) ||
+        getRelationId(item?.product_id) ||
+        getRelationId(item?.product_details) ||
+        getRelationId(item?.product_data) ||
+        getRelationId(item?.product_info) ||
+        ""
+    );
+};
+
+const getItemDescription = (item) => {
+    return (
+        item?.particular ||
+        item?.description ||
+        item?.product_name ||
+        item?.service_name ||
+        item?.service ||
+        item?.product_details?.name ||
+        item?.product_details?.product_name ||
+        item?.product_data?.name ||
+        item?.product_data?.product_name ||
+        ""
+    );
+};
+
+const getItemService = (item) => {
+    return (
+        item?.product_name ||
+        item?.service_name ||
+        item?.service ||
+        item?.product_details?.name ||
+        item?.product_details?.product_name ||
+        item?.product_data?.name ||
+        item?.product_data?.product_name ||
+        item?.particular ||
+        item?.description ||
+        ""
+    );
+};
+
+// ======================================================
+// DEFAULT ITEM
+// ======================================================
 
 export const defaultItem = () => ({
     id: Date.now(),
     product: "",
+    sales_order_item: null,
     slNo: "01",
     service: "",
     particular: "",
@@ -37,29 +100,36 @@ export const defaultItem = () => ({
     amount: "",
 });
 
+// ======================================================
+// EMPTY FORM
+// ======================================================
 
 export const emptyForm = {
     invoiceNumber: "",
     salesOrderRef: "",
     deliveryNoteRef: "",
-    paymentStatus: "",
+    paymentStatus: "unpaid",
+
     from: {
         name: "",
         address: "",
         phone: "",
         email: "",
     },
+
     billTo: {
         client: "",
         address: "",
         phone: "",
         email: "",
     },
+
     payment: {
         accountHolder: "",
         accountNumber: "",
         iban: "",
     },
+
     summary: {
         subTotal: "",
         vat: "",
@@ -67,13 +137,15 @@ export const emptyForm = {
         roundOff: "",
         total: "",
     },
+
     amountPaid: "",
     items: [defaultItem()],
 };
 
+// ======================================================
+// PAYMENT STATUS
+// ======================================================
 
-// The dropdown sends "unpaid" for Pending, so "pending" is normalised to
-// "unpaid" to keep the select and the saved value in sync.
 const normalizePaymentStatus = (status = "") => {
     const value = String(status).trim().toLowerCase();
 
@@ -96,6 +168,9 @@ const normalizePaymentStatus = (status = "") => {
     return value;
 };
 
+// ======================================================
+// INVOICE RESPONSE TO FORM DATA
+// ======================================================
 
 const mapInvoiceToFormData = (invoice) => {
     if (!invoice) return null;
@@ -103,39 +178,44 @@ const mapInvoiceToFormData = (invoice) => {
     return {
         invoiceNumber: invoice.invoice_number || "",
 
-        salesOrderRef:
+        salesOrderRef: getRelationId(
             invoice.sales_order ||
             invoice.sales_order_id ||
             invoice.so_ref ||
             invoice.so_number ||
-            "",
+            ""
+        ),
 
-        deliveryNoteRef:
+        deliveryNoteRef: getRelationId(
             invoice.delivery_note ||
             invoice.delivery_note_id ||
             invoice.delivery_note_reference ||
-            "",
+            ""
+        ),
 
         invoiceDate: invoice.invoice_date || "",
         dueDate: invoice.due_date || "",
 
         paymentStatus: normalizePaymentStatus(
             invoice.payment_status || ""
-        ),
+        ) || "unpaid",
 
         from: {
             name:
                 invoice?.from?.name ||
                 invoice.company_name ||
                 "",
+
             address:
                 invoice?.from?.address ||
                 invoice.company_address ||
                 "",
+
             phone:
                 invoice?.from?.phone ||
                 invoice.company_phone ||
                 "",
+
             email:
                 invoice?.from?.email ||
                 invoice.company_email ||
@@ -143,19 +223,23 @@ const mapInvoiceToFormData = (invoice) => {
         },
 
         billTo: {
-            client:
+            client: getRelationId(
                 invoice?.bill_to?.client ||
                 invoice.customer ||
                 invoice.customer_id ||
-                "",
+                ""
+            ),
+
             address:
                 invoice?.bill_to?.address ||
                 invoice.customer_address ||
                 "",
+
             phone:
                 invoice?.bill_to?.phone ||
                 invoice.customer_phone ||
                 "",
+
             email:
                 invoice?.bill_to?.email ||
                 invoice.customer_email ||
@@ -167,10 +251,12 @@ const mapInvoiceToFormData = (invoice) => {
                 invoice?.payment?.account_holder ||
                 invoice.account_holder ||
                 "",
+
             accountNumber:
                 invoice?.payment?.account_number ||
                 invoice.account_number ||
                 "",
+
             iban:
                 invoice?.payment?.iban ||
                 invoice.iban ||
@@ -182,14 +268,15 @@ const mapInvoiceToFormData = (invoice) => {
                 invoice.subtotal ??
                 invoice.sub_total ??
                 "",
+
             vat:
                 invoice.total_vat ??
                 invoice.vat ??
                 "",
-            discount:
-                invoice.discount ?? "",
-            roundOff:
-                invoice.round_off ?? "",
+
+            discount: invoice.discount ?? "",
+            roundOff: invoice.round_off ?? "",
+
             total:
                 invoice.total_amount ??
                 invoice.amount ??
@@ -204,20 +291,18 @@ const mapInvoiceToFormData = (invoice) => {
         items:
             Array.isArray(invoice.items) && invoice.items.length > 0
                 ? invoice.items.map((item, idx) => ({
-                    id: item.id ?? Date.now() + idx,
-                    product: item.product || "",
+                    id: Date.now() + idx,
+
+                    sales_order_item:
+                        getRelationId(item.sales_order_item) || null,
+
+                    product: getProductId(item),
+
                     slNo: String(idx + 1).padStart(2, "0"),
 
-                    service:
-                        item.product_name ||
-                        item.service_name ||
-                        item.service ||
-                        "",
+                    service: getItemService(item),
 
-                    particular:
-                        item.particular ||
-                        item.description ||
-                        "",
+                    particular: getItemDescription(item),
 
                     qty:
                         item.quantity ??
@@ -229,7 +314,10 @@ const mapInvoiceToFormData = (invoice) => {
                         "",
 
                     rate:
-                        item.rate ?? "",
+                        item.rate ??
+                        item.unit_price ??
+                        item.price ??
+                        "",
 
                     vat:
                         item.vat_percentage ??
@@ -237,20 +325,29 @@ const mapInvoiceToFormData = (invoice) => {
                         "",
 
                     vatAmount:
-                        item.vat_amount ?? "",
+                        item.vat_sar ??
+                        item.vat_amount ??
+                        "",
 
                     amount:
-                        item.amount ?? "",
+                        item.amount ??
+                        "",
                 }))
                 : [defaultItem()],
     };
 };
 
+// ======================================================
+// VALIDATION REGEX
+// ======================================================
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PHONE_RE = /^[+]?[\d\s-]{7,20}$/;
 const IBAN_RE = /^[A-Za-z0-9]{5,34}$/;
 
+// ======================================================
+// PAYMENT TERMS
+// ======================================================
 
 const PAYMENT_TERMS_DAYS = {
     due_on_receipt: 0,
@@ -261,6 +358,9 @@ const PAYMENT_TERMS_DAYS = {
     net_60: 60,
 };
 
+// ======================================================
+// DATE HELPERS
+// ======================================================
 
 const addDaysToDateString = (dateStr, days) => {
     if (!dateStr) return dateStr;
@@ -274,18 +374,18 @@ const addDaysToDateString = (dateStr, days) => {
     return date.toISOString().split("T")[0];
 };
 
-
 const capitalize = (str) =>
     str.charAt(0).toUpperCase() + str.slice(1);
-
 
 const isValidEmail = (value) =>
     EMAIL_RE.test(String(value).trim());
 
-
 const isValidPhone = (value) =>
     PHONE_RE.test(String(value).trim());
 
+// ======================================================
+// DECIMAL HELPER
+// ======================================================
 
 const toDecimal = (value) => {
     if (
@@ -301,6 +401,9 @@ const toDecimal = (value) => {
     return Number.isNaN(num) ? undefined : num;
 };
 
+// ======================================================
+// BACKEND ERROR MAPPING
+// ======================================================
 
 const BACKEND_FIELD_MAP = {
     due_date: "dueDate",
@@ -310,27 +413,36 @@ const BACKEND_FIELD_MAP = {
     amount_paid: "amountPaid",
     sales_order: "salesOrderRef",
     delivery_note: "deliveryNoteRef",
+
     company_name: "fromName",
     company_email: "fromEmail",
     company_phone: "fromPhone",
     company_address: "fromAddress",
+
     customer: "billToClient",
     customer_email: "billToEmail",
     customer_phone: "billToPhone",
     customer_address: "billToAddress",
+
     iban: "iban",
 };
 
-
 const extractMessage = (value) => {
-    if (Array.isArray(value)) return value.join(" ");
-    if (typeof value === "string") return value;
+    if (Array.isArray(value)) {
+        return value.join(" ");
+    }
+
+    if (typeof value === "string") {
+        return value;
+    }
+
     return "";
 };
 
-
 const mapBackendErrors = (payload) => {
-    if (!payload || typeof payload !== "object") return {};
+    if (!payload || typeof payload !== "object") {
+        return {};
+    }
 
     const mapped = {};
 
@@ -347,6 +459,9 @@ const mapBackendErrors = (payload) => {
     return mapped;
 };
 
+// ======================================================
+// ITEM VALIDATION
+// ======================================================
 
 const validateItems = (items) => {
     const itemErrors = {};
@@ -355,23 +470,34 @@ const validateItems = (items) => {
     items.forEach((item) => {
         const rowErrors = {};
 
+        const productId = getRelationId(item.product);
+
+        const description =
+            String(item.particular || "").trim() ||
+            String(item.service || "").trim();
+
         const hasAnyValue = Boolean(
-            item.service?.trim() ||
-            item.particular?.trim() ||
+            description ||
             item.qty !== "" ||
-            item.rate !== ""
+            item.rate !== "" ||
+            productId
         );
 
+        // Ignore completely empty rows.
         if (!hasAnyValue) return;
 
-        if (!item.service?.trim()) {
-            rowErrors.service = "Service is required";
+        // Product is optional for service-only invoice items.
+        // Description/service is required instead.
+        if (!description) {
+            rowErrors.particular = "Description is required";
         }
 
         const qtyNum = Number(item.qty);
 
         if (
             item.qty === "" ||
+            item.qty === null ||
+            item.qty === undefined ||
             Number.isNaN(qtyNum) ||
             qtyNum <= 0
         ) {
@@ -382,6 +508,8 @@ const validateItems = (items) => {
 
         if (
             item.rate === "" ||
+            item.rate === null ||
+            item.rate === undefined ||
             Number.isNaN(rateNum) ||
             rateNum < 0
         ) {
@@ -417,18 +545,10 @@ const validateItems = (items) => {
     };
 };
 
+// ======================================================
+// DELIVERY NOTE ITEM MAPPING
+// ======================================================
 
-// Handles either an object relation or a plain ID.
-const getRelationId = (value) => {
-    if (value && typeof value === "object") {
-        return value.id ?? value.pk ?? "";
-    }
-
-    return value ?? "";
-};
-
-
-// Convert Delivery Note item format into Invoice item format.
 const mapDeliveryNoteItems = (deliveryNoteItems) => {
     if (
         !Array.isArray(deliveryNoteItems) ||
@@ -438,25 +558,18 @@ const mapDeliveryNoteItems = (deliveryNoteItems) => {
     }
 
     return deliveryNoteItems.map((item, idx) => ({
-        id: item.id ?? Date.now() + idx,
+        id: Date.now() + idx,
 
-        product: getRelationId(item.product),
+        sales_order_item:
+            getRelationId(item.sales_order_item) || null,
+
+        product: getProductId(item),
 
         slNo: String(idx + 1).padStart(2, "0"),
 
-        service:
-            item.product_name ||
-            item.service_name ||
-            item.service ||
-            item.product_details?.name ||
-            item.product_details?.product_name ||
-            "",
+        service: getItemService(item),
 
-        particular:
-            item.particular ||
-            item.description ||
-            item.remarks ||
-            "",
+        particular: getItemDescription(item),
 
         qty:
             item.quantity ??
@@ -479,6 +592,7 @@ const mapDeliveryNoteItems = (deliveryNoteItems) => {
             "",
 
         vatAmount:
+            item.vat_sar ??
             item.vat_amount ??
             "",
 
@@ -489,6 +603,9 @@ const mapDeliveryNoteItems = (deliveryNoteItems) => {
     }));
 };
 
+// ======================================================
+// MAIN CUSTOM HOOK
+// ======================================================
 
 export const useAddingInvoice = () => {
     const { id } = useParams();
@@ -497,14 +614,14 @@ export const useAddingInvoice = () => {
     const dispatch = useDispatch();
 
     const isEditMode = Boolean(id);
-
-    // Keep your existing view-mode handling if you have a separate view route.
     const isViewMode = false;
 
     const today = new Date().toISOString().split("T")[0];
 
-
+    // ==================================================
     // INVOICE REDUX STATE
+    // ==================================================
+
     const {
         salesOrders,
         selectedSalesOrder,
@@ -517,8 +634,10 @@ export const useAddingInvoice = () => {
         error: saveError,
     } = useSelector((state) => state.invoice);
 
-
+    // ==================================================
     // DELIVERY NOTE REDUX STATE
+    // ==================================================
+
     const deliveryNotes = useSelector(
         (state) => state.deliveryNotes?.deliveryNotes || []
     );
@@ -527,8 +646,10 @@ export const useAddingInvoice = () => {
         (state) => state.deliveryNotes?.selectedDeliveryNote || null
     );
 
-
+    // ==================================================
     // FORM STATES
+    // ==================================================
+
     const [invoiceNumber, setInvoiceNumber] = useState(
         emptyForm.invoiceNumber
     );
@@ -545,7 +666,7 @@ export const useAddingInvoice = () => {
     const [dueDate, setDueDate] = useState(today);
 
     const [paymentStatus, setPaymentStatus] = useState(
-        emptyForm.paymentStatus
+        emptyForm.paymentStatus || "unpaid"
     );
 
     const [amountPaid, setAmountPaid] = useState(
@@ -561,15 +682,16 @@ export const useAddingInvoice = () => {
 
     const [errors, setErrors] = useState({});
 
-
+    // ==================================================
     // INITIAL DATA LOADS
+    // ==================================================
+
     useEffect(() => {
         dispatch(clearInvoiceError());
 
         dispatch(getInvoiceCompanyDetails());
         dispatch(getInvoiceCustomers());
 
-        // Load Delivery Note dropdown data (all pages worth).
         dispatch(fetchDeliveryNotes({ page_size: 200 }));
 
         if (!isEditMode) {
@@ -583,8 +705,10 @@ export const useAddingInvoice = () => {
         };
     }, [dispatch, isEditMode]);
 
-
+    // ==================================================
     // LOAD INVOICE FOR EDIT MODE
+    // ==================================================
+
     useEffect(() => {
         if (isEditMode) {
             dispatch(clearInvoiceError());
@@ -592,8 +716,10 @@ export const useAddingInvoice = () => {
         }
     }, [dispatch, id, isEditMode]);
 
-
+    // ==================================================
     // COMPANY DETAILS
+    // ==================================================
+
     useEffect(() => {
         if (!companyDetails || isEditMode) return;
 
@@ -617,8 +743,10 @@ export const useAddingInvoice = () => {
         }));
     }, [companyDetails, isEditMode]);
 
-
+    // ==================================================
     // LOAD EXISTING INVOICE DETAILS
+    // ==================================================
+
     useEffect(() => {
         if (!selectedInvoice) return;
 
@@ -626,13 +754,13 @@ export const useAddingInvoice = () => {
 
         setInvoiceNumber(mapped.invoiceNumber);
 
-        setSalesOrderRef(mapped.salesOrderRef);
+        setSalesOrderRef(String(mapped.salesOrderRef || ""));
         setDeliveryNoteRef(String(mapped.deliveryNoteRef || ""));
 
         setInvoiceDate(mapped.invoiceDate || today);
-        setDueDate(mapped.dueDate);
+        setDueDate(mapped.dueDate || "");
 
-        setPaymentStatus(mapped.paymentStatus);
+        setPaymentStatus(mapped.paymentStatus || "unpaid");
         setAmountPaid(mapped.amountPaid);
 
         setFrom(mapped.from);
@@ -643,14 +771,14 @@ export const useAddingInvoice = () => {
         setItems(mapped.items);
 
         setErrors({});
+
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [selectedInvoice]);
 
-
+    // ==================================================
     // SALES ORDER DETAILS AUTO POPULATION
-    // invoiceDate is read through a ref-like closure on purpose and is NOT a
-    // dependency, otherwise changing the date would overwrite the user's
-    // Bill To and items every time.
+    // ==================================================
+
     useEffect(() => {
         if (isEditMode || !selectedSalesOrder) return;
 
@@ -660,9 +788,15 @@ export const useAddingInvoice = () => {
 
         setBillTo({
             client: getRelationId(order.customer),
-            address: order.customer_address || "",
-            phone: order.customer_phone || "",
-            email: order.customer_email || "",
+
+            address:
+                order.customer_address || "",
+
+            phone:
+                order.customer_phone || "",
+
+            email:
+                order.customer_email || "",
         });
 
         if (order.payment_terms in PAYMENT_TERMS_DAYS) {
@@ -679,54 +813,71 @@ export const useAddingInvoice = () => {
         }
 
         if (Array.isArray(order.items) && order.items.length > 0) {
-            setItems(
-                order.items.map((item, idx) => ({
-                    id: item.id ?? Date.now() + idx,
+            const mappedItems = order.items.map((item, idx) => ({
+                id: Date.now() + idx,
 
-                    product: getRelationId(item.product),
+                // Sales Order item primary key.
+                sales_order_item:
+                    getRelationId(item) || null,
 
-                    slNo: String(idx + 1).padStart(2, "0"),
+                // Product is optional for service-only items.
+                product:
+                    getProductId(item),
 
-                    service:
-                        item.product_name ||
-                        item.service_name ||
-                        item.service ||
-                        "",
+                slNo: String(idx + 1).padStart(2, "0"),
 
-                    particular:
-                        item.particular ||
-                        item.description ||
-                        "",
+                service:
+                    getItemService(item),
 
-                    qty:
-                        item.quantity ??
-                        item.qty ??
-                        "",
+                particular:
+                    getItemDescription(item),
 
-                    hsCode:
-                        item.hs_code || "",
+                qty:
+                    item.quantity ??
+                    item.qty ??
+                    "",
 
-                    rate:
-                        item.rate ?? "",
+                hsCode:
+                    item.hs_code || "",
 
-                    vat:
-                        item.vat_percentage ??
-                        item.vat ??
-                        "",
+                rate:
+                    item.rate ??
+                    item.unit_price ??
+                    item.price ??
+                    "",
 
-                    vatAmount:
-                        item.vat_amount ?? "",
+                vat:
+                    item.vat_percentage ??
+                    item.vat ??
+                    "",
 
-                    amount:
-                        item.amount ?? "",
-                }))
+                vatAmount:
+                    item.vat_sar ??
+                    item.vat_amount ??
+                    "",
+
+                amount:
+                    item.amount ?? "",
+            }));
+
+            console.log("Sales Order API items:", order.items);
+            console.log("Mapped invoice items:", mappedItems);
+
+            setItems(mappedItems);
+        } else {
+            console.warn(
+                "Selected Sales Order has no items:",
+                order
             );
         }
+
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [selectedSalesOrder, isEditMode]);
 
-
+    // ==================================================
     // DELIVERY NOTE DETAILS AUTO POPULATION
+    // ==================================================
+
     useEffect(() => {
         if (isEditMode || !selectedDeliveryNote) return;
 
@@ -735,68 +886,31 @@ export const useAddingInvoice = () => {
             selectedDeliveryNote;
 
         const customer =
-            typeof note.customer === "object" &&
-            note.customer !== null
-                ? note.customer
-                : {};
-
-        const billToData =
-            note.bill_to ||
-            note.billTo ||
+            note.customer_details ||
+            note.customer ||
             {};
 
-        // CUSTOMER DETAILS
-        const customerId =
-            note.customer_id ||
-            getRelationId(note.customer) ||
-            getRelationId(billToData.client);
-
         setBillTo({
-            client: customerId,
+            client: getRelationId(customer),
 
             address:
-                note.customer_address ||
-                customer.billing_address ||
                 customer.address ||
-                billToData.address ||
+                note.customer_address ||
                 "",
 
             phone:
-                note.customer_phone ||
-                customer.phno ||
                 customer.phone ||
-                billToData.phone ||
+                note.customer_phone ||
                 "",
 
             email:
-                note.customer_email ||
-                customer.admin_email ||
                 customer.email ||
-                billToData.email ||
+                note.customer_email ||
                 "",
         });
 
-        // SALES ORDER REFERENCE FROM DELIVERY NOTE
-        const soReference =
-            note.sales_order_id ||
-            getRelationId(note.sales_order) ||
-            note.so_ref ||
-            note.sales_order_reference ||
-            "";
-
-        if (soReference) {
-            setSalesOrderRef(String(soReference));
-        }
-
-        // DELIVERY DATE / DUE DATE
-        if (note.due_date) {
-            setDueDate(note.due_date);
-        }
-
-        // INVOICE ITEMS FROM DELIVERY NOTE
         const noteItems =
             note.items ||
-            note.delivery_items ||
             note.delivery_note_items ||
             [];
 
@@ -805,8 +919,10 @@ export const useAddingInvoice = () => {
         }
     }, [selectedDeliveryNote, isEditMode]);
 
+    // ==================================================
+    // LIVE TOTALS
+    // ==================================================
 
-    // LIVE TOTALS (create mode only; saved invoices keep their stored totals)
     useEffect(() => {
         if (isEditMode) return;
 
@@ -817,6 +933,7 @@ export const useAddingInvoice = () => {
             const qty = Number(item.qty) || 0;
             const rate = Number(item.rate) || 0;
             const pct = Number(item.vat) || 0;
+
             const base = qty * rate;
 
             sub += base;
@@ -828,16 +945,25 @@ export const useAddingInvoice = () => {
 
         setSummary((prev) => ({
             ...prev,
-            subTotal: hasAmounts ? sub.toFixed(2) : "",
-            vat: hasAmounts ? vat.toFixed(2) : "",
+
+            subTotal: hasAmounts
+                ? sub.toFixed(2)
+                : "",
+
+            vat: hasAmounts
+                ? vat.toFixed(2)
+                : "",
+
             total: hasAmounts
                 ? Math.max(0, sub + vat - discount).toFixed(2)
                 : "",
         }));
     }, [items, summary.discount, isEditMode]);
 
-
+    // ==================================================
     // ERROR HELPERS
+    // ==================================================
+
     const clearError = (field) => {
         setErrors((prev) => {
             if (!prev[field]) return prev;
@@ -848,7 +974,6 @@ export const useAddingInvoice = () => {
             return next;
         });
     };
-
 
     const clearItemError = (itemId, field) => {
         setErrors((prev) => {
@@ -884,35 +1009,33 @@ export const useAddingInvoice = () => {
         });
     };
 
-
+    // ==================================================
     // FIELD HANDLERS
+    // ==================================================
+
     const handleInvoiceDateChange = (value) => {
         setInvoiceDate(value);
-
         clearError("invoiceDate");
         clearError("dueDate");
     };
-
 
     const handleDueDateChange = (value) => {
         setDueDate(value);
         clearError("dueDate");
     };
 
-
     const handlePaymentStatusChange = (value) => {
         setPaymentStatus(value);
 
-        const total = toDecimal(summary.total);
+        if (value === "paid") {
+            const total = toDecimal(summary.total);
 
-        if (value === "paid" && total !== undefined) {
-            setAmountPaid(String(total));
+            if (total !== undefined) {
+                setAmountPaid(String(total));
+            }
         }
 
-        if (
-            value === "pending" ||
-            value === "unpaid"
-        ) {
+        if (value === "pending" || value === "unpaid") {
             setAmountPaid("0");
         }
 
@@ -920,14 +1043,15 @@ export const useAddingInvoice = () => {
         clearError("amountPaid");
     };
 
-
     const handleAmountPaidChange = (value) => {
         setAmountPaid(value);
         clearError("amountPaid");
     };
 
-
+    // ==================================================
     // DISCOUNT HANDLER
+    // ==================================================
+
     const handleDiscountChange = (value) => {
         setSummary((prev) => ({
             ...prev,
@@ -936,7 +1060,6 @@ export const useAddingInvoice = () => {
 
         clearError("discount");
     };
-
 
     const updateFrom = (field, value) => {
         setFrom((prev) => ({
@@ -947,7 +1070,6 @@ export const useAddingInvoice = () => {
         clearError(`from${capitalize(field)}`);
     };
 
-
     const updateBillTo = (field, value) => {
         setBillTo((prev) => ({
             ...prev,
@@ -956,7 +1078,6 @@ export const useAddingInvoice = () => {
 
         clearError(`billTo${capitalize(field)}`);
     };
-
 
     const updatePayment = (field, value) => {
         setPayment((prev) => ({
@@ -967,15 +1088,16 @@ export const useAddingInvoice = () => {
         clearError(field);
     };
 
-
+    // ==================================================
     // SALES ORDER SELECTION
+    // ==================================================
+
     const handleSalesOrderChange = (e) => {
         const value = e.target.value;
 
         setSalesOrderRef(value);
-
-        // Clear Delivery Note selection.
         setDeliveryNoteRef("");
+
         dispatch(clearSelectedDeliveryNote());
 
         if (!value) {
@@ -993,20 +1115,13 @@ export const useAddingInvoice = () => {
             return;
         }
 
-        dispatch(clearSelectedSalesOrder());
-
-        setBillTo({
-            client: "",
-            address: "",
-            phone: "",
-            email: "",
-        });
-
         dispatch(getInvoiceSalesOrderById(value));
     };
 
-
+    // ==================================================
     // DELIVERY NOTE SELECTION
+    // ==================================================
+
     const handleDeliveryNoteChange = (e) => {
         const value = e.target.value;
 
@@ -1014,7 +1129,6 @@ export const useAddingInvoice = () => {
 
         clearError("deliveryNoteRef");
 
-        // Clear Sales Order selection and previous details.
         dispatch(clearSelectedSalesOrder());
         dispatch(clearSelectedDeliveryNote());
 
@@ -1031,12 +1145,13 @@ export const useAddingInvoice = () => {
             return;
         }
 
-        // Fetch selected Delivery Note details.
         dispatch(fetchDeliveryNoteById(value));
     };
 
-
+    // ==================================================
     // CUSTOMER SELECTION
+    // ==================================================
+
     const handleCustomerChange = (e) => {
         const customerId = e.target.value;
 
@@ -1049,37 +1164,39 @@ export const useAddingInvoice = () => {
 
         setBillTo({
             client: selectedCustomer.id,
-            address: selectedCustomer.billing_address || "",
-            phone: selectedCustomer.phno || "",
-            email: selectedCustomer.admin_email || "",
+
+            address:
+                selectedCustomer.billing_address || "",
+
+            phone:
+                selectedCustomer.phno || "",
+
+            email:
+                selectedCustomer.admin_email || "",
         });
 
         clearError("billToClient");
     };
 
-
+    // ==================================================
     // ADD ITEM
+    // ==================================================
+
     const addItem = () => {
         setItems((prev) => [
             ...prev,
             {
+                ...defaultItem(),
                 id: Date.now(),
-                product: "",
                 slNo: String(prev.length + 1).padStart(2, "0"),
-                service: "",
-                particular: "",
-                qty: "",
-                hsCode: "",
-                rate: "",
-                vat: "",
-                vatAmount: "",
-                amount: "",
             },
         ]);
     };
 
-
+    // ==================================================
     // REMOVE ITEM
+    // ==================================================
+
     const removeItem = (itemId) => {
         setItems((prev) =>
             prev.filter((item) => item.id !== itemId)
@@ -1107,8 +1224,10 @@ export const useAddingInvoice = () => {
         });
     };
 
-
+    // ==================================================
     // UPDATE ITEM
+    // ==================================================
+
     const updateItem = (itemId, field, value) => {
         setItems((prev) =>
             prev.map((item) =>
@@ -1125,52 +1244,81 @@ export const useAddingInvoice = () => {
         }
     };
 
+    // ==================================================
+    // CANCEL
+    // ==================================================
 
     const handleCancel = () => {
         navigate("/sales/invoices");
     };
 
-
+    // ==================================================
     // BUILD API PAYLOAD
+    // ==================================================
+
     const buildApiPayload = () => {
         const payload = {
-            sales_order: salesOrderRef || null,
-
-            // Confirm this field name against your Invoice serializer.
-            // Remove or rename it if your backend uses another field.
-            delivery_note: deliveryNoteRef || null,
+            sales_order:
+                getRelationId(salesOrderRef) || null,
 
             invoice_date: invoiceDate,
+
             due_date: dueDate || undefined,
-            payment_status: paymentStatus || undefined,
 
-            company_name: from.name || undefined,
-            company_email: from.email || undefined,
-            company_phone: from.phone || undefined,
-            company_address: from.address || undefined,
+            payment_status: paymentStatus || "unpaid",
 
-            customer: billTo.client || undefined,
-            customer_email: billTo.email || undefined,
-            customer_phone: billTo.phone || undefined,
-            customer_address: billTo.address || undefined,
+            company_name: from.name || "",
+            company_email: from.email || "",
+            company_phone: from.phone || "",
+            company_address: from.address || "",
 
-            account_holder:
-                payment.accountHolder || undefined,
+            customer:
+                getRelationId(billTo.client) || undefined,
 
-            account_number:
-                payment.accountNumber || undefined,
+            customer_email: billTo.email || "",
+            customer_phone: billTo.phone || "",
+            customer_address: billTo.address || "",
 
-            iban:
-                payment.iban || undefined,
+            account_holder: payment.accountHolder || "",
+            account_number: payment.accountNumber || "",
+            iban: payment.iban || "",
 
-            amount_paid:
-                toDecimal(amountPaid),
+            amount_paid: toDecimal(amountPaid) ?? 0,
 
-            discount:
-                toDecimal(summary.discount),
+            discount: toDecimal(summary.discount) ?? 0,
 
-            round_off:
-                toDecimal(summary.roundOff),
+            round_off: toDecimal(summary.roundOff) ?? 0,
+
+            items: items
+                .filter((item) =>
+                    String(item.service || "").trim() ||
+                    String(item.particular || "").trim() ||
+                    item.qty !== "" ||
+                    item.rate !== "" ||
+                    getRelationId(item.product)
+                )
+                .map((item) => ({
+                    sales_order_item:
+                        getRelationId(item.sales_order_item) || null,
+
+                    // Product is nullable for service-only items.
+                    product:
+                        getRelationId(item.product) || null,
+
+                    particular:
+                        String(item.particular || "").trim() ||
+                        String(item.service || "").trim() ||
+                        String(item.description || "").trim(),
+
+                    quantity: toDecimal(item.qty),
+
+                    hs_code: item.hsCode || "",
+
+                    rate: toDecimal(item.rate),
+
+                    vat_percentage:
+                        toDecimal(item.vat) ?? 0,
+                })),
         };
 
         Object.keys(payload).forEach((key) => {
@@ -1182,8 +1330,10 @@ export const useAddingInvoice = () => {
         return payload;
     };
 
-
+    // ==================================================
     // VALIDATION
+    // ==================================================
+
     const validate = () => {
         const newErrors = {};
 
@@ -1236,6 +1386,7 @@ export const useAddingInvoice = () => {
                 "Due date cannot be before invoice date";
         }
 
+        // Create-only company and customer validation.
         if (!isEditMode) {
             if (!from.name.trim()) {
                 newErrors.fromName =
@@ -1278,20 +1429,30 @@ export const useAddingInvoice = () => {
                 newErrors.billToPhone =
                     "Enter a valid phone number";
             }
+        }
 
-            const {
-                itemErrors,
-                hasValidItem,
-            } = validateItems(items);
+        // Validate invoice items.
+        console.log("Invoice items before validation:", items);
 
-            if (Object.keys(itemErrors).length > 0) {
-                newErrors.items = itemErrors;
-            }
+        const {
+            itemErrors,
+            hasValidItem,
+        } = validateItems(items);
 
-            if (!hasValidItem) {
-                newErrors.itemsGeneral =
-                    "Add at least one item with a service, quantity and rate";
-            }
+        console.log("Invoice item validation:", {
+            itemErrors,
+            hasValidItem,
+        });
+
+        if (Object.keys(itemErrors).length > 0) {
+            newErrors.items = itemErrors;
+        }
+
+        if (!hasValidItem) {
+            newErrors.itemsGeneral =
+                Object.keys(itemErrors).length > 0
+                    ? "Please check the description, quantity and rate in your items."
+                    : "Add at least one invoice item.";
         }
 
         if (
@@ -1305,18 +1466,49 @@ export const useAddingInvoice = () => {
         return newErrors;
     };
 
-
+    // ==================================================
     // SAVE INVOICE
-    const handleSave = () => {
+    // ==================================================
+
+    const handleSave = async (isDraft = false) => {
         const validationErrors = validate();
+
+        console.log(
+            "FULL VALIDATION ERRORS:",
+            JSON.stringify(validationErrors, null, 2)
+        );
+
+        console.table(
+            items.map((item) => ({
+                product: item.product,
+                sales_order_item: item.sales_order_item,
+                service: item.service,
+                particular: item.particular,
+                qty: item.qty,
+                rate: item.rate,
+            }))
+        );
+
+        // Drafts do not require payment status or payment completion.
+        if (isDraft) {
+            delete validationErrors.paymentStatus;
+            delete validationErrors.amountPaid;
+        }
 
         setErrors(validationErrors);
 
         if (Object.keys(validationErrors).length > 0) {
+            console.log(
+                "Invoice validation errors:",
+                validationErrors
+            );
+
             return;
         }
 
         const payload = buildApiPayload();
+
+        console.log("Invoice API payload:", payload);
 
         const action = isEditMode
             ? updateInvoicePartial({
@@ -1325,7 +1517,9 @@ export const useAddingInvoice = () => {
             })
             : addInvoice(payload);
 
-        dispatch(action).then((result) => {
+        try {
+            const result = await dispatch(action);
+
             if (!result.error) {
                 navigate("/sales/invoices");
                 return;
@@ -1341,17 +1535,40 @@ export const useAddingInvoice = () => {
                     ...backendErrors,
                 }));
             }
-        });
+
+            console.error(
+                "Invoice API error:",
+                result.payload
+            );
+        } catch (error) {
+            console.error(
+                "Invoice save failed:",
+                error
+            );
+        }
     };
 
+    // ==================================================
+    // SAVE DRAFT
+    // ==================================================
 
-    // SAVE DRAFT, PREVIEW and DOWNLOAD
-    // Draft and Preview both save for now. Replace them with dedicated
-    // calls if your backend has draft / preview endpoints.
-    const handleSaveDraft = () => handleSave();
-    const handlePreview = () => handleSave();
+    const handleSaveDraft = () => handleSave(true);
+
+    // ==================================================
+    // PREVIEW
+    // ==================================================
+
+    const handlePreview = () => handleSave(false);
+
+    // ==================================================
+    // DOWNLOAD
+    // ==================================================
+
     const handleDownload = () => window.print();
 
+    // ==================================================
+    // DERIVED STATES
+    // ==================================================
 
     const isSaving = isEditMode
         ? updateLoading
@@ -1363,11 +1580,13 @@ export const useAddingInvoice = () => {
         !selectedInvoice &&
         Boolean(saveError);
 
+    // ==================================================
+    // RETURN
+    // ==================================================
 
     return {
         id,
         navigate,
-
         isEditMode,
         isViewMode,
 
@@ -1379,7 +1598,6 @@ export const useAddingInvoice = () => {
         selectedInvoice,
         companyDetails,
         customers,
-
         detailLoading,
         createLoading,
         updateLoading,
@@ -1389,12 +1607,10 @@ export const useAddingInvoice = () => {
         invoiceNumber,
         salesOrderRef,
         deliveryNoteRef,
-
         invoiceDate,
         dueDate,
         paymentStatus,
         amountPaid,
-
         from,
         billTo,
         payment,
@@ -1414,19 +1630,15 @@ export const useAddingInvoice = () => {
         handlePaymentStatusChange,
         handleAmountPaidChange,
         handleDiscountChange,
-
         updateFrom,
         updateBillTo,
         updatePayment,
-
         handleSalesOrderChange,
         handleDeliveryNoteChange,
         handleCustomerChange,
-
         addItem,
         removeItem,
         updateItem,
-
         handleCancel,
         handleSave,
         handleSaveDraft,
@@ -1434,6 +1646,5 @@ export const useAddingInvoice = () => {
         handleDownload,
     };
 };
-
 
 export default useAddingInvoice;

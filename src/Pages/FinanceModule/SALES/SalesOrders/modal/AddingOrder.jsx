@@ -1275,7 +1275,7 @@ useEffect(() => {
               <span>Total VAT (15%)</span>
               <strong>{currency} {formatAmount(totals.totalVat)}</strong>
             </SummaryRow>
-            <SummaryRow>
+            {/* <SummaryRow>
               <span>Discount</span>
 
               <Input
@@ -1296,11 +1296,12 @@ useEffect(() => {
                   color: "#03AC17",
                 }}
               />
-            </SummaryRow>
-            <SummaryRow>
+            </SummaryRow> */}
+            
+            {/* <SummaryRow>
               <span>Round Off</span>
               <strong>{currency} {formatAmount(totals.roundOff)}</strong>
-            </SummaryRow>
+            </SummaryRow> */}
             <TotalAmount>
               <span>TOTAL AMOUNT</span>
               <strong>{currency} {formatAmount(totals.total)}</strong>
