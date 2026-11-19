@@ -147,20 +147,19 @@ const EmployeeHeader = ({
        <FieldGroup>
   <FieldLabel $required>Country</FieldLabel>
 
-  <Select
-    name="country"
-    value={employee.country || ""}
-    onChange={onChange}
-    $error={Boolean(errors?.country)}
-  >
-    <option value="">Select Country</option>
-
-    {COUNTRY_OPTIONS.map((country) => (
-      <option key={country.code} value={country.name}>
-        {country.name}
-      </option>
-    ))}
-  </Select>
+ <Select
+  name="country"
+  value={employee.country || ""}
+  onChange={onChange}
+  $error={Boolean(errors?.country)}
+>
+  <option value="">Select Country</option>
+  {COUNTRY_OPTIONS.map((country) => (
+    <option key={country.code} value={country.code}>
+      {country.name}
+    </option>
+  ))}
+</Select>
 
   {errors?.country && (
     <ErrorText>{errors.country}</ErrorText>

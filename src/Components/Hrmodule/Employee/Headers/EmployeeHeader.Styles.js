@@ -199,10 +199,18 @@ export const Input = styled.input`
   padding: 0 10px;
   border-radius: 4px;
   border: 1px solid lightgray;
-  font-size: 1rem;
+  font-size: 14px;
   background: #fff;
+  font-family: "Poppins", sans-serif;
+
+  color: #555555;
+
+  &::placeholder {
+    color: #bdbdbd;
+  }
 
   &:focus {
+    color: #000;
     border-color: #3352ba;
     outline: none;
     box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
@@ -226,28 +234,31 @@ export const TextArea = styled.textarea`
 `;
 
 export const Select = styled.select`
-  box-sizing: border-box;
+   box-sizing: border-box;
   width: 100%;
   height: ${CONTROL_HEIGHT};
   padding: 0 10px;
   border-radius: 4px;
   border: 1px solid lightgray;
-  font-size: 1rem;
+  font-size: 14px;
   background: #fff;
-  color: ${(props) => (props.value ? "#333" : "#9ca3af")};
+  font-family: "Poppins", sans-serif;
+
+  color: #555555;
 
   &:focus {
+    color: #000;
     border-color: #3352ba;
     outline: none;
     box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
   }
 
-  option {
-    color: #333;
+  &::placeholder {
+    color: #bdbdbd;
   }
 
-  option[value=""] {
-    color: #9ca3af;
+  &:focus::placeholder {
+    color: #000;
   }
 `;
 export const ErrorText = styled.div`

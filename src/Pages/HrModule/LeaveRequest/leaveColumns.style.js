@@ -61,3 +61,24 @@ export const RejectButton = styled.button`
 
 
 
+
+export const ViewButton = styled.button`
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border: 1px solid #d1d5db;
+  border-radius: 5px;
+  background: #fff;
+  color: #3478f6;
+
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: #e8f1ff;
+    border-color: #3478f6;
+  }
+`;

@@ -3,24 +3,30 @@ import {
   ActionButtons,
   ApproveButton,
   RejectButton,
+  ViewButton,
 } from "./leaveColumns.style";
 import { FaRegMessage } from "react-icons/fa6";
 import { FaCalendarCheck } from "react-icons/fa";
-import { MdOutlinePendingActions } from "react-icons/md";
-import { MdFreeCancellation } from "react-icons/md";
+import { MdOutlinePendingActions, MdFreeCancellation } from "react-icons/md";
+import { FiEye } from "react-icons/fi";
+
+const capitalize = (value) =>
+  value ? value.charAt(0).toUpperCase() + value.slice(1) : "";
 
 export const getLeaveColumns = ({
   page,
+  pageSize = 20,
   formatDate,
   openApproveModal,
   openRejectModal,
+  openConflictModal,
 }) => [
   {
     header: "Sl No",
     accessor: "slNo",
     sortable: false,
     width: "60px",
-    render: (row, index) => index + 1 + (page - 1) * 20,
+    render: (row, index) => index + 1 + (page - 1) * pageSize,
   },
 
   {
@@ -33,11 +39,7 @@ export const getLeaveColumns = ({
   {
     header: "Leave Type",
     accessor: "leave_type",
-    render: (row) =>
-      row.leave_type
-        ? row.leave_type.charAt(0).toUpperCase() +
-          row.leave_type.slice(1)
-        : "-",
+    render: (row) => capitalize(row.leave_type) || "-",
   },
 
   {
@@ -47,44 +49,38 @@ export const getLeaveColumns = ({
     render: (row) => row.employee?.department || "-",
   },
 
- {
-  header: "Applied Date",
-  accessor: "applied_date",
-  sortable: false,
-  render: (row) => formatDate(row.created_at),
-},
- {
-  header: "Start & End Date",
-  accessor: "date",
-  sortable: false,
-  render: (row) => {
-    const start = formatDate(row.from_date);
-    const end = formatDate(row.to_date);
+  {
+    header: "Applied Date",
+    accessor: "applied_date",
+    sortable: false,
+    render: (row) => formatDate(row.created_at),
+  },
 
-    // single day + half a day => show "Half Day"
-    if (start === end) {
+  {
+    header: "Start & End Date",
+    accessor: "date",
+    sortable: false,
+    render: (row) => {
+      const start = formatDate(row.from_date);
+      const end = formatDate(row.to_date);
+
+      // single day + half a day => show "Half Day"
+      if (start === end) {
+        return (
+          <span>
+            {start}
+            {Number(row.leave_days) === 0.5 && " (Half Day)"}
+          </span>
+        );
+      }
+
       return (
         <span>
-          {start}
-          {Number(row.leave_days) === 0.5 && " (Half Day)"}
+          {start} - {end}
         </span>
       );
-    }
-
-    return (
-      <span>
-        {start} - {end}
-      </span>
-    );
+    },
   },
-},
-
-  // {
-  //   header: "Leave Balance",
-  //   accessor: "leave_balance",
-  //   sortable: false,
-  //   render: (row) => row.employee?.total_leave ?? "0",
-  // },
 
   {
     header: "No Of Days",
@@ -134,9 +130,7 @@ export const getLeaveColumns = ({
               : "#f59e0b",
         }}
       >
-        {row.status
-          ? row.status.charAt(0).toUpperCase() + row.status.slice(1)
-          : "Pending"}
+        {capitalize(row.status) || "Pending"}
       </span>
     ),
   },
@@ -153,35 +147,34 @@ export const getLeaveColumns = ({
           <ActionButtons>
             {currentStatus === "pending" && (
               <>
-                <ApproveButton
-                  onClick={() => openApproveModal(row.id)}
-                >
+                <ApproveButton onClick={() => openApproveModal(row.id)}>
                   Approve
                 </ApproveButton>
-
-                <RejectButton
-                  onClick={() => openRejectModal(row.id)}
-                >
+                <RejectButton onClick={() => openRejectModal(row.id)}>
                   Reject
                 </RejectButton>
               </>
             )}
 
             {currentStatus === "approved" && (
-              <RejectButton
-                onClick={() => openRejectModal(row.id)}
-              >
+              <RejectButton onClick={() => openRejectModal(row.id)}>
                 Reject
               </RejectButton>
             )}
 
             {currentStatus === "rejected" && (
-              <ApproveButton
-                onClick={() => openApproveModal(row.id)}
-              >
+              <ApproveButton onClick={() => openApproveModal(row.id)}>
                 Approve
               </ApproveButton>
             )}
+
+            <ViewButton
+              type="button"
+              title="View employees already on leave during these dates"
+              onClick={() => openConflictModal(row)}
+            >
+              <FiEye size={15} />
+            </ViewButton>
           </ActionButtons>
         </div>
       );
@@ -202,7 +195,6 @@ export const getPayrollCards = ({
     iconColor: "#157baa",
     backgroundColor: "#e3f5f7",
   },
-
   {
     title: "Pending Request",
     count: pending,
@@ -210,7 +202,6 @@ export const getPayrollCards = ({
     iconColor: "#ffa600",
     backgroundColor: "#fdf2e4",
   },
-
   {
     title: "Approved Request",
     count: approved,
@@ -218,7 +209,6 @@ export const getPayrollCards = ({
     iconColor: "#309e48",
     backgroundColor: "#caf7dd",
   },
-
   {
     title: "Rejected Request",
     count: rejected,

@@ -2,10 +2,12 @@ import styled from "styled-components";
 
 export const Wrapper = styled.div`
   width: 100%;
-  padding: 20px;
+  padding: 10px;
   cursor: pointer;
+
   @media (max-width: 768px) {
     padding: 10px;
+
   }
 `;
 

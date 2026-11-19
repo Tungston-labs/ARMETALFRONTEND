@@ -7,8 +7,9 @@ import ReusableFilter from "../../../Components/ReusableTable/ReusableFilter";
 import ReusableConfirmModal from "../../../Components/modals/ReusableConfirmModal";
 import StatsCards from "../../../Components/StatsCards/StatsCards";
 import ReusablePagination from "../../../Components/Pagination/ReusablePagination";
-
 import useLeaveRequests from "./Useleaverequests";
+import ConflictModal from "./modal/ConflictModal"; 
+
 export default function LeaveRequestList() {
   const {
     columns,
@@ -29,6 +30,14 @@ export default function LeaveRequestList() {
     handleStatusChange,
     dateValue,
     handleDateChange,
+
+    showConflictModal,
+    selectedConflictLeave,
+    onLeaveEmployees,
+    alsoRequestedEmployees,
+    onLeaveLoading,
+    closeConflictModal,
+    formatDate,
 
     showModal,
     actionType,
@@ -71,13 +80,12 @@ export default function LeaveRequestList() {
         data={leaveData}
         loading={loading}
         loadingComponent={null}
-     
       />
 
       <ReusablePagination
         currentPage={page}
         totalPages={pagination?.total_pages}
-        totalRecords={pagination?.total_records}
+        totalRecords={pagination?.total_items}
         onPageChange={handlePageChange}
       />
 
@@ -95,6 +103,17 @@ export default function LeaveRequestList() {
         onConfirm={handleStatusUpdate}
         onClose={closeModal}
       />
+
+      {showConflictModal && (
+        <ConflictModal
+          leave={selectedConflictLeave}
+          employees={onLeaveEmployees}
+          alsoRequested={alsoRequestedEmployees}
+          loading={onLeaveLoading}
+          formatDate={formatDate}
+          onClose={closeConflictModal}
+        />
+      )}
     </Container>
   );
 }

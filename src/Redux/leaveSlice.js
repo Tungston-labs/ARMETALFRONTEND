@@ -1,30 +1,33 @@
-import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import {
   fetchAllLeaveRequests,
   fetchLeaveDetailsById,
   updateLeaveStatus,
-  fetchOnLeaveEmployees,
-   fetchLeaveCounts
-} from '../services/leaveService';
+  fetchLeaveConflicts,
+  fetchLeaveCounts,
+  fetchEmployeePendingLeaves,
+} from "../services/leaveService";
 
 // Get all leave requests
 export const getLeaveRequests = createAsyncThunk(
-  'leave/getLeaveRequests',
-  async (filters = {}, thunkAPI) => {
+  "leave/getLeaveRequests",
+  async (filters = {}, { rejectWithValue }) => {
     try {
       return await fetchAllLeaveRequests(filters);
     } catch (error) {
-      return thunkAPI.rejectWithValue(error.response?.data || 'Error fetching leave requests');
+      return rejectWithValue(
+        error.response?.data || "Error fetching leave requests"
+      );
     }
   }
 );
 
-// Get employees on leave by department
+// Get conflicts for one leave request
 export const getOnLeaveEmployees = createAsyncThunk(
-  'leave/getOnLeaveEmployees',
-  async (departmentId, { rejectWithValue }) => {
+  "leave/getOnLeaveEmployees",
+  async (leaveId, { rejectWithValue }) => {
     try {
-      return await fetchOnLeaveEmployees(departmentId);
+      return await fetchLeaveConflicts(leaveId);
     } catch (error) {
       return rejectWithValue(error.response?.data || error.message);
     }
@@ -33,69 +36,79 @@ export const getOnLeaveEmployees = createAsyncThunk(
 
 // Get single leave details
 export const getLeaveDetails = createAsyncThunk(
-  'leave/getLeaveDetails',
+  "leave/getLeaveDetails",
   async (id, { rejectWithValue }) => {
     try {
       return await fetchLeaveDetailsById(id);
     } catch (err) {
-      return rejectWithValue(err.response?.data || 'Error fetching leave details');
+      return rejectWithValue(
+        err.response?.data || "Error fetching leave details"
+      );
     }
   }
 );
 
 // Patch leave status
 export const patchLeaveStatus = createAsyncThunk(
-  'leave/patchLeaveStatus',
+  "leave/patchLeaveStatus",
   async ({ leaveId, status }, { rejectWithValue }) => {
     try {
       return await updateLeaveStatus(leaveId, status);
     } catch (err) {
-      return rejectWithValue(err.response?.data || 'Error updating status');
+      return rejectWithValue(err.response?.data || "Error updating status");
     }
   }
 );
 
 export const getEmployeePendingLeaves = createAsyncThunk(
   "leave/getEmployeePendingLeaves",
-  async (employeeId, thunkAPI) => {
+  async (employeeId, { rejectWithValue }) => {
     try {
-      const response = await axios.get(`/api/leaves/${employeeId}/pending-count/`);
-      return response.data.count;
+      return await fetchEmployeePendingLeaves(employeeId);
     } catch (error) {
-      return thunkAPI.rejectWithValue(error.response.data);
+      return rejectWithValue(
+        error.response?.data || "Error fetching pending leaves"
+      );
     }
   }
 );
 
 export const getLeaveCounts = createAsyncThunk(
-  'leave/getLeaveCounts',
+  "leave/getLeaveCounts",
   async (_, { rejectWithValue }) => {
     try {
       return await fetchLeaveCounts();
     } catch (error) {
       return rejectWithValue(
-        error.response?.data || 'Error fetching leave counts'
+        error.response?.data || "Error fetching leave counts"
       );
     }
   }
 );
 
 
+
 const leaveSlice = createSlice({
-  name: 'leave',
+  name: "leave",
   initialState: {
     leaves: [],
     onLeaveEmployees: [],
     leaveDetails: null,
-     pendingLeaves: 0,
+    pendingLeaves: 0,
+    onLeaveEmployees: [],
+    alsoRequestedEmployees: [],
+    leaveCounts: {
+      total: 0,
+      pending: 0,
+      approved: 0,
+      rejected: 0,
+    },
 
-  leaveCounts: {
-    total: 0,
-    pending: 0,
-    approved: 0,
-    rejected: 0,
-  },
-    loading: false,
+    // separate flags so one request doesn't flicker another's UI
+    loading: false, // main leave list / details
+    countsLoading: false,
+    onLeaveLoading: false,
+
     error: null,
     pagination: {
       total_pages: 0,
@@ -105,7 +118,12 @@ const leaveSlice = createSlice({
       total_items: 0,
     },
   },
-  reducers: {},
+  reducers: {
+    clearOnLeaveEmployees: (state) => {
+      state.onLeaveEmployees = [];
+         state.alsoRequestedEmployees = [];
+    },
+  },
   extraReducers: (builder) => {
     builder
       // Get Leave Requests
@@ -128,9 +146,12 @@ const leaveSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       })
- .addCase(getEmployeePendingLeaves.fulfilled, (state, action) => {
+
+      // Pending leaves for one employee
+      .addCase(getEmployeePendingLeaves.fulfilled, (state, action) => {
         state.pendingLeaves = action.payload;
       })
+
       // Get Leave Details
       .addCase(getLeaveDetails.pending, (state) => {
         state.loading = true;
@@ -148,7 +169,7 @@ const leaveSlice = createSlice({
       // Update Leave Status
       .addCase(patchLeaveStatus.fulfilled, (state, action) => {
         const updated = action.payload;
-        const index = state.leaves.findIndex(l => l.id === updated.id);
+        const index = state.leaves.findIndex((l) => l.id === updated.id);
         if (index !== -1) {
           state.leaves[index] = updated;
         }
@@ -156,40 +177,39 @@ const leaveSlice = createSlice({
 
       // Get On-Leave Employees
       .addCase(getOnLeaveEmployees.pending, (state) => {
-        state.loading = true;
+        state.onLeaveLoading = true;
         state.error = null;
       })
       .addCase(getOnLeaveEmployees.fulfilled, (state, action) => {
-        state.loading = false;
-        state.onLeaveEmployees = action.payload;
-      })
+  state.onLeaveLoading = false;
+  state.onLeaveEmployees = action.payload?.already_on_leave || [];
+  state.alsoRequestedEmployees = action.payload?.also_requested || [];
+})
       .addCase(getOnLeaveEmployees.rejected, (state, action) => {
-        state.loading = false;
+        state.onLeaveLoading = false;
         state.error = action.payload;
       })
+
       // Get Leave Counts
-.addCase(getLeaveCounts.pending, (state) => {
-  state.loading = true;
-  state.error = null;
-})
-
-.addCase(getLeaveCounts.fulfilled, (state, action) => {
-  state.loading = false;
-
-  state.leaveCounts = {
-    total: action.payload?.total ?? 0,
-    pending: action.payload?.pending ?? 0,
-    approved: action.payload?.approved ?? 0,
-    rejected: action.payload?.rejected ?? 0,
-  };
-})
-
-.addCase(getLeaveCounts.rejected, (state, action) => {
-  state.loading = false;
-  state.error = action.payload;
-})
-      ;
+      .addCase(getLeaveCounts.pending, (state) => {
+        state.countsLoading = true;
+        state.error = null;
+      })
+      .addCase(getLeaveCounts.fulfilled, (state, action) => {
+        state.countsLoading = false;
+        state.leaveCounts = {
+          total: action.payload?.total ?? 0,
+          pending: action.payload?.pending ?? 0,
+          approved: action.payload?.approved ?? 0,
+          rejected: action.payload?.rejected ?? 0,
+        };
+      })
+      .addCase(getLeaveCounts.rejected, (state, action) => {
+        state.countsLoading = false;
+        state.error = action.payload;
+      });
   },
 });
 
+export const { clearOnLeaveEmployees } = leaveSlice.actions;
 export default leaveSlice.reducer;

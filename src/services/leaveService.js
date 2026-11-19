@@ -36,14 +36,39 @@ export const updateLeaveStatus = async (leaveId, status) => {
   return response.data;
 };
 
-// ✅ Fixed: fetch on-leave employees by department
-export const fetchOnLeaveEmployees = async (departmentId) => {
-  const response = await API.get(`/departments/${departmentId}/on-leave-employees/`);
+// Fetch employees on leave in a department, overlapping the given dates.
+// Only departmentId is required; the other params are optional filters.
+export const fetchOnLeaveEmployees = async ({
+  departmentId,
+  from_date,
+  to_date,
+  exclude_employee_id,
+}) => {
+  const params = {};
+  if (from_date) params.from_date = from_date;
+  if (to_date) params.to_date = to_date;
+  if (exclude_employee_id) params.exclude_employee_id = exclude_employee_id;
+
+  const response = await API.get(
+    `/departments/${departmentId}/on-leave-employees/`,
+    { params }
+  );
   return response.data;
 };
 
 // leave counts
 export const fetchLeaveCounts = async () => {
   const response = await API.get('/leave-counts/');
+  return response.data;
+};
+
+// pending leave count for one employee (moved here from leaveSlice)
+export const fetchEmployeePendingLeaves = async (employeeId) => {
+  const response = await API.get(`/leaves/${employeeId}/pending-count/`);
+  return response.data.count;
+};
+
+export const fetchLeaveConflicts = async (leaveId) => {
+  const response = await API.get(`/leave/admin/${leaveId}/conflicts/`);
   return response.data;
 };

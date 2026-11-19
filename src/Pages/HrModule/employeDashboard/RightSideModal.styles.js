@@ -70,7 +70,7 @@ export const HeaderBar = styled.div`
 `;
 
 export const BackButton = styled.button`
-  font-size: 16px;
+  font-size: 24px;
   background: none;
   border: none;
   cursor: pointer;

@@ -9,7 +9,7 @@ import {
   LeftSide,
   RightSide,
 } from "./RightSideModal.styles";
-
+import { IoMdArrowBack } from "react-icons/io";
 import { useDispatch, useSelector } from "react-redux";
 import EmployeeDetails from "./EmployeeDetails";
 import ProgressCard from "./ProgressCard";
@@ -60,12 +60,7 @@ const RightSideModal = ({ isOpen, onClose, employeeId }) => {
       <Overlay isOpen={isOpen} onClick={onClose} />
 
       <ModalWrapper isOpen={isOpen}>
-        <HeaderBar>
-          <BackButton onClick={onClose}>
-            ← Back
-          </BackButton>
-        </HeaderBar>
-
+      
         <ContentArea>
           {loading && <p>Loading...</p>}
 

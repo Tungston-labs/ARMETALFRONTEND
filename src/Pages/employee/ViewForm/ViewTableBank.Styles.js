@@ -67,16 +67,24 @@ export const Label = styled.label`
 `;
 
 export const Input = styled.input`
-  box-sizing: border-box;
+ box-sizing: border-box;
   width: 100%;
   height: ${CONTROL_HEIGHT};
   padding: 0 10px;
   border-radius: 4px;
   border: 1px solid lightgray;
-  font-size: 1rem;
+  font-size: 14px;
   background: #fff;
+  font-family: "Poppins", sans-serif;
+
+  color: #555555;
+
+  &::placeholder {
+    color: #bdbdbd;
+  }
 
   &:focus {
+    color: #000;
     border-color: #3352ba;
     outline: none;
     box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
@@ -84,18 +92,27 @@ export const Input = styled.input`
 `;
 
 export const Select = styled.select`
-  width: 100%;
-  height: 40px;
   box-sizing: border-box;
+  width: 100%;
+  height: ${CONTROL_HEIGHT};
   padding: 0 10px;
-  font-size: 0.9rem;
   border-radius: 4px;
-  border: 1px solid #ccc;
+  border: 1px solid lightgray;
+  font-size: 14px;
   background: #fff;
+  font-family: "Poppins", sans-serif;
+
+  color: #555555;
+
+  &::placeholder {
+    color: #bdbdbd;
+  }
 
   &:focus {
+    color: #000;
+    border-color: #3352ba;
     outline: none;
-    border-color: #304eb0;
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
   }
 `;
 

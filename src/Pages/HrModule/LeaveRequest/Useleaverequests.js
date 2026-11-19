@@ -5,9 +5,13 @@ import {
   getLeaveRequests,
   patchLeaveStatus,
   getLeaveCounts,
+  getOnLeaveEmployees,
+  clearOnLeaveEmployees,
 } from "../../../Redux/leaveSlice";
 import { getDepartments } from "../../../Redux/departmentSlice";
 import { getLeaveColumns, getPayrollCards } from "./leaveColumns";
+
+const PAGE_SIZE = 20;
 
 // ======================================================
 // HELPERS
@@ -28,9 +32,15 @@ export default function useLeaveRequests() {
   // ======================================================
   // REDUX  (errors are shown by the global error banner)
   // ======================================================
-  const { leaves, loading, pagination, leaveCounts } = useSelector(
-    (state) => state.leave
-  );
+  const {
+    leaves,
+    loading,
+    pagination,
+    leaveCounts,
+    onLeaveEmployees,
+      alsoRequestedEmployees,
+    onLeaveLoading,
+  } = useSelector((state) => state.leave);
   const { list: departmentList } = useSelector((state) => state.departments);
 
   // ======================================================
@@ -43,15 +53,15 @@ export default function useLeaveRequests() {
   const [departmentFilter, setDepartmentFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
 
-  const today = new Date();
-  const [selectedMonth, setSelectedMonth] = useState(
-    String(today.getMonth() + 1).padStart(2, "0")
-  );
-  const [selectedYear, setSelectedYear] = useState(String(today.getFullYear()));
+const [selectedMonth, setSelectedMonth] = useState("");
+const [selectedYear, setSelectedYear] = useState("");
+  // const [selectedYear, setSelectedYear] = useState(String(today.getFullYear()));
 
   const [showModal, setShowModal] = useState(false);
   const [actionType, setActionType] = useState("");
   const [selectedLeaveId, setSelectedLeaveId] = useState(null);
+  const [showConflictModal, setShowConflictModal] = useState(false);
+  const [selectedConflictLeave, setSelectedConflictLeave] = useState(null);
 
   // ======================================================
   // DEPARTMENTS
@@ -160,7 +170,24 @@ export default function useLeaveRequests() {
       : "";
 
   // ======================================================
-  // MODALS
+  // CONFLICT MODAL
+  // ======================================================
+ const openConflictModal = async (row) => {
+  dispatch(clearOnLeaveEmployees());
+  setSelectedConflictLeave(row);
+  setShowConflictModal(true);
+
+  await dispatch(getOnLeaveEmployees(row.id));
+};
+
+  const closeConflictModal = () => {
+    setShowConflictModal(false);
+    setSelectedConflictLeave(null);
+    dispatch(clearOnLeaveEmployees());
+  };
+
+  // ======================================================
+  // APPROVE / REJECT MODAL
   // ======================================================
   const openApproveModal = (id) => {
     setSelectedLeaveId(id);
@@ -222,9 +249,11 @@ export default function useLeaveRequests() {
   // ======================================================
   const columns = getLeaveColumns({
     page,
+    pageSize: PAGE_SIZE,
     formatDate,
     openApproveModal,
     openRejectModal,
+    openConflictModal,
   });
 
   const payrollCards = getPayrollCards(leaveCounts);
@@ -255,10 +284,19 @@ export default function useLeaveRequests() {
     dateValue,
     handleDateChange,
 
-    // modal
+    // approve / reject modal
     showModal,
     actionType,
     closeModal,
     handleStatusUpdate,
+
+    // conflict modal
+    showConflictModal,
+    selectedConflictLeave,
+    onLeaveEmployees,
+    onLeaveLoading,
+    alsoRequestedEmployees,
+    closeConflictModal,
+    formatDate,
   };
 }
