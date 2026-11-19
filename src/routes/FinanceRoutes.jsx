@@ -188,7 +188,23 @@ const FinanceRoutes = () => {
       <Route path="sales/delivery-notes/edit/:id" element={<Createdeliverynotes />} />
       <Route path="sales/delivery-notes/view/:id" element={<Createdeliverynotes />} />
 
-      {/* =====================================================
+            <Route path="delivery/notes" element={<DeliveryNotes />} />
+
+            <Route path="delivery/notes/add" element={<Createdeliverynotes />} />
+
+            <Route path="delivery/notes/edit/:id" element={<Createdeliverynotes />} />
+
+            <Route path="delivery/notes/view/:id" element={<Createdeliverynotes />} />
+
+            <Route path="sales/delivery-notes" element={<DeliveryNotes />} />
+
+            <Route path="sales/delivery-notes/add" element={<Createdeliverynotes />} />
+
+            <Route path="sales/delivery-notes/edit/:id" element={<Createdeliverynotes />} />
+
+            <Route path="sales/delivery-notes/view/:id" element={<Createdeliverynotes />} />
+
+            {/* =====================================================
           SALES - PAYMENTS
       ===================================================== */}
       <Route path="sales/payments" element={<PaymentPage />} />
@@ -196,11 +212,16 @@ const FinanceRoutes = () => {
       {/* =====================================================
           SALES - CREDIT NOTES
       ===================================================== */}
-      <Route path="sales/credit-notes" element={<SalesCreditNotes />} />
-      <Route path="sales/credit-notes/add" element={<CreateCreditNotes />} />
-      <Route path="sales/credit-notes/edit/:id" element={<CreateCreditNotes />} />
-      
-      {/* =====================================================
+
+            <Route path="credit-notes" element={<SalesCreditNotes />} />
+
+            <Route path="credit-notes/add" element={<CreateCreditNotes />} />
+
+            <Route path="credit-notes/edit/:id" element={<CreateCreditNotes />} />
+
+            <Route path="credit-notes/view/:id" element={<CreateCreditNotes />} />
+
+            {/* =====================================================
           SALES - CREDIT NOTE ACTION
       ===================================================== */}
       <Route path="credit-notes/action/:id" element={<CreditAction />} />

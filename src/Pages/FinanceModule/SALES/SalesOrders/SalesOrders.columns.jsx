@@ -16,6 +16,7 @@ export const ORDER_STATUS_OPTIONS = [
     { value: "pending", label: "Pending" },
     { value: "confirmed", label: "Confirmed" },
     { value: "processing", label: "Processing" },
+    { value: "rejected", label: "Rejected" },
 ];
 
 export const PAYMENT_TERMS_OPTIONS = [
@@ -131,11 +132,6 @@ export const getSalesOrderColumns = ({ onView, onDownload, onDelete }) => [
         header: "Delivery Status",
         accessor: "delivery_status",
         render: (row) => <StatusBadge value={row.delivery_status} />,
-    },
-    {
-        header: "Invoice Status",
-        accessor: "invoice_status",
-        render: (row) => <StatusBadge value={row.invoice_status} />,
     },
     {
         header: "Action",

@@ -4,24 +4,31 @@ export const ActionWrapper = styled.div`
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
+    gap: 6px;
 `;
 
 export const IconButton = styled.button`
-   width: 26px;
-    height: 26px;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    border: 1px solid ${({ $danger }) => ($danger ? "#F5C2C4" : "#E5E7EB")};
-    border-radius: 6px;
-    background: #fff;
-    color: ${({ $danger }) => ($danger ? "#E5484D" : "#4B5563")};
-    cursor: pointer;
-    transition: background 0.15s;
+    flex-shrink: 0;
 
-    &:hover:not(:disabled) {
-        background: ${({ $danger }) => ($danger ? "#FDECEC" : "#F3F4F6")};
+    border: 1px solid #e5e7eb;
+    border-radius: 4px;
+    background: #ffffff;
+    color: ${({ $danger }) => ($danger ? "#e5484d" : "#374151")};
+
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+
+    &:hover {
+        background: ${({ $danger }) => ($danger ? "#fdecec" : "#f9fafb")};
+        border-color: ${({ $danger }) => ($danger ? "#fca5a5" : "#d1d5db")};
+        color: ${({ $danger }) => ($danger ? "#dc2626" : "#111827")};
     }
 
     &:disabled {
@@ -34,6 +41,11 @@ export const IconButton = styled.button`
     }
 
     @keyframes spin {
-        to { transform: rotate(360deg); }
+        from {
+            transform: rotate(0deg);
+        }
+        to {
+            transform: rotate(360deg);
+        }
     }
 `;

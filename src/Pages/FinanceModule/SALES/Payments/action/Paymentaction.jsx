@@ -1,9 +1,15 @@
 import React, { useState } from "react";
-import { FiEye, FiEdit2, FiDownload, FiLoader, FiX } from "react-icons/fi";
+import { FiDownload, FiEdit2, FiEye, FiLoader, FiX } from "react-icons/fi";
 import { ActionWrapper, IconButton } from "./Paymentaction.style";
+import { getPaymentStatus } from "../PaymentColoumn";
 
-const Paymentactions = ({ row, onView, onEdit, onDelete, onDownload }) => {
+const Paymentactions = ({ row, onInfo, onEdit, onDelete, onDownload }) => {
     const [isDownloading, setIsDownloading] = useState(false);
+
+    const handleView = (e) => {
+        e.stopPropagation();
+        onInfo?.(row);
+    };
 
     const handleDownload = async (e) => {
         e.stopPropagation();
@@ -18,37 +24,61 @@ const Paymentactions = ({ row, onView, onEdit, onDelete, onDownload }) => {
         }
     };
 
-    const call = (fn) => (e) => {
+    const handleEdit = (e) => {
         e.stopPropagation();
-        fn?.(row);
+        onEdit?.(row);
     };
+
+    const handleDelete = (e) => {
+        e.stopPropagation();
+        onDelete?.(row);
+    };
+
+    const status = getPaymentStatus(row);
+    const isPartiallyPaid = status === "Partially Paid";
 
     return (
         <ActionWrapper>
-            {onView && (
-                <IconButton type="button" title="View Payment" onClick={call(onView)}>
-                    <FiEye size={14} />
-                </IconButton>
-            )}
-            {onEdit && (
-                <IconButton type="button" title="Edit Payment" onClick={call(onEdit)}>
-                    <FiEdit2 size={14} />
-                </IconButton>
-            )}
-            {onDownload && (
-                <IconButton
-                    type="button"
-                    title="Download Payment"
-                    onClick={handleDownload}
-                    disabled={isDownloading}
-                >
-                    {isDownloading ? <FiLoader size={14} className="spin" /> : <FiDownload size={14} />}
-                </IconButton>
-            )}
-            {onDelete && (
-                <IconButton type="button" $danger title="Delete Payment" onClick={call(onDelete)}>
-                    <FiX size={14} />
-                </IconButton>
+            <IconButton
+                type="button"
+                title="View Payment"
+                onClick={handleView}
+            >
+                <FiEye size={14} />
+            </IconButton>
+
+            <IconButton
+                type="button"
+                title="Download Payment"
+                onClick={handleDownload}
+                disabled={isDownloading}
+            >
+                {isDownloading ? (
+                    <FiLoader size={14} className="spin" />
+                ) : (
+                    <FiDownload size={14} />
+                )}
+            </IconButton>
+
+            {isPartiallyPaid && (
+                <>
+                    <IconButton
+                        type="button"
+                        title="Edit Payment"
+                        onClick={handleEdit}
+                    >
+                        <FiEdit2 size={14} />
+                    </IconButton>
+
+                    <IconButton
+                        type="button"
+                        $danger
+                        title="Delete Payment"
+                        onClick={handleDelete}
+                    >
+                        <FiX size={14} />
+                    </IconButton>
+                </>
             )}
         </ActionWrapper>
     );
