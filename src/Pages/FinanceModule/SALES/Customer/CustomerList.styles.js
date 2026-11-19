@@ -273,19 +273,19 @@ export const ArchiveActionButton = styled.button`
 `;
 const STATUS_COLORS = {
   active: {
-    color: "#059669",
-    background: "#ecfdf5",
-    border: "#a7f3d0",
+    color: " #059669",
+    background: " #ecfdf5",
+    border: " #a7f3d0",
   },
   inactive: {
-    color: "#dc2626",
-    background: "#fef2f2",
-    border: "#fecaca",
+    color: " #dc2626",
+    background: " #fef2f2",
+    border: " #fecaca",
   },
   archived: {
-    color: "#7c3aed",
-    background: "#f5f3ff",
-    border: "#ddd6fe",
+    color: " #7c3aed",
+    background: " #f5f3ff",
+    border: " #ddd6fe",
   },
 };
 
@@ -311,15 +311,15 @@ export const StatusBadge = styled.span`
 
   font-family: "Poppins", sans-serif;
   font-size: 12px;
-  font-weight: 500;
+  font-weight: 400;
   line-height: 1.4;
   white-space: nowrap;
 
-  &::before {
+  /* &::before {
     content: "";
     width: 6px;
     height: 6px;
     border-radius: 50%;
     background: ${({ $status }) => getColors($status).color};
-  }
+  } */
 `;

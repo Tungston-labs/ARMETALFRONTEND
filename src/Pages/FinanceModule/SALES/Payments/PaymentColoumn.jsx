@@ -256,7 +256,7 @@ export const PAYMENT_METHOD_OPTIONS = [
    TABLE COLUMNS
 ========================================================= */
 
-export const getPaymentColumns = ({ onInfo }) => [
+export const getPaymentColumns = ({ onView, onEdit, onDownload, onDelete } = {}) => [
   {
     header: "Payment no.",
     accessor: "receipt_no",
@@ -331,9 +331,17 @@ export const getPaymentColumns = ({ onInfo }) => [
   },
 
   {
-  header: "Action",
-  accessor: "actions",
-  sortable: false,
-  render: (row) => <Paymentactions row={row} onInfo={onInfo} />,
-},
+    header: "Action",
+    accessor: "actions",
+    sortable: false,
+    render: (row) => (
+      <Paymentactions
+        row={row}
+        onView={onView}
+        onEdit={onEdit}
+        onDownload={onDownload}
+        onDelete={onDelete}
+      />
+    ),
+  },
 ];

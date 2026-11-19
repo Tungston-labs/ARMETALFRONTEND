@@ -42,12 +42,9 @@ const money = (value) =>
     maximumFractionDigits: 2,
   });
 
-// Opening balance stored on the customer record.
-// Check the field name your customer API returns.
 const getOpeningBalance = (customer) =>
   customer?.opening_balance ?? customer?.opening_balance_amount ?? "";
 
-// Does this invoice row belong to the selected customer?
 const invoiceBelongsToCustomer = (invoice, customerId, customerName) => {
   const invoiceCustomerId =
     invoice?.customer?.id ??
@@ -71,8 +68,39 @@ const invoiceBelongsToCustomer = (invoice, customerId, customerName) => {
   return false;
 };
 
+// Turns an existing payment row into form state
+const buildFormFromPayment = (p) => {
+  const invoiceNo = p.invoice_no || p.invoice_ref || "";
+
+  return {
+    paymentCategory:
+      p.payment_category === "opening_balance"
+        ? CATEGORY_OPENING
+        : invoiceNo
+          ? CATEGORY_INVOICE
+          : "",
+    invoiceId:
+      p.invoice_id ??
+      p.invoice?.id ??
+      (typeof p.invoice === "number" ? p.invoice : ""),
+    invoiceNo,
+    customerId: p.customer_id ?? p.customer?.id ?? p.customer ?? "",
+    customer: p.customer_name || p.customer?.name || p.customer || "",
+    invoiceAmount: p.invoice_amount ?? "",
+    alreadyPaid: p.already_paid ?? p.amount_paid ?? "",
+    outstandingAmount: p.outstanding_amount ?? p.balance_due ?? "",
+    paymentDate: String(p.payment_date || "").slice(0, 10),
+    paymentType: p.payment_type || "Full Payment",
+    paymentMethod: p.payment_method || "Bank Transfer",
+    amountReceived: p.amount_received ?? p.amount ?? "",
+    referenceNumber: p.transaction_id || p.reference_number || "",
+    notes: p.notes || "",
+  };
+};
+
 const PaymentModal = ({
   isOpen,
+  mode = "create", // "create" | "edit" | "view"
   onClose,
   onSave,
   submitting = false,
@@ -82,70 +110,33 @@ const PaymentModal = ({
   invoices = [],
   onCustomerChange,
 }) => {
+  const isView = mode === "view";
+  const isEditMode = mode === "edit";
+
   const [formData, setFormData] = useState(initialFormData);
   const [validationError, setValidationError] = useState("");
 
-  // Reset form when modal opens
+  // Reset / pre-fill form when modal opens
   useEffect(() => {
     if (!isOpen) return;
 
-    if (initialData) {
-      const invoiceNo = initialData.invoice_no || initialData.invoice_ref || "";
-
-      setFormData({
-        paymentCategory:
-          initialData.payment_category === "opening_balance"
-            ? CATEGORY_OPENING
-            : invoiceNo
-              ? CATEGORY_INVOICE
-              : "",
-
-        invoiceId:
-          initialData.invoice_id ??
-          initialData.invoice?.id ??
-          (typeof initialData.invoice === "number" ? initialData.invoice : ""),
-
-        invoiceNo,
-
-        customerId:
-          initialData.customer_id ??
-          initialData.customer?.id ??
-          initialData.customer ??
-          "",
-
-        customer:
-          initialData.customer_name ||
-          initialData.customer?.name ||
-          initialData.customer ||
-          "",
-
-        invoiceAmount: initialData.invoice_amount ?? "",
-
-        alreadyPaid: initialData.already_paid ?? initialData.amount_paid ?? "",
-
-        outstandingAmount:
-          initialData.outstanding_amount ?? initialData.balance_due ?? "",
-
-        paymentDate: initialData.payment_date || "",
-
-        paymentType: initialData.payment_type || "Full Payment",
-
-        paymentMethod: initialData.payment_method || "Bank Transfer",
-
-        amountReceived: initialData.amount_received ?? initialData.amount ?? "",
-
-        referenceNumber:
-          initialData.transaction_id || initialData.reference_number || "",
-
-        notes: initialData.notes || "",
-      });
-
-      setValidationError("");
-      return;
-    }
-
-    setFormData({ ...initialFormData });
+    setFormData(
+      initialData ? buildFormFromPayment(initialData) : { ...initialFormData },
+    );
     setValidationError("");
+  }, [isOpen, initialData]);
+
+  // When opening an existing payment, load that customer's invoices
+  useEffect(() => {
+    if (!isOpen || !initialData) return;
+
+    const cid =
+      initialData.customer_id ??
+      initialData.customer?.id ??
+      initialData.customer;
+
+    if (cid && /^\d+$/.test(String(cid))) onCustomerChange?.(cid);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, initialData]);
 
   // Invoices of the selected customer that still have a balance.
@@ -175,17 +166,12 @@ const PaymentModal = ({
   const isOpeningCategory = formData.paymentCategory === CATEGORY_OPENING;
   const isCash = formData.paymentMethod === "Cash";
 
-  // Input change handler
   const handleChange = (e) => {
     const { name, value } = e.target;
 
     setFormData((prev) => {
-      const next = {
-        ...prev,
-        [name]: value,
-      };
+      const next = { ...prev, [name]: value };
 
-      // Cash payments have no transaction id
       if (name === "paymentMethod" && value === "Cash") {
         next.referenceNumber = "";
       }
@@ -198,7 +184,6 @@ const PaymentModal = ({
         next.customer =
           selectedCustomer?.name || selectedCustomer?.customer_name || "";
 
-        // A different customer means the old invoice no longer applies
         next.invoiceId = "";
         next.invoiceNo = "";
         next.invoiceAmount = "";
@@ -233,7 +218,6 @@ const PaymentModal = ({
     setValidationError("");
   };
 
-  // Picking an invoice fills total / paid / balance automatically
   const handleInvoiceSelect = (e) => {
     const invoiceId = e.target.value;
 
@@ -253,9 +237,9 @@ const PaymentModal = ({
     setValidationError("");
   };
 
-  // Submit handler
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (isView) return;
 
     if (!formData.paymentCategory) {
       setValidationError("Payment Category is required.");
@@ -287,9 +271,18 @@ const PaymentModal = ({
       return;
     }
 
+    // In edit mode the original amount was already counted against the balance,
+    // so add it back to get the real maximum.
+    // If your API's balance_due already EXCLUDES this payment, keep this as is.
+    // If it already INCLUDES it, set originalAmount to 0.
+    const originalAmount = isEditMode
+      ? Number(initialData?.amount_received ?? initialData?.amount ?? 0)
+      : 0;
+
     if (
       formData.outstandingAmount !== "" &&
-      Number(formData.amountReceived) > Number(formData.outstandingAmount)
+      Number(formData.amountReceived) >
+        Number(formData.outstandingAmount) + originalAmount
     ) {
       setValidationError("Amount Received cannot exceed the balance due.");
       return;
@@ -311,11 +304,17 @@ const PaymentModal = ({
     (invoice) => String(invoice.id) === String(formData.invoiceId),
   );
 
+  const title = isView
+    ? "View Payment"
+    : isEditMode
+      ? "Edit Payment"
+      : "Record Payment";
+
   return (
     <ModalOverlay onClick={onClose}>
       <ModalContainer onClick={(e) => e.stopPropagation()}>
         <ModalHeader>
-          <Title>Record Payment</Title>
+          <Title>{title}</Title>
 
           <Subtitle>
             Monitor customer collections, track payment transactions, manage
@@ -324,251 +323,254 @@ const PaymentModal = ({
         </ModalHeader>
 
         <form onSubmit={handleSubmit}>
-          <FormGrid>
-            {/* Customer */}
-            <FormGroup>
-              <Label>
-                CUSTOMER <span>*</span>
-              </Label>
+          {/* A disabled fieldset disables every field inside it (view mode) */}
+          <fieldset
+            disabled={isView}
+            style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}
+          >
+            <FormGrid>
+              {/* Customer */}
+              <FormGroup>
+                <Label>
+                  CUSTOMER <span>*</span>
+                </Label>
 
-              {customers.length > 0 ? (
+                {customers.length > 0 ? (
+                  <Select
+                    name="customerId"
+                    value={formData.customerId}
+                    onChange={handleChange}
+                    disabled={isEditMode}
+                    required
+                  >
+                    <option value="">Select a customer</option>
+
+                    {customers.map((customer) => (
+                      <option key={customer.id} value={customer.id}>
+                        {customer.name ||
+                          customer.customer_name ||
+                          `Customer #${customer.id}`}
+                      </option>
+                    ))}
+                  </Select>
+                ) : (
+                  <Input
+                    type="text"
+                    name="customer"
+                    placeholder="Enter client name"
+                    value={formData.customer}
+                    onChange={handleChange}
+                    readOnly={isEditMode}
+                    required
+                  />
+                )}
+              </FormGroup>
+
+              {/* Payment Category */}
+              <FormGroup>
+                <Label>
+                  PAYMENT CATEGORY <span>*</span>
+                </Label>
+
                 <Select
-                  name="customerId"
-                  value={formData.customerId}
+                  name="paymentCategory"
+                  value={formData.paymentCategory}
                   onChange={handleChange}
+                  disabled={isEditMode}
                   required
                 >
-                  <option value="">Select a customer</option>
-
-                  {customers.map((customer) => (
-                    <option key={customer.id} value={customer.id}>
-                      {customer.name ||
-                        customer.customer_name ||
-                        `Customer #${customer.id}`}
-                    </option>
-                  ))}
+                  <option value="">Select Payment Category</option>
+                  <option value={CATEGORY_INVOICE}>Invoice Ref</option>
+                  <option value={CATEGORY_OPENING}>Opening Balance</option>
                 </Select>
-              ) : (
-                <Input
-                  type="text"
-                  name="customer"
-                  placeholder="Enter client name"
-                  value={formData.customer}
-                  onChange={handleChange}
-                  required
-                />
+              </FormGroup>
+
+              {/* Invoice (only for Invoice Ref) */}
+              {isInvoiceCategory && (
+                <FormGroup>
+                  <Label>
+                    INVOICE <span>*</span>
+                  </Label>
+
+                  <Select
+                    name="invoiceId"
+                    value={formData.invoiceId}
+                    onChange={handleInvoiceSelect}
+                    disabled={isEditMode}
+                    required
+                  >
+                    <option value="">
+                      {formData.customerId || formData.customer
+                        ? customerInvoices.length
+                          ? "Select Invoice"
+                          : "No pending invoices"
+                        : "Select a customer first"}
+                    </option>
+
+                    {formData.invoiceId && !hasInvoiceInList && (
+                      <option value={formData.invoiceId}>
+                        {formData.invoiceNo || `Invoice #${formData.invoiceId}`}
+                      </option>
+                    )}
+
+                    {customerInvoices.map((invoice) => (
+                      <option key={invoice.id} value={invoice.id}>
+                        {invoice.invoice_number} (balance SAR{" "}
+                        {money(invoice.balance)})
+                      </option>
+                    ))}
+                  </Select>
+                </FormGroup>
               )}
-            </FormGroup>
 
-            {/* Payment Category */}
-            <FormGroup>
-              <Label>
-                PAYMENT CATEGORY <span>*</span>
-              </Label>
+              {/* Invoice Total + Already Paid */}
+              {isInvoiceCategory && (
+                <>
+                  <FormGroup>
+                    <Label>INVOICE TOTAL</Label>
+                    <Input
+                      type="text"
+                      placeholder="SAR 0.00"
+                      value={
+                        formData.invoiceAmount === ""
+                          ? ""
+                          : `SAR ${money(formData.invoiceAmount)}`
+                      }
+                      readOnly
+                    />
+                  </FormGroup>
 
-              <Select
-                name="paymentCategory"
-                value={formData.paymentCategory}
-                onChange={handleChange}
-                required
-              >
-                <option value="">Select Payment Category</option>
-                <option value={CATEGORY_INVOICE}>Invoice Ref</option>
-                <option value={CATEGORY_OPENING}>Opening Balance</option>
-              </Select>
-            </FormGroup>
+                  <FormGroup>
+                    <Label>ALREADY PAID</Label>
+                    <Input
+                      type="text"
+                      placeholder="SAR 0.00"
+                      value={
+                        formData.alreadyPaid === ""
+                          ? ""
+                          : `SAR ${money(formData.alreadyPaid)}`
+                      }
+                      readOnly
+                    />
+                  </FormGroup>
+                </>
+              )}
 
-            {/* Invoice (only for Invoice Ref) */}
-            {isInvoiceCategory && (
-              <FormGroup>
-                <Label>
-                  INVOICE <span>*</span>
-                </Label>
-
-                <Select
-                  name="invoiceId"
-                  value={formData.invoiceId}
-                  onChange={handleInvoiceSelect}
-                  required
-                >
-                  <option value="">
-                    {formData.customerId || formData.customer
-                      ? customerInvoices.length
-                        ? "Select Invoice"
-                        : "No pending invoices"
-                      : "Select a customer first"}
-                  </option>
-
-                  {formData.invoiceId && !hasInvoiceInList && (
-                    <option value={formData.invoiceId}>
-                      {formData.invoiceNo || `Invoice #${formData.invoiceId}`}
-                    </option>
-                  )}
-
-                  {customerInvoices.map((invoice) => (
-                    <option key={invoice.id} value={invoice.id}>
-                      {invoice.invoice_number} (balance SAR{" "}
-                      {money(invoice.balance)})
-                    </option>
-                  ))}
-                </Select>
-              </FormGroup>
-            )}
-
-            {/* Invoice Total + Already Paid (Invoice Ref only) */}
-            {isInvoiceCategory && (
-              <>
+              {/* Balance Due / Opening Balance */}
+              {(isInvoiceCategory || isOpeningCategory) && (
                 <FormGroup>
-                  <Label>INVOICE TOTAL</Label>
-
+                  <Label>
+                    {isInvoiceCategory ? "BALANCE DUE" : "OPENING BALANCE"}
+                  </Label>
                   <Input
                     type="text"
                     placeholder="SAR 0.00"
                     value={
-                      formData.invoiceAmount === ""
+                      formData.outstandingAmount === ""
                         ? ""
-                        : `SAR ${money(formData.invoiceAmount)}`
+                        : `SAR ${money(formData.outstandingAmount)}`
                     }
                     readOnly
+                    $isBalance
                   />
                 </FormGroup>
+              )}
 
-                <FormGroup>
-                  <Label>ALREADY PAID</Label>
-
-                  <Input
-                    type="text"
-                    placeholder="SAR 0.00"
-                    value={
-                      formData.alreadyPaid === ""
-                        ? ""
-                        : `SAR ${money(formData.alreadyPaid)}`
-                    }
-                    readOnly
-                  />
-                </FormGroup>
-              </>
-            )}
-
-            {/* Balance Due / Opening Balance (both categories) */}
-            {(isInvoiceCategory || isOpeningCategory) && (
-              <FormGroup>
-                <Label>{isInvoiceCategory ? "BALANCE DUE" : "OPENING BALANCE"}</Label>
-
-                <Input
-                  type="text"
-                  placeholder="SAR 0.00"
-                  value={
-                    formData.outstandingAmount === ""
-                      ? ""
-                      : `SAR ${money(formData.outstandingAmount)}`
-                  }
-                  readOnly
-                  $isBalance
-                />
-              </FormGroup>
-            )}
-
-            {/* Payment Date */}
-            <FormGroup>
-              <Label>
-                PAYMENT DATE <span>*</span>
-              </Label>
-
-              <Input
-                type="date"
-                name="paymentDate"
-                value={formData.paymentDate}
-                onChange={handleChange}
-                required
-              />
-            </FormGroup>
-
-            {/* Payment Type */}
-            <FormGroup>
-              <Label>
-                PAYMENT TYPE <span>*</span>
-              </Label>
-
-              <Select
-                name="paymentType"
-                value={formData.paymentType}
-                onChange={handleChange}
-                required
-              >
-                <option value="Full Payment">Full Payment</option>
-                <option value="Partial Payment">Partial Payment</option>
-                <option value="Advance Payment">Advance Payment</option>
-              </Select>
-            </FormGroup>
-
-            {/* Payment Method */}
-            <FormGroup>
-              <Label>
-                PAYMENT METHOD <span>*</span>
-              </Label>
-
-              <Select
-                name="paymentMethod"
-                value={formData.paymentMethod}
-                onChange={handleChange}
-                required
-              >
-                <option value="Bank Transfer">Bank Transfer</option>
-                <option value="Cheque">Cheque</option>
-                <option value="Online Payment">Online Payment</option>
-                <option value="Cash">Cash</option>
-              </Select>
-            </FormGroup>
-
-            {/* Amount Received */}
-            <FormGroup>
-              <Label>
-                AMOUNT (SAR) <span>*</span>
-              </Label>
-
-              <Input
-                type="number"
-                name="amountReceived"
-                placeholder="00.00 SAR"
-                value={formData.amountReceived}
-                onChange={handleChange}
-                min="0.01"
-                step="0.01"
-                required
-              />
-            </FormGroup>
-
-            {/* Transaction ID (not for cash) */}
-            {!isCash && (
+              {/* Payment Date */}
               <FormGroup>
                 <Label>
-                  TRANSACTION ID <span>*</span>
+                  PAYMENT DATE <span>*</span>
                 </Label>
-
                 <Input
-                  type="text"
-                  name="referenceNumber"
-                  placeholder="enter transaction id"
-                  value={formData.referenceNumber}
+                  type="date"
+                  name="paymentDate"
+                  value={formData.paymentDate}
                   onChange={handleChange}
                   required
                 />
               </FormGroup>
-            )}
 
-            {/* Notes */}
-            <FormGroup>
-              <Label>NOTES</Label>
+              {/* Payment Type */}
+              <FormGroup>
+                <Label>
+                  PAYMENT TYPE <span>*</span>
+                </Label>
+                <Select
+                  name="paymentType"
+                  value={formData.paymentType}
+                  onChange={handleChange}
+                  required
+                >
+                  <option value="Full Payment">Full Payment</option>
+                  <option value="Partial Payment">Partial Payment</option>
+                  <option value="Advance Payment">Advance Payment</option>
+                </Select>
+              </FormGroup>
 
-              <Input
-                name="notes"
-                placeholder="Enter notes"
-                value={formData.notes}
-                onChange={handleChange}
-              />
-            </FormGroup>
-          </FormGrid>
+              {/* Payment Method */}
+              <FormGroup>
+                <Label>
+                  PAYMENT METHOD <span>*</span>
+                </Label>
+                <Select
+                  name="paymentMethod"
+                  value={formData.paymentMethod}
+                  onChange={handleChange}
+                  required
+                >
+                  <option value="Bank Transfer">Bank Transfer</option>
+                  <option value="Cheque">Cheque</option>
+                  <option value="Online Payment">Online Payment</option>
+                  <option value="Cash">Cash</option>
+                </Select>
+              </FormGroup>
+
+              {/* Amount Received */}
+              <FormGroup>
+                <Label>
+                  AMOUNT (SAR) <span>*</span>
+                </Label>
+                <Input
+                  type="number"
+                  name="amountReceived"
+                  placeholder="00.00 SAR"
+                  value={formData.amountReceived}
+                  onChange={handleChange}
+                  min="0.01"
+                  step="0.01"
+                  required
+                />
+              </FormGroup>
+
+              {/* Transaction ID (not for cash) */}
+              {!isCash && (
+                <FormGroup>
+                  <Label>
+                    TRANSACTION ID <span>*</span>
+                  </Label>
+                  <Input
+                    type="text"
+                    name="referenceNumber"
+                    placeholder="enter transaction id"
+                    value={formData.referenceNumber}
+                    onChange={handleChange}
+                    required
+                  />
+                </FormGroup>
+              )}
+
+              {/* Notes */}
+              <FormGroup>
+                <Label>NOTES</Label>
+                <Input
+                  name="notes"
+                  placeholder="Enter notes"
+                  value={formData.notes}
+                  onChange={handleChange}
+                />
+              </FormGroup>
+            </FormGrid>
+          </fieldset>
 
           {(validationError || error) && (
             <div className="payment-error">
@@ -579,14 +581,19 @@ const PaymentModal = ({
 
           <ButtonWrapper>
             <CancelButton type="button" onClick={onClose} disabled={submitting}>
-              CANCEL
+              {isView ? "CLOSE" : "CANCEL"}
             </CancelButton>
 
-            <SaveButton type="submit" disabled={submitting}>
-              <span>▣</span>
-
-              {submitting ? "RECORDING..." : "RECORD PAYMENT"}
-            </SaveButton>
+            {!isView && (
+              <SaveButton type="submit" disabled={submitting}>
+                <span>▣</span>
+                {submitting
+                  ? "SAVING..."
+                  : isEditMode
+                    ? "UPDATE PAYMENT"
+                    : "RECORD PAYMENT"}
+              </SaveButton>
+            )}
           </ButtonWrapper>
         </form>
       </ModalContainer>
