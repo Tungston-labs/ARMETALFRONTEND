@@ -77,8 +77,6 @@ const rowTotals = (row) => {
 const fmt = (n) =>
   n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-// Reads the vendor's contact details. The key names are guesses, so adjust
-// them to match your vendor API response.
 // Reads the vendor's contact details (keys match the Vendors API)
 const getVendorContact = (v) => {
   if (!v) {
@@ -122,8 +120,12 @@ const useAddingPurchaseOrder = () => {
     productOptions: rawProducts = [],
   } = useSelector((state) => state.purchaseOrder) || {};
 
-  // Vendors from the Vendors module, used when the PO dropdown returns nothing
-  const moduleVendors = useSelector((state) => state.vendor?.vendors) || EMPTY;
+  // Vendors from the Vendors module. Accepts either an array or a paginated
+  // object ({ results: [...] }).
+  const vendorsState = useSelector((state) => state.vendor?.vendors);
+  const moduleVendors = Array.isArray(vendorsState)
+    ? vendorsState
+    : vendorsState?.results || EMPTY;
   const sourceVendors = rawVendors.length ? rawVendors : moduleVendors;
 
   const [form, setForm] = useState({
@@ -166,12 +168,16 @@ const useAddingPurchaseOrder = () => {
     dispatch(getVendors({ page: 1, page_size: 100, ordering: "name" }));
   }, [dispatch]);
 
+  // The vendor ID is added to the label because several vendors share a name
   const vendorOptions = useMemo(
     () =>
-      sourceVendors.map((v) => ({
-        value: String(v.id ?? v.value),
-        label: v.name || v.vendor_name || v.label || `Vendor #${v.id}`,
-      })),
+      sourceVendors.map((v) => {
+        const name = v.name || v.vendor_name || v.label || "Vendor";
+        return {
+          value: String(v.id ?? v.value),
+          label: v.vendor_id ? `${name} (${v.vendor_id})` : name,
+        };
+      }),
     [sourceVendors]
   );
 
@@ -197,7 +203,7 @@ const useAddingPurchaseOrder = () => {
     [rawProducts]
   );
 
-  // ---- Fill address, phone and finance email from the selected vendor ----
+  // ---- Fill address, phone, finance email and credit limit from the vendor ----
   // Runs when the vendor changes, and again once the vendor list has loaded
   // (which also covers edit mode).
 
@@ -205,7 +211,7 @@ const useAddingPurchaseOrder = () => {
     if (!form.vendorId) return;
 
     const match = (v) => String(v.id ?? v.value) === String(form.vendorId);
-    // The Vendors module list usually has the full details, so check it first
+    // The Vendors module list has the full details, so check it first
     const vendor = moduleVendors.find(match) || sourceVendors.find(match);
     if (!vendor) return;
 
@@ -279,12 +285,14 @@ const useAddingPurchaseOrder = () => {
     setErrors((prev) => ({ ...prev, [name]: undefined }));
   };
 
-  // Picking a vendor pre-fills its payment term when the dropdown row has one
-  // that matches an available option (e.g. "30_days" -> "30 days").
-  // Address, phone and finance email are filled by the effect above.
+  // Picking a vendor pre-fills its payment term when the vendor has one that
+  // matches an available option (e.g. "30_days" -> "30 days").
+  // Address, phone, finance email and credit limit are filled by the effect above.
   const handleVendorChange = (e) => {
     const vid = e.target.value;
-    const vendor = sourceVendors.find((v) => String(v.id ?? v.value) === String(vid));
+    const vendor =
+      moduleVendors.find((v) => String(v.id ?? v.value) === String(vid)) ||
+      sourceVendors.find((v) => String(v.id ?? v.value) === String(vid));
     const raw = vendor?.payment_terms || vendor?.payment_term;
     const normalized = raw ? String(raw).replace(/_/g, " ").toLowerCase() : "";
     const match = PAYMENT_TERMS.find((o) => o.value.toLowerCase() === normalized);
@@ -388,9 +396,14 @@ const useAddingPurchaseOrder = () => {
     return Object.keys(e).length === 0;
   };
 
-  const handleSave = async () => {
+  // statusOverride: the Save Draft / Send buttons pass "draft" or
+  // "sent_to_vendor". Without it, the STATUS dropdown value is used.
+  const handleSave = async (statusOverride) => {
     setSaveError("");
     if (!validate()) return;
+
+    const status =
+      typeof statusOverride === "string" ? statusOverride : form.orderStatus;
 
     setIsSaving(true);
     try {
@@ -402,7 +415,7 @@ const useAddingPurchaseOrder = () => {
         order_date: form.orderDate,
         expected_delivery_date: form.expectedDate,
         payment_terms: form.paymentTerm,
-        status: form.orderStatus,
+        status,
         warehouse: Number(form.warehouse),
         discount: money(calc.discount),
         round_off: money(calc.roundOff),
@@ -433,6 +446,10 @@ const useAddingPurchaseOrder = () => {
 
   const handleCancel = () => navigate(LIST_ROUTE);
 
+  // Placeholder: opens the browser print dialog, where the user can choose
+  // "Save as PDF". Replace with your PDF API call when you have one.
+  const handleDownload = () => window.print();
+
   return {
     form,
     errors,
@@ -455,6 +472,7 @@ const useAddingPurchaseOrder = () => {
     selectProduct,
     handleSave,
     handleCancel,
+    handleDownload,
     navigate,
   };
 };

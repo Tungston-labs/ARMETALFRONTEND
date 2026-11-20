@@ -1,140 +1,209 @@
 import styled from "styled-components";
 
+/* Breakpoints */
+const bp = {
+  xl: "@media (max-width: 1280px)",
+  lg: "@media (max-width: 1024px)",
+  md: "@media (max-width: 768px)",
+  sm: "@media (max-width: 480px)",
+};
+
 export const CreateBillContainer = styled.div`
   width: 100%;
-  min-height: 100vh;
+  min-height: 100%;
+  padding: 20px;
+  box-sizing: border-box;
 
   background: #ffffff;
+  border: 1px solid #eeeeee;
+  border-radius: 6px;
 
-  padding: 0 44px 48px;
+  font-family: "Poppins", sans-serif;
+
+  ${bp.md} {
+    padding: 14px;
+  }
+
+  ${bp.sm} {
+    padding: 10px;
+    border-radius: 4px;
+  }
 `;
 
 export const BillHeader = styled.div`
   border-bottom: 1px solid #eeeeee;
 
-  margin: 0 -44px 20px;
-
-  padding: 10px 44px 9px;
+  margin: 0 0 22px;
+  padding: 0 0 12px;
 
   h1 {
     margin: 0 0 7px;
 
-    color: #2f4da8;
+    color: #2c469f;
 
+    font-family: "Poppins", sans-serif;
     font-size: 17px;
     font-weight: 600;
+  }
+
+  ${bp.sm} {
+    margin-bottom: 16px;
+
+    h1 {
+      font-size: 15px;
+    }
   }
 `;
 
 export const Breadcrumbs = styled.div`
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
 
   gap: 8px;
 
+  font-family: "Poppins", sans-serif;
   font-size: 12px;
 
   color: #222222;
 
   strong {
-    color: #2f4da8;
+    color: #2c469f;
     font-weight: 500;
   }
 `;
 
-export const FormGrid = styled.div`
-  display: grid;
+/* =========================
+   FORM
+========================= */
 
-  grid-template-columns:
-    repeat(4, minmax(0, 1fr));
+export const FormGrid = styled.div`
+  width: 100%;
+
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
 
   column-gap: 24px;
+  row-gap: 14px;
 
-  row-gap: 13px;
+  ${bp.xl} {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    column-gap: 20px;
+  }
+
+  ${bp.lg} {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 16px;
+  }
+
+  ${bp.sm} {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 12px;
+  }
 `;
 
 export const FormGroup = styled.div`
+  width: 100%;
   min-width: 0;
+
+  display: flex;
+  flex-direction: column;
 `;
 
 export const Label = styled.label`
   display: block;
 
-  margin-bottom: 5px;
+  margin-bottom: 7px;
 
   color: #171717;
 
-  font-size: 11px;
-  font-weight: 500;
+  font-family: "Poppins", sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 18px;
+
+  ${bp.sm} {
+    font-size: 13px;
+    margin-bottom: 5px;
+  }
 `;
 
 export const Input = styled.input`
   width: 100%;
-
-  height: 36px;
+  height: 40px;
 
   box-sizing: border-box;
 
-  border: 1px solid #e5e5e5;
+  border: 1px solid #e2e5ea;
+  border-radius: 5px;
 
-  border-radius: 4px;
-
-  padding: 0 17px;
-
-  outline: none;
-
-  color: #777777;
+  padding: 0 12px;
 
   background: #ffffff;
 
-  font-family: inherit;
+  color: #333333;
 
-  font-size: 12px;
+  font-family: "Poppins", sans-serif;
+  font-size: 13px;
+  font-weight: 400;
 
-  &:focus {
-    border-color: #2f4da8;
-  }
+  outline: none;
+
+  transition: border-color 0.2s ease;
 
   &::placeholder {
-    color: #999999;
+    color: #9ca3af;
+  }
+
+  &:focus {
+    border-color: #3049a3;
+  }
+
+  /* 16px stops iOS from zooming in when an input is focused */
+  ${bp.sm} {
+    font-size: 16px;
   }
 `;
 
+/* =========================
+   SELECT
+========================= */
+
 export const SelectWrapper = styled.div`
   position: relative;
-
   width: 100%;
 `;
 
 export const Select = styled.select`
   width: 100%;
-
-  height: 36px;
-
-  appearance: none;
+  height: 40px;
 
   box-sizing: border-box;
 
-  border: 1px solid #e5e5e5;
+  border: 1px solid #e2e5ea;
+  border-radius: 5px;
 
-  border-radius: 4px;
-
-  padding: 0 35px 0 17px;
-
-  outline: none;
-
-  color: #777777;
+  padding: 0 40px 0 12px;
 
   background: #ffffff;
 
-  font-family: inherit;
+  color: #4b5563;
 
-  font-size: 12px;
+  font-family: "Poppins", sans-serif;
+  font-size: 13px;
+  font-weight: 400;
+
+  appearance: none;
+  outline: none;
 
   cursor: pointer;
 
   &:focus {
-    border-color: #2f4da8;
+    border-color: #3049a3;
+  }
+
+  ${bp.sm} {
+    font-size: 16px;
   }
 `;
 
@@ -142,7 +211,7 @@ export const SelectIcon = styled.span`
   position: absolute;
 
   top: 50%;
-  right: 12px;
+  right: 13px;
 
   display: flex;
 
@@ -150,253 +219,400 @@ export const SelectIcon = styled.span`
 
   pointer-events: none;
 
-  color: #111111;
+  color: #4b5563;
 
   svg {
-    width: 13px;
-    height: 13px;
+    width: 16px;
+    height: 16px;
   }
 `;
 
+/* =========================
+   ITEMS TABLE
+========================= */
+
 export const ItemsTitle = styled.h3`
-  margin: 24px 0 12px;
+  margin: 30px 0 12px;
 
-  color: #171717;
+  color: #111111;
 
-  font-size: 12px;
+  font-family: "Poppins", sans-serif;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 20px;
 
-  font-weight: 600;
+  ${bp.sm} {
+    margin-top: 22px;
+    font-size: 14px;
+  }
 `;
 
+/* Scrolls sideways on small screens; header and rows keep a minimum width */
 export const ItemsTable = styled.div`
   width: 100%;
+  max-width: 100%;
 
-  border-bottom: 1px solid #eeeeee;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+
+  border: 1px solid #e5e7eb;
+  border-radius: 5px;
+
+  scrollbar-width: thin;
+`;
+
+const columns = `
+  6fr
+  11fr
+  19fr
+  7fr
+  9fr
+  10fr
+  8fr
+  10fr
+  11fr
+  7fr
 `;
 
 export const TableHeader = styled.div`
   display: grid;
-
-  grid-template-columns:
-    65px
-    1.05fr
-    1.55fr
-    75px
-    95px
-    105px
-    100px
-    115px
-    120px
-    80px;
+  grid-template-columns: ${columns};
 
   align-items: center;
 
-  min-height: 36px;
+  min-width: 1050px;
+  height: 42px;
 
-  padding: 0 10px;
+  padding: 0 9px;
+  box-sizing: border-box;
 
-  background: #2f4da8;
-
+  background: #2c469f;
   color: #ffffff;
 
+  font-family: "Poppins", sans-serif;
   font-size: 11px;
   font-weight: 600;
+  white-space: nowrap;
+
+  span {
+    padding: 0 8px;
+  }
+
+  span:first-child,
+  span:last-child {
+    text-align: center;
+  }
+
+  ${bp.md} {
+    min-width: 960px;
+  }
 `;
 
 export const TableRow = styled.div`
   display: grid;
-
-  grid-template-columns:
-    65px
-    1.05fr
-    1.55fr
-    75px
-    95px
-    105px
-    100px
-    115px
-    120px
-    80px;
+  grid-template-columns: ${columns};
 
   align-items: center;
 
+  min-width: 1050px;
   min-height: 48px;
 
-  padding: 0 10px;
+  padding: 5px 9px;
+  box-sizing: border-box;
 
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid #eeeeee;
 
-  color: #777777;
+  color: #555555;
 
-  font-size: 12px;
+  font-family: "Poppins", sans-serif;
+  font-size: 11px;
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  ${bp.md} {
+    min-width: 960px;
+  }
 `;
 
 export const TableCell = styled.div`
   display: flex;
-
   align-items: center;
-
+  font-family: "Poppins", sans-serif;
   min-width: 0;
 
-  padding: 0 7px;
+  padding: 0 8px;
+
+  &:first-child,
+  &:last-child {
+    justify-content: center;
+    
+  }
 `;
 
 export const SmallInput = styled.input`
   width: 100%;
-
   max-width: 100%;
-
-  height: 26px;
+  height: 32px;
 
   box-sizing: border-box;
 
-  border: 1px solid #eeeeee;
-
-  border-radius: 0;
-
   padding: 0 8px;
 
-  outline: none;
-
-  color: #777777;
+  border: 1px solid #e3e5e8;
+  border-radius: 3px;
 
   background: #ffffff;
 
-  font-family: inherit;
+  color: #4b5563;
 
-  font-size: 12px;
+  font-family: "Poppins", sans-serif;
+  font-size: 11px;
+
+  outline: none;
 
   &:focus {
-    border-color: #2f4da8;
+    border-color: #3049a3;
+  }
+
+  &::placeholder {
+    color: #9ca3af;
   }
 `;
 
 export const RemoveButton = styled.button`
-  width: 25px;
-  height: 25px;
+  width: 28px;
+  height: 28px;
+
+  margin: 0 auto;
+  padding: 0;
 
   display: flex;
-
   align-items: center;
   justify-content: center;
 
-  border: 1px solid #ff0000;
-
+  border: 1px solid #ff3b30;
   border-radius: 50%;
 
   background: #ffffff;
-
-  color: #ff0000;
+  color: #ff3b30;
 
   cursor: pointer;
 
-  padding: 0;
+  transition: all 0.2s ease;
 
   svg {
     width: 14px;
     height: 14px;
   }
+
+  &:hover {
+    background: #fff1f0;
+  }
 `;
 
+/* =========================
+   SUMMARY
+========================= */
+
 export const SummaryWrapper = styled.div`
-  width: 360px;
+  width: 100%;
+  max-width: 50%;
 
   margin-left: auto;
+  margin-top: 28px;
+  padding-top: 2px;
 
-  margin-top: 20px;
+  ${bp.lg} {
+    max-width: 60%;
+  }
 
-  color: #171717;
+  ${bp.md} {
+    max-width: 100%;
+  }
 
-  font-size: 12px;
+  ${bp.sm} {
+    margin-top: 20px;
+  }
 `;
 
 export const SummaryRow = styled.div`
-  display: flex;
+  min-height: 32px;
 
+  display: flex;
+  align-items: center;
   justify-content: space-between;
 
-  align-items: center;
+  gap: 20px;
 
-  min-height: 24px;
+  font-family: "Poppins", sans-serif;
+  font-size: 12px;
+
+  color: #111111;
+
+  span {
+    color: #4b5563;
+  }
 
   strong {
     font-weight: 600;
+    color: #111111;
+    white-space: nowrap;
   }
 
   .discount {
-    color: #18a34a;
+    color: #20a34a;
+  }
+
+  ${bp.sm} {
+    gap: 10px;
+    font-size: 13px;
   }
 `;
 
 export const TotalAmount = styled.div`
-  display: flex;
-
-  align-items: center;
-  justify-content: space-between;
-
-  height: 37px;
+  width: 100%;
+  min-height: 42px;
 
   margin-top: 10px;
+  padding: 0 16px;
 
-  padding: 0 18px;
+  box-sizing: border-box;
 
-  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
 
-  background: #f79312;
+  border-radius: 5px;
 
+  background: #ff8500;
   color: #ffffff;
 
+  font-family: "Poppins", sans-serif;
   font-size: 12px;
-
   font-weight: 600;
 
   strong {
     font-size: 14px;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  ${bp.sm} {
+    padding: 0 12px;
   }
 `;
 
-export const ButtonWrapper = styled.div`
-  display: flex;
+/* =========================
+   BUTTONS
+========================= */
 
+export const ButtonWrapper = styled.div`
+  width: 100%;
+
+  display: flex;
   justify-content: flex-end;
+  align-items: center;
+  flex-wrap: wrap;
 
   gap: 12px;
 
-  margin-top: 24px;
+  margin-top: 30px;
+
+  ${bp.sm} {
+    margin-top: 22px;
+
+    button {
+      flex: 1 1 calc(50% - 6px);
+      width: auto;
+    }
+  }
 `;
 
+export const AddButton = styled.button`
+ height: 36px;
+
+    padding: 0 16px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    gap: 7px;
+
+    border: none;
+    border-radius: 4px;
+
+    background: #F48211;
+    color: #ffffff;
+
+    font-family: "Poppins", sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+
+    cursor: pointer;
+    white-space: nowrap;
+
+    transition: background 0.2s ease;
+
+    svg {
+        width: 15px;
+        height: 15px;
+    }
+
+    &:hover {
+        background: #d9720c;
+    }
+`;
 export const CancelButton = styled.button`
-  width: 98px;
+  min-width: 100px;
+  height: 38px;
 
-  height: 36px;
+  padding: 0 16px;
 
-  border: 1px solid #2f4da8;
-
+  border: 1px solid #3049a3;
   border-radius: 4px;
 
   background: #ffffff;
-
   color: #111111;
 
+  font-family: "Poppins", sans-serif;
   font-size: 12px;
+  font-weight: 500;
 
   cursor: pointer;
+
+  &:hover {
+    background: #f5f7ff;
+  }
 `;
 
 export const PreviewButton = styled.button`
-  width: 91px;
+  min-width: 100px;
+  height: 38px;
 
-  height: 36px;
+  padding: 0 16px;
 
-  border: 1px solid #2f4da8;
-
+  border: 1px solid #3049a3;
   border-radius: 4px;
 
-  background: #2f4da8;
-
+  background: #3049a3;
   color: #ffffff;
 
+  font-family: "Poppins", sans-serif;
   font-size: 12px;
+  font-weight: 500;
 
   cursor: pointer;
+
+  &:hover:not(:disabled) {
+    background: #263b88;
+  }
+
+  &:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+  }
 `;

@@ -575,6 +575,7 @@ export const ButtonWrapper = styled.div`
     display: flex;
     justify-content: flex-end;
     align-items: center;
+    flex-wrap: wrap;
 
     gap: 12px;
 
@@ -584,12 +585,11 @@ export const ButtonWrapper = styled.div`
         margin-top: 22px;
 
         button {
-            flex: 1;
+            flex: 1 1 calc(50% - 6px);
             width: auto;
         }
     }
 `;
-
 export const CancelButton = styled.button`
     min-width: 100px;
     height: 38px;

@@ -140,6 +140,7 @@ const AddingPurchaseOrder = () => {
     selectProduct,
     handleSave,
     handleCancel,
+        handleDownload,
   } = useAddingPurchaseOrder();
 
   const onSelect = (e) => setField(e.target.name, e.target.value);
@@ -487,18 +488,29 @@ const AddingPurchaseOrder = () => {
             </PaymentRight>
           </PaymentSection>
 
-          <ButtonWrapper>
-            <CancelButton type="button" onClick={handleCancel}>
-              CANCEL
-            </CancelButton>
-            <PreviewButton
-              type="button"
-              onClick={handleSave}
-              disabled={isSaving}
-            >
-              {isSaving ? "SAVING..." : isEdit ? "UPDATE" : "SAVE"}
-            </PreviewButton>
-          </ButtonWrapper>
+         <ButtonWrapper>
+            <CancelButton type="button" onClick={handleCancel} disabled={isSaving}>
+    CANCEL
+  </CancelButton>
+  <CancelButton
+    type="button"
+    onClick={() => handleSave("draft")}
+    disabled={isSaving}
+  >
+    SAVE DRAFT
+  </CancelButton>
+
+  <CancelButton type="button" onClick={handleDownload} disabled={isSaving}>
+    DOWNLOAD
+  </CancelButton>
+    <PreviewButton
+    type="button"
+    onClick={() => handleSave("sent_to_vendor")}
+    disabled={isSaving}
+  >
+    {isSaving ? "SAVING..." : "SEND"}
+  </PreviewButton>
+</ButtonWrapper>
         </InvoiceForm>
       )}
     </InvoiceContainer>
