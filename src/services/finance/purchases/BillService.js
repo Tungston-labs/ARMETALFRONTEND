@@ -259,3 +259,26 @@ export const exportBills = async (params = {}) => {
 
     return buildBillsCsv(response.data);
 };
+
+/* =========================================================
+   APPROVED PURCHASE ORDERS REFERENCE
+   GET /api/finance/bill/purchase-orders/
+   GET /api/finance/bill/purchase-orders/{id}/
+========================================================= */
+
+export const getApprovedPurchaseOrders = async (params = {}) => {
+    const response = await axios.get(`${BILL_URL}purchase-orders/`, {
+        params,
+        headers: getAuthHeaders(),
+    });
+
+    return response.data;
+};
+
+export const getApprovedPurchaseOrderDetail = async (poId) => {
+    const response = await axios.get(`${BILL_URL}purchase-orders/${poId}/`, {
+        headers: getAuthHeaders(),
+    });
+
+    return response.data;
+};
