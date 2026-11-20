@@ -100,14 +100,15 @@ export const Th = styled.th`
   background: #DD6F02;
   color: white;
 
-  padding: 14px 8px;
+  padding: 10px 8px;
 
   text-align: left;
 
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
 
-  white-space: nowrap;
+  white-space: normal;
+  vertical-align: middle;
 
   position: sticky;
   top: 0;

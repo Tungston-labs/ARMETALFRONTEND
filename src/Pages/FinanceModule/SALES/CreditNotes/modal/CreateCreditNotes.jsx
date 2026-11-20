@@ -26,6 +26,7 @@ import {
   PreviewButton,
   NotesTitle,
   CreditNotesTextArea,
+  Required,
 } from "./CreateCreditNotes.style";
 
 import ReusableHeader from "../../../../../Components/ReusableTable/ReusableHeader";
@@ -89,7 +90,6 @@ const toNumber = (value) => {
   return Number.isFinite(number) ? number : 0;
 };
 
-
 const normalizeId = (value) => {
   if (value === null || value === undefined || value === "") {
     return null;
@@ -114,9 +114,9 @@ const normalizeId = (value) => {
   return stringValue;
 };
 
-
 const createDefaultItem = (index = 1) => ({
   id: Date.now() + index,
+  invoiceItemId: null,
   slNo: String(index).padStart(2, "0"),
   product: "",
   productId: null,
@@ -124,7 +124,10 @@ const createDefaultItem = (index = 1) => ({
   alreadyCredited: 0,
   creditingNow: 0,
   availableQty: 0,
+  rate: 0,
   unitPrice: 0,
+  vatPercentage: 15,
+  vatAmount: 0,
   creditTotal: 0,
 });
 
@@ -178,7 +181,6 @@ const getProductId = (item, products = []) => {
   return null;
 };
 
-
 const formatBackendError = (error) => {
   if (!error) {
     return "";
@@ -209,13 +211,11 @@ const formatBackendError = (error) => {
   return String(error);
 };
 
-
 const getInvoiceRef = (invoice) =>
   invoice?.invoice_number ||
   invoice?.invoice_reference ||
   invoice?.number ||
   "";
-
 
 const mapRowToFormData = (row) => {
   if (!row) {
@@ -224,19 +224,17 @@ const mapRowToFormData = (row) => {
       invoiceReference: "",
       issueDate: today,
       reason: "Price Adjustment",
-
+      status: "open",
       invoiceValue: "",
       alreadyCredited: "",
       remainingBalance: "",
       thisCreditNote: "",
-
       from: {
-        name: "",
-        address: "",
-        phone: "",
-        email: "",
+        name: "Tungston Labs",
+        address: "Tungston Labs, Ullampilly Building,...",
+        phone: "+91 97783 77526",
+        email: "info@tungstonlabs.com",
       },
-
       billTo: {
         client: "",
         clientId: null,
@@ -244,9 +242,7 @@ const mapRowToFormData = (row) => {
         phone: "",
         email: "",
       },
-
       items: getDefaultItems(),
-
       notes: "",
     };
   }
@@ -266,15 +262,15 @@ const mapRowToFormData = (row) => {
     customerObject?.id ??
     customerObject?.pk ??
     billToObject?.clientId ??
-    null;
+    (typeof row?.customer === "number" ? row.customer : null);
 
   const customerValue =
     customerObject?.name ??
     customerObject?.customer_name ??
     customerObject?.company_name ??
     billToObject?.client ??
-    row?.customer ??
-    "";
+    row?.customer_name ??
+    (typeof row?.customer === "string" ? row.customer : "");
 
   const apiItems = Array.isArray(row?.items) ? row.items : [];
 
@@ -286,98 +282,142 @@ const mapRowToFormData = (row) => {
               ? item.product
               : null;
 
-          const invoicedQty = toNumber(
-            item?.invoiced_qty ??
-              item?.invoiced_quantity ??
-              item?.quantity ??
-              0,
-          );
+          const qty = toNumber(item?.quantity ?? item?.crediting_now ?? item?.creditingNow ?? 0);
+          const rate = toNumber(item?.rate ?? item?.unit_price ?? item?.unitPrice ?? 0);
+          const vatPct = toNumber(item?.vat_percentage ?? item?.vatPercentage ?? 15);
+          const vatAmount = toNumber(item?.vat_amount ?? (qty * rate * (vatPct / 100)));
+          const amount = toNumber(item?.amount ?? item?.credit_total ?? (qty * rate + vatAmount));
 
-          const alreadyCredited = toNumber(
-            item?.already_credited ?? item?.already_credited_qty ?? 0,
-          );
+          const itemInvoicedQty = toNumber(item?.invoiced_qty ?? item?.invoicedQuantity ?? item?.invoice_item_quantity ?? qty);
 
           return {
             id: item?.id ?? Date.now() + index,
-
-            slNo:
-              item?.sl_no ?? item?.slNo ?? String(index + 1).padStart(2, "0"),
-
+            invoiceItemId: item?.invoice_item ?? item?.invoice_item_id ?? null,
+            slNo: item?.sl_no ?? item?.slNo ?? String(index + 1).padStart(2, "0"),
             product:
+              item?.item_name ??
               item?.product_name ??
               productObject?.name ??
               productObject?.product_name ??
               (typeof item?.product === "string" ? item.product : ""),
-
             productId:
               item?.product_id ??
               productObject?.id ??
               productObject?.pk ??
-              null,
-
-            invoicedQty,
-
-            alreadyCredited,
-
-            creditingNow: item?.crediting_now ?? item?.crediting_quantity ?? 0,
-
-            availableQty: Math.max(0, invoicedQty - alreadyCredited),
-
-            unitPrice: item?.unit_price ?? item?.price ?? 0,
-
-            creditTotal: item?.credit_total ?? item?.credit_amount ?? 0,
+              (typeof item?.product === "number" ? item.product : null),
+            invoicedQty: itemInvoicedQty,
+            alreadyCredited: 0,
+            creditingNow: qty,
+            availableQty: itemInvoicedQty,
+            rate,
+            unitPrice: rate,
+            vatPercentage: vatPct,
+            vatAmount,
+            creditTotal: amount,
           };
         })
       : getDefaultItems();
 
+  const reasonMap = {
+    sales_return: "Sales Return",
+    price_adjustment: "Price Adjustment",
+    damaged_goods: "Damaged Goods",
+    discount_adjustment: "Discount Adjustment",
+    pricing_error: "Pricing Error",
+  };
+  const displayReason = reasonMap[row?.reason] || row?.reason || "Price Adjustment";
+
+  const invVal =
+    row?.invoice_amount ??
+    row?.invoice_value ??
+    row?.invoice?.total_amount ??
+    row?.invoice?.grand_total ??
+    row?.invoice_total ??
+    "";
+
+  const alreadyCred =
+    row?.already_credited ??
+    row?.alreadyCredited ??
+    row?.applied_amount ??
+    "";
+
+  const remBal =
+    row?.remaining_balance ??
+    row?.remainingBalance ??
+    row?.balance ??
+    "";
+
+  const statusMap = {
+    open: "open",
+    pending: "open",
+    closed: "closed",
+    applied: "closed",
+    partially_applied: "partially_applied",
+    draft: "draft",
+    cancelled: "cancelled",
+  };
+  const normalizedStatus =
+    statusMap[String(row?.status || "").toLowerCase()] || row?.status || "open";
+
+  const customerAddress =
+    row?.customer_address ||
+    row?.customer?.billing_address ||
+    row?.customer?.address ||
+    billToObject?.address ||
+    "";
+
+  const customerPhone =
+    row?.customer_phone ||
+    row?.customer?.phno ||
+    row?.customer?.phone ||
+    billToObject?.phone ||
+    "";
+
+  const customerEmail =
+    row?.customer_email ||
+    row?.finance_contact_email ||
+    row?.customer?.financial_email ||
+    row?.customer?.admin_email ||
+    row?.customer?.email ||
+    billToObject?.email ||
+    "";
+
   return {
     creditNoteNumber:
-      row?.credit_note_number ?? row?.creditNoteNumber ?? row?.number ?? "",
-
+      row?.cn_number ?? row?.credit_note_number ?? row?.creditNoteNumber ?? row?.number ?? "",
     invoiceReference:
-      row?.invoice_reference ?? row?.invoiceReference ?? row?.invoice_ref ?? "",
-
+      row?.invoice_ref ?? row?.invoice_reference ?? row?.invoiceReference ?? "",
     issueDate: toInputDate(row?.issue_date ?? row?.issueDate) || today,
-
-    reason: row?.reason || "Price Adjustment",
-
-    invoiceValue: row?.invoice_value ?? row?.invoiceValue ?? "",
-
-    alreadyCredited: row?.already_credited ?? row?.alreadyCredited ?? "",
-
-    remainingBalance: row?.remaining_balance ?? row?.remainingBalance ?? "",
-
+    reason: displayReason,
+    status: normalizedStatus,
+    invoiceValue:
+      invVal !== "" && invVal !== null && invVal !== undefined && Number(invVal) > 0
+        ? `SAR ${toNumber(invVal).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+        : "",
+    alreadyCredited:
+      alreadyCred !== "" && alreadyCred !== null && alreadyCred !== undefined
+        ? `SAR ${toNumber(alreadyCred).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+        : "SAR 0.00",
+    remainingBalance:
+      remBal !== "" && remBal !== null && remBal !== undefined
+        ? `SAR ${toNumber(remBal).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+        : "",
     thisCreditNote:
-      row?.this_credit_note ?? row?.thisCreditNote ?? row?.credit_amount ?? "",
-
+      row?.credit_amount ?? row?.this_credit_note ?? row?.thisCreditNote ?? "",
     from: {
-      name: row?.from_name ?? row?.from?.name ?? "",
-
-      address: row?.from_address ?? row?.from?.address ?? "",
-
-      phone: row?.from_phone ?? row?.from?.phone ?? "",
-
-      email: row?.from_email ?? row?.from?.email ?? "",
+      name: row?.from_company_name ?? row?.from_name ?? row?.from?.name ?? "Tungston Labs",
+      address: row?.from_address ?? row?.from?.address ?? "Tungston Labs, Ullampilly Building,...",
+      phone: row?.from_phone_number ?? row?.from_phone ?? row?.from?.phone ?? "+91 97783 77526",
+      email: row?.from_email ?? row?.from?.email ?? "info@tungstonlabs.com",
     },
-
     billTo: {
       client: customerValue,
-
       clientId: customerId,
-
-      address: row?.customer_address ?? billToObject?.address ?? "",
-
-      phone: row?.customer_phone ?? billToObject?.phone ?? "",
-
-      email:
-        row?.finance_contact_email ??
-        row?.customer_email ??
-        billToObject?.email ??
-        "",
+      address: customerAddress,
+      phone: customerPhone,
+      email: customerEmail,
     },
-
     items,
-
     notes: row?.notes ?? row?.notes_reason_detail ?? "",
   };
 };
@@ -390,23 +430,21 @@ const getInvoiceItems = (response) => {
   if (Array.isArray(response)) {
     return response;
   }
-
+  if (Array.isArray(response?.data?.items)) {
+    return response.data.items;
+  }
   if (Array.isArray(response?.items)) {
     return response.items;
   }
-
   if (Array.isArray(response?.results)) {
     return response.results;
   }
-
   if (Array.isArray(response?.data)) {
     return response.data;
   }
-
   if (Array.isArray(response?.invoice?.items)) {
     return response.invoice.items;
   }
-
   return [];
 };
 
@@ -432,30 +470,39 @@ const mapInvoiceItems = (response) => {
         0,
     );
 
+    const availableQty = item?.max_creditable_qty !== undefined
+      ? toNumber(item.max_creditable_qty)
+      : Math.max(0, invoicedQty - alreadyCredited);
+
+    const rate = toNumber(
+      item?.unit_price ?? item?.rate ?? item?.price ?? product?.selling_price ?? 0
+    );
+    const vatPercentage = toNumber(item?.vat_percentage ?? 15);
+    // When loading an invoice, default creditingNow to availableQty if > 0, otherwise default to invoicedQty (so it's never 0)
+    const creditingNow = availableQty > 0 ? availableQty : (invoicedQty > 0 ? invoicedQty : 1);
+    const vatAmount = (creditingNow * rate) * (vatPercentage / 100);
+    const creditTotal = (creditingNow * rate) + vatAmount;
+
     return {
-      id: item?.id ?? Date.now() + index,
-
+      id: item?.id ?? item?.invoice_item_id ?? Date.now() + index,
+      invoiceItemId: item?.invoice_item_id ?? item?.id ?? null,
       slNo: item?.sl_no ?? item?.slNo ?? String(index + 1).padStart(2, "0"),
-
       product:
         item?.product_name ??
+        item?.particular ??
         product?.name ??
         product?.product_name ??
         (typeof item?.product === "string" ? item.product : ""),
-
       productId: item?.product_id ?? product?.id ?? product?.pk ?? null,
-
       invoicedQty,
-
       alreadyCredited,
-
-      creditingNow: 0,
-
-      availableQty: Math.max(0, invoicedQty - alreadyCredited),
-
-      unitPrice: item?.unit_price ?? item?.price ?? product?.unit_price ?? 0,
-
-      creditTotal: 0,
+      creditingNow,
+      availableQty: availableQty > 0 ? availableQty : (invoicedQty > 0 ? invoicedQty : 99999),
+      rate,
+      unitPrice: rate,
+      vatPercentage,
+      vatAmount,
+      creditTotal,
     };
   });
 };
@@ -469,73 +516,83 @@ const buildPayload = ({
   invoiceReference,
   issueDate,
   reason,
-  invoiceValue,
-  alreadyCredited,
-  remainingBalance,
-  thisCreditNote,
+  status,
   from,
   billTo,
   items,
   notes,
   products,
+  invoices,
 }) => {
   const customer = normalizeId(
     billTo?.clientId ?? billTo?.customerId ?? billTo?.client,
   );
 
-  return {
-    credit_note_number: String(creditNoteNumber ?? "").trim(),
+  const selectedInvoice = invoices?.find(
+    (inv) => getInvoiceRef(inv) === invoiceReference || String(inv.id) === invoiceReference,
+  );
 
-    invoice_reference: String(invoiceReference ?? "").trim(),
-
-    issue_date: issueDate || today,
-
-    reason: String(reason ?? "").trim(),
-
-    invoice_value: toNumber(invoiceValue),
-
-    already_credited: toNumber(alreadyCredited),
-
-    remaining_balance: toNumber(remainingBalance),
-
-    this_credit_note: toNumber(thisCreditNote),
-
-    customer,
-
-    from_name: from?.name?.trim() || "",
-
-    from_address: from?.address?.trim() || "",
-
-    from_phone: from?.phone?.trim() || "",
-
-    from_email: from?.email?.trim() || "",
-
-    customer_address: billTo?.address?.trim() || "",
-
-    customer_phone: billTo?.phone?.trim() || "",
-
-    finance_contact_email: billTo?.email?.trim() || "",
-
-    notes_reason_detail: notes?.trim() || "",
-
-    items: (Array.isArray(items) ? items : [])
-      .filter((item) => toNumber(item?.creditingNow) > 0)
-      .map((item, index) => ({
-        sl_no: item?.slNo || String(index + 1).padStart(2, "0"),
-
-        product: getProductId(item, products),
-
-        invoiced_qty: toNumber(item?.invoicedQty),
-
-        already_credited: toNumber(item?.alreadyCredited),
-
-        crediting_now: toNumber(item?.creditingNow),
-
-        unit_price: toNumber(item?.unitPrice),
-
-        credit_total: toNumber(item?.creditTotal),
-      })),
+  const reasonMap = {
+    "Sales Return": "sales_return",
+    "Price Adjustment": "price_adjustment",
+    "Damaged Goods": "damaged_goods",
+    "Discount Adjustment": "discount_adjustment",
+    "Pricing Error": "pricing_error",
   };
+  const snakeReason =
+    reasonMap[reason] ||
+    String(reason || "sales_return").toLowerCase().replace(/\s+/g, "_");
+
+  const creditedItems = (Array.isArray(items) ? items : [])
+    .filter((item) => toNumber(item?.creditingNow) > 0)
+    .map((item, index) => {
+      const qty = toNumber(item?.creditingNow);
+      const rate = toNumber(item?.rate || item?.unitPrice);
+      const vatPct = toNumber(item?.vatPercentage || 15);
+      const vatAmount = toNumber(item?.vatAmount || (qty * rate * (vatPct / 100)));
+      const amount = toNumber(item?.creditTotal || (qty * rate + vatAmount));
+
+      return {
+        invoice_item: item?.invoiceItemId || (typeof item?.id === "number" && item.id < 1000000000000 ? item.id : null),
+        product: getProductId(item, products),
+        item_name: item?.product || `Item ${index + 1}`,
+        description: item?.description || item?.product || "",
+        quantity: qty,
+        rate: rate,
+        vat_percentage: vatPct,
+        vat_amount: Number(vatAmount.toFixed(2)),
+        amount: Number(amount.toFixed(2)),
+      };
+    });
+
+  const subTotal = creditedItems.reduce((acc, it) => acc + (it.quantity * it.rate), 0);
+  const totalVat = creditedItems.reduce((acc, it) => acc + it.vat_amount, 0);
+  const creditAmount = subTotal + totalVat;
+
+  const payload = {
+    customer,
+    invoice: selectedInvoice?.id || (invoiceReference && /^\d+$/.test(invoiceReference) ? Number(invoiceReference) : null),
+    invoice_ref: String(invoiceReference ?? "").trim(),
+    issue_date: issueDate || today,
+    reason: snakeReason,
+    status: status || "open",
+    credit_amount: Number(creditAmount.toFixed(2)),
+    sub_total: Number(subTotal.toFixed(2)),
+    total_vat: Number(totalVat.toFixed(2)),
+    discount: 0,
+    from_company_name: from?.name?.trim() || "Tungston Labs",
+    from_address: from?.address?.trim() || "",
+    from_phone_number: from?.phone?.trim() || "",
+    from_email: from?.email?.trim() || "",
+    notes: notes?.trim() || "",
+    items: creditedItems,
+  };
+
+  if (creditNoteNumber && String(creditNoteNumber).trim()) {
+    payload.cn_number = String(creditNoteNumber).trim();
+  }
+
+  return payload;
 };
 
 /* =========================================================
@@ -552,6 +609,14 @@ const CreateCreditNotes = ({ onCancel }) => {
   const dispatch = useDispatch();
 
   const isEditMode = Boolean(id);
+
+  const searchParams = new URLSearchParams(location.search);
+  const isViewOnly = Boolean(
+    location.state?.isViewOnly ||
+      location.state?.viewMode ||
+      searchParams.get("view") === "true" ||
+      location.pathname.includes("/credit-notes/view/"),
+  );
 
   /* =======================================================
      CUSTOMER
@@ -582,7 +647,6 @@ const CreateCreditNotes = ({ onCancel }) => {
 
   const products = useSelector((state) => state?.product?.products || []);
 
-
   const invoicesFromStore = useSelector((state) => state?.invoice?.invoices);
 
   const invoices = useMemo(
@@ -595,9 +659,6 @@ const CreateCreditNotes = ({ onCancel }) => {
     detailsLoading,
     submitting,
     submitError,
-
-    // eslint-disable-next-line no-unused-vars
-    invoiceDetailsLoading,
     invoiceDetailsError,
   } = useSelector((state) => state.creditNotes);
 
@@ -625,13 +686,13 @@ const CreateCreditNotes = ({ onCancel }) => {
 
   const [remainingBalance, setRemainingBalance] = useState("");
 
-  const [thisCreditNote, setThisCreditNote] = useState("");
-const [status, setStatus] = useState("Price Adjustment");
+  const [status, setStatus] = useState("open");
+
   const [from, setFrom] = useState({
-    name: "",
-    address: "",
-    phone: "",
-    email: "",
+    name: "Tungston Labs",
+    address: "Tungston Labs, Ullampilly Building,...",
+    phone: "+91 97783 77526",
+    email: "info@tungstonlabs.com",
   });
 
   const [billTo, setBillTo] = useState({
@@ -717,30 +778,57 @@ const [status, setStatus] = useState("Price Adjustment");
 
     const mapped = mapRowToFormData(source);
 
+    // Fallback: match from customers store if address or phone missing
+    const custId = mapped.billTo.clientId;
+    if ((!mapped.billTo.address || !mapped.billTo.phone) && custId && customers.length > 0) {
+      const matched = customers.find(
+        (c) =>
+          String(getCustomerOptionValue(c)) === String(custId) ||
+          String(c.id) === String(custId),
+      );
+      if (matched) {
+        if (!mapped.billTo.address) {
+          mapped.billTo.address =
+            matched.billing_address || matched.address || "";
+        }
+        if (!mapped.billTo.phone) {
+          mapped.billTo.phone = matched.phno || matched.phone || "";
+        }
+        if (!mapped.billTo.email) {
+          mapped.billTo.email =
+            matched.financial_email ||
+            matched.admin_email ||
+            matched.email ||
+            "";
+        }
+      }
+    }
+
     setCreditNoteNumber(mapped.creditNoteNumber);
-
     setInvoiceReference(mapped.invoiceReference);
-
     setIssueDate(mapped.issueDate);
-
     setReason(mapped.reason);
-
     setInvoiceValue(mapped.invoiceValue);
-
     setAlreadyCredited(mapped.alreadyCredited);
-
     setRemainingBalance(mapped.remainingBalance);
-
-    setThisCreditNote(mapped.thisCreditNote);
-
+    setStatus(mapped.status || "open");
     setFrom(mapped.from);
-
     setBillTo(mapped.billTo);
-
     setItems(mapped.items);
-
     setNotes(mapped.notes);
-  }, [isEditMode, selectedCreditNote, routeCreditNote]);
+
+    if (!mapped.invoiceValue && mapped.invoiceReference && invoices.length > 0) {
+      const foundInvoice = invoices.find(
+        (inv) => getInvoiceRef(inv) === mapped.invoiceReference || String(inv.id) === String(mapped.invoiceReference)
+      );
+      if (foundInvoice) {
+        const total = toNumber(foundInvoice.total_amount ?? foundInvoice.grand_total);
+        if (total > 0) {
+          setInvoiceValue(`SAR ${total.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
+        }
+      }
+    }
+  }, [isEditMode, selectedCreditNote, routeCreditNote, invoices]);
 
   /* =======================================================
      CUSTOMER CHANGE
@@ -756,18 +844,24 @@ const [status, setStatus] = useState("Price Adjustment");
     if (selected) {
       setBillTo({
         client: getCustomerLabel(selected),
-
         clientId: getCustomerOptionValue(selected),
-
-        address: selected?.address ?? selected?.company_address ?? "",
-
+        address:
+          selected?.billing_address ??
+          selected?.address ??
+          selected?.company_address ??
+          "",
         phone:
+          selected?.phno ??
           selected?.phone ??
           selected?.phone_number ??
           selected?.contact_number ??
           "",
-
-        email: selected?.email ?? selected?.finance_email ?? "",
+        email:
+          selected?.financial_email ??
+          selected?.admin_email ??
+          selected?.email ??
+          selected?.finance_email ??
+          "",
       });
     } else {
       setBillTo({
@@ -784,8 +878,6 @@ const [status, setStatus] = useState("Price Adjustment");
 
   /* =======================================================
      LOAD ORIGINAL INVOICE
-     Accepts the reference directly because state has not
-     updated yet when the dropdown fires onChange.
   ======================================================= */
 
   const handleLoadInvoice = async (ref = invoiceReference) => {
@@ -798,52 +890,98 @@ const [status, setStatus] = useState("Price Adjustment");
     setValidationError("");
 
     try {
+      const selectedInv = invoices.find(
+        (inv) => getInvoiceRef(inv) === invoice || String(inv.id) === invoice,
+      );
+      const invoiceId = selectedInv?.id;
+
       const response = await dispatch(
         fetchInvoiceCreditNoteDetails({
           invoice_reference: invoice,
+          invoice_number: invoice,
+          invoice_id: invoiceId,
+          ...(isEditMode && id ? { exclude_credit_note: id } : {}),
         }),
       ).unwrap();
 
-      const invoiceData = response?.invoice ?? response?.data ?? response;
-
+      const invoiceData = response?.data ?? response?.invoice ?? response;
       const invoiceItems = mapInvoiceItems(response);
 
       if (!invoiceItems.length) {
         setValidationError("No invoice items were found for this invoice.");
-
         return;
       }
 
       setItems(invoiceItems);
 
-      setInvoiceValue(
+      const invVal = toNumber(
         invoiceData?.invoice_value ??
           invoiceData?.total ??
           invoiceData?.total_amount ??
-          "",
+          selectedInv?.total_amount ??
+          0,
+      );
+      const alreadyCred = toNumber(
+        invoiceData?.already_credited_amount ??
+          invoiceData?.already_credited ??
+          0,
+      );
+      const remBal = toNumber(
+        invoiceData?.remaining_balance ?? Math.max(0, invVal - alreadyCred),
       );
 
-      setAlreadyCredited(invoiceData?.already_credited ?? "");
+      setInvoiceValue(`SAR ${invVal.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
+      setAlreadyCredited(`SAR ${alreadyCred.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
+      setRemainingBalance(`SAR ${remBal.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
 
-      setRemainingBalance(invoiceData?.remaining_balance ?? "");
+      const customerObj = invoiceData?.customer;
+      const matchedCust = customers.find(
+        (c) =>
+          String(getCustomerOptionValue(c)) === String(invoiceData?.customer) ||
+          String(c.id) === String(invoiceData?.customer),
+      );
 
-      const customer = invoiceData?.customer;
-
-      setBillTo((previous) => ({
-        ...previous,
-
-        client: customer?.name ?? invoiceData?.customer_name ?? previous.client,
-
-        clientId: invoiceData?.customer_id ?? customer?.id ?? previous.clientId,
-
+      setBillTo({
+        client:
+          invoiceData?.customer_name ||
+          (typeof customerObj === "object" ? customerObj?.customer_name || customerObj?.name : "") ||
+          matchedCust?.customer_name ||
+          selectedInv?.customer_name ||
+          "",
+        clientId:
+          invoiceData?.customer ??
+          invoiceData?.customer_id ??
+          (typeof customerObj === "object" ? customerObj?.id : customerObj) ??
+          matchedCust?.id ??
+          selectedInv?.customer ??
+          null,
         address:
-          invoiceData?.customer_address ??
-          customer?.address ??
-          previous.address,
+          invoiceData?.customer_address ||
+          (typeof customerObj === "object" ? customerObj?.address : "") ||
+          matchedCust?.address ||
+          selectedInv?.customer_address ||
+          "",
+        phone:
+          invoiceData?.customer_phone ||
+          (typeof customerObj === "object" ? customerObj?.phone : "") ||
+          matchedCust?.phone ||
+          selectedInv?.customer_phone ||
+          "",
+        email:
+          invoiceData?.customer_email ||
+          invoiceData?.finance_contact_email ||
+          (typeof customerObj === "object" ? customerObj?.email : "") ||
+          matchedCust?.email ||
+          selectedInv?.customer_email ||
+          "",
+      });
 
-        phone: invoiceData?.customer_phone ?? customer?.phone ?? previous.phone,
-
-        email: invoiceData?.customer_email ?? customer?.email ?? previous.email,
+      setFrom((previous) => ({
+        ...previous,
+        name: invoiceData?.from_company_name || selectedInv?.company_name || previous.name || "Tungston Labs",
+        address: invoiceData?.from_address || selectedInv?.company_address || previous.address || "Tungston Labs, Ullampilly Building,...",
+        phone: invoiceData?.from_phone_number || selectedInv?.company_phone || previous.phone || "+91 97783 77526",
+        email: invoiceData?.from_email || selectedInv?.company_email || previous.email || "info@tungstonlabs.com",
       }));
     } catch (error) {
       console.error("Invoice details loading failed:", error);
@@ -854,18 +992,13 @@ const [status, setStatus] = useState("Price Adjustment");
     const value = event.target.value;
 
     setInvoiceReference(value);
-
     setValidationError("");
 
     if (!value) {
       setItems(getDefaultItems());
-
       setInvoiceValue("");
-
       setAlreadyCredited("");
-
       setRemainingBalance("");
-
       setBillTo({
         client: "",
         clientId: null,
@@ -873,7 +1006,6 @@ const [status, setStatus] = useState("Price Adjustment");
         phone: "",
         email: "",
       });
-
       return;
     }
 
@@ -896,16 +1028,22 @@ const [status, setStatus] = useState("Price Adjustment");
           [field]: value,
         };
 
-        if (field === "creditingNow" || field === "unitPrice") {
+        if (field === "creditingNow" || field === "rate" || field === "unitPrice") {
           const quantity = toNumber(
             field === "creditingNow" ? value : updated.creditingNow,
           );
-
-          const price = toNumber(
-            field === "unitPrice" ? value : updated.unitPrice,
+          const unitRate = toNumber(
+            field === "rate" || field === "unitPrice" ? value : (updated.rate || updated.unitPrice),
           );
+          const vatPct = toNumber(updated.vatPercentage || 15);
+          const base = quantity * unitRate;
+          const vat = base * (vatPct / 100);
 
-          updated.creditTotal = quantity * price;
+          updated.creditingNow = quantity;
+          updated.rate = unitRate;
+          updated.unitPrice = unitRate;
+          updated.vatAmount = vat;
+          updated.creditTotal = base + vat;
         }
 
         return updated;
@@ -918,13 +1056,25 @@ const [status, setStatus] = useState("Price Adjustment");
   ======================================================= */
 
   const subtotal = useMemo(
-    () => items.reduce((sum, item) => sum + toNumber(item.creditTotal), 0),
+    () =>
+      items.reduce(
+        (sum, item) =>
+          sum + (toNumber(item.creditingNow) * toNumber(item.rate || item.unitPrice)),
+        0,
+      ),
     [items],
   );
 
-  const tax = useMemo(() => subtotal * 0.15, [subtotal]);
+  const tax = useMemo(
+    () =>
+      items.reduce(
+        (sum, item) => sum + toNumber(item.vatAmount),
+        0,
+      ),
+    [items],
+  );
 
-  const totalCreditAmount = subtotal + tax;
+  const totalCreditAmount = useMemo(() => subtotal + tax, [subtotal, tax]);
 
   /* =======================================================
      VALIDATION
@@ -935,20 +1085,17 @@ const [status, setStatus] = useState("Price Adjustment");
       billTo?.clientId ?? billTo?.customerId ?? billTo?.client ?? "";
 
     if (customerId === "" || customerId === null || customerId === undefined) {
-      setValidationError("Please select a customer from BILL TO.");
-
+      setValidationError("Please select a customer.");
       return false;
     }
 
     if (!invoiceReference.trim()) {
-      setValidationError("Please select an original invoice.");
-
+      setValidationError("Please select an invoice.");
       return false;
     }
 
     if (!issueDate) {
       setValidationError("Please select an issue date.");
-
       return false;
     }
 
@@ -960,36 +1107,32 @@ const [status, setStatus] = useState("Price Adjustment");
       setValidationError(
         "Please enter a credit quantity for at least one item.",
       );
-
       return false;
     }
 
     const invalidQuantity = creditedItems.some(
-      (item) => toNumber(item.creditingNow) > toNumber(item.availableQty),
+      (item) => toNumber(item.creditingNow) <= 0,
     );
 
     if (invalidQuantity) {
-      setValidationError(
-        "Crediting quantity cannot exceed available quantity.",
-      );
-
+      setValidationError("Crediting quantity must be greater than zero.");
       return false;
     }
 
-    const invalidProduct = creditedItems.some(
-      (item) => !getProductId(item, products),
-    );
+    const overInvoicedItem = creditedItems.find((item) => {
+      const maxLimit = item.invoicedQty > 0 ? item.invoicedQty : (item.availableQty > 0 ? item.availableQty : 0);
+      return maxLimit > 0 && toNumber(item.creditingNow) > toNumber(maxLimit);
+    });
 
-    if (invalidProduct) {
+    if (overInvoicedItem) {
+      const maxLimit = overInvoicedItem.invoicedQty > 0 ? overInvoicedItem.invoicedQty : overInvoicedItem.availableQty;
       setValidationError(
-        "Please enter a valid product for every credited item.",
+        `Crediting quantity for '${overInvoicedItem.product || "item"}' cannot exceed purchased/invoiced quantity (${maxLimit}).`
       );
-
       return false;
     }
 
     setValidationError("");
-
     return true;
   };
 
@@ -1011,20 +1154,14 @@ const [status, setStatus] = useState("Price Adjustment");
       invoiceReference,
       issueDate,
       reason,
-      invoiceValue,
-      alreadyCredited,
-      remainingBalance,
-
-      thisCreditNote: thisCreditNote || totalCreditAmount,
-
+      status,
       from,
       billTo,
       items,
       notes,
       products,
+      invoices,
     });
-
-    console.log("FINAL CREDIT NOTE PAYLOAD:", JSON.stringify(payload, null, 2));
 
     try {
       if (isEditMode) {
@@ -1051,7 +1188,6 @@ const [status, setStatus] = useState("Price Adjustment");
   const handleCancel = () => {
     if (onCancel) {
       onCancel();
-
       return;
     }
 
@@ -1071,21 +1207,23 @@ const [status, setStatus] = useState("Price Adjustment");
      EDIT LOADING
   ======================================================= */
 
+  const pageTitle = isViewOnly
+    ? "View Credit Note"
+    : isEditMode
+      ? "Edit Credit Note"
+      : "Create Credit Note";
+
   if (isEditMode && detailsLoading && !selectedCreditNote) {
     return (
       <OrderContainer>
         <ReusableHeader
-          title="Edit Credit Note"
+          title={pageTitle}
           breadcrumbs={["Sales", "Credit Notes"]}
           showBack
           onBack={() => navigate("/credit-notes")}
         />
 
-        <div
-          style={{
-            padding: 20,
-          }}
-        >
+        <div style={{ padding: 20 }}>
           Loading credit note...
         </div>
       </OrderContainer>
@@ -1099,7 +1237,7 @@ const [status, setStatus] = useState("Price Adjustment");
   return (
     <OrderContainer>
       <ReusableHeader
-        title={isEditMode ? "Edit Credit Note" : "Create Credit Note"}
+        title={pageTitle}
         breadcrumbs={["Sales", "Credit Notes"]}
         showBack
         onBack={() => navigate("/sales/credit-notes")}
@@ -1124,34 +1262,40 @@ const [status, setStatus] = useState("Price Adjustment");
 
       <OrderForm>
         <FormGrid>
-        <FormGroup>
-  <Label>CREDIT NOTE NUMBER</Label>
-
-  <Input
-    placeholder="Auto-generated after save"
-    value={creditNoteNumber}
-    readOnly
-    disabled
-  />
-</FormGroup>
+          {/* ROW 1 */}
+          <FormGroup>
+            <Label>CREDIT NOTE NUMBER</Label>
+            <Input
+              placeholder="Auto-generated after save"
+              value={creditNoteNumber}
+              readOnly
+              disabled
+            />
+          </FormGroup>
 
           <FormGroup>
-            <Label>INVOICE REFERENCE</Label>
-
+            <Label>
+              AGAINST INVOICE <Required />
+            </Label>
             <SelectWrapper>
               <Select
                 value={invoiceReference}
                 onChange={handleInvoiceChange}
-                disabled={isEditMode}
+                disabled={isEditMode || isViewOnly}
               >
                 <option value="">Select Invoice</option>
-
                 {invoices.map((invoice, index) => {
                   const ref = getInvoiceRef(invoice);
+                  const custName =
+                    invoice?.customer_name ||
+                    invoice?.customer?.customer_name ||
+                    invoice?.customer?.name ||
+                    "";
+                  const label = custName ? `${ref} - ${custName}` : ref;
 
                   return (
                     <option key={invoice?.id ?? `${ref}-${index}`} value={ref}>
-                      {ref}
+                      {label}
                     </option>
                   );
                 })}
@@ -1163,95 +1307,99 @@ const [status, setStatus] = useState("Price Adjustment");
                     <option value={invoiceReference}>{invoiceReference}</option>
                   )}
               </Select>
-
               <FiChevronDown />
             </SelectWrapper>
           </FormGroup>
 
           <FormGroup>
-            <Label>ISSUE DATE</Label>
-
+            <Label>
+              ISSUE DATE <Required />
+            </Label>
             <CalendarInput>
               <Input
                 type="date"
                 value={issueDate}
-                onChange={(e) => setIssueDate(e.target.value)}
+                onChange={(e) => !isViewOnly && setIssueDate(e.target.value)}
+                readOnly={isViewOnly}
               />
             </CalendarInput>
           </FormGroup>
 
           <FormGroup>
-            <Label>REASON</Label>
-
+            <Label>
+              REASON <Required />
+            </Label>
             <SelectWrapper>
               <Select
                 value={reason}
-                onChange={(e) => setReason(e.target.value)}
+                onChange={(e) => !isViewOnly && setReason(e.target.value)}
+                disabled={isViewOnly}
               >
-                <option value="Sales Return">Sales Return</option>
                 <option value="Price Adjustment">Price Adjustment</option>
+                <option value="Sales Return">Sales Return</option>
                 <option value="Damaged Goods">Damaged Goods</option>
                 <option value="Discount Adjustment">Discount Adjustment</option>
                 <option value="Pricing Error">Pricing Error</option>
               </Select>
-
               <FiChevronDown />
             </SelectWrapper>
           </FormGroup>
 
+          {/* ROW 2: 3 financial cards matching Figma */}
           <FormGroup>
-            <Label>INVOICE VALUE</Label>
-
+            <Label>INVOICE AMOUNT</Label>
             <Input
-              placeholder="15,000 SAR"
+              placeholder="SAR 0.00"
               value={invoiceValue}
-              onChange={(e) => setInvoiceValue(e.target.value)}
+              readOnly
             />
           </FormGroup>
 
           <FormGroup>
             <Label>ALREADY CREDITED</Label>
-
             <Input
-              placeholder="10,000 SAR"
+              placeholder="SAR 0.00"
               value={alreadyCredited}
-              onChange={(e) => setAlreadyCredited(e.target.value)}
+              readOnly
             />
           </FormGroup>
 
           <FormGroup className="remaining-balance">
-            <Label>REMAINING BALANCE</Label>
-
+            <Label>REMAINING CREDITABLE</Label>
             <Input
-              placeholder="SAR 5,000"
+              placeholder="SAR 0.00"
               value={remainingBalance}
-              onChange={(e) => setRemainingBalance(e.target.value)}
+              readOnly
             />
           </FormGroup>
 
-         <FormGroup>
-  <Label>STATUS</Label>
+          <FormGroup>
+            <Label>STATUS</Label>
+            <SelectWrapper>
+              <Select
+                value={status}
+                onChange={(e) => !isViewOnly && setStatus(e.target.value)}
+                disabled={isViewOnly}
+              >
+                <option value="open">Issued/Pending</option>
+                <option value="closed">Applied</option>
+                <option value="partially_applied">Partially Applied</option>
+                <option value="draft">Draft</option>
+                <option value="cancelled">Cancelled</option>
+              </Select>
+              <FiChevronDown />
+            </SelectWrapper>
+          </FormGroup>
 
-  <SelectWrapper>
-    <Select value={status} onChange={(e) => setStatus(e.target.value)}>
-      <option value="Price Adjustment">Price Adjustment</option>
-      <option value="Sales Return">Sales Return</option>
-      <option value="Damaged Goods">Damaged Goods</option>
-      <option value="Discount Adjustment">Discount Adjustment</option>
-      <option value="Pricing Error">Pricing Error</option>
-    </Select>
-
-    <FiChevronDown />
-  </SelectWrapper>
-</FormGroup>
-
+          {/* ROW 3: FROM / COMPANY */}
           <FormGroup>
             <Label>FROM</Label>
-
             <Input
               placeholder="TUNGSTON LABS"
               value={from.name}
+              readOnly={isViewOnly}
               onChange={(e) =>
+                !isViewOnly &&
                 setFrom((previous) => ({
                   ...previous,
                   name: e.target.value,
@@ -1262,11 +1410,12 @@ const [status, setStatus] = useState("Price Adjustment");
 
           <FormGroup>
             <Label>ADDRESS</Label>
-
             <Input
               placeholder="Tungston Labs, Ullampilly Building,..."
               value={from.address}
+              readOnly={isViewOnly}
               onChange={(e) =>
+                !isViewOnly &&
                 setFrom((previous) => ({
                   ...previous,
                   address: e.target.value,
@@ -1277,11 +1426,12 @@ const [status, setStatus] = useState("Price Adjustment");
 
           <FormGroup>
             <Label>PHONE NUMBER</Label>
-
             <Input
               placeholder="+91 97783 77526"
               value={from.phone}
+              readOnly={isViewOnly}
               onChange={(e) =>
+                !isViewOnly &&
                 setFrom((previous) => ({
                   ...previous,
                   phone: e.target.value,
@@ -1292,11 +1442,12 @@ const [status, setStatus] = useState("Price Adjustment");
 
           <FormGroup>
             <Label>EMAIL ID</Label>
-
             <Input
               placeholder="info@tungstonlabs.com"
               value={from.email}
+              readOnly={isViewOnly}
               onChange={(e) =>
+                !isViewOnly &&
                 setFrom((previous) => ({
                   ...previous,
                   email: e.target.value,
@@ -1305,16 +1456,18 @@ const [status, setStatus] = useState("Price Adjustment");
             />
           </FormGroup>
 
+          {/* ROW 4: CUSTOMER / BILL TO */}
           <FormGroup>
-            <Label>BILL TO</Label>
-
+            <Label>
+              CUSTOMER <Required />
+            </Label>
             <SelectWrapper>
               <Select
                 value={billTo.clientId ?? billTo.client ?? ""}
                 onChange={handleCustomerChange}
+                disabled={isViewOnly}
               >
                 <option value="">Company/Client Name</option>
-
                 {customers.map((customer, index) => {
                   const value = getCustomerOptionValue(customer);
 
@@ -1328,18 +1481,20 @@ const [status, setStatus] = useState("Price Adjustment");
                   );
                 })}
               </Select>
-
               <FiChevronDown />
             </SelectWrapper>
           </FormGroup>
 
           <FormGroup>
-            <Label>ADDRESS</Label>
-
+            <Label>
+              ADDRESS <Required />
+            </Label>
             <Input
-              placeholder="Company/Client ADDRESS"
+              placeholder="Company/Client aDDRESS"
               value={billTo.address}
+              readOnly={isViewOnly}
               onChange={(e) =>
+                !isViewOnly &&
                 setBillTo((previous) => ({
                   ...previous,
                   address: e.target.value,
@@ -1349,12 +1504,15 @@ const [status, setStatus] = useState("Price Adjustment");
           </FormGroup>
 
           <FormGroup>
-            <Label>PHONE NUMBER</Label>
-
+            <Label>
+              PHONE NUMBER <Required />
+            </Label>
             <Input
               placeholder="Company/Client Phone Number"
               value={billTo.phone}
+              readOnly={isViewOnly}
               onChange={(e) =>
+                !isViewOnly &&
                 setBillTo((previous) => ({
                   ...previous,
                   phone: e.target.value,
@@ -1365,11 +1523,12 @@ const [status, setStatus] = useState("Price Adjustment");
 
           <FormGroup>
             <Label>FINANCE CONTACT EMAIL</Label>
-
             <Input
               placeholder="Company/Client Email ID"
               value={billTo.email}
+              readOnly={isViewOnly}
               onChange={(e) =>
+                !isViewOnly &&
                 setBillTo((previous) => ({
                   ...previous,
                   email: e.target.value,
@@ -1379,82 +1538,124 @@ const [status, setStatus] = useState("Price Adjustment");
           </FormGroup>
         </FormGrid>
 
+        {/* ITEMS BEING CREDITED */}
         <OrderItemsHeader>
-          <SectionTitle>RETURNED ITEMS</SectionTitle>
+          <SectionTitle>ITEMS BEING CREDITED</SectionTitle>
         </OrderItemsHeader>
 
         <OrderTableWrapper>
           <OrderTable>
             <thead>
               <tr>
-                <th>SL NO</th>
-
-                <th>Product</th>
-
-                <th>Invoiced Qty</th>
-
-                <th>Already Credited</th>
-
-                <th>Crediting Now</th>
-
-                <th>Unit Price</th>
-
-                <th>Credit Total</th>
+                <th style={{ width: "7%", textAlign: "center" }}>SL No</th>
+                <th style={{ width: "25%", textAlign: "left" }}>Product</th>
+                <th style={{ width: "12%", textAlign: "center" }}>Qty</th>
+                <th style={{ width: "14%", textAlign: "right" }}>Rate</th>
+                <th style={{ width: "12%", textAlign: "center" }}>VAT (%)</th>
+                <th style={{ width: "14%", textAlign: "right" }}>VAT (SAR)</th>
+                <th style={{ width: "16%", textAlign: "right" }}>Amount</th>
               </tr>
             </thead>
 
             <tbody>
               {items.map((item) => (
                 <tr key={item.id}>
-                  <td>{item.slNo}</td>
-
-                  <td>
-                    <input value={item.product} readOnly />
-                  </td>
-
-                  <td>
-                    <input value={item.invoicedQty} readOnly />
-                  </td>
-
-                  <td>
-                    <input value={item.alreadyCredited} readOnly />
-                  </td>
+                  <td style={{ textAlign: "center" }}>{item.slNo}</td>
 
                   <td>
                     <input
-                      type="number"
-                      min="0"
-                      max={item.availableQty}
-                      value={item.creditingNow}
-                      onChange={(e) => {
-                        const value = Number(e.target.value);
-
-                        if (value > Number(item.availableQty)) {
-                          return;
-                        }
-
-                        updateItem(item.id, "creditingNow", value);
+                      value={item.product}
+                      readOnly
+                      style={{
+                        border: "none",
+                        background: "transparent",
+                        width: "100%",
+                        outline: "none",
+                        color: "#333333",
+                        fontSize: "13px",
                       }}
                     />
                   </td>
 
-                  <td>
+                  <td style={{ textAlign: "center" }}>
                     <input
-                      value={`SAR ${toNumber(item.unitPrice).toFixed(2)}`}
-                      readOnly
+                      type="number"
+                      min="0"
+                      max={item.invoicedQty > 0 ? item.invoicedQty : undefined}
+                      value={item.creditingNow}
+                      readOnly={isViewOnly}
+                      disabled={isViewOnly}
+                      onChange={(e) => {
+                        if (isViewOnly) return;
+                        const raw = e.target.value;
+                        const val = raw === "" ? 0 : Number(raw);
+                        if (val < 0) return;
+                        const maxLimit = item.invoicedQty > 0 ? item.invoicedQty : (item.availableQty > 0 ? item.availableQty : 0);
+                        if (maxLimit > 0 && val > maxLimit) {
+                          setValidationError(
+                            `Crediting quantity for '${item.product || "item"}' cannot exceed invoiced quantity (${maxLimit}).`
+                          );
+                          updateItem(item.id, "creditingNow", maxLimit);
+                          return;
+                        }
+                        setValidationError("");
+                        updateItem(item.id, "creditingNow", val);
+                      }}
+                      style={{
+                        width: "60px",
+                        height: "32px",
+                        textAlign: "center",
+                        border: "1px solid #e2e5ea",
+                        borderRadius: "4px",
+                        fontSize: "13px",
+                        background: isViewOnly ? "#f9fafb" : "#ffffff",
+                        cursor: isViewOnly ? "default" : "text",
+                      }}
                     />
                   </td>
 
-                  <td>
+                  <td style={{ textAlign: "right" }}>
                     <input
-                      value={`SAR ${toNumber(item.creditTotal).toLocaleString(
-                        "en-US",
-                        {
-                          maximumFractionDigits: 2,
-                        },
-                      )}`}
+                      value={toNumber(item.rate || item.unitPrice).toFixed(2)}
                       readOnly
+                      style={{
+                        border: "none",
+                        background: "transparent",
+                        width: "100%",
+                        textAlign: "right",
+                        outline: "none",
+                        color: "#333333",
+                        fontSize: "13px",
+                      }}
                     />
+                  </td>
+
+                  <td style={{ textAlign: "center" }}>
+                    <span style={{ fontSize: "13px", color: "#333333" }}>
+                      {toNumber(item.vatPercentage || 15)}%
+                    </span>
+                  </td>
+
+                  <td style={{ textAlign: "right" }}>
+                    <span style={{ fontSize: "13px", color: "#333333" }}>
+                      {toNumber(item.vatAmount).toFixed(2)}
+                    </span>
+                  </td>
+
+                  <td style={{ textAlign: "right" }}>
+                    <strong
+                      style={{
+                        fontSize: "13px",
+                        color: "#d9383a",
+                        fontWeight: "600",
+                      }}
+                    >
+                      SAR{" "}
+                      {toNumber(item.creditTotal).toLocaleString("en-US", {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}
+                    </strong>
                   </td>
                 </tr>
               ))}
@@ -1462,71 +1663,85 @@ const [status, setStatus] = useState("Price Adjustment");
           </OrderTable>
         </OrderTableWrapper>
 
+        {/* SUMMARY & NOTES SECTION */}
         <PaymentSection>
-  <PaymentLeft>
-    <NotesTitle>NOTES &amp; REASON DETAIL</NotesTitle>
+          <PaymentLeft>
+            <NotesTitle>Notes &amp; reason detail</NotesTitle>
+            <CreditNotesTextArea
+              value={notes}
+              readOnly={isViewOnly}
+              onChange={(e) => !isViewOnly && setNotes(e.target.value)}
+              placeholder="Price correction agreed with customer after post-delivery review — original invoice priced at incorrect rate for [Product]. Revised price approved by [Sales Manager name] on [date]. Adjustment applies to lines 1 & 2 only."
+            />
+          </PaymentLeft>
 
-    <CreditNotesTextArea
-      value={notes}
-      onChange={(e) => setNotes(e.target.value)}
-      placeholder="Price correction agreed with customer after post-delivery review — original invoice priced at incorrect rate for [Product]. Revised price approved by [Sales Manager name] on [date]. Adjustment applies to lines 1 & 2 only."
-    />
-  </PaymentLeft>
+          <PaymentRight>
+            <SummaryRow>
+              <span>Subtotal</span>
+              <strong>
+                SAR{" "}
+                {subtotal.toLocaleString("en-US", {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}
+              </strong>
+            </SummaryRow>
 
-  <PaymentRight>
-    <SummaryRow>
-      <span>Subtotal</span>
+            <SummaryRow>
+              <span>Tax (15% VAT)</span>
+              <strong>
+                SAR{" "}
+                {tax.toLocaleString("en-US", {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}
+              </strong>
+            </SummaryRow>
 
-      <strong>
-        SAR{" "}
-        {subtotal.toLocaleString("en-US", {
-          maximumFractionDigits: 2,
-        })}
-      </strong>
-    </SummaryRow>
-
-    <SummaryRow>
-      <span>Tax (15% VAT)</span>
-
-      <strong>
-        SAR{" "}
-        {tax.toLocaleString("en-US", {
-          maximumFractionDigits: 2,
-        })}
-      </strong>
-    </SummaryRow>
-
-    <TotalAmount>
-      <span>Total Credit Amount</span>
-
-      <strong>
-        SAR{" "}
-        {totalCreditAmount.toLocaleString("en-US", {
-          maximumFractionDigits: 2,
-        })}
-      </strong>
-    </TotalAmount>
-  </PaymentRight>
-</PaymentSection>
+            <TotalAmount>
+              <span>Total Credit Amount</span>
+              <strong>
+                SAR{" "}
+                {totalCreditAmount.toLocaleString("en-US", {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}
+              </strong>
+            </TotalAmount>
+          </PaymentRight>
+        </PaymentSection>
 
         <ButtonWrapper>
-          <CancelButton type="button" onClick={handleCancel}>
-            CANCEL
-          </CancelButton>
+          {isViewOnly ? (
+            <>
+              <CancelButton type="button" onClick={handleCancel}>
+                BACK
+              </CancelButton>
+              <PreviewButton type="button" onClick={() => window.print()}>
+                PRINT / EXPORT
+              </PreviewButton>
+            </>
+          ) : (
+            <>
+              <CancelButton type="button" onClick={handleCancel}>
+                CANCEL
+              </CancelButton>
 
-          <PreviewButton
-            type="button"
-            onClick={handleCreate}
-            disabled={submitting}
-          >
-            {submitting
-              ? isEditMode
-                ? "UPDATING..."
-                : "CREATING..."
-              : isEditMode
-                ? "UPDATE"
-                : "CREATE"}
-          </PreviewButton>
+              <PreviewButton
+                type="button"
+                onClick={handleCreate}
+                disabled={submitting}
+              >
+                {submitting
+                  ? isEditMode
+                    ? "UPDATING..."
+                    : "SAVING..."
+                  : isEditMode
+                    ? "UPDATE CREDIT NOTE"
+                    : "SENT FOR APPROVAL"}
+              </PreviewButton>
+            </>
+          )}
         </ButtonWrapper>
       </OrderForm>
     </OrderContainer>

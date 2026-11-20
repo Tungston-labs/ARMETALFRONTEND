@@ -1,5 +1,7 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
+
 import { FiDownload } from "react-icons/fi";
+
 import { useDispatch, useSelector } from "react-redux";
 
 import ReusableHeader from "../../../../Components/ReusableTable/ReusableHeader";
@@ -7,7 +9,6 @@ import ReusableFilter from "../../../../Components/ReusableTable/ReusableFilter"
 import ReusableTable from "../../../../Components/ReusableTable/ReusableTable";
 import ReusablePagination from "../../../../Components/Pagination/ReusablePagination";
 import StatsCards from "../../../../Components/StatsCards/StatsCards";
-import API from "../../../../services/api";
 
 import {
   DateRangeWrapper,
@@ -32,105 +33,214 @@ import {
   fetchPaymentKPI,
   fetchPaymentById,
   createPayment,
-  updatePayment, // ← must exist in paymentSlice (PATCH/PUT /payments/:id)
+  updatePayment,
+  deletePayment,
   exportPayments,
   selectPayments,
   selectPaymentPagination,
   selectPaymentKPI,
   selectPaymentLoading,
   selectPaymentCreateLoading,
+  selectPaymentUpdateLoading,
   selectPaymentError,
 } from "../../../../Redux/finance/Sales/paymentSlice";
 import { getCustomers } from "../../../../Redux/finance/Sales/CustomerSlice";
+import { getInvoices } from "../../../../Redux/finance/Sales/InvoiceSlice";
 import { normalizePaymentPayload } from "./paymentPayload";
 
-/* DEBOUNCE */
+/* =========================================================
+   CURRENT MONTH
+========================================================= */
+
+const getCurrentMonthRange = () => {
+  const today = new Date();
+
+  const year = today.getFullYear();
+  const month = today.getMonth();
+
+  const firstDay = new Date(year, month, 1);
+  const lastDay = new Date(year, month + 1, 0);
+
+  const formatDate = (date) => {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, "0");
+    const d = String(date.getDate()).padStart(2, "0");
+
+    return `${y}-${m}-${d}`;
+  };
+
+  return {
+    start: formatDate(firstDay),
+    end: formatDate(lastDay),
+  };
+};
+
+/* =========================================================
+   DEBOUNCE
+========================================================= */
+
 const useDebouncedValue = (value, delay = 400) => {
   const [debounced, setDebounced] = useState(value);
 
   useEffect(() => {
-    const timer = setTimeout(() => setDebounced(value), delay);
+    const timer = setTimeout(() => {
+      setDebounced(value);
+    }, delay);
+
     return () => clearTimeout(timer);
   }, [value, delay]);
 
   return debounced;
 };
 
-/* PAGE */
+/* =========================================================
+   PAGE
+========================================================= */
+
 const Payment = () => {
   const dispatch = useDispatch();
+
+  const currentMonth = useMemo(() => getCurrentMonthRange(), []);
 
   const payments = useSelector(selectPayments);
   const pagination = useSelector(selectPaymentPagination);
   const kpi = useSelector(selectPaymentKPI);
   const loading = useSelector(selectPaymentLoading);
   const createLoading = useSelector(selectPaymentCreateLoading);
+  const updateLoading = useSelector(selectPaymentUpdateLoading);
   const error = useSelector(selectPaymentError);
   const customers = useSelector((state) => state.customer?.customers || []);
+  const invoices = useSelector((state) => state.invoice?.invoices || []);
 
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
   const [customer, setCustomer] = useState("");
   const [paymentType, setPaymentType] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("");
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
+
+  const [startDate, setStartDate] = useState();
+
+  const [endDate, setEndDate] = useState();
+
   const [currentPage, setCurrentPage] = useState(1);
 
-  // One modal for create / edit / view
-  const [paymentModal, setPaymentModal] = useState({
-    isOpen: false,
-    mode: "create", // "create" | "edit" | "view"
-    payment: null,
-  });
-  const [invoices, setInvoices] = useState([]);
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [selectedPayment, setSelectedPayment] = useState(null);
+  const [isViewOnly, setIsViewOnly] = useState(false);
 
   const debouncedSearch = useDebouncedValue(search);
 
-  useEffect(() => {
-    dispatch(getCustomers());
-  }, [dispatch]);
+  /* =====================================================
+       CUSTOMER OPTIONS
+       Uses customers already returned by the payment
+       listing because the payment API does not expose
+       a separate customer lookup endpoint.
+    ===================================================== */
 
-  /* SHARED FILTER PARAMS */
-  const buildFilterParams = useCallback(
-    () => ({
-      ...(debouncedSearch && { search: debouncedSearch }),
-      ...(status && { status }),
-      ...(customer && { customer }),
-      ...(paymentType && { payment_type: paymentType }),
-      ...(paymentMethod && { payment_method: paymentMethod }),
-      ...(startDate && { payment_date_after: startDate }),
-      ...(endDate && { payment_date_before: endDate }),
-    }),
-    [debouncedSearch, status, customer, paymentType, paymentMethod, startDate, endDate]
+  const customerOptions = useMemo(
+    () =>
+      customers.map((customer) => ({
+        label:
+          customer.name || customer.customer_name || `Customer #${customer.id}`,
+        value: String(customer.id),
+      })),
+    [customers],
   );
 
-  /* FETCH LIST */
   useEffect(() => {
-    dispatch(fetchPayments({ page: currentPage, ...buildFilterParams() }));
-  }, [dispatch, currentPage, buildFilterParams]);
+    dispatch(getCustomers());
+    dispatch(getInvoices());
+  }, [dispatch]);
 
-  /* FETCH KPI */
+  /* =====================================================
+       FETCH PAYMENT LIST
+    ===================================================== */
+
+  useEffect(() => {
+    const params = {
+      page: currentPage,
+    };
+
+    if (debouncedSearch) {
+      params.search = debouncedSearch;
+    }
+
+    if (status) {
+      params.status = status;
+    }
+
+    if (customer) {
+      params.customer = customer;
+    }
+
+    if (paymentType) {
+      params.payment_type = paymentType;
+    }
+
+    if (paymentMethod) {
+      params.payment_method = paymentMethod;
+    }
+
+    if (startDate) {
+      params.payment_date_after = startDate;
+    }
+
+    if (endDate) {
+      params.payment_date_before = endDate;
+    }
+
+    dispatch(fetchPayments(params));
+  }, [
+    dispatch,
+    debouncedSearch,
+    status,
+    customer,
+    paymentType,
+    paymentMethod,
+    startDate,
+    endDate,
+    currentPage,
+  ]);
+
+  /* =====================================================
+       FETCH KPI
+    ===================================================== */
+
   useEffect(() => {
     dispatch(fetchPaymentKPI());
   }, [dispatch]);
 
-  const stats = useMemo(() => buildPaymentStats(kpi), [kpi]);
-  const totalRecords =
-    pagination.totalItems ?? pagination.total ?? payments.length;
+  /* =====================================================
+       KPI CARDS
+    ===================================================== */
 
-  /* DATE HANDLERS */
+  const stats = useMemo(() => buildPaymentStats(kpi), [kpi]);
+const totalRecords =
+  pagination.totalItems ?? pagination.total ?? payments.length;
+  /* =====================================================
+       START DATE
+    ===================================================== */
+
   const handleStartDateChange = (e) => {
     const value = e.target.value;
+
     setCurrentPage(1);
 
     if (!value) {
       setStartDate("");
       return;
     }
+
     setStartDate(value);
-    if (endDate && value > endDate) setEndDate(value);
+
+    if (endDate && value > endDate) {
+      setEndDate(value);
+    }
   };
+
+  /* =====================================================
+       END DATE
+    ===================================================== */
 
   const handleEndDateChange = (e) => {
     const value = e.target.value;
@@ -140,105 +250,228 @@ const Payment = () => {
       setCurrentPage(1);
       return;
     }
-    if (startDate && value < startDate) return;
+
+    if (startDate && value < startDate) {
+      return;
+    }
 
     setEndDate(value);
     setCurrentPage(1);
   };
 
-  /* MODAL OPEN / CLOSE */
-  const closeModal = () => {
-    setPaymentModal({ isOpen: false, mode: "create", payment: null });
-    setInvoices([]);
+  /* =====================================================
+       RECORD PAYMENT BUTTON
+    ===================================================== */
+
+  const handleRecordPayment = () => {
+    setSelectedPayment(null);
+    setIsViewOnly(false);
+    setIsPaymentModalOpen(true);
   };
 
-  const handleRecordPayment = () =>
-    setPaymentModal({ isOpen: true, mode: "create", payment: null });
+  const handleEditPayment = (payment) => {
+    setSelectedPayment(payment);
+    setIsViewOnly(false);
+    setIsPaymentModalOpen(true);
+  };
 
-  // Fetch the full record when possible; fall back to the table row
-  const openExisting = useCallback(
-    async (row, mode) => {
-      if (!row?.id) return;
+  const handleCloseModal = () => {
+    setIsPaymentModalOpen(false);
+    setSelectedPayment(null);
+    setIsViewOnly(false);
+  };
 
-      let payment = row;
-      try {
-        const full = await dispatch(fetchPaymentById(row.id)).unwrap();
-        payment = full?.data ?? full ?? row;
-      } catch (err) {
-        console.error("Could not load payment details, using row data", err);
-      }
+  /* =====================================================
+       SAVE PAYMENT
+    ===================================================== */
 
-      setPaymentModal({ isOpen: true, mode, payment });
-    },
-    [dispatch]
-  );
-
-  const handleView = useCallback((row) => openExisting(row, "view"), [openExisting]);
-  const handleEdit = useCallback((row) => openExisting(row, "edit"), [openExisting]);
-
-  // The modal calls this when a customer is chosen or an existing payment opens
-  const handleCustomerChange = useCallback(async (customerId) => {
-    if (!customerId) {
-      setInvoices([]);
-      return;
-    }
-    try {
-      const res = await API.get("/finance/invoice/", {
-        // ← adjust to your invoice endpoint
-        params: { customer: customerId, page_size: 100 },
-      });
-      const rows = res.data?.results || res.data || [];
-      setInvoices(Array.isArray(rows) ? rows : []);
-    } catch {
-      setInvoices([]);
-    }
-  }, []);
-
-  /* SAVE (create or update) */
   const handleSavePayment = async (formData) => {
     const payload = normalizePaymentPayload(formData);
-    const isEdit = paymentModal.mode === "edit";
 
     try {
-      if (isEdit) {
-        await dispatch(
-          updatePayment({ id: paymentModal.payment.id, data: payload })
+      let result;
+      if (selectedPayment?.id) {
+        result = await dispatch(
+          updatePayment({ id: selectedPayment.id, data: payload })
         ).unwrap();
       } else {
-        await dispatch(createPayment(payload)).unwrap();
-        setCurrentPage(1);
+        result = await dispatch(createPayment(payload)).unwrap();
       }
 
-      closeModal();
+      if (result) {
+        setIsPaymentModalOpen(false);
+        setSelectedPayment(null);
+        setIsViewOnly(false);
+      }
+
+      setCurrentPage(1);
+
       dispatch(
         fetchPayments({
-          page: isEdit ? currentPage : 1,
-          ...buildFilterParams(),
-        })
+          page: 1,
+          ...(debouncedSearch
+            ? {
+                search: debouncedSearch,
+              }
+            : {}),
+          ...(status
+            ? {
+                status,
+              }
+            : {}),
+          ...(customer
+            ? {
+                customer,
+              }
+            : {}),
+          ...(paymentType
+            ? {
+                payment_type: paymentType,
+              }
+            : {}),
+          ...(paymentMethod
+            ? {
+                payment_method: paymentMethod,
+              }
+            : {}),
+          ...(startDate
+            ? {
+                payment_date_after: startDate,
+              }
+            : {}),
+          ...(endDate
+            ? {
+                payment_date_before: endDate,
+              }
+            : {}),
+        }),
       );
+
       dispatch(fetchPaymentKPI());
+      dispatch(getInvoices());
     } catch (err) {
-      console.error("Saving payment failed:", err);
+      console.error("Payment save failed:", err);
     }
   };
 
-  /* EXPORT */
+  /* =====================================================
+       EXPORT
+    ===================================================== */
+
   const handleExport = () => {
     dispatch(
       exportPayments({
-        ...buildFilterParams(),
-        ...(search && { search }), // export uses the raw (non-debounced) search
+        ...(search
+          ? {
+              search,
+            }
+          : {}),
+        ...(status
+          ? {
+              status,
+            }
+          : {}),
+        ...(customer
+          ? {
+              customer,
+            }
+          : {}),
+        ...(paymentType
+          ? {
+              payment_type: paymentType,
+            }
+          : {}),
+        ...(paymentMethod
+          ? {
+              payment_method: paymentMethod,
+            }
+          : {}),
+        ...(startDate
+          ? {
+              payment_date_after: startDate,
+            }
+          : {}),
+        ...(endDate
+          ? {
+              payment_date_before: endDate,
+            }
+          : {}),
+      }),
+    );
+  };
+
+  /* =====================================================
+       VIEW / DELETE / DOWNLOAD PAYMENT
+    ===================================================== */
+
+  const handlePaymentInfo = (payment) => {
+    if (!payment?.id) return;
+    setSelectedPayment(payment);
+    setIsViewOnly(true);
+    setIsPaymentModalOpen(true);
+  };
+
+  const handleDeletePayment = async (payment) => {
+    if (!payment?.id) return;
+    const confirmed = window.confirm(
+      `Are you sure you want to delete payment ${payment.receipt_number || payment.receipt_no || ""}?`
+    );
+    if (!confirmed) return;
+
+    try {
+      await dispatch(deletePayment(payment.id)).unwrap();
+      dispatch(
+        fetchPayments({
+          page: currentPage,
+          ...(debouncedSearch ? { search: debouncedSearch } : {}),
+          ...(status ? { status } : {}),
+          ...(customer ? { customer } : {}),
+          ...(paymentType ? { payment_type: paymentType } : {}),
+          ...(paymentMethod ? { payment_method: paymentMethod } : {}),
+          ...(startDate ? { payment_date_after: startDate } : {}),
+          ...(endDate ? { payment_date_before: endDate } : {}),
+        })
+      );
+      dispatch(fetchPaymentKPI());
+      dispatch(getInvoices());
+    } catch (err) {
+      console.error("Failed to delete payment:", err);
+      alert(
+        typeof err === "string"
+          ? err
+          : err?.detail || err?.message || "Failed to delete payment."
+      );
+    }
+  };
+
+  const handleDownloadPayment = (payment) => {
+    if (!payment?.id) return;
+    dispatch(
+      exportPayments({
+        id: payment.id,
       })
     );
   };
 
-  /* TABLE COLUMNS */
+  /* =====================================================
+       TABLE COLUMNS
+    ===================================================== */
+
   const columns = useMemo(
-    () => getPaymentColumns({ onView: handleView, onEdit: handleEdit }),
-    [handleView, handleEdit]
+    () =>
+      getPaymentColumns({
+        onInfo: handlePaymentInfo,
+        onEdit: handleEditPayment,
+        onDelete: handleDeletePayment,
+        onDownload: handleDownloadPayment,
+      }),
+    [currentPage, debouncedSearch, status, customer, paymentType, paymentMethod, startDate, endDate],
   );
 
-  /* FILTER HANDLERS */
+  /* =====================================================
+       FILTER HANDLERS
+    ===================================================== */
+
   const handleSearch = (value) => {
     setSearch(value);
     setCurrentPage(1);
@@ -246,7 +479,13 @@ const Payment = () => {
 
   const handleStatus = (value) => {
     const match = PAYMENT_STATUS_OPTIONS.find((item) => item.label === value);
+
     setStatus(match?.value || "");
+    setCurrentPage(1);
+  };
+
+  const handleCustomer = (value) => {
+    setCustomer(value);
     setCurrentPage(1);
   };
 
@@ -282,7 +521,9 @@ const Payment = () => {
               max={endDate || undefined}
               aria-label="Start date"
             />
+
             <DateSeparator>-</DateSeparator>
+
             <DateInput
               type="date"
               value={endDate}
@@ -306,6 +547,7 @@ const Payment = () => {
         onStatus={handleStatus}
         showStatus
         filters={[
+          
           {
             key: "paymentType",
             value: paymentType,
@@ -329,26 +571,25 @@ const Payment = () => {
         ]}
       />
 
-      <ReusableTable columns={columns} data={payments} loading={loading} />
+      <ReusableTable columns={columns} data={payments} loading={loading}/>
 
       <ReusablePagination
         currentPage={pagination.currentPage || currentPage}
         totalPages={pagination.totalPages || 1}
         onPageChange={setCurrentPage}
-        totalRecords={totalRecords}
+         totalRecords={totalRecords}
       />
 
       <PaymentModal
-        isOpen={paymentModal.isOpen}
-        mode={paymentModal.mode}
-        initialData={paymentModal.payment}
-        onClose={closeModal}
+        isOpen={isPaymentModalOpen}
+        onClose={handleCloseModal}
         onSave={handleSavePayment}
-        submitting={createLoading}
+        submitting={createLoading || updateLoading}
         error={error}
         customers={customers}
         invoices={invoices}
-        onCustomerChange={handleCustomerChange}
+        initialData={selectedPayment}
+        isViewOnly={isViewOnly}
       />
     </div>
   );

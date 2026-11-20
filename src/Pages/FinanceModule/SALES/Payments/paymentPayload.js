@@ -29,25 +29,29 @@ export const normalizePaymentPayload = (formData = {}) => {
       ? parsedCustomerId
       : customerName || null;
 
-  const paymentCategory = toSnake(formData.paymentCategory); // invoice_ref | opening_balance
-  const isInvoice = paymentCategory === "invoice_ref";
+  const paymentCategory = toSnake(formData.paymentCategory);
+  const isInvoice = Boolean(formData.invoiceId) || paymentCategory === "invoice_ref";
 
   return {
     customer: customerValue,
     customer_id: Number.isFinite(parsedCustomerId) ? parsedCustomerId : null,
     customer_name: customerName,
 
-    payment_category: paymentCategory,
+    payment_category: isInvoice ? "invoice_ref" : (paymentCategory || "advance_payment"),
     invoice: isInvoice ? toNumberOrNull(formData.invoiceId) : null,
     invoice_no: isInvoice ? formData.invoiceNo || "" : "",
 
     invoice_amount: toNumberOrNull(formData.invoiceAmount),
     outstanding_amount: toNumberOrNull(formData.outstandingAmount),
     payment_date: formData.paymentDate,
-    payment_type: toSnake(formData.paymentType),
-    payment_method: toSnake(formData.paymentMethod),
+    payment_type: toSnake(formData.paymentType || "full_payment"),
+    payment_method: toSnake(formData.paymentMethod || "bank_transfer"),
     amount_received: toNumberOrNull(formData.amountReceived),
     reference_number: formData.referenceNumber || "",
+    bank_name: String(formData.bankName || "").trim(),
+    account_holder: String(formData.accountHolder || "").trim(),
+    iban: String(formData.iban || "").trim(),
     notes: formData.notes || "",
+    status: "completed",
   };
 };
