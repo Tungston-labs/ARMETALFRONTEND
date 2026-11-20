@@ -40,11 +40,6 @@ import {
   selectBillExportLoading,
 } from "../../../../Redux/finance/purchases/BillSlice";
 
-import {
-  getVendors,
-  selectVendors,
-} from "../../../../Redux/finance/purchases/vendorsSlice";
-
 /* =========================================================
    CURRENT MONTH
 ========================================================= */
@@ -123,8 +118,6 @@ const Bill = () => {
 
   const exportLoading = useSelector(selectBillExportLoading);
 
-  const vendors = useSelector(selectVendors);
-
   /* =======================================================
      FILTERS
   ======================================================= */
@@ -132,8 +125,6 @@ const Bill = () => {
   const [search, setSearch] = useState("");
 
   const [status, setStatus] = useState("");
-
-  const [vendor, setVendor] = useState("");
 
   const [dueDate, setDueDate] = useState("");
 
@@ -150,28 +141,6 @@ const Bill = () => {
   const debouncedSearch = useDebouncedValue(search);
 
   /* =======================================================
-     VENDORS
-  ======================================================= */
-
-  useEffect(() => {
-    dispatch(getVendors());
-  }, [dispatch]);
-
-  const vendorOptions = useMemo(
-    () =>
-      vendors.map((vendorItem) => ({
-        label:
-          vendorItem.name ||
-          vendorItem.vendor_name ||
-          vendorItem.company_name ||
-          `Vendor #${vendorItem.id}`,
-
-        value: String(vendorItem.id),
-      })),
-    [vendors],
-  );
-
-  /* =======================================================
      BILL LIST
   ======================================================= */
 
@@ -183,10 +152,6 @@ const Bill = () => {
 
     if (debouncedSearch) {
       params.search = debouncedSearch;
-    }
-
-    if (vendor) {
-      params.vendor = vendor;
     }
 
     if (status) {
@@ -209,7 +174,6 @@ const Bill = () => {
   }, [
     dispatch,
     debouncedSearch,
-    vendor,
     status,
     dueDate,
     startDate,
@@ -365,10 +329,6 @@ const Bill = () => {
       params.search = debouncedSearch;
     }
 
-    if (vendor) {
-      params.vendor = vendor;
-    }
-
     if (status) {
       params.payment_status = status;
     }
@@ -481,22 +441,6 @@ const Bill = () => {
         }}
         showStatus
         filters={[
-          {
-            key: "vendor",
-
-            value: vendor,
-
-            onChange: (value) => {
-              setVendor(value);
-
-              setCurrentPage(1);
-            },
-
-            options: vendorOptions,
-
-            placeholder: "All Customer",
-          },
-
           {
             key: "dueDate",
 
