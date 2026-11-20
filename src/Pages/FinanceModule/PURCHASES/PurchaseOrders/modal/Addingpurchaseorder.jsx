@@ -250,7 +250,7 @@ const AddingPurchaseOrder = () => {
                 onChange={(e) => setField("creditLimit", e.target.value)}
               />
             </FormGroup>
-
+<br/>
             <FormGroup>
               <Label>FROM</Label>
               <Input
@@ -290,7 +290,7 @@ const AddingPurchaseOrder = () => {
                 onChange={(e) => setField("fromEmail", e.target.value)}
               />
             </FormGroup>
-            <br />
+          
             <SelectField
               label="VENDOR NAME"
               name="vendorId"
