@@ -1,5 +1,13 @@
 import styled from "styled-components";
 
+/* Breakpoints */
+const bp = {
+    xl: "@media (max-width: 1280px)",
+    lg: "@media (max-width: 1024px)",
+    md: "@media (max-width: 768px)",
+    sm: "@media (max-width: 480px)",
+};
+
 export const InvoiceContainer = styled.div`
     width: 100%;
     min-height: 100%;
@@ -9,11 +17,24 @@ export const InvoiceContainer = styled.div`
     background: #ffffff;
     border: 1px solid #eeeeee;
     border-radius: 6px;
+
+    ${bp.md} {
+        padding: 14px;
+    }
+
+    ${bp.sm} {
+        padding: 10px;
+        border-radius: 4px;
+    }
 `;
 
 export const InvoiceForm = styled.div`
     width: 100%;
     margin-top: 22px;
+
+    ${bp.sm} {
+        margin-top: 16px;
+    }
 `;
 
 export const SectionTitle = styled.h3`
@@ -34,6 +55,10 @@ export const SectionTitle = styled.h3`
         width: 15px;
         height: 15px;
     }
+
+    ${bp.sm} {
+        font-size: 14px;
+    }
 `;
 
 /* =========================
@@ -47,7 +72,22 @@ export const FormGrid = styled.div`
     grid-template-columns: repeat(4, minmax(0, 1fr));
 
     column-gap: 24px;
-    row-gap: 10px;
+    row-gap: 14px;
+
+    ${bp.xl} {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        column-gap: 20px;
+    }
+
+    ${bp.lg} {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        column-gap: 16px;
+    }
+
+    ${bp.sm} {
+        grid-template-columns: minmax(0, 1fr);
+        row-gap: 12px;
+    }
 `;
 
 export const FormGroup = styled.div`
@@ -66,11 +106,15 @@ export const Label = styled.label`
     font-weight: 400;
     line-height: 18px;
 
+    ${bp.sm} {
+        font-size: 13px;
+        margin-bottom: 5px;
+    }
 `;
 
 export const Input = styled.input`
     width: 100%;
-    height: 38px;
+    height: 40px;
 
     box-sizing: border-box;
 
@@ -98,6 +142,11 @@ export const Input = styled.input`
     &:focus {
         border-color: #3049a3;
     }
+
+    /* 16px stops iOS from zooming in when an input is focused */
+    ${bp.sm} {
+        font-size: 16px;
+    }
 `;
 
 /* =========================
@@ -107,12 +156,6 @@ export const Input = styled.input`
 export const CalendarInput = styled.div`
     position: relative;
     width: 100%;
-
-    /* input {
-        padding-right: 42px;
-    } */
-
-   
 `;
 
 /* =========================
@@ -167,6 +210,10 @@ export const Select = styled.select`
     &:focus {
         border-color: #3049a3;
     }
+
+    ${bp.sm} {
+        font-size: 16px;
+    }
 `;
 
 /* =========================
@@ -182,6 +229,12 @@ export const InvoiceItemsHeader = styled.div`
     display: flex;
     align-items: center;
     justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+
+    ${bp.sm} {
+        margin-top: 22px;
+    }
 `;
 
 export const AddItemButton = styled.button`
@@ -206,6 +259,7 @@ export const AddItemButton = styled.button`
     font-weight: 600;
 
     cursor: pointer;
+    white-space: nowrap;
 
     transition: background 0.2s ease;
 
@@ -215,7 +269,7 @@ export const AddItemButton = styled.button`
     }
 
     &:hover {
-        background: #F48211;
+        background: #d9720c;
     }
 `;
 
@@ -225,8 +279,10 @@ export const AddItemButton = styled.button`
 
 export const InvoiceTableWrapper = styled.div`
     width: 100%;
+    max-width: 100%;
 
     overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
 
     border: 1px solid #e5e7eb;
     border-radius: 5px;
@@ -236,7 +292,7 @@ export const InvoiceTableWrapper = styled.div`
 
 export const InvoiceTable = styled.table`
     width: 100%;
-    min-width: 1050px;
+    min-width: 1050px; /* keeps columns readable; the wrapper scrolls sideways */
 
     border-collapse: collapse;
     table-layout: fixed;
@@ -360,6 +416,10 @@ export const InvoiceTable = styled.table`
             color: #9ca3af;
         }
     }
+
+    ${bp.md} {
+        min-width: 960px;
+    }
 `;
 
 export const DeleteButton = styled.button`
@@ -401,6 +461,10 @@ export const PaymentSection = styled.div`
     display: flex;
     justify-content: flex-end;
     margin-top: 28px;
+
+    ${bp.sm} {
+        margin-top: 20px;
+    }
 `;
 
 export const PaymentLeft = styled.div`
@@ -412,8 +476,7 @@ export const PaymentGrid = styled.div`
     width: 100%;
 
     display: grid;
-    /* grid-template-columns: repeat(2, minmax(0, 1fr)); */
- justify-content:end;
+    justify-content: end;
     column-gap: 18px;
     row-gap: 16px;
 
@@ -424,6 +487,14 @@ export const PaymentRight = styled.div`
     width: 100%;
     max-width: 50%;
     padding-top: 2px;
+
+    ${bp.lg} {
+        max-width: 60%;
+    }
+
+    ${bp.md} {
+        max-width: 100%;
+    }
 `;
 
 export const SummaryRow = styled.div`
@@ -453,11 +524,16 @@ export const SummaryRow = styled.div`
     .discount {
         color: #20a34a;
     }
+
+    ${bp.sm} {
+        gap: 10px;
+        font-size: 13px;
+    }
 `;
 
 export const TotalAmount = styled.div`
     width: 100%;
-    height: 42px;
+    min-height: 42px;
 
     margin-top: 10px;
     padding: 0 16px;
@@ -467,6 +543,7 @@ export const TotalAmount = styled.div`
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: 10px;
 
     border-radius: 5px;
 
@@ -480,6 +557,11 @@ export const TotalAmount = styled.div`
     strong {
         font-size: 14px;
         font-weight: 600;
+        white-space: nowrap;
+    }
+
+    ${bp.sm} {
+        padding: 0 12px;
     }
 `;
 
@@ -497,11 +579,22 @@ export const ButtonWrapper = styled.div`
     gap: 12px;
 
     margin-top: 30px;
+
+    ${bp.sm} {
+        margin-top: 22px;
+
+        button {
+            flex: 1;
+            width: auto;
+        }
+    }
 `;
 
 export const CancelButton = styled.button`
-    width: 100px;
+    min-width: 100px;
     height: 38px;
+
+    padding: 0 16px;
 
     border: 1px solid #3049a3;
     border-radius: 4px;
@@ -521,8 +614,10 @@ export const CancelButton = styled.button`
 `;
 
 export const PreviewButton = styled.button`
-    width: 100px;
+    min-width: 100px;
     height: 38px;
+
+    padding: 0 16px;
 
     border: 1px solid #3049a3;
     border-radius: 4px;
@@ -536,13 +631,18 @@ export const PreviewButton = styled.button`
 
     cursor: pointer;
 
-    &:hover {
+    &:hover:not(:disabled) {
         background: #263b88;
+    }
+
+    &:disabled {
+        opacity: 0.7;
+        cursor: not-allowed;
     }
 `;
 
 /* =========================
-   RESPONSIVE
+   UPLOAD
 ========================= */
 
 export const UploadBox = styled.div`
@@ -568,4 +668,3 @@ export const UploadBox = styled.div`
         height: 16px;
     }
 `;
-

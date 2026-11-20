@@ -32,7 +32,6 @@ import ReusableHeader from "../../../../../Components/ReusableTable/ReusableHead
 import useAddingPurchaseOrder, {
   PAYMENT_TERMS,
   ORDER_STATUSES,
-  SHIPPING_METHODS,
 } from "./Useaddingpurchaseorder";
 
 const errorStyle = { borderColor: "#c0392b" };
@@ -174,16 +173,6 @@ const AddingPurchaseOrder = () => {
       ) : (
         <InvoiceForm>
           <FormGrid>
-            <SelectField
-              label="VENDOR NAME"
-              name="vendorId"
-              value={form.vendorId}
-              onChange={handleVendorChange}
-              options={vendorOptions}
-              placeholder="Select Vendor"
-              error={errors.vendorId}
-            />
-
             <FormGroup>
               <Label>PO NUMBER</Label>
               <Input
@@ -191,16 +180,6 @@ const AddingPurchaseOrder = () => {
                 placeholder="Auto-generated"
                 value={form.poNumber}
                 readOnly
-              />
-            </FormGroup>
-
-            <FormGroup>
-              <Label>PR REFERENCE</Label>
-              <Input
-                name="prReference"
-                placeholder="PR-2026-001"
-                value={form.prReference}
-                onChange={(e) => setField("prReference", e.target.value)}
               />
             </FormGroup>
 
@@ -233,6 +212,16 @@ const AddingPurchaseOrder = () => {
             </FormGroup>
 
             <SelectField
+              label="STATUS"
+              name="orderStatus"
+              value={form.orderStatus}
+              onChange={onSelect}
+              options={ORDER_STATUSES}
+              placeholder="Select Order Status"
+              error={errors.orderStatus}
+            />
+
+            <SelectField
               label="PAYMENT TERMS"
               name="paymentTerm"
               value={form.paymentTerm}
@@ -240,16 +229,6 @@ const AddingPurchaseOrder = () => {
               options={PAYMENT_TERMS}
               placeholder="Select Payment Terms"
               error={errors.paymentTerm}
-            />
-
-            <SelectField
-              label="ORDER STATUS"
-              name="orderStatus"
-              value={form.orderStatus}
-              onChange={onSelect}
-              options={ORDER_STATUSES}
-              placeholder="Select Order Status"
-              error={errors.orderStatus}
             />
 
             <SelectField
@@ -262,15 +241,96 @@ const AddingPurchaseOrder = () => {
               error={errors.warehouse}
             />
 
+            <FormGroup>
+              <Label>CREDIT LIMIT</Label>
+              <Input
+                name="creditLimit"
+                placeholder="Credit limit"
+                value={form.creditLimit}
+                onChange={(e) => setField("creditLimit", e.target.value)}
+              />
+            </FormGroup>
+
+            <FormGroup>
+              <Label>FROM</Label>
+              <Input
+                name="fromName"
+                placeholder="From"
+                value={form.fromName}
+                onChange={(e) => setField("fromName", e.target.value)}
+              />
+            </FormGroup>
+
+            <FormGroup>
+              <Label>ADDRESS</Label>
+              <Input
+                name="fromAddress"
+                placeholder="Address"
+                value={form.fromAddress}
+                onChange={(e) => setField("fromAddress", e.target.value)}
+              />
+            </FormGroup>
+
+            <FormGroup>
+              <Label>PHONE NUMBER</Label>
+              <Input
+                name="fromPhone"
+                placeholder="Phone number"
+                value={form.fromPhone}
+                onChange={(e) => setField("fromPhone", e.target.value)}
+              />
+            </FormGroup>
+
+            <FormGroup>
+              <Label>EMAIL ID</Label>
+              <Input
+                name="fromEmail"
+                placeholder="Email ID"
+                value={form.fromEmail}
+                onChange={(e) => setField("fromEmail", e.target.value)}
+              />
+            </FormGroup>
+            <br />
             <SelectField
-              label="SHIPPING METHOD"
-              name="shippingMethod"
-              value={form.shippingMethod}
-              onChange={onSelect}
-              options={SHIPPING_METHODS}
-              placeholder="Select Shipping Method"
-              error={errors.shippingMethod}
+              label="VENDOR NAME"
+              name="vendorId"
+              value={form.vendorId}
+              onChange={handleVendorChange}
+              options={vendorOptions}
+              placeholder="Select Vendor"
+              error={errors.vendorId}
             />
+
+            {/* Filled automatically when a vendor is selected */}
+            <FormGroup>
+              <Label>ADDRESS</Label>
+              <Input
+                name="vendorAddress"
+                placeholder="Vendor address"
+                value={form.vendorAddress}
+                readOnly
+              />
+            </FormGroup>
+
+            <FormGroup>
+              <Label>PHONE NUMBER</Label>
+              <Input
+                name="vendorPhone"
+                placeholder="Vendor phone"
+                value={form.vendorPhone}
+                readOnly
+              />
+            </FormGroup>
+
+            <FormGroup>
+              <Label>FINANCE CONTACT EMAIL</Label>
+              <Input
+                name="financeEmail"
+                placeholder="Finance email"
+                value={form.financeEmail}
+                readOnly
+              />
+            </FormGroup>
           </FormGrid>
 
           {/* ---------- Items ---------- */}
@@ -415,25 +475,10 @@ const AddingPurchaseOrder = () => {
               <SummaryRow>
                 <span>Discount</span>
                 <strong className="discount">{summary.discount}</strong>
-                {/* <SummaryInput
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  placeholder="0.00"
-                  value={form.discount}
-                  onChange={(e) => setField("discount", e.target.value)}
-                /> */}
               </SummaryRow>
               <SummaryRow>
                 <span>Round Off</span>
                 <strong>{summary.roundOff}</strong>
-                {/* <SummaryInput
-                  type="number"
-                  step="0.01"
-                  placeholder="0.00"
-                  value={form.roundOff}
-                  onChange={(e) => setField("roundOff", e.target.value)}
-                /> */}
               </SummaryRow>
               <TotalAmount>
                 <span>TOTAL AMOUNT</span>

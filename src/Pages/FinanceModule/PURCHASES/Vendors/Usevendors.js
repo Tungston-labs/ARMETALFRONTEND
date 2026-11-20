@@ -147,6 +147,38 @@ const handleViewVendor = useCallback(
     (row) => navigate(`/purchase/vendors/${row.id}`),
     [navigate]
 );
+
+const handleDownloadVendor = useCallback((row) => {
+    const fields = [
+        ["Code", "vendor_id"],
+        ["Vendor Name", "name"],
+        ["Vendor Group", "vendor_type_display"],
+        ["Phone Number", "phno"],
+        ["Payment Terms", "payment_term_display"],
+        ["Credit Limit", "credit_limit"],
+        ["Current Balance", "opening_balance"],
+        ["Currency", "currency"],
+        ["Status", "client_status"],
+        ["Admin Email", "admin_email"],
+        ["Financial Email", "financial_email"],
+        ["Technical Email", "technical_email"],
+        ["City", "city"],
+        ["Country", "country"],
+    ];
+    const esc = (v) => `"${String(v ?? "").replace(/"/g, '""')}"`;
+    const csv = [
+        fields.map(([label]) => esc(label)).join(","),
+        fields.map(([, key]) => esc(row[key])).join(","),
+    ].join("\n");
+
+    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `vendor-${row.vendor_id || row.id}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+}, []);
     // ---- Modal handlers ----
 
     const handleAddVendor = () => {
@@ -242,9 +274,10 @@ const handleViewVendor = useCallback(
         getVendorColumns({
             onView: handleViewVendor,
             onEdit: handleEditVendor,
+            onDownload: handleDownloadVendor,
             onDelete: handleDeleteVendor,
         }),
-    [handleViewVendor, handleEditVendor, handleDeleteVendor]
+    [handleViewVendor, handleEditVendor, handleDownloadVendor, handleDeleteVendor]
 );
 
     return {

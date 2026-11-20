@@ -10,10 +10,10 @@ export const CLIENT_STATUS_OPTIONS = [
 export const VENDOR_TYPE_OPTIONS = [
     { label: "Equipment", value: "equipment" },
     { label: "Telecom", value: "telecom" },
-        { label: "Networking", value: "networking" },
-            { label: "Software", value: "software" },
-                { label: "Services", value: "services" },
-                      { label: "Other", value: "other" },
+    { label: "Networking", value: "networking" },
+    { label: "Software", value: "software" },
+    { label: "Services", value: "services" },
+    { label: "Other", value: "other" },
 
 ];
 

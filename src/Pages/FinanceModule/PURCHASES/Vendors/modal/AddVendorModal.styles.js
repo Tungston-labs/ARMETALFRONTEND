@@ -275,3 +275,8 @@ export const SaveButton = styled.button`
     width: 100%;
   }
 `;
+
+export const RequiredMark = styled.span`
+  color: #d32f2f;
+  margin-left: 3px;
+`;
