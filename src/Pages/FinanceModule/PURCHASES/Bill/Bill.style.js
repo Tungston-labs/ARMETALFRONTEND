@@ -1,91 +1,100 @@
 import styled from "styled-components";
 
 export const DateRangeWrapper = styled.div`
-  display: flex;
-  align-items: center;
+    display: flex;
+    align-items: center;
+    gap: 10px;
 `;
 
 export const DatePickerContainer = styled.div`
-  display: flex;
-  align-items: center;
+    display: flex;
+    align-items: center;
+    gap: 8px;
 
-  height: 32px;
+    width: 280px;
+    height: 38px;
+    padding: 0 10px;
 
-  border: 1px solid #e2e2e2;
-  border-radius: 5px;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    background: #ffffff;
 
-  background: #ffffff;
-
-  overflow: hidden;
+    box-sizing: border-box;
 `;
 
 export const DateInput = styled.input`
-  width: 150px;
+    flex: 1;
+    min-width: 0;
+    width: 100%;
+    height: 100%;
 
-  height: 32px;
+    border: none;
+    outline: none;
+    background: transparent;
 
-  border: none;
-  outline: none;
-
-  padding: 0 9px;
-
-  font-size: 12px;
-  font-family: inherit;
-
-  color: #222222;
-
-  background: transparent;
-
-  &::-webkit-calendar-picker-indicator {
+    color: #374151;
+    font-size: 13px;
     cursor: pointer;
-  }
+
+    &::-webkit-calendar-picker-indicator {
+        cursor: pointer;
+    }
 `;
 
 export const DateSeparator = styled.span`
-  font-size: 12px;
+    flex-shrink: 0;
 
-  color: #777777;
-
-  padding: 0 2px;
+    color: #6b7280;
+    font-size: 13px;
+    font-weight: 500;
 `;
 
 export const ExportButton = styled.button`
-  height: 32px;
+    height: 38px;
+    min-width: 90px;
 
-  display: flex;
-  align-items: center;
-  justify-content: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
 
-  gap: 6px;
+    padding: 0 14px;
 
-  padding: 0 12px;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
 
-  border: 1px solid #e2e2e2;
+    background: #ffffff;
+    color: #374151;
 
-  border-radius: 5px;
+    font-size: 13px;
+    font-weight: 500;
 
-  background: #ffffff;
+    cursor: pointer;
 
-  color: #111111;
+    transition: all 0.2s ease;
 
-  font-size: 12px;
+    svg {
+        width: 16px;
+        height: 16px;
+    }
 
-  cursor: pointer;
+    &:hover {
+        border-color: #f78926;
+        color: #f78926;
+        background: #fff8f2;
+    }
 
-  white-space: nowrap;
+    &:active {
+        transform: scale(0.98);
+    }
 
-  svg {
-    width: 13px;
-    height: 13px;
-  }
+    @media (max-width: 900px) {
+        min-width: 38px;
+        width: 38px;
+        padding: 0;
 
-  &:hover {
-    border-color: #2f4da8;
-    color: #2f4da8;
-  }
-
-  &:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-  }
+        span {
+            display: none;
+        }
+    }
 `;

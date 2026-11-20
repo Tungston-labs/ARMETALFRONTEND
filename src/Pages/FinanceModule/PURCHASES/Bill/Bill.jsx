@@ -137,9 +137,9 @@ const Bill = () => {
 
   const [dueDate, setDueDate] = useState("");
 
-  const [startDate, setStartDate] = useState(currentMonth.start);
+  const [startDate, setStartDate] = useState();
 
-  const [endDate, setEndDate] = useState(currentMonth.end);
+  const [endDate, setEndDate] = useState();
 
   const [currentPage, setCurrentPage] = useState(1);
 
