@@ -1,93 +1,79 @@
-import React, { useEffect, useRef, useState } from "react";
-
-import { FiMoreVertical, FiEdit2, FiTrash2 } from "react-icons/fi";
-
+import React from "react";
+import { FiEye, FiDownload, FiEdit2, FiX } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
+import { ActionWrapper, IconButton } from "./BillAction.styles";
 
-import {
-  ActionWrapper,
-  ActionButton,
-  FloatingAction,
-} from "./BillAction.styles";
+// Statuses where the bill can no longer be edited or removed
+const LOCKED_STATUSES = ["paid"];
 
-const BillAction = ({ row, onDelete }) => {
-  const [open, setOpen] = useState(false);
-
+const BillAction = ({ row, onView, onDownload, onDelete }) => {
   const navigate = useNavigate();
 
-  const wrapperRef = useRef(null);
+  const status = String(row?.status || "").toLowerCase();
+  const canModify = !LOCKED_STATUSES.includes(status);
 
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (wrapperRef.current && !wrapperRef.current.contains(event.target)) {
-        setOpen(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, []);
-
+  // Row is passed in router state so the edit page can prefill instantly
   const handleEdit = () => {
-    if (!row?.id) {
-      return;
-    }
-
-    navigate(`/purchases/bill/edit/${row.id}`);
-
-    setOpen(false);
-  };
-
-  const handleDelete = () => {
-    onDelete?.(row);
-
-    setOpen(false);
+    if (!row?.id) return;
+    navigate(`/purchases/bill/edit/${row.id}`, {
+      state: { billData: row },
+    });
   };
 
   return (
-    <ActionWrapper ref={wrapperRef}>
-      <ActionButton
+    <ActionWrapper>
+      {/* VIEW */}
+      <IconButton
         type="button"
-        title="Actions"
-        onClick={(event) => {
-          event.stopPropagation();
-
-          setOpen((previous) => !previous);
+        title="View Bill"
+        onClick={(e) => {
+          e.stopPropagation();
+          onView?.(row);
         }}
       >
-        <FiMoreVertical size={13} />
-      </ActionButton>
+        <FiEye size={14} />
+      </IconButton>
 
-      <FloatingAction
+      {/* DOWNLOAD */}
+      <IconButton
         type="button"
-        $open={open}
-        $position="edit"
-        title="Edit Bill"
-        onClick={(event) => {
-          event.stopPropagation();
-
-          handleEdit();
+        title="Download Bill"
+        onClick={(e) => {
+          e.stopPropagation();
+          onDownload?.(row);
         }}
       >
-        <FiEdit2 size={12} />
-      </FloatingAction>
+        <FiDownload size={14} />
+      </IconButton>
 
-      <FloatingAction
-        type="button"
-        $open={open}
-        $position="delete"
-        title="Delete Bill"
-        onClick={(event) => {
-          event.stopPropagation();
+      {canModify && (
+        <>
+          {/* EDIT */}
+          <IconButton
+            type="button"
+            title="Edit Bill"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleEdit();
+            }}
+          >
+            <FiEdit2 size={14} />
+          </IconButton>
 
-          handleDelete();
-        }}
-      >
-        <FiTrash2 size={12} />
-      </FloatingAction>
+          {/* DELETE */}
+          <IconButton
+            type="button"
+            $variant="danger"
+            title="Delete Bill"
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete?.(row);
+            }}
+          >
+            <FiX size={14} />
+          </IconButton>
+        </>
+      )}
     </ActionWrapper>
   );
 };

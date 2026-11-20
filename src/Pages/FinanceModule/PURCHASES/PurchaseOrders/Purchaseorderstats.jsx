@@ -35,34 +35,32 @@ const humanize = (value) =>
         ? String(value).replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())
         : "-";
 
-// key -> label + badge colours
+// key -> label + text colour (plain coloured text, as in the design)
 export const STATUS_META = {
-    draft: { label: "Draft", bg: "#F3F4F6", color: "#4B5563" },
-    pending: { label: "Pending", bg: "#FFF7ED", color: "#B06000" },
-    approved: { label: "Approved", bg: "#E8F0FE", color: "#1A73E8" },
-    ordered: { label: "Ordered", bg: "#EEF2FF", color: "#4F46E5" },
-    partially_received: { label: "Partially Received", bg: "#FEF7E0", color: "#B06000" },
-    received: { label: "Received", bg: "#E6F4EA", color: "#188038" },
-    cancelled: { label: "Cancelled", bg: "#FDEEEE", color: "#B00020" },
+    draft: { label: "Draft", color: "#3049A3" },
+    sent_to_vendor: { label: "Sent to Vendor", color: "#F5820E" },
+    received: { label: "Received", color: "#16A34A" },
+    cancelled: { label: "Cancelled", color: "#DC2626" },
+
+    // Older values, kept so existing records still display
+    pending: { label: "Pending", color: "#F5820E" },
+    approved: { label: "Approved", color: "#1A73E8" },
+    ordered: { label: "Ordered", color: "#4F46E5" },
+    partially_received: { label: "Partially Received", color: "#B06000" },
 };
 
-const StatusBadge = ({ status }) => {
+const StatusText = ({ status }) => {
     const meta = STATUS_META[status] || {
         label: humanize(status),
-        bg: "#F3F4F6",
         color: "#4B5563",
     };
 
     return (
         <span
             style={{
-                display: "inline-block",
-                padding: "3px 10px",
-                borderRadius: 12,
-                fontSize: 12,
-                fontWeight: 500,
-                background: meta.bg,
                 color: meta.color,
+                fontSize: 13,
+                fontWeight: 400,
                 whiteSpace: "nowrap",
             }}
         >
@@ -71,13 +69,28 @@ const StatusBadge = ({ status }) => {
     );
 };
 
+// Warehouse and linked bill may come back as a string, a nested object or a flat field.
+// The key names are guesses, so adjust them to match your list API.
+const getWarehouseName = (row) =>
+    row.warehouse_name ||
+    row.warehouse?.name ||
+    (typeof row.warehouse === "string" ? row.warehouse : "") ||
+    "-";
+
+const getLinkedBill = (row) =>
+    row.linked_bill ||
+    row.bill_number ||
+    row.bill?.bill_number ||
+    row.bill?.number ||
+    "-";
+
 // ===============================
 // Table columns (match the API list fields)
 // ===============================
-// A function because the action buttons need the delete handler from the hook.
-// Usage: getPurchaseOrderColumns({ onDelete })
+// A function because the action buttons need the handlers from the hook.
+// Usage: getPurchaseOrderColumns({ onDelete, onDownload })
 
-export const getPurchaseOrderColumns = ({ onDelete } = {}) => [
+export const getPurchaseOrderColumns = ({ onDelete, onDownload } = {}) => [
     { header: "PO Number", accessor: "po_number" },
     { header: "Vendor", accessor: "vendor_name" },
     {
@@ -86,41 +99,41 @@ export const getPurchaseOrderColumns = ({ onDelete } = {}) => [
         render: (row) => formatDate(row.order_date),
     },
     {
-        header: "Delivery Date",
+        header: "Expected Delivery",
         accessor: "expected_delivery_date",
         render: (row) => formatDate(row.expected_delivery_date),
     },
     {
-        header: "Order Value",
+        header: "Warehouse",
+        accessor: "warehouse_name",
+        render: (row) => getWarehouseName(row),
+    },
+    {
+        header: "Amount",
         accessor: "total_amount",
         render: (row) => formatAmount(row.total_amount),
     },
     {
-        header: "Order Status",
+        header: "Status",
         accessor: "status",
-        render: (row) => <StatusBadge status={row.status} />,
+        render: (row) => <StatusText status={row.status} />,
     },
     {
-        header: "Receipt Status",
-        accessor: "receipt_status",
-        render: (row) => humanize(row.receipt_status),
-    },
-    {
-        header: "Bill Status",
-        accessor: "bill_status",
-        render: (row) => humanize(row.bill_status),
-    },
-    {
-        header: "Created By",
-        accessor: "created_by_name",
-        render: (row) => row.created_by_name || "-",
+        header: "Linked Bill",
+        accessor: "linked_bill",
+        sortable: false,
+        render: (row) => getLinkedBill(row),
     },
     {
         header: "Action",
         accessor: "actions",
         sortable: false,
         render: (row) => (
-            <PurchaseOrderActions row={row} onDelete={onDelete} />
+            <PurchaseOrderActions
+                row={row}
+                onDelete={onDelete}
+                onDownload={onDownload}
+            />
         ),
     },
 ];

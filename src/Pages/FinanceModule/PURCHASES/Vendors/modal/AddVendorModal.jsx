@@ -20,6 +20,7 @@ import {
   UploadWrapper,
   HiddenFileInput,
   UploadLabel,
+  RequiredMark,
 } from "./AddVendorModal.styles";
 import { FiSave } from "react-icons/fi";
 import { formatApiError, vendorToForm, vendorAddresses } from "../Vendorpayload";
@@ -87,17 +88,17 @@ const AddVendorModal = ({
   const [formData, setFormData] = useState(initialState);
   const [addresses, setAddresses] = useState([""]);
 
-useEffect(() => {
-  if (!isOpen) return;
+  useEffect(() => {
+    if (!isOpen) return;
 
-  if (vendor) {
-    setFormData({ ...initialState, ...vendorToForm(vendor) });
-    setAddresses(vendorAddresses(vendor));
-  } else {
-    setFormData(initialState);
-    setAddresses([""]);
-  }
-}, [isOpen, vendor]);
+    if (vendor) {
+      setFormData({ ...initialState, ...vendorToForm(vendor) });
+      setAddresses(vendorAddresses(vendor));
+    } else {
+      setFormData(initialState);
+      setAddresses([""]);
+    }
+  }, [isOpen, vendor]);
 
   if (!isOpen) return null;
 
@@ -131,7 +132,7 @@ useEffect(() => {
     <ModalOverlay onClick={saving ? undefined : onClose}>
       <ModalContainer onClick={(e) => e.stopPropagation()}>
         <Form onSubmit={handleSubmit}>
-          {/* Vendor Information */}
+
 
           <section>
             <SectionTitle>
@@ -157,7 +158,7 @@ useEffect(() => {
               </FormGroup>
 
               <FormGroup>
-                <Label>VENDOR NAME</Label>
+               <Label>VENDOR NAME<RequiredMark>*</RequiredMark></Label>
                 <Input
                   name="vendorName"
                   placeholder="Enter vendor name"
@@ -182,97 +183,36 @@ useEffect(() => {
                   ))}
                 </Select>
               </FormGroup>
-
               <FormGroup>
-                <Label>OPENING BALANCE</Label>
+
+                <Label>PHONE NUMBER <RequiredMark>*</RequiredMark></Label>
                 <Input
-                  type="number"
-                  name="openingBalance"
-                  value={formData.openingBalance}
+                  type="tel"
+                  name="phoneNumber"
+                  placeholder="Enter Phone Number"
+                  value={formData.phoneNumber}
                   onChange={handleChange}
+                      required
                 />
               </FormGroup>
 
               <FormGroup>
-                <Label>CREDIT LIMIT</Label>
-                <Input
-                  type="number"
-                  name="creditLimit"
-                  value={formData.creditLimit}
-                  onChange={handleChange}
-                />
-              </FormGroup>
-
-              <FormGroup>
-                <Label>CR NUMBER</Label>
-                <Input
-                  name="crNumber"
-                  placeholder="Enter Number"
-                  value={formData.crNumber}
-                  onChange={handleChange}
-                />
-              </FormGroup>
-
-              <FormGroup>
-                <Label>CURRENCY</Label>
+                <Label>STATUS</Label>
                 <Select
-                  name="currency"
-                  value={formData.currency}
+                  name="clientStatus"
+                  value={formData.clientStatus}
                   onChange={handleChange}
                 >
-                  {CURRENCIES.map((c) => (
-                    <option key={c} value={c}>
-                      {c}
-                    </option>
-                  ))}
+                  <option value="">Select status</option>
+                  <option value="Active">Active</option>
+                  <option value="Inactive">Inactive</option>
                 </Select>
               </FormGroup>
 
-              <FormGroup>
-                <Label>VAT REGISTRATION NUMBER</Label>
-                <Input
-                  name="vatNumber"
-                  placeholder="Enter Number"
-                  value={formData.vatNumber}
-                  onChange={handleChange}
-                />
-              </FormGroup>
-
-              <FormGroup>
-                <Label>PAYMENT TERM</Label>
-                <Select
-                  name="paymentTerm"
-                  value={formData.paymentTerm}
-                  onChange={handleChange}
-                >
-                  <option value="">Select</option>
-                  {PAYMENT_TERMS.map((o) => (
-                    <option key={o.value} value={o.value}>
-                      {o.label}
-                    </option>
-                  ))}
-                </Select>
-              </FormGroup>
-
-              <FormGroup>
-                <Label>CR EXPIRY DATE</Label>
-                <Input
-                  type="date"
-                  name="crExpiryDate"
-                  value={
-                    formData.crExpiryDate
-                      ? formData.crExpiryDate.slice(0, 10)
-                      : ""
-                  }
-                  onChange={handleChange}
-                />
-              </FormGroup>
-
-              {/* Billing Address */}
 
               <FormGroup>
                 <AddressHeader>
-                  <Label>BILLING ADDRESS</Label>
+                  <Label>BILLING ADDRESS <RequiredMark>*</RequiredMark></Label>
                   <AddAddressButton type="button" onClick={addAddress}>
                     +
                   </AddAddressButton>
@@ -286,9 +226,11 @@ useEffect(() => {
                     onChange={(e) =>
                       handleAddressChange(index, e.target.value)
                     }
+                    required
                   />
                 ))}
               </FormGroup>
+
 
               <FormGroup>
                 <Label>CITY</Label>
@@ -331,65 +273,94 @@ useEffect(() => {
               </FormGroup>
 
               <FormGroup>
-                <Label>PHONE NUMBER</Label>
+                <Label>CR NUMBER</Label>
                 <Input
-                  type="tel"
-                  name="phoneNumber"
-                  placeholder="Enter Phone Number"
-                  value={formData.phoneNumber}
+                  name="crNumber"
+                  placeholder="Enter Number"
+                  value={formData.crNumber}
+                  onChange={handleChange}
+                />
+              </FormGroup>
+              <FormGroup>
+                <Label>VAT REGISTRATION NUMBER <RequiredMark>*</RequiredMark></Label>
+                <Input
+                  name="vatNumber"
+                  placeholder="Enter Number"
+                  value={formData.vatNumber}
+                  onChange={handleChange}
+                  required
+                />
+              </FormGroup>
+
+              <FormGroup>
+                <Label>PAYMENT TERM</Label>
+                <Select
+                  name="paymentTerm"
+                  value={formData.paymentTerm}
+                  onChange={handleChange}
+                >
+                  <option value="">Select</option>
+                  {PAYMENT_TERMS.map((o) => (
+                    <option key={o.value} value={o.value}>
+                      {o.label}
+                    </option>
+                  ))}
+                </Select>
+              </FormGroup>
+              <FormGroup>
+                <Label>CREDIT LIMIT</Label>
+                <Input
+                  type="number"
+                  name="creditLimit"
+                  value={formData.creditLimit}
                   onChange={handleChange}
                 />
               </FormGroup>
 
               <FormGroup>
-                <Label>ADMIN CONTACT EMAIL ID</Label>
+                <Label>OPENING BALANCE</Label>
                 <Input
-                  type="email"
-                  name="adminEmail"
-                  placeholder="Enter Email ID"
-                  value={formData.adminEmail}
+                  type="number"
+                  name="openingBalance"
+                  value={formData.openingBalance}
                   onChange={handleChange}
                 />
               </FormGroup>
-
               <FormGroup>
-                <Label>FINANCIAL CONTACT EMAIL ID</Label>
+                <Label>FINANCE CONTACT EMAIL <RequiredMark>*</RequiredMark></Label>
                 <Input
                   type="email"
                   name="financialEmail"
-                  placeholder="Enter Email ID"
+                  placeholder="Enter finance contact email"
                   value={formData.financialEmail}
                   onChange={handleChange}
+                  required
                 />
               </FormGroup>
 
               <FormGroup>
-                <Label>TECHNICAL CONTACT EMAIL ID</Label>
+                <Label>TECHNICAL CONTACT EMAIL</Label>
                 <Input
                   type="email"
                   name="technicalEmail"
-                  placeholder="Enter Email ID"
+                  placeholder="Enter technical contact email"
                   value={formData.technicalEmail}
                   onChange={handleChange}
                 />
               </FormGroup>
 
               <FormGroup>
-                <Label>CLIENT STATUS</Label>
-                <Select
-                  name="clientStatus"
-                  value={formData.clientStatus}
+                <Label>ADMIN CONTACT EMAIL</Label>
+                <Input
+                  type="email"
+                  name="adminEmail"
+                  placeholder="Enter admin contact email"
+                  value={formData.adminEmail}
                   onChange={handleChange}
-                >
-                  <option value="">Select status</option>
-                  <option value="Active">Active</option>
-                  <option value="Inactive">Inactive</option>
-                </Select>
+                />
               </FormGroup>
             </FormGrid>
           </section>
-
-          {/* Bank Information */}
 
           <Divider />
 
@@ -478,8 +449,8 @@ useEffect(() => {
               {saving
                 ? "SAVING..."
                 : isEdit
-                ? "UPDATE VENDOR"
-                : "SAVE VENDOR"}
+                  ? "UPDATE VENDOR"
+                  : "SAVE VENDOR"}
             </SaveButton>
           </ButtonGroup>
         </Form>

@@ -13,8 +13,7 @@ const formatAmount = (value) =>
         maximumFractionDigits: 2,
     });
 
-export const getVendorColumns = ({ onEdit, onDelete } = {}) => [
-    { header: "Code", accessor: "vendor_id" },
+export const getVendorColumns = ({ onView, onEdit, onDownload, onDelete } = {}) => [    { header: "Code", accessor: "vendor_id" },
 {
         header: "Vendor Name",
         accessor: "name",
@@ -40,7 +39,13 @@ export const getVendorColumns = ({ onEdit, onDelete } = {}) => [
         accessor: "actions",
         sortable: false,
         render: (row) => (
-            <VendorActions row={row} onEdit={onEdit} onDelete={onDelete} />
+          <VendorActions
+                row={row}
+                onView={onView}
+                onEdit={onEdit}
+                onDownload={onDownload}
+                onDelete={onDelete}
+            />
         ),
     },
 ];

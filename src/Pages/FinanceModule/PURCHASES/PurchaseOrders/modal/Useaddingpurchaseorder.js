@@ -27,29 +27,20 @@ export const PAYMENT_TERMS = [
   { value: "90 days", label: "90 Days" },
 ];
 
+// Confirm the backend accepts these exact values
 export const ORDER_STATUSES = [
   { value: "draft", label: "Draft" },
-  { value: "pending", label: "Pending" },
-  { value: "approved", label: "Approved" },
-  { value: "ordered", label: "Ordered" },
-  { value: "partially_received", label: "Partially Received" },
+  { value: "sent_to_vendor", label: "Sent to Vendor" },
   { value: "received", label: "Received" },
-  { value: "cancelled", label: "Cancelled" },
-];
-
-export const SHIPPING_METHODS = [
-  { value: "road", label: "Road" },
-  { value: "air", label: "Air" },
-  { value: "sea", label: "Sea" },
-  { value: "courier", label: "Courier" },
-  { value: "pickup", label: "Pickup" },
-  { value: "other", label: "Other" },
 ];
 
 const VAT_RATE = 15;
 
 // Must start with "/" and match the route your list page is registered on
 const LIST_ROUTE = "/purchase/purchaseorder";
+
+// Stable empty array so effects don't re-run on every render
+const EMPTY = [];
 
 // ---- Helpers ----
 
@@ -86,6 +77,24 @@ const rowTotals = (row) => {
 const fmt = (n) =>
   n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
+// Reads the vendor's contact details (keys match the Vendors API)
+const getVendorContact = (v) => {
+  if (!v) {
+    return { vendorAddress: "", vendorPhone: "", financeEmail: "", creditLimit: "" };
+  }
+
+  const address = [v.billing_address, v.city, v.state, v.country, v.postal]
+    .filter(Boolean)
+    .join(", ");
+
+  return {
+    vendorAddress: address,
+    vendorPhone: v.phno || "",
+    financeEmail: v.financial_email || "",
+    creditLimit: v.credit_limit ? String(parseFloat(v.credit_limit)) : "",
+  };
+};
+
 // Turns a DRF error ({ field: ["msg"] } | { detail } | string) into text
 const formatError = (error) => {
   if (!error) return "";
@@ -111,8 +120,12 @@ const useAddingPurchaseOrder = () => {
     productOptions: rawProducts = [],
   } = useSelector((state) => state.purchaseOrder) || {};
 
-  // Vendors from the Vendors module, used when the PO dropdown returns nothing
-  const moduleVendors = useSelector((state) => state.vendor?.vendors) || [];
+  // Vendors from the Vendors module. Accepts either an array or a paginated
+  // object ({ results: [...] }).
+  const vendorsState = useSelector((state) => state.vendor?.vendors);
+  const moduleVendors = Array.isArray(vendorsState)
+    ? vendorsState
+    : vendorsState?.results || EMPTY;
   const sourceVendors = rawVendors.length ? rawVendors : moduleVendors;
 
   const [form, setForm] = useState({
@@ -124,10 +137,21 @@ const useAddingPurchaseOrder = () => {
     paymentTerm: "",
     orderStatus: "draft",
     warehouse: "",
-    shippingMethod: "",
     discount: "",
     roundOff: "",
     notes: "", // kept so editing doesn't wipe existing notes
+
+    // Buyer side fields (display only, not sent to the backend)
+    creditLimit: "",
+    fromName: "",
+    fromAddress: "",
+    fromPhone: "",
+    fromEmail: "",
+
+    // Auto-filled from the selected vendor (display only)
+    vendorAddress: "",
+    vendorPhone: "",
+    financeEmail: "",
   });
   const [items, setItems] = useState([newItem(1)]);
   const [errors, setErrors] = useState({});
@@ -144,12 +168,16 @@ const useAddingPurchaseOrder = () => {
     dispatch(getVendors({ page: 1, page_size: 100, ordering: "name" }));
   }, [dispatch]);
 
+  // The vendor ID is added to the label because several vendors share a name
   const vendorOptions = useMemo(
     () =>
-      sourceVendors.map((v) => ({
-        value: String(v.id ?? v.value),
-        label: v.name || v.vendor_name || v.label || `Vendor #${v.id}`,
-      })),
+      sourceVendors.map((v) => {
+        const name = v.name || v.vendor_name || v.label || "Vendor";
+        return {
+          value: String(v.id ?? v.value),
+          label: v.vendor_id ? `${name} (${v.vendor_id})` : name,
+        };
+      }),
     [sourceVendors]
   );
 
@@ -175,6 +203,29 @@ const useAddingPurchaseOrder = () => {
     [rawProducts]
   );
 
+  // ---- Fill address, phone, finance email and credit limit from the vendor ----
+  // Runs when the vendor changes, and again once the vendor list has loaded
+  // (which also covers edit mode).
+
+  useEffect(() => {
+    if (!form.vendorId) return;
+
+    const match = (v) => String(v.id ?? v.value) === String(form.vendorId);
+    // The Vendors module list has the full details, so check it first
+    const vendor = moduleVendors.find(match) || sourceVendors.find(match);
+    if (!vendor) return;
+
+    const contact = getVendorContact(vendor);
+    setForm((prev) =>
+      prev.vendorAddress === contact.vendorAddress &&
+      prev.vendorPhone === contact.vendorPhone &&
+      prev.financeEmail === contact.financeEmail &&
+      prev.creditLimit === contact.creditLimit
+        ? prev
+        : { ...prev, ...contact }
+    );
+  }, [form.vendorId, moduleVendors, sourceVendors]);
+
   // ---- Edit mode: load the purchase order and prefill ----
 
   useEffect(() => {
@@ -186,7 +237,8 @@ const useAddingPurchaseOrder = () => {
         const po = await dispatch(getPurchaseOrderById(id)).unwrap();
         if (!active) return;
 
-        setForm({
+        setForm((prev) => ({
+          ...prev,
           vendorId: String(po.vendor?.id ?? po.vendor ?? ""),
           poNumber: po.po_number || "",
           prReference: po.pr_reference || "",
@@ -195,11 +247,14 @@ const useAddingPurchaseOrder = () => {
           paymentTerm: po.payment_terms || "",
           orderStatus: po.status || "draft",
           warehouse: String(po.warehouse?.id ?? po.warehouse ?? ""),
-          shippingMethod: po.shipping_method || "",
           discount: numStr(po.discount),
           roundOff: numStr(po.round_off),
           notes: po.notes || "",
-        });
+          // Use the nested vendor object if the API returns one
+          ...(typeof po.vendor === "object" && po.vendor
+            ? getVendorContact(po.vendor)
+            : {}),
+        }));
 
         const loaded = (po.item_details || []).map((it, idx) => ({
           ...newItem(idx + 1),
@@ -230,11 +285,14 @@ const useAddingPurchaseOrder = () => {
     setErrors((prev) => ({ ...prev, [name]: undefined }));
   };
 
-  // Picking a vendor pre-fills its payment term when the dropdown row has one
-  // that matches an available option (e.g. "30_days" -> "30 days")
+  // Picking a vendor pre-fills its payment term when the vendor has one that
+  // matches an available option (e.g. "30_days" -> "30 days").
+  // Address, phone, finance email and credit limit are filled by the effect above.
   const handleVendorChange = (e) => {
     const vid = e.target.value;
-    const vendor = sourceVendors.find((v) => String(v.id ?? v.value) === String(vid));
+    const vendor =
+      moduleVendors.find((v) => String(v.id ?? v.value) === String(vid)) ||
+      sourceVendors.find((v) => String(v.id ?? v.value) === String(vid));
     const raw = vendor?.payment_terms || vendor?.payment_term;
     const normalized = raw ? String(raw).replace(/_/g, " ").toLowerCase() : "";
     const match = PAYMENT_TERMS.find((o) => o.value.toLowerCase() === normalized);
@@ -323,7 +381,6 @@ const useAddingPurchaseOrder = () => {
     if (!form.paymentTerm) e.paymentTerm = "Select payment terms";
     if (!form.orderStatus) e.orderStatus = "Select a status";
     if (!form.warehouse) e.warehouse = "Select a warehouse";
-    if (!form.shippingMethod) e.shippingMethod = "Select a shipping method";
 
     const itemErrors = {};
     items.forEach((i) => {
@@ -339,22 +396,27 @@ const useAddingPurchaseOrder = () => {
     return Object.keys(e).length === 0;
   };
 
-  const handleSave = async () => {
+  // statusOverride: the Save Draft / Send buttons pass "draft" or
+  // "sent_to_vendor". Without it, the STATUS dropdown value is used.
+  const handleSave = async (statusOverride) => {
     setSaveError("");
     if (!validate()) return;
 
+    const status =
+      typeof statusOverride === "string" ? statusOverride : form.orderStatus;
+
     setIsSaving(true);
     try {
-      // po_number is generated by the backend, so it is never sent
+      // po_number is generated by the backend, so it is never sent.
+      // The vendor contact and buyer fields are display only.
       const payload = {
         vendor: Number(form.vendorId),
         pr_reference: form.prReference.trim() || undefined,
         order_date: form.orderDate,
         expected_delivery_date: form.expectedDate,
         payment_terms: form.paymentTerm,
-        status: form.orderStatus,
+        status,
         warehouse: Number(form.warehouse),
-        shipping_method: form.shippingMethod,
         discount: money(calc.discount),
         round_off: money(calc.roundOff),
         notes: form.notes || undefined,
@@ -384,6 +446,10 @@ const useAddingPurchaseOrder = () => {
 
   const handleCancel = () => navigate(LIST_ROUTE);
 
+  // Placeholder: opens the browser print dialog, where the user can choose
+  // "Save as PDF". Replace with your PDF API call when you have one.
+  const handleDownload = () => window.print();
+
   return {
     form,
     errors,
@@ -406,6 +472,7 @@ const useAddingPurchaseOrder = () => {
     selectProduct,
     handleSave,
     handleCancel,
+    handleDownload,
     navigate,
   };
 };
