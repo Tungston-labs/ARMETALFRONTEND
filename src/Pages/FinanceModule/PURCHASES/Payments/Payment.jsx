@@ -192,10 +192,10 @@ const PurchasePayment = () => {
     useState("");
 
   const [startDate, setStartDate] =
-    useState(currentMonth.start);
+    useState();
 
   const [endDate, setEndDate] =
-    useState(currentMonth.end);
+    useState();
 
   const [currentPage, setCurrentPage] =
     useState(1);
@@ -488,10 +488,9 @@ const PurchasePayment = () => {
     }
 
     const confirmed = window.confirm(
-      `Delete payment ${
-        payment.payment_no ||
-        payment.receipt_no ||
-        payment.id
+      `Delete payment ${payment.payment_no ||
+      payment.receipt_no ||
+      payment.id
       }?`,
     );
 

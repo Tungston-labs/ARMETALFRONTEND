@@ -10,6 +10,8 @@ import {
   getBillKPI as getBillKPIService,
   getBillSummary as getBillSummaryService,
   exportBills as exportBillsService,
+  getApprovedPurchaseOrders as getApprovedPurchaseOrdersService,
+  getApprovedPurchaseOrderDetail as getApprovedPurchaseOrderDetailService,
   getBillError,
 } from "../../../services/finance/purchases/BillService";
 
@@ -253,6 +255,48 @@ export const exportBills = createAsyncThunk(
 );
 
 /* =========================================================
+   APPROVED PURCHASE ORDERS (LIST)
+   GET /api/finance/bill/purchase-orders/
+========================================================= */
+
+export const getApprovedPurchaseOrders = createAsyncThunk(
+  "bill/getApprovedPurchaseOrders",
+
+  async (params = {}, { rejectWithValue }) => {
+    try {
+      return await getApprovedPurchaseOrdersService(params);
+    } catch (error) {
+      return rejectWithValue(
+        getBillError(error, "Failed to fetch approved purchase orders"),
+      );
+    }
+  },
+);
+
+/* =========================================================
+   APPROVED PURCHASE ORDER (DETAIL)
+   GET /api/finance/bill/purchase-orders/{id}/
+========================================================= */
+
+export const getApprovedPurchaseOrderDetail = createAsyncThunk(
+  "bill/getApprovedPurchaseOrderDetail",
+
+  async (poId, { rejectWithValue }) => {
+    try {
+      if (!poId) {
+        return rejectWithValue("Purchase order ID is required");
+      }
+
+      return await getApprovedPurchaseOrderDetailService(poId);
+    } catch (error) {
+      return rejectWithValue(
+        getBillError(error, "Failed to fetch purchase order details"),
+      );
+    }
+  },
+);
+
+/* =========================================================
    INITIAL STATE
 ========================================================= */
 
@@ -260,6 +304,10 @@ const initialState = {
   bills: [],
 
   selectedBill: null,
+
+  purchaseOrders: [],
+
+  selectedPurchaseOrder: null,
 
   kpi: {
     total_bill_value: 0,
@@ -294,6 +342,8 @@ const initialState = {
 
   purchaseOrderLoading: false,
 
+  purchaseOrderDetailLoading: false,
+
   error: null,
 
   detailError: null,
@@ -307,6 +357,10 @@ const initialState = {
   kpiError: null,
 
   exportError: null,
+
+  purchaseOrderError: null,
+
+  purchaseOrderDetailError: null,
 };
 
 /* =========================================================
@@ -347,9 +401,27 @@ const billSlice = createSlice({
       state.exportError = null;
     },
 
+    clearPurchaseOrderError: (state) => {
+      state.purchaseOrderError = null;
+    },
+
+    clearPurchaseOrderDetailError: (state) => {
+      state.purchaseOrderDetailError = null;
+    },
+
     clearSelectedBill: (state) => {
       state.selectedBill = null;
       state.detailError = null;
+    },
+
+    clearSelectedPurchaseOrder: (state) => {
+      state.selectedPurchaseOrder = null;
+      state.purchaseOrderDetailError = null;
+    },
+
+    clearPurchaseOrders: (state) => {
+      state.purchaseOrders = [];
+      state.purchaseOrderError = null;
     },
 
     clearBills: (state) => {
@@ -798,6 +870,82 @@ const billSlice = createSlice({
             "Failed to export bills",
           );
       });
+
+    /* =======================================================
+       APPROVED PURCHASE ORDERS (LIST)
+    ======================================================= */
+
+    builder
+      .addCase(getApprovedPurchaseOrders.pending, (state) => {
+        state.purchaseOrderLoading = true;
+        state.purchaseOrderError = null;
+      })
+
+      .addCase(
+        getApprovedPurchaseOrders.fulfilled,
+        (state, action) => {
+          state.purchaseOrderLoading = false;
+          state.purchaseOrderError = null;
+
+          state.purchaseOrders = getRows(
+            unwrapResponse(action.payload),
+          );
+        },
+      )
+
+      .addCase(
+        getApprovedPurchaseOrders.rejected,
+        (state, action) => {
+          state.purchaseOrderLoading = false;
+
+          state.purchaseOrderError =
+            getErrorMessage(
+              action.payload,
+              "Failed to fetch approved purchase orders",
+            );
+
+          state.purchaseOrders = [];
+        },
+      );
+
+    /* =======================================================
+       APPROVED PURCHASE ORDER (DETAIL)
+    ======================================================= */
+
+    builder
+      .addCase(
+        getApprovedPurchaseOrderDetail.pending,
+        (state) => {
+          state.purchaseOrderDetailLoading = true;
+          state.purchaseOrderDetailError = null;
+        },
+      )
+
+      .addCase(
+        getApprovedPurchaseOrderDetail.fulfilled,
+        (state, action) => {
+          state.purchaseOrderDetailLoading = false;
+          state.purchaseOrderDetailError = null;
+
+          state.selectedPurchaseOrder =
+            unwrapResponse(action.payload) || null;
+        },
+      )
+
+      .addCase(
+        getApprovedPurchaseOrderDetail.rejected,
+        (state, action) => {
+          state.purchaseOrderDetailLoading = false;
+
+          state.purchaseOrderDetailError =
+            getErrorMessage(
+              action.payload,
+              "Failed to fetch purchase order details",
+            );
+
+          state.selectedPurchaseOrder = null;
+        },
+      );
   },
 });
 
@@ -810,6 +958,12 @@ export const selectBills = (state) =>
 
 export const selectSelectedBill = (state) =>
   state.bill?.selectedBill || null;
+
+export const selectApprovedPurchaseOrders = (state) =>
+  state.bill?.purchaseOrders || [];
+
+export const selectSelectedPurchaseOrder = (state) =>
+  state.bill?.selectedPurchaseOrder || null;
 
 export const selectBillPagination = (state) =>
   state.bill?.pagination || {
@@ -851,6 +1005,12 @@ export const selectBillKpiLoading = (state) =>
 export const selectBillExportLoading = (state) =>
   Boolean(state.bill?.exportLoading);
 
+export const selectPurchaseOrderLoading = (state) =>
+  Boolean(state.bill?.purchaseOrderLoading);
+
+export const selectPurchaseOrderDetailLoading = (state) =>
+  Boolean(state.bill?.purchaseOrderDetailLoading);
+
 export const selectBillError = (state) =>
   state.bill?.error || null;
 
@@ -872,6 +1032,12 @@ export const selectBillKpiError = (state) =>
 export const selectBillExportError = (state) =>
   state.bill?.exportError || null;
 
+export const selectPurchaseOrderError = (state) =>
+  state.bill?.purchaseOrderError || null;
+
+export const selectPurchaseOrderDetailError = (state) =>
+  state.bill?.purchaseOrderDetailError || null;
+
 /* =========================================================
    ACTIONS
 ========================================================= */
@@ -884,7 +1050,11 @@ export const {
   clearBillDeleteError,
   clearBillKPIError,
   clearBillExportError,
+  clearPurchaseOrderError,
+  clearPurchaseOrderDetailError,
   clearSelectedBill,
+  clearSelectedPurchaseOrder,
+  clearPurchaseOrders,
   clearBills,
 } = billSlice.actions;
 

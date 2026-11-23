@@ -32,6 +32,7 @@ export const ORDER_STATUSES = [
   { value: "draft", label: "Draft" },
   { value: "sent_to_vendor", label: "Sent to Vendor" },
   { value: "received", label: "Received" },
+  { value: "cancelled", label: "Cancelled" }
 ];
 
 const VAT_RATE = 15;
@@ -218,9 +219,9 @@ const useAddingPurchaseOrder = () => {
     const contact = getVendorContact(vendor);
     setForm((prev) =>
       prev.vendorAddress === contact.vendorAddress &&
-      prev.vendorPhone === contact.vendorPhone &&
-      prev.financeEmail === contact.financeEmail &&
-      prev.creditLimit === contact.creditLimit
+        prev.vendorPhone === contact.vendorPhone &&
+        prev.financeEmail === contact.financeEmail &&
+        prev.creditLimit === contact.creditLimit
         ? prev
         : { ...prev, ...contact }
     );
@@ -314,8 +315,8 @@ const useAddingPurchaseOrder = () => {
       prev.length === 1
         ? prev // always keep one row
         : prev
-            .filter((i) => i.id !== itemId)
-            .map((i, idx) => ({ ...i, slNo: idx + 1 }))
+          .filter((i) => i.id !== itemId)
+          .map((i, idx) => ({ ...i, slNo: idx + 1 }))
     );
 
   const updateItem = (itemId, field, value) =>
@@ -330,11 +331,11 @@ const useAddingPurchaseOrder = () => {
       prev.map((i) =>
         i.id === itemId
           ? {
-              ...i,
-              product: productId,
-              description: i.description || p?.description || "",
-              hsCode: i.hsCode || p?.hs_code || "",
-            }
+            ...i,
+            product: productId,
+            description: i.description || p?.description || "",
+            hsCode: i.hsCode || p?.hs_code || "",
+          }
           : i
       )
     );

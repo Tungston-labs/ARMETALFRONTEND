@@ -1,65 +1,100 @@
 import styled from "styled-components";
 
 export const DateRangeWrapper = styled.div`
-  display: flex;
-  align-items: center;
+    display: flex;
+    align-items: center;
+    gap: 10px;
 `;
 
 export const DatePickerContainer = styled.div`
-  display: flex;
-  align-items: center;
+    display: flex;
+    align-items: center;
+    gap: 8px;
 
-  height: 32px;
+    width: 280px;
+    height: 38px;
+    padding: 0 10px;
 
-  padding: 0 5px;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    background: #ffffff;
 
-  border: 1px solid #e1e5ec;
-  border-radius: 5px;
-
-  background: #ffffff;
+    box-sizing: border-box;
 `;
 
 export const DateInput = styled.input`
-  border: none;
-  outline: none;
+    flex: 1;
+    min-width: 0;
+    width: 100%;
+    height: 100%;
 
-  width: 105px;
+    border: none;
+    outline: none;
+    background: transparent;
 
-  font-size: 11px;
-  color: #222222;
+    color: #374151;
+    font-size: 13px;
+    cursor: pointer;
 
-  background: transparent;
+    &::-webkit-calendar-picker-indicator {
+        cursor: pointer;
+    }
 `;
 
 export const DateSeparator = styled.span`
-  margin: 0 5px;
+    flex-shrink: 0;
 
-  color: #777777;
-
-  font-size: 11px;
+    color: #6b7280;
+    font-size: 13px;
+    font-weight: 500;
 `;
 
 export const ExportButton = styled.button`
-  height: 32px;
+    height: 38px;
+    min-width: 90px;
 
-  padding: 0 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
 
-  display: flex;
-  align-items: center;
-  gap: 6px;
+    padding: 0 14px;
 
-  border: 1px solid #e1e5ec;
-  border-radius: 5px;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
 
-  background: #ffffff;
+    background: #ffffff;
+    color: #374151;
 
-  color: #222222;
+    font-size: 13px;
+    font-weight: 500;
 
-  font-size: 11px;
+    cursor: pointer;
 
-  cursor: pointer;
+    transition: all 0.2s ease;
 
-  &:hover {
-    background: #f8fafc;
-  }
+    svg {
+        width: 16px;
+        height: 16px;
+    }
+
+    &:hover {
+        border-color: #f78926;
+        color: #f78926;
+        background: #fff8f2;
+    }
+
+    &:active {
+        transform: scale(0.98);
+    }
+
+    @media (max-width: 900px) {
+        min-width: 38px;
+        width: 38px;
+        padding: 0;
+
+        span {
+            display: none;
+        }
+    }
 `;

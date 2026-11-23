@@ -105,7 +105,7 @@ export const formatDate = (value) => {
    BILL TABLE COLUMNS
 ========================================================= */
 
-export const getBillColumns = ({ onDelete }) => [
+export const getBillColumns = ({ onView, onDownload, onDelete } = {}) => [
   {
     header: "Bill No.",
     accessor: "invoice_number",
@@ -211,12 +211,13 @@ export const getBillColumns = ({ onDelete }) => [
     accessor: "actions",
     sortable: false,
 
-    render: (row) =><BillAction
-  row={row}
-  onView={handleView}
-  onDownload={handleDownload}
-  onDelete={handleDelete}
-/>,
+    render: (row) =>
+    <BillAction
+        row={row}
+        onView={onView}
+        onDownload={onDownload}
+        onDelete={onDelete}
+      />
   },
 ];
 

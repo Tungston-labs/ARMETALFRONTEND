@@ -1,6 +1,12 @@
 import React from "react";
 import { FiEye, FiDownload, FiEdit2, FiTrash2 } from "react-icons/fi";
-
+import {
+  FiCreditCard,
+  FiDollarSign,
+  FiCalendar,
+  FiClock,
+  FiAlertCircle,
+} from "react-icons/fi";
 /* =========================================================
    FORMATTERS
 ========================================================= */
@@ -122,39 +128,35 @@ export const buildPurchasePaymentStats = (kpi = {}) => [
   {
     title: "Total Payments Made",
     count: kpi.totalPaymentsMade ?? kpi.total_payments_made ?? 0,
-    icon: "payments",
+    icon: <FiCreditCard />,
     backgroundColor: "#e8f8f0",
     iconColor: "#008000",
   },
-
   {
     title: "Total Paid Out",
     count: formatCurrency(kpi.totalPaidOut),
-    icon: "paid",
+    icon: <FiDollarSign />,
     backgroundColor: "#eee8ff",
     iconColor: "#7c3aed",
   },
-
   {
     title: "Paid This Month",
     count: formatCurrency(kpi.paidThisMonth),
-    icon: "month",
+    icon: <FiCalendar />,
     backgroundColor: "#e8f8ed",
     iconColor: "#22c55e",
   },
-
   {
     title: "Pending Clearance",
     count: String(kpi.pendingClearance ?? 0).padStart(2, "0"),
-    icon: "pending",
+    icon: <FiClock />,
     backgroundColor: "#fff2df",
     iconColor: "#f97316",
   },
-
   {
     title: "Failed Payments",
     count: String(kpi.failedPayments ?? 0).padStart(2, "0"),
-    icon: "failed",
+    icon: <FiAlertCircle />,
     backgroundColor: "#ffe8e8",
     iconColor: "#ef4444",
   },

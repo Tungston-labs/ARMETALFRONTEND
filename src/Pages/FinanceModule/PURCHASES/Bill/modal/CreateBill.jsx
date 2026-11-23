@@ -63,10 +63,11 @@ const CreateBill = () => {
     form,
     rows,
     calculations,
+    saveError,
     isSaving,
     isEdit,
     poOptions,
-handlePoChange,
+    handlePoChange,
     handleChange,
     handleItemChange,
     handleAddItem,
@@ -103,17 +104,17 @@ handlePoChange,
         </FormGroup>
 
         <SelectField
-  label="PURCHASE ORDER REFERENCE"
-  value={form.purchaseOrderReference}
-  onChange={(e) => handlePoChange(e.target.value)}
->
-  <option value="">Select Purchase Order</option>
-  {poOptions.map((o) => (
-    <option key={o.value} value={o.value}>
-      {o.label}
-    </option>
-  ))}
-</SelectField>
+          label="PURCHASE ORDER REFERENCE"
+          value={form.purchaseOrderReference}
+          onChange={(e) => handlePoChange(e.target.value)}
+        >
+          <option value="">Select Purchase Order</option>
+          {poOptions.map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
+          ))}
+        </SelectField>
 
         <TextField
           label="BILL DATE"
@@ -138,7 +139,9 @@ handlePoChange,
           onChange={(e) => handleChange("paymentTerms", e.target.value)}
         >
           {PAYMENT_TERMS.map((t) => (
-            <option key={t}>{t}</option>
+            <option key={t} value={t}>
+              {t}
+            </option>
           ))}
         </SelectField>
 
@@ -148,7 +151,9 @@ handlePoChange,
           onChange={(e) => handleChange("billStatus", e.target.value)}
         >
           {BILL_STATUSES.map((s) => (
-            <option key={s}>{s}</option>
+            <option key={s.value} value={s.value}>
+              {s.label}
+            </option>
           ))}
         </SelectField>
 
@@ -159,22 +164,23 @@ handlePoChange,
           onChange={handleChange}
           placeholder="Enter Note"
         />
-<br/>
+        <br />
+
+        {/* From */}
         <TextField label="FROM" field="from" form={form} onChange={handleChange} placeholder="From" />
         <TextField label="ADDRESS" field="fromAddress" form={form} onChange={handleChange} placeholder="Address" />
         <TextField label="PHONE NUMBER" field="phoneNumber" form={form} onChange={handleChange} placeholder="Phone number" />
         <TextField label="EMAIL ID" field="email" form={form} onChange={handleChange} placeholder="Email" />
 
-        <SelectField
+        {/* Vendor (auto-filled from the purchase order) */}
+        <TextField
           label="VENDOR NAME"
-          value={form.billTo}
-          onChange={(e) => handleChange("billTo", e.target.value)}
-        >
-          <option value="">Company/Client Name</option>
-          <option>Mediora</option>
-          <option>Chicking</option>
-        </SelectField>
-
+          field="billTo"
+          form={form}
+          onChange={handleChange}
+          placeholder="Auto-filled from Purchase Order"
+          readOnly
+        />
         <TextField label="ADDRESS" field="billToAddress" form={form} onChange={handleChange} placeholder="Company/Client ADDRESS" />
         <TextField label="PHONE NUMBER" field="billToPhone" form={form} onChange={handleChange} placeholder="Company/Client Phone Number" />
         <TextField label="FINANCE CONTACT EMAIL" field="financeEmail" form={form} onChange={handleChange} placeholder="Company/Client Email ID" />
@@ -220,9 +226,7 @@ handlePoChange,
             <TableCell>{cellInput(row, "rate", { type: "number", min: "0", step: "0.01" })}</TableCell>
             <TableCell>{cellInput(row, "vat", { type: "number", min: "0" })}</TableCell>
             <TableCell>SAR {fmt(row.vatAmount)}</TableCell>
-            <TableCell>
-            SAR {fmt(row.amount)}
-            </TableCell>
+            <TableCell>SAR {fmt(row.amount)}</TableCell>
             <TableCell>
               <RemoveButton
                 type="button"
@@ -267,17 +271,29 @@ handlePoChange,
         </TotalAmount>
       </SummaryWrapper>
 
+      {/* ---------- Save error ---------- */}
+      {saveError && (
+        <div style={{ color: "#d32f2f", margin: "12px 0", fontSize: 14 }}>
+          {saveError}
+        </div>
+      )}
+
       <ButtonWrapper>
         <CancelButton type="button" onClick={handleCancel} disabled={isSaving}>
           CANCEL
         </CancelButton>
-         <CancelButton type="button" onClick={handleCancel} disabled={isSaving}>
-       SAVE DRAFT
+        <CancelButton
+          type="button"
+          onClick={() => handleSave("draft")}
+          disabled={isSaving}
+        >
+          SAVE DRAFT
         </CancelButton>
-        <CancelButton type="button" onClick={handleCancel} disabled={isSaving}>
-        DOWNLOAD
+        {/* DOWNLOAD has no implementation yet */}
+        <CancelButton type="button" disabled={isSaving}>
+          DOWNLOAD
         </CancelButton>
-        <PreviewButton type="button" onClick={handleSave} disabled={isSaving}>
+        <PreviewButton type="button" onClick={() => handleSave()} disabled={isSaving}>
           {isSaving ? "SAVING..." : isEdit ? "UPDATE" : "SEND"}
         </PreviewButton>
       </ButtonWrapper>

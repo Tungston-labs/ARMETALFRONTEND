@@ -262,8 +262,6 @@ export const exportBills = async (params = {}) => {
 
 /* =========================================================
    APPROVED PURCHASE ORDERS REFERENCE
-   GET /api/finance/bill/purchase-orders/
-   GET /api/finance/bill/purchase-orders/{id}/
 ========================================================= */
 
 export const getApprovedPurchaseOrders = async (params = {}) => {
@@ -274,6 +272,7 @@ export const getApprovedPurchaseOrders = async (params = {}) => {
 
     return response.data;
 };
+
 
 export const getApprovedPurchaseOrderDetail = async (poId) => {
     const response = await axios.get(`${BILL_URL}purchase-orders/${poId}/`, {

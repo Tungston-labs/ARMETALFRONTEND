@@ -15,6 +15,7 @@ import {
   CancelButton,
   SaveButton,
 } from "./Recordpayment.style";
+import { FiSave } from "react-icons/fi";
 
 const initialFormData = {
   vendorId: "",
@@ -745,7 +746,7 @@ const PaymentModal = ({
               type="submit"
               disabled={submitting}
             >
-              <span>▣</span>
+                   <FiSave size={15} />
 
               {submitting
                 ? "RECORDING..."

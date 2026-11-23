@@ -306,6 +306,17 @@ const Bill = () => {
     );
   };
 
+  const handleView = (bill) => {
+    if (!bill?.id) return;
+    navigate(`/purchases/bill/view/${bill.id}`, {
+      state: { billData: bill },
+    });
+  };
+
+  const handleDownload = (bill) => {
+    // TODO: connect a bill download/print API when one exists
+    console.log("Download bill", bill?.id);
+  };
   /* =======================================================
      COLUMNS
   ======================================================= */
@@ -313,6 +324,8 @@ const Bill = () => {
   const columns = useMemo(
     () =>
       getBillColumns({
+        onView: handleView,
+        onDownload: handleDownload,
         onDelete: handleDelete,
       }),
     [handleDelete],
@@ -477,7 +490,7 @@ const Bill = () => {
         ]}
       />
 
-      <ReusableTable columns={columns} data={bills} loading={loading} />
+      <ReusableTable columns={columns} data={bills} loading={loading} autoLayout/>
 
       <ReusablePagination
         currentPage={pagination.currentPage || currentPage}
@@ -491,9 +504,8 @@ const Bill = () => {
         message={
           deleteError ||
           (billToDelete
-            ? `Are you sure you want to delete bill ${
-                billToDelete.invoice_number || billToDelete.bill_number || ""
-              }?`
+            ? `Are you sure you want to delete bill ${billToDelete.invoice_number || billToDelete.bill_number || ""
+            }?`
             : "")
         }
         confirmText={deleteError ? "Close" : "Delete"}
