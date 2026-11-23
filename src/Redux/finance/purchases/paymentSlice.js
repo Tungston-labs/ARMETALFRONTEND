@@ -11,8 +11,11 @@ import {
   getPurchasePaymentKPI,
 } from "../../../services/finance/purchases/paymentService";
 
+const errorOf = (error, fallback) =>
+  error?.response?.data || error?.message || fallback;
+
 /* =========================================================
-   FETCH PAYMENTS
+   THUNKS
 ========================================================= */
 
 export const fetchPurchasePayments = createAsyncThunk(
@@ -21,16 +24,10 @@ export const fetchPurchasePayments = createAsyncThunk(
     try {
       return await getPurchasePayments(params);
     } catch (error) {
-      return rejectWithValue(
-        error?.response?.data || error?.message || "Failed to fetch payments",
-      );
+      return rejectWithValue(errorOf(error, "Failed to fetch payments"));
     }
   },
 );
-
-/* =========================================================
-   FETCH PAYMENT BY ID
-========================================================= */
 
 export const fetchPurchasePaymentById = createAsyncThunk(
   "purchasePayments/fetchPaymentById",
@@ -38,18 +35,10 @@ export const fetchPurchasePaymentById = createAsyncThunk(
     try {
       return await getPurchasePaymentById(id);
     } catch (error) {
-      return rejectWithValue(
-        error?.response?.data ||
-          error?.message ||
-          "Failed to fetch payment",
-      );
+      return rejectWithValue(errorOf(error, "Failed to fetch payment"));
     }
   },
 );
-
-/* =========================================================
-   CREATE PAYMENT
-========================================================= */
 
 export const createPurchasePaymentThunk = createAsyncThunk(
   "purchasePayments/createPayment",
@@ -57,83 +46,44 @@ export const createPurchasePaymentThunk = createAsyncThunk(
     try {
       return await createPurchasePayment(payload);
     } catch (error) {
-      return rejectWithValue(
-        error?.response?.data ||
-          error?.message ||
-          "Failed to create payment",
-      );
+      return rejectWithValue(errorOf(error, "Failed to create payment"));
     }
   },
 );
-
-/* =========================================================
-   UPDATE PAYMENT
-========================================================= */
 
 export const updatePurchasePaymentThunk = createAsyncThunk(
   "purchasePayments/updatePayment",
   async ({ id, payload }, { rejectWithValue }) => {
     try {
-      return await updatePurchasePayment({
-        id,
-        payload,
-      });
+      return await updatePurchasePayment({ id, payload });
     } catch (error) {
-      return rejectWithValue(
-        error?.response?.data ||
-          error?.message ||
-          "Failed to update payment",
-      );
+      return rejectWithValue(errorOf(error, "Failed to update payment"));
     }
   },
 );
-
-/* =========================================================
-   PATCH PAYMENT
-========================================================= */
 
 export const patchPurchasePaymentThunk = createAsyncThunk(
   "purchasePayments/patchPayment",
   async ({ id, payload }, { rejectWithValue }) => {
     try {
-      return await patchPurchasePayment({
-        id,
-        payload,
-      });
+      return await patchPurchasePayment({ id, payload });
     } catch (error) {
-      return rejectWithValue(
-        error?.response?.data ||
-          error?.message ||
-          "Failed to update payment",
-      );
+      return rejectWithValue(errorOf(error, "Failed to update payment"));
     }
   },
 );
-
-/* =========================================================
-   DELETE PAYMENT
-========================================================= */
 
 export const deletePurchasePaymentThunk = createAsyncThunk(
   "purchasePayments/deletePayment",
   async (id, { rejectWithValue }) => {
     try {
       await deletePurchasePayment(id);
-
       return id;
     } catch (error) {
-      return rejectWithValue(
-        error?.response?.data ||
-          error?.message ||
-          "Failed to delete payment",
-      );
+      return rejectWithValue(errorOf(error, "Failed to delete payment"));
     }
   },
 );
-
-/* =========================================================
-   EXPORT
-========================================================= */
 
 export const exportPurchasePaymentsThunk = createAsyncThunk(
   "purchasePayments/exportPayments",
@@ -142,18 +92,16 @@ export const exportPurchasePaymentsThunk = createAsyncThunk(
       const response = await exportPurchasePayments(params);
 
       const contentType =
-        response.headers?.["content-type"] ||
-        "application/octet-stream";
+        response.headers?.["content-type"] || "text/csv";
 
-      const blob = new Blob([response.data], {
-        type: contentType,
-      });
+      const blob = new Blob([response.data], { type: contentType });
 
       const url = window.URL.createObjectURL(blob);
 
       const link = document.createElement("a");
       link.href = url;
-      link.download = "purchase-payments.xlsx";
+      // backend export endpoint returns CSV
+      link.download = "purchase-payments.csv";
 
       document.body.appendChild(link);
       link.click();
@@ -163,18 +111,10 @@ export const exportPurchasePaymentsThunk = createAsyncThunk(
 
       return true;
     } catch (error) {
-      return rejectWithValue(
-        error?.response?.data ||
-          error?.message ||
-          "Failed to export payments",
-      );
+      return rejectWithValue(errorOf(error, "Failed to export payments"));
     }
   },
 );
-
-/* =========================================================
-   KPI
-========================================================= */
 
 export const fetchPurchasePaymentKPI = createAsyncThunk(
   "purchasePayments/fetchKPI",
@@ -182,11 +122,7 @@ export const fetchPurchasePaymentKPI = createAsyncThunk(
     try {
       return await getPurchasePaymentKPI();
     } catch (error) {
-      return rejectWithValue(
-        error?.response?.data ||
-          error?.message ||
-          "Failed to fetch payment KPI",
-      );
+      return rejectWithValue(errorOf(error, "Failed to fetch payment KPI"));
     }
   },
 );
@@ -201,6 +137,8 @@ const normalizeListResponse = (response) => {
       results: response,
       count: response.length,
       total: response.length,
+      next: null,
+      previous: null,
     };
   }
 
@@ -306,10 +244,7 @@ const purchasePaymentSlice = createSlice({
   },
 
   extraReducers: (builder) => {
-    /* -----------------------------------------------------
-       LIST
-    ----------------------------------------------------- */
-
+    /* ---------- LIST ---------- */
     builder
       .addCase(fetchPurchasePayments.pending, (state) => {
         state.loading = true;
@@ -324,9 +259,7 @@ const purchasePaymentSlice = createSlice({
         state.payments = normalized.results;
 
         const currentPage =
-          Number(action.meta?.arg?.page) ||
-          state.pagination.currentPage ||
-          1;
+          Number(action.meta?.arg?.page) || state.pagination.currentPage || 1;
 
         const pageSize =
           Number(action.meta?.arg?.page_size) ||
@@ -341,8 +274,8 @@ const purchasePaymentSlice = createSlice({
           currentPage,
           pageSize,
           totalPages: Math.max(1, Math.ceil(count / pageSize)),
-          next: normalized.next,
-          previous: normalized.previous,
+          next: normalized.next ?? null,
+          previous: normalized.previous ?? null,
         };
       })
 
@@ -351,10 +284,7 @@ const purchasePaymentSlice = createSlice({
         state.error = action.payload || "Failed to fetch payments";
       });
 
-    /* -----------------------------------------------------
-       DETAILS
-    ----------------------------------------------------- */
-
+    /* ---------- DETAILS ---------- */
     builder
       .addCase(fetchPurchasePaymentById.pending, (state) => {
         state.detailsLoading = true;
@@ -371,24 +301,17 @@ const purchasePaymentSlice = createSlice({
         state.error = action.payload || "Failed to fetch payment";
       });
 
-    /* -----------------------------------------------------
-       CREATE
-    ----------------------------------------------------- */
-
+    /* ---------- CREATE ----------
+       The page refetches the list after a successful create,
+       so we do NOT prepend the new row here (avoids duplicates). */
     builder
       .addCase(createPurchasePaymentThunk.pending, (state) => {
         state.createLoading = true;
         state.error = null;
       })
 
-      .addCase(createPurchasePaymentThunk.fulfilled, (state, action) => {
+      .addCase(createPurchasePaymentThunk.fulfilled, (state) => {
         state.createLoading = false;
-
-        const created = action.payload?.data ?? action.payload;
-
-        if (created) {
-          state.payments = [created, ...state.payments];
-        }
       })
 
       .addCase(createPurchasePaymentThunk.rejected, (state, action) => {
@@ -396,10 +319,7 @@ const purchasePaymentSlice = createSlice({
         state.error = action.payload || "Failed to create payment";
       });
 
-    /* -----------------------------------------------------
-       UPDATE
-    ----------------------------------------------------- */
-
+    /* ---------- UPDATE ---------- */
     builder
       .addCase(updatePurchasePaymentThunk.pending, (state) => {
         state.updateLoading = true;
@@ -416,9 +336,7 @@ const purchasePaymentSlice = createSlice({
         }
 
         state.payments = state.payments.map((payment) =>
-          String(payment.id) === String(updated.id)
-            ? updated
-            : payment,
+          String(payment.id) === String(updated.id) ? updated : payment,
         );
 
         if (
@@ -434,10 +352,7 @@ const purchasePaymentSlice = createSlice({
         state.error = action.payload || "Failed to update payment";
       });
 
-    /* -----------------------------------------------------
-       PATCH
-    ----------------------------------------------------- */
-
+    /* ---------- PATCH ---------- */
     builder
       .addCase(patchPurchasePaymentThunk.pending, (state) => {
         state.updateLoading = true;
@@ -454,10 +369,15 @@ const purchasePaymentSlice = createSlice({
         }
 
         state.payments = state.payments.map((payment) =>
-          String(payment.id) === String(updated.id)
-            ? updated
-            : payment,
+          String(payment.id) === String(updated.id) ? updated : payment,
         );
+
+        if (
+          state.selectedPayment &&
+          String(state.selectedPayment.id) === String(updated.id)
+        ) {
+          state.selectedPayment = updated;
+        }
       })
 
       .addCase(patchPurchasePaymentThunk.rejected, (state, action) => {
@@ -465,10 +385,7 @@ const purchasePaymentSlice = createSlice({
         state.error = action.payload || "Failed to update payment";
       });
 
-    /* -----------------------------------------------------
-       DELETE
-    ----------------------------------------------------- */
-
+    /* ---------- DELETE ---------- */
     builder
       .addCase(deletePurchasePaymentThunk.pending, (state) => {
         state.deleteLoading = true;
@@ -479,8 +396,16 @@ const purchasePaymentSlice = createSlice({
         state.deleteLoading = false;
 
         state.payments = state.payments.filter(
-          (payment) =>
-            String(payment.id) !== String(action.payload),
+          (payment) => String(payment.id) !== String(action.payload),
+        );
+
+        if (state.pagination.count > 0) {
+          state.pagination.count -= 1;
+        }
+
+        state.pagination.totalPages = Math.max(
+          1,
+          Math.ceil(state.pagination.count / state.pagination.pageSize),
         );
       })
 
@@ -489,10 +414,7 @@ const purchasePaymentSlice = createSlice({
         state.error = action.payload || "Failed to delete payment";
       });
 
-    /* -----------------------------------------------------
-       EXPORT
-    ----------------------------------------------------- */
-
+    /* ---------- EXPORT ---------- */
     builder
       .addCase(exportPurchasePaymentsThunk.pending, (state) => {
         state.exportLoading = true;
@@ -508,10 +430,7 @@ const purchasePaymentSlice = createSlice({
         state.error = action.payload || "Failed to export payments";
       });
 
-    /* -----------------------------------------------------
-       KPI
-    ----------------------------------------------------- */
-
+    /* ---------- KPI ---------- */
     builder
       .addCase(fetchPurchasePaymentKPI.pending, (state) => {
         state.kpiLoading = true;
@@ -554,6 +473,7 @@ const purchasePaymentSlice = createSlice({
             response.failed_payments ??
             response.failedPayments ??
             response.failed ??
+            response.cancelled ??
             0,
         };
       })

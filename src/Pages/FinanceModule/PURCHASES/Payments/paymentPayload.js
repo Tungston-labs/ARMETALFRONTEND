@@ -8,97 +8,41 @@ const toNumberOrNull = (value) => {
   return Number.isFinite(number) ? number : null;
 };
 
+// "Full Payment" -> "full_payment"
 const normalizeChoice = (value) => {
   if (!value) {
     return "";
   }
 
-  return String(value)
-    .trim()
-    .toLowerCase()
-    .replace(/\s+/g, "_");
+  return String(value).trim().toLowerCase().replace(/\s+/g, "_");
 };
 
+/**
+ * Maps the modal form data to the backend contract:
+ * POST /api/finance/vendor/payments/
+ */
 export const normalizePurchasePaymentPayload = (formData = {}) => {
-  const vendorId =
-    formData.vendorId ??
-    formData.vendor_id ??
-    formData.vendor;
-
-  const billId =
-    formData.billId ??
-    formData.bill_id ??
-    formData.bill;
+  const amount = toNumberOrNull(formData.amount);
 
   return {
-    vendor:
-      vendorId === "" ||
-        vendorId === null ||
-        vendorId === undefined
-        ? null
-        : Number(vendorId),
-
-    vendor_id:
-      vendorId === "" ||
-        vendorId === null ||
-        vendorId === undefined
-        ? null
-        : Number(vendorId),
-
-    bill:
-      billId === "" ||
-        billId === null ||
-        billId === undefined
-        ? null
-        : Number(billId),
-
-    bill_id:
-      billId === "" ||
-        billId === null ||
-        billId === undefined
-        ? null
-        : Number(billId),
+    vendor: toNumberOrNull(formData.vendorId),
+    bill: toNumberOrNull(formData.billId),
 
     payment_date: formData.paymentDate || null,
-
     payment_type: normalizeChoice(formData.paymentType),
-
     payment_method: normalizeChoice(formData.paymentMethod),
 
-    amount:
-      toNumberOrNull(formData.amount) ??
-      toNumberOrNull(formData.amountPaid) ??
-      toNumberOrNull(formData.amountReceived),
+    amount_paid: amount === null ? null : amount.toFixed(2),
 
-    amount_paid:
-      toNumberOrNull(formData.amount) ??
-      toNumberOrNull(formData.amountPaid) ??
-      toNumberOrNull(formData.amountReceived),
+    reference_number: String(formData.referenceNumber || "").trim(),
 
-    amount_received:
-      toNumberOrNull(formData.amount) ??
-      toNumberOrNull(formData.amountPaid) ??
-      toNumberOrNull(formData.amountReceived),
+    // only keep these three if your serializer exposes them
+    bank_name: String(formData.bankName || "").trim(),
+    account_holder: String(formData.accountHolder || "").trim(),
+    iban: String(formData.iban || "").trim(),
 
-    bill_total: toNumberOrNull(formData.billTotal),
+    notes: String(formData.notes || "").trim(),
 
-    already_paid: toNumberOrNull(formData.alreadyPaid),
-
-    balance_due: toNumberOrNull(formData.balanceDue),
-
-    reference_number:
-      String(formData.referenceNumber || "").trim(),
-
-    bank_name:
-      String(formData.bankName || "").trim(),
-
-    account_holder:
-      String(formData.accountHolder || "").trim(),
-
-    iban:
-      String(formData.iban || "").trim(),
-
-    notes:
-      String(formData.notes || "").trim(),
+    status: "completed",
   };
 };

@@ -1,12 +1,16 @@
 import React from "react";
-import { FiEye, FiDownload, FiEdit2, FiTrash2 } from "react-icons/fi";
 import {
+  FiEye,
+  FiDownload,
+  FiEdit2,
+  FiTrash2,
   FiCreditCard,
   FiDollarSign,
   FiCalendar,
   FiClock,
   FiAlertCircle,
 } from "react-icons/fi";
+
 /* =========================================================
    FORMATTERS
 ========================================================= */
@@ -59,7 +63,7 @@ export const formatPaymentDate = (value) => {
 };
 
 /* =========================================================
-   VENDOR
+   VENDOR / BILL
 ========================================================= */
 
 const getVendorName = (row) => {
@@ -82,20 +86,13 @@ const getVendorName = (row) => {
   return "-";
 };
 
-/* =========================================================
-   BILL
-========================================================= */
-
-const getBillNumber = (row) => {
-  return (
-    row?.bill_number ||
-    row?.bill_no ||
-    row?.invoice_no ||
-    row?.bill?.bill_number ||
-    row?.bill?.bill_no ||
-    "-"
-  );
-};
+const getBillNumber = (row) =>
+  row?.bill_number ||
+  row?.bill_no ||
+  row?.invoice_no ||
+  row?.bill?.bill_number ||
+  row?.bill?.bill_no ||
+  "-";
 
 /* =========================================================
    STATUS
@@ -103,16 +100,16 @@ const getBillNumber = (row) => {
 
 export const getPaymentStatusColor = (status) => {
   switch (String(status).toLowerCase()) {
-    case "cleared":
     case "completed":
+    case "cleared":
       return "#008000";
 
     case "pending":
     case "pending_clearance":
       return "#ff8c00";
 
-    case "failed":
     case "cancelled":
+    case "failed":
       return "#ef0000";
 
     default:
@@ -163,61 +160,46 @@ export const buildPurchasePaymentStats = (kpi = {}) => [
 ];
 
 /* =========================================================
-   FILTERS
+   FILTER OPTIONS
+   (values must match the backend status choices)
 ========================================================= */
 
 export const PAYMENT_STATUS_OPTIONS = [
-  {
-    label: "Cleared",
-    value: "cleared",
-  },
-  {
-    label: "Pending",
-    value: "pending",
-  },
-  {
-    label: "Failed",
-    value: "failed",
-  },
+  { label: "Completed", value: "completed" },
+  { label: "Pending", value: "pending" },
+  { label: "Cancelled", value: "cancelled" },
 ];
 
 export const PAYMENT_TYPE_OPTIONS = [
-  {
-    label: "Full Payment",
-    value: "full_payment",
-  },
-  {
-    label: "Partial Payment",
-    value: "partial_payment",
-  },
-  {
-    label: "Advance Payment",
-    value: "advance_payment",
-  },
+  { label: "Full Payment", value: "full_payment" },
+  { label: "Partial Payment", value: "partial_payment" },
+  { label: "Advance Payment", value: "advance_payment" },
 ];
 
 export const PAYMENT_METHOD_OPTIONS = [
-  {
-    label: "Bank Transfer",
-    value: "bank_transfer",
-  },
-  {
-    label: "Cheque",
-    value: "cheque",
-  },
-  {
-    label: "Online Payment",
-    value: "online_payment",
-  },
-  {
-    label: "Cash",
-    value: "cash",
-  },
+  { label: "Bank Transfer", value: "bank_transfer" },
+  { label: "Cheque", value: "cheque" },
+  { label: "Online Payment", value: "online_payment" },
+  { label: "Cash", value: "cash" },
 ];
 
 /* =========================================================
    TABLE COLUMNS
 ========================================================= */
+
+const buttonStyle = {
+  width: "25px",
+  height: "25px",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  padding: 0,
+  border: "1px solid #e5e7eb",
+  borderRadius: "5px",
+  background: "#ffffff",
+  color: "#111827",
+  cursor: "pointer",
+};
 
 export const getPurchasePaymentColumns = ({
   onView,
@@ -268,10 +250,13 @@ export const getPurchasePaymentColumns = ({
 
   {
     header: "Amount",
-    accessor: "amount",
+    accessor: "amount_paid",
     render: (row) =>
       formatCurrency(
-        row?.amount ?? row?.amount_received ?? row?.received_amount,
+        row?.amount_paid ??
+          row?.amount ??
+          row?.amount_received ??
+          row?.received_amount,
       ),
   },
 
@@ -282,11 +267,7 @@ export const getPurchasePaymentColumns = ({
       const status = row?.status || row?.payment_status || "";
 
       return (
-        <span
-          style={{
-            color: getPaymentStatusColor(status),
-          }}
-        >
+        <span style={{ color: getPaymentStatusColor(status) }}>
           {formatStatusLabel(status)}
         </span>
       );
@@ -340,10 +321,7 @@ export const getPurchasePaymentColumns = ({
               type="button"
               onClick={() => onDelete?.(row)}
               title="Delete Payment"
-              style={{
-                ...buttonStyle,
-                color: "#ef4444",
-              }}
+              style={{ ...buttonStyle, color: "#ef4444" }}
             >
               <FiTrash2 size={13} />
             </button>
@@ -353,17 +331,3 @@ export const getPurchasePaymentColumns = ({
     ),
   },
 ];
-
-const buttonStyle = {
-  width: "25px",
-  height: "25px",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  padding: 0,
-  border: "1px solid #e5e7eb",
-  borderRadius: "5px",
-  background: "#ffffff",
-  color: "#111827",
-  cursor: "pointer",
-};
