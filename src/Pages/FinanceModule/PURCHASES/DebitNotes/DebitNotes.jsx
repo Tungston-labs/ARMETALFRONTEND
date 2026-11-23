@@ -6,8 +6,6 @@ import ReusableTable from "../../../../Components/ReusableTable/ReusableTable";
 import ReusablePagination from "../../../../Components/Pagination/ReusablePagination";
 import StatsCards from "../../../../Components/StatsCards/StatsCards";
 import useDebitNotes from "./UseDebitNotes";
-import { DateInput, DatePickerContainer, DateRangeWrapper, DateSeparator, ExportButton } from "./DebitNotes.styles";
-import { FiDownload } from "react-icons/fi";
 
 const DebitNotes = () => {
   const {
@@ -48,48 +46,75 @@ const DebitNotes = () => {
         breadcrumbs={["Purchases", "Debit Notes"]}
         buttonText="+ CREATE DEBIT NOTE"
         onButtonClick={handleAddDebitNote}
+      >
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+          }}
         >
-       <ExportButton
-                type="button"
-                onClick={handleExport}
-              >
-                <FiDownload />
-                <span>Export</span>
-              </ExportButton>
-      
-              <DateRangeWrapper>
-                <DatePickerContainer>
-                  <DateInput
-                    type="date"
-                    value={startDate}
-                    onChange={
-                      handleStartDateChange
-                    }
-                    max={
-                      endDate || undefined
-                    }
-                    aria-label="Start date"
-                  />
-      
-                  <DateSeparator>
-                    -
-                  </DateSeparator>
-      
-                  <DateInput
-                    type="date"
-                    value={endDate}
-                    onChange={
-                      handleEndDateChange
-                    }
-                    min={
-                      startDate || undefined
-                    }
-                    aria-label="End date"
-                  />
-                </DatePickerContainer>
-              </DateRangeWrapper>
-   </ReusableHeader>
-    
+          <button
+            type="button"
+            onClick={handleExport}
+            style={{
+              height: "34px",
+              padding: "0 14px",
+              border: "1px solid #D1D5DB",
+              borderRadius: "4px",
+              background: "#FFFFFF",
+              fontSize: "12px",
+              cursor: "pointer",
+            }}
+          >
+            EXPORT
+          </button>
+
+          <input
+            type="date"
+            value={startDate}
+            onChange={handleStartDateChange}
+            style={{
+              height: "34px",
+              border: "1px solid #D1D5DB",
+              borderRadius: "4px",
+              padding: "0 8px",
+              fontSize: "12px",
+            }}
+          />
+
+          <span>-</span>
+
+          <input
+            type="date"
+            value={endDate}
+            onChange={handleEndDateChange}
+            min={startDate || undefined}
+            style={{
+              height: "34px",
+              border: "1px solid #D1D5DB",
+              borderRadius: "4px",
+              padding: "0 8px",
+              fontSize: "12px",
+            }}
+          />
+        </div>
+      </ReusableHeader>
+
+      {errorMessage && (
+        <div
+          style={{
+            margin: "12px 0",
+            padding: "10px 14px",
+            borderRadius: 6,
+            background: "#FDEEEE",
+            color: "#B00020",
+            fontSize: 14,
+          }}
+        >
+          {errorMessage}
+        </div>
+      )}
 
       <StatsCards cards={cards} loading={kpiLoading} />
 
