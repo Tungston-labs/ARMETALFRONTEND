@@ -67,10 +67,17 @@ export const normalizePurchasePaymentPayload = (formData = {}) => {
 
     amount:
       toNumberOrNull(formData.amount) ??
+      toNumberOrNull(formData.amountPaid) ??
+      toNumberOrNull(formData.amountReceived),
+
+    amount_paid:
+      toNumberOrNull(formData.amount) ??
+      toNumberOrNull(formData.amountPaid) ??
       toNumberOrNull(formData.amountReceived),
 
     amount_received:
       toNumberOrNull(formData.amount) ??
+      toNumberOrNull(formData.amountPaid) ??
       toNumberOrNull(formData.amountReceived),
 
     bill_total: toNumberOrNull(formData.billTotal),

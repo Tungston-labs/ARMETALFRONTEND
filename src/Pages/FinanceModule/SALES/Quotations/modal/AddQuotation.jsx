@@ -123,6 +123,22 @@ const AddQuotation = ({
       .catch(() => setProducts([]));
   }, [isOpen]);
 
+  const getCustomerAddress = (c) => {
+    if (!c) return "";
+    const parts = [
+      c.billing_address || c.address,
+      c.city,
+      c.state,
+      c.country,
+      c.postal,
+    ]
+      .map((p) => (typeof p === "string" ? p.trim() : p))
+      .filter(Boolean);
+    return parts.length > 0
+      ? parts.join(", ")
+      : (c.billing_address || c.address || "");
+  };
+
   // Auto-fill Bill To fields when customer list loads for defaultCustomerId
   useEffect(() => {
     if (!form.customer || customers.length === 0) return;
@@ -132,11 +148,14 @@ const AddQuotation = ({
     if (selected && !form.bill_to_name) {
       setForm((prev) => ({
         ...prev,
-        bill_to_name: selected.customer_name || prev.bill_to_name,
+        bill_to_name:
+          selected.customer_name || selected.company_name || prev.bill_to_name,
         bill_to_address:
-          selected.address || selected.city || prev.bill_to_address,
-        bill_to_phone: selected.phone_number || prev.bill_to_phone,
-        finance_contact_email: selected.email || prev.finance_contact_email,
+          getCustomerAddress(selected) || prev.bill_to_address,
+        bill_to_phone:
+          selected.phno || selected.phone_number || selected.phone || prev.bill_to_phone,
+        finance_contact_email:
+          selected.financial_email || selected.admin_email || selected.email || prev.finance_contact_email,
       }));
     }
   }, [customers, form.customer, form.bill_to_name]);
@@ -191,11 +210,14 @@ const AddQuotation = ({
     setForm((prev) => ({
       ...prev,
       customer: customerId,
-      bill_to_name: selected?.customer_name || prev.bill_to_name,
+      bill_to_name:
+        selected?.customer_name || selected?.company_name || prev.bill_to_name,
       bill_to_address:
-        selected?.address || selected?.city || prev.bill_to_address,
-      bill_to_phone: selected?.phone_number || prev.bill_to_phone,
-      finance_contact_email: selected?.email || prev.finance_contact_email,
+        getCustomerAddress(selected) || prev.bill_to_address,
+      bill_to_phone:
+        selected?.phno || selected?.phone_number || selected?.phone || prev.bill_to_phone,
+      finance_contact_email:
+        selected?.financial_email || selected?.admin_email || selected?.email || prev.finance_contact_email,
     }));
   };
 
