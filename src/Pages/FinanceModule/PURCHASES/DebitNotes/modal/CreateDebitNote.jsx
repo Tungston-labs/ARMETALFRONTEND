@@ -8,6 +8,7 @@ import {
   editDebitNote,
   getDebitNoteById,
   getBillDebitDetails,
+  exportDebitNoteList,
   clearDebitNoteError,
   clearDebitNoteMessage,
 } from "../../../../../Redux/finance/purchases/debitNoteSlice";
@@ -226,6 +227,68 @@ const CreateDebitNote = () => {
       vendorEmail:
         data.vendor_email ?? data.vendor?.email ?? previous.vendorEmail,
     }));
+
+    if (Array.isArray(resPayload.items) && resPayload.items.length > 0) {
+      setItems(
+        resPayload.items.map((item, index) => {
+          const qty = item.max_debitable_qty > 0 ? item.max_debitable_qty : (item.quantity ?? item.billed_qty ?? 1);
+          const rate = item.rate ?? item.unit_price ?? 0;
+          const vat = item.vat_percentage ?? item.vat ?? 15;
+          return {
+            id: item.bill_item_id || item.id || Date.now() + index,
+            bill_item: item.bill_item_id || item.id,
+            product: item.product_id || item.product || "",
+            productName: item.product_name || item.particular || `Product ${index + 1}`,
+            particular: item.particular || item.product_name || "",
+            reasonDetail: item.reason_detail || "Invoiced at wrong unit price",
+            qty: String(qty),
+            rate: String(rate),
+            vat: String(vat),
+          };
+        }),
+      );
+    }
+  };
+
+  /* =====================================================
+     VENDOR SELECT & AUTO-FILL
+  ===================================================== */
+
+  const handleVendorSelect = (selectedVendorId) => {
+    handleChange("vendorId", selectedVendorId);
+
+    if (!selectedVendorId) {
+      return;
+    }
+
+    const selectedVendor = vendors.find(
+      (v) => String(v.id) === String(selectedVendorId),
+    );
+
+    if (selectedVendor) {
+      setForm((previous) => ({
+        ...previous,
+        vendorId: selectedVendor.id,
+        vendorName:
+          selectedVendor.name ||
+          selectedVendor.vendor_name ||
+          selectedVendor.company_name ||
+          previous.vendorName,
+        vendorAddress:
+          selectedVendor.billing_address ||
+          selectedVendor.address ||
+          previous.vendorAddress,
+        vendorPhone:
+          selectedVendor.phno ||
+          selectedVendor.phone_number ||
+          previous.vendorPhone,
+        vendorEmail:
+          selectedVendor.financial_email ||
+          selectedVendor.admin_email ||
+          selectedVendor.email ||
+          previous.vendorEmail,
+      }));
+    }
   };
 
   /* ---------- Items ---------- */
@@ -317,7 +380,14 @@ const CreateDebitNote = () => {
     dispatch(clearDebitNoteError());
     dispatch(clearDebitNoteMessage());
 
-    const payload = buildPayload();
+    const finalStatus = targetStatus || form.status || "pending";
+    const payload = {
+      ...buildPayload(),
+      status: finalStatus,
+      sub_total: subtotal,
+      total_vat: tax,
+      debit_amount: totalDebitAmount,
+    };
 
     const result = isEdit
       ? await dispatch(editDebitNote({ id, data: payload }))

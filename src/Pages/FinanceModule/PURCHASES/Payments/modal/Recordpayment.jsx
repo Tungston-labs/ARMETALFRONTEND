@@ -64,20 +64,30 @@ const getBillTotal = (bill) =>
   "";
 
 const getAlreadyPaid = (bill) =>
+  bill?.amount_paid ??
   bill?.already_paid ??
   bill?.paid_amount ??
-  bill?.amount_paid ??
   bill?.paid ??
   0;
 
-const getBalanceDue = (bill) =>
-  bill?.balance_due ??
-  bill?.remaining_amount ??
-  bill?.outstanding_amount ??
-  (
-    Number(getBillTotal(bill) || 0) -
-    Number(getAlreadyPaid(bill) || 0)
-  );
+const getBalanceDue = (bill) => {
+  if (bill?.balance !== undefined && bill?.balance !== null && bill?.balance !== "") {
+    return bill.balance;
+  }
+  if (bill?.balance_due !== undefined && bill?.balance_due !== null && bill?.balance_due !== "") {
+    return bill.balance_due;
+  }
+  if (bill?.remaining_amount !== undefined && bill?.remaining_amount !== null && bill?.remaining_amount !== "") {
+    return bill.remaining_amount;
+  }
+  if (bill?.outstanding_amount !== undefined && bill?.outstanding_amount !== null && bill?.outstanding_amount !== "") {
+    return bill.outstanding_amount;
+  }
+  const total = Number(getBillTotal(bill) || 0);
+  const paid = Number(getAlreadyPaid(bill) || 0);
+  const diff = total - paid;
+  return diff >= 0 ? diff : 0;
+};
 
 const getVendorId = (bill) => {
   if (!bill) {
@@ -162,12 +172,16 @@ const PaymentModal = ({
 
         alreadyPaid:
           initialData.already_paid ??
+          initialData.amount_paid ??
           initialData.paid_amount ??
+          bill?.amount_paid ??
           "",
 
         balanceDue:
           initialData.balance_due ??
+          initialData.balance ??
           initialData.outstanding_amount ??
+          bill?.balance ??
           "",
 
         paymentDate:
@@ -185,6 +199,7 @@ const PaymentModal = ({
 
         amount:
           initialData.amount ??
+          initialData.amount_paid ??
           initialData.amount_received ??
           "",
 
@@ -192,13 +207,13 @@ const PaymentModal = ({
           initialData.reference_number || "",
 
         bankName:
-          initialData.bank_name || "",
+          initialData.bank_name || vendor?.bank_name || "",
 
         accountHolder:
-          initialData.account_holder || "",
+          initialData.account_holder || vendor?.name || "",
 
         iban:
-          initialData.iban || "",
+          initialData.iban || vendor?.iban || "",
 
         notes:
           initialData.notes || "",
@@ -268,17 +283,24 @@ const PaymentModal = ({
       };
 
       if (name === "vendorId") {
-        const vendor = vendorOptions.find(
+        const vendor = vendors.find(
           (item) => String(item.id) === String(value),
         );
 
-        next.vendorName = vendor?.name || "";
+        next.vendorName = vendor ? getVendorName(vendor) : "";
 
         next.billId = "";
         next.billNumber = "";
         next.billTotal = "";
         next.alreadyPaid = "";
         next.balanceDue = "";
+        next.amount = "";
+
+        if (vendor) {
+          if (vendor.bank_name) next.bankName = vendor.bank_name;
+          if (vendor.name || vendor.vendor_name) next.accountHolder = vendor.name || vendor.vendor_name;
+          if (vendor.iban) next.iban = vendor.iban;
+        }
       }
 
       if (name === "billId") {
@@ -300,8 +322,16 @@ const PaymentModal = ({
           next.alreadyPaid =
             getAlreadyPaid(selectedBill);
 
-          next.balanceDue =
-            getBalanceDue(selectedBill);
+          const balanceDue = getBalanceDue(selectedBill);
+          next.balanceDue = balanceDue;
+
+          // Auto-fill amount if paymentType is Full Payment or if amount hasn't been set
+          if (next.paymentType === "Full Payment" || !next.amount) {
+            next.amount =
+              balanceDue !== "" && balanceDue !== null && balanceDue !== undefined
+                ? String(balanceDue)
+                : "";
+          }
 
           if (
             vendorId !== "" &&
@@ -310,17 +340,29 @@ const PaymentModal = ({
           ) {
             next.vendorId = vendorId;
 
-            const vendor = vendorOptions.find(
+            const vendor = vendors.find(
               (item) =>
                 String(item.id) ===
                 String(vendorId),
             );
 
             next.vendorName =
-              vendor?.name ||
-              selectedBill?.vendor_name ||
-              "";
+              vendor ? getVendorName(vendor) : (selectedBill?.vendor_name || "");
+
+            if (vendor) {
+              if (!next.bankName && vendor.bank_name) next.bankName = vendor.bank_name;
+              if (!next.accountHolder && (vendor.name || vendor.vendor_name)) {
+                next.accountHolder = vendor.name || vendor.vendor_name;
+              }
+              if (!next.iban && vendor.iban) next.iban = vendor.iban;
+            }
           }
+        }
+      }
+
+      if (name === "paymentType") {
+        if (value === "Full Payment" && next.balanceDue !== "" && next.balanceDue !== null && next.balanceDue !== undefined) {
+          next.amount = String(next.balanceDue);
         }
       }
 
@@ -496,11 +538,15 @@ const PaymentModal = ({
               <Input
                 type="text"
                 value={
-                  formData.billTotal !== ""
+                  formData.billTotal !== "" &&
+                  formData.billTotal !== null &&
+                  formData.billTotal !== undefined &&
+                  !isNaN(Number(formData.billTotal))
                     ? `SAR ${Number(
                         formData.billTotal,
                       ).toLocaleString("en-US", {
                         minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
                       })}`
                     : ""
                 }
@@ -517,11 +563,15 @@ const PaymentModal = ({
               <Input
                 type="text"
                 value={
-                  formData.alreadyPaid !== ""
+                  formData.alreadyPaid !== "" &&
+                  formData.alreadyPaid !== null &&
+                  formData.alreadyPaid !== undefined &&
+                  !isNaN(Number(formData.alreadyPaid))
                     ? `SAR ${Number(
                         formData.alreadyPaid,
                       ).toLocaleString("en-US", {
                         minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
                       })}`
                     : ""
                 }
@@ -538,11 +588,15 @@ const PaymentModal = ({
               <Input
                 type="text"
                 value={
-                  formData.balanceDue !== ""
+                  formData.balanceDue !== "" &&
+                  formData.balanceDue !== null &&
+                  formData.balanceDue !== undefined &&
+                  !isNaN(Number(formData.balanceDue))
                     ? `SAR ${Number(
                         formData.balanceDue,
                       ).toLocaleString("en-US", {
                         minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
                       })}`
                     : ""
                 }

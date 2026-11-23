@@ -21,6 +21,8 @@ import {
     clearDebitNoteMessage,
 } from "../../../../Redux/finance/purchases/debitNoteSlice";
 
+import { getVendors } from "../../../../Redux/finance/purchases/vendorsSlice";
+
 import {
     getDebitNoteColumns,
     debitNoteStats,
@@ -37,9 +39,10 @@ const ADD_ROUTE = "/purchases/debit-notes/add";
 ========================================================= */
 
 const STATUS_OPTIONS = [
-    "Issued",
-    "Pending",
-    "Cancelled",
+    { label: "Issued", value: "issued" },
+    { label: "Pending", value: "pending" },
+    { label: "Cancelled", value: "cancelled" },
+    { label: "Draft", value: "draft" },
 ];
 
 const REASON_OPTIONS = [
@@ -137,6 +140,10 @@ const useDebitNotes = () => {
         (state) => state.debitNote || {}
     );
 
+    const vendors = useSelector(
+        (state) => state.vendor?.vendors || []
+    );
+
     /* =====================================================
        FILTERS
     ===================================================== */
@@ -145,6 +152,8 @@ const useDebitNotes = () => {
 
     const [debouncedSearch, setDebouncedSearch] =
         useState("");
+
+    const [vendor, setVendor] = useState("");
 
     const [reason, setReason] = useState("");
 
@@ -166,6 +175,17 @@ const useDebitNotes = () => {
             totalItems / ROWS_PER_PAGE
         ) || 1;
 
+    useEffect(() => {
+        dispatch(getVendors({ page_size: 100 }));
+    }, [dispatch]);
+
+    const vendorOptions = useMemo(() => {
+        return vendors.map((v) => ({
+            label: v.name || v.vendor_name || v.company_name || `Vendor #${v.id}`,
+            value: String(v.id),
+        }));
+    }, [vendors]);
+
     /* =====================================================
        FETCH LIST
     ===================================================== */
@@ -175,6 +195,10 @@ const useDebitNotes = () => {
             getDebitNotes({
                 search:
                     debouncedSearch ||
+                    undefined,
+
+                vendor:
+                    vendor ||
                     undefined,
 
                 reason:
@@ -201,6 +225,7 @@ const useDebitNotes = () => {
     }, [
         dispatch,
         debouncedSearch,
+        vendor,
         reason,
         status,
         startDate,
@@ -281,6 +306,11 @@ const useDebitNotes = () => {
         setSearch(value);
     };
 
+    const handleVendorChange = (value) => {
+        setVendor(value);
+        setCurrentPage(1);
+    };
+
     const handleReasonChange = (value) => {
         setReason(value);
 
@@ -302,6 +332,17 @@ const useDebitNotes = () => {
     const handleEndDateChange = (event) => {
         setEndDate(event.target.value);
 
+        setCurrentPage(1);
+    };
+
+    const handleClearFilter = () => {
+        setSearch("");
+        setDebouncedSearch("");
+        setVendor("");
+        setReason("");
+        setStatus("");
+        setStartDate("");
+        setEndDate("");
         setCurrentPage(1);
     };
 
@@ -461,6 +502,10 @@ const useDebitNotes = () => {
     return {
         search,
 
+        vendor,
+
+        vendorOptions,
+
         reason,
 
         status,
@@ -502,6 +547,8 @@ const useDebitNotes = () => {
 
         handleSearch,
 
+        handleVendorChange,
+
         handleReasonChange,
 
         handleStatusChange,
@@ -509,6 +556,8 @@ const useDebitNotes = () => {
         handleStartDateChange,
 
         handleEndDateChange,
+
+        handleClearFilter,
 
         handleAddDebitNote,
 

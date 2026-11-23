@@ -12,6 +12,8 @@ import { FiDownload } from "react-icons/fi";
 const DebitNotes = () => {
   const {
     search,
+    vendor,
+    vendorOptions,
     reason,
     status,
     startDate,
@@ -29,10 +31,12 @@ const DebitNotes = () => {
     reasonOptions,
     statusOptions,
     handleSearch,
+    handleVendorChange,
     handleReasonChange,
     handleStatusChange,
     handleStartDateChange,
     handleEndDateChange,
+    handleClearFilter,
     handleAddDebitNote,
     handleExport,
   } = useDebitNotes();
@@ -96,6 +100,13 @@ const DebitNotes = () => {
         showSearch
         filters={[
           {
+            key: "vendor",
+            value: vendor,
+            onChange: handleVendorChange,
+            options: vendorOptions,
+            placeholder: "All Vendor",
+          },
+          {
             key: "reason",
             value: reason,
             onChange: handleReasonChange,
@@ -107,6 +118,27 @@ const DebitNotes = () => {
         statuses={statusOptions}
         onStatus={handleStatusChange}
         showStatus
+        statusPlaceholder="All Status"
+        rightButton={
+          <button
+            type="button"
+            onClick={handleClearFilter}
+            style={{
+              height: "36px",
+              padding: "0 18px",
+              background: "#2563EB",
+              color: "#FFFFFF",
+              border: "none",
+              borderRadius: "4px",
+              fontSize: "12px",
+              fontWeight: 500,
+              cursor: "pointer",
+              whiteSpace: "nowrap",
+            }}
+          >
+            Clear Filter
+          </button>
+        }
       />
 
       <ReusableTable columns={columns} data={paginatedData} loading={loading} />
