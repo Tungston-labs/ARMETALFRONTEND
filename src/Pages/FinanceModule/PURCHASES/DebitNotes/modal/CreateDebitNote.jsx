@@ -13,9 +13,13 @@ import {
   editDebitNote,
   getDebitNoteById,
   getBillDebitDetails,
+  exportDebitNoteList,
   clearDebitNoteError,
   clearDebitNoteMessage,
 } from "../../../../../Redux/finance/purchases/debitNoteSlice";
+
+import { getBills } from "../../../../../Redux/finance/purchases/BillSlice";
+import { getVendors } from "../../../../../Redux/finance/purchases/vendorsSlice";
 
 const CreateDebitNote = () => {
   const navigate = useNavigate();
@@ -28,6 +32,20 @@ const CreateDebitNote = () => {
 
   const { selectedDebitNote, billDetails, submitting, detailsLoading, error } =
     useSelector((state) => state.debitNote || {});
+
+  const vendors = useSelector(
+    (state) =>
+      state.vendor?.vendors ||
+      state.vendors?.vendors ||
+      [],
+  );
+
+  const bills = useSelector(
+    (state) =>
+      state.bill?.bills ||
+      state.bills?.bills ||
+      [],
+  );
 
   /* =====================================================
      FORM
@@ -73,8 +91,22 @@ const CreateDebitNote = () => {
   ]);
 
   /* =====================================================
-     LOAD DETAILS
+     LOAD DETAILS & LOOKUPS
   ===================================================== */
+
+  useEffect(() => {
+    dispatch(getBills({ page_size: 100 }));
+    dispatch(getVendors({ page_size: 100 }));
+  }, [dispatch]);
+
+  useEffect(() => {
+    if (!isEdit && !form.issueDate) {
+      setForm((prev) => ({
+        ...prev,
+        issueDate: new Date().toISOString().slice(0, 10),
+      }));
+    }
+  }, [isEdit, form.issueDate]);
 
   useEffect(() => {
     if (!isEdit) {
@@ -83,6 +115,27 @@ const CreateDebitNote = () => {
 
     dispatch(getDebitNoteById(id));
   }, [dispatch, id, isEdit]);
+
+  /* =====================================================
+     OPTIONS
+  ===================================================== */
+
+  const vendorOptions = useMemo(() => {
+    return vendors.map((v) => ({
+      id: v.id,
+      name: v.name || v.vendor_name || v.company_name || `Vendor #${v.id}`,
+    }));
+  }, [vendors]);
+
+  const billOptions = useMemo(() => {
+    if (!form.vendorId) {
+      return bills;
+    }
+    return bills.filter((b) => {
+      const bVendorId = typeof b.vendor === "object" ? b.vendor?.id : (b.vendor_id ?? b.vendor);
+      return !bVendorId || String(bVendorId) === String(form.vendorId);
+    });
+  }, [bills, form.vendorId]);
 
   /* =====================================================
      PREFILL EDIT
@@ -96,9 +149,9 @@ const CreateDebitNote = () => {
     const data = selectedDebitNote?.data || selectedDebitNote;
 
     setForm({
-      debitNoteNumber: data.debit_note_number || data.debitNoteNumber || "",
+      debitNoteNumber: data.debit_note_number || data.dn_number || data.debitNoteNumber || "",
 
-      billId: data.bill_id || data.bill?.id || "",
+      billId: data.bill_id || data.bill?.id || data.bill || "",
 
       issueDate: data.issue_date || "",
 
@@ -110,23 +163,23 @@ const CreateDebitNote = () => {
 
       alreadyDebited: data.already_debited ?? "",
 
-      remainingBalance: data.remaining_balance ?? "",
+      remainingBalance: data.remaining_balance ?? data.balance ?? "",
 
-      companyName: data.company_name || "TUNGSTON LABS",
+      companyName: data.company_name || data.from_company_name || "TUNGSTON LABS",
 
-      companyAddress: data.company_address || "",
+      companyAddress: data.company_address || data.from_address || "",
 
-      companyPhone: data.company_phone || "",
+      companyPhone: data.company_phone || data.from_phone_number || "",
 
-      companyEmail: data.company_email || "",
+      companyEmail: data.company_email || data.from_email || "",
 
-      vendorId: data.vendor_id || data.vendor?.id || "",
+      vendorId: data.vendor_id || data.vendor?.id || data.vendor || "",
 
-      vendorAddress: data.vendor_address || "",
+      vendorAddress: data.vendor_address || data.bill_to_address || "",
 
-      vendorPhone: data.vendor_phone || "",
+      vendorPhone: data.vendor_phone || data.bill_to_phone || "",
 
-      vendorEmail: data.vendor_email || "",
+      vendorEmail: data.vendor_email || data.finance_contact_email || "",
 
       notes: data.notes || "",
     });
@@ -136,15 +189,21 @@ const CreateDebitNote = () => {
         data.items.map((item, index) => ({
           id: item.id || Date.now() + index,
 
+          bill_item: item.bill_item || item.bill_item_id || null,
+
           product: item.product_id || item.product || "",
 
-          reasonDetail: item.reason_detail || "",
+          productName: item.product_name || item.item_name || item.particular || `Product ${index + 1}`,
 
-          qty: item.quantity ?? item.qty ?? "",
+          particular: item.particular || item.item_name || "",
 
-          rate: item.rate ?? "",
+          reasonDetail: item.reason_detail || item.description || "",
 
-          vat: item.vat_percentage ?? item.vat ?? "15",
+          qty: String(item.quantity ?? item.qty ?? "1"),
+
+          rate: String(item.rate ?? ""),
+
+          vat: String(item.vat_percentage ?? item.vat ?? "15"),
         })),
       );
     }
@@ -162,31 +221,26 @@ const CreateDebitNote = () => {
   };
 
   /* =====================================================
-     BILL CHANGE
+     BILL SELECT & AUTO-FILL
   ===================================================== */
 
-  const handleBillChange = (value) => {
-    handleChange("billId", value);
-  };
+  const handleBillSelect = async (selectedBillId) => {
+    handleChange("billId", selectedBillId);
 
-  /* =====================================================
-     BILL DETAILS LOOKUP
-  ===================================================== */
-
-  const handleBillBlur = async () => {
-    const value = String(form.billId || "").trim();
-
-    if (!value) {
-      return;
-    }
-
-    if (!/^\d+$/.test(value)) {
+    if (!selectedBillId) {
+      setForm((previous) => ({
+        ...previous,
+        billId: "",
+        billValue: "",
+        alreadyDebited: "",
+        remainingBalance: "",
+      }));
       return;
     }
 
     const result = await dispatch(
       getBillDebitDetails({
-        bill_id: value,
+        bill_id: selectedBillId,
       }),
     );
 
@@ -194,32 +248,91 @@ const CreateDebitNote = () => {
       return;
     }
 
-    const data = result.payload?.data || result.payload;
-
-    if (!data) {
+    const resPayload = result.payload?.data || result.payload;
+    if (!resPayload) {
       return;
     }
 
     setForm((previous) => ({
       ...previous,
+      billId: selectedBillId,
+      billValue: resPayload.bill_value !== undefined ? String(resPayload.bill_value) : previous.billValue,
+      alreadyDebited: resPayload.already_debited_amount !== undefined ? String(resPayload.already_debited_amount) : previous.alreadyDebited,
+      remainingBalance: resPayload.remaining_balance !== undefined ? String(resPayload.remaining_balance) : previous.remainingBalance,
 
-      billValue: data.bill_value ?? data.bill_amount ?? previous.billValue,
+      vendorId: resPayload.vendor_id ?? resPayload.vendor ?? previous.vendorId,
+      vendorName: resPayload.vendor_name ?? resPayload.bill_to_name ?? previous.vendorName,
+      vendorAddress: resPayload.vendor_address ?? resPayload.bill_to_address ?? previous.vendorAddress,
+      vendorPhone: resPayload.vendor_phone ?? resPayload.bill_to_phone ?? previous.vendorPhone,
+      vendorEmail: resPayload.vendor_email ?? resPayload.finance_contact_email ?? previous.vendorEmail,
 
-      alreadyDebited: data.already_debited ?? previous.alreadyDebited,
-
-      remainingBalance: data.remaining_balance ?? previous.remainingBalance,
-
-      vendorId: data.vendor_id ?? data.vendor?.id ?? previous.vendorId,
-
-      vendorAddress:
-        data.vendor_address ?? data.vendor?.address ?? previous.vendorAddress,
-
-      vendorPhone:
-        data.vendor_phone ?? data.vendor?.phone ?? previous.vendorPhone,
-
-      vendorEmail:
-        data.vendor_email ?? data.vendor?.email ?? previous.vendorEmail,
+      companyName: resPayload.from_company_name || resPayload.company_name || previous.companyName || "TUNGSTON LABS",
+      companyAddress: resPayload.from_address || resPayload.company_address || previous.companyAddress,
+      companyPhone: resPayload.from_phone_number || resPayload.company_phone || previous.companyPhone,
+      companyEmail: resPayload.from_email || resPayload.company_email || previous.companyEmail,
     }));
+
+    if (Array.isArray(resPayload.items) && resPayload.items.length > 0) {
+      setItems(
+        resPayload.items.map((item, index) => {
+          const qty = item.max_debitable_qty > 0 ? item.max_debitable_qty : (item.quantity ?? item.billed_qty ?? 1);
+          const rate = item.rate ?? item.unit_price ?? 0;
+          const vat = item.vat_percentage ?? item.vat ?? 15;
+          return {
+            id: item.bill_item_id || item.id || Date.now() + index,
+            bill_item: item.bill_item_id || item.id,
+            product: item.product_id || item.product || "",
+            productName: item.product_name || item.particular || `Product ${index + 1}`,
+            particular: item.particular || item.product_name || "",
+            reasonDetail: item.reason_detail || "Invoiced at wrong unit price",
+            qty: String(qty),
+            rate: String(rate),
+            vat: String(vat),
+          };
+        }),
+      );
+    }
+  };
+
+  /* =====================================================
+     VENDOR SELECT & AUTO-FILL
+  ===================================================== */
+
+  const handleVendorSelect = (selectedVendorId) => {
+    handleChange("vendorId", selectedVendorId);
+
+    if (!selectedVendorId) {
+      return;
+    }
+
+    const selectedVendor = vendors.find(
+      (v) => String(v.id) === String(selectedVendorId),
+    );
+
+    if (selectedVendor) {
+      setForm((previous) => ({
+        ...previous,
+        vendorId: selectedVendor.id,
+        vendorName:
+          selectedVendor.name ||
+          selectedVendor.vendor_name ||
+          selectedVendor.company_name ||
+          previous.vendorName,
+        vendorAddress:
+          selectedVendor.billing_address ||
+          selectedVendor.address ||
+          previous.vendorAddress,
+        vendorPhone:
+          selectedVendor.phno ||
+          selectedVendor.phone_number ||
+          previous.vendorPhone,
+        vendorEmail:
+          selectedVendor.financial_email ||
+          selectedVendor.admin_email ||
+          selectedVendor.email ||
+          previous.vendorEmail,
+      }));
+    }
   };
 
   /* =====================================================
@@ -324,14 +437,16 @@ const CreateDebitNote = () => {
 
   const buildPayload = () => ({
     debit_note_number: form.debitNoteNumber || "",
+    dn_number: form.debitNoteNumber || "",
 
     bill: numberOrNull(form.billId),
+    bill_id: numberOrNull(form.billId),
 
     issue_date: form.issueDate || null,
 
-    reason: form.reason,
+    reason: form.reason || "damaged_goods",
 
-    status: form.status,
+    status: form.status || "pending",
 
     bill_value: numberOrNull(form.billValue) ?? 0,
 
@@ -339,34 +454,57 @@ const CreateDebitNote = () => {
 
     remaining_balance: numberOrNull(form.remainingBalance) ?? 0,
 
-    company_name: form.companyName,
+    sub_total: subtotal,
 
-    company_address: form.companyAddress,
+    total_vat: tax,
 
-    company_phone: form.companyPhone,
+    debit_amount: totalDebitAmount,
 
-    company_email: form.companyEmail,
+    from_company_name: form.companyName || "TUNGSTON LABS",
+    company_name: form.companyName || "TUNGSTON LABS",
+
+    from_address: form.companyAddress || "",
+    company_address: form.companyAddress || "",
+
+    from_phone_number: form.companyPhone || "",
+    company_phone: form.companyPhone || "",
+
+    from_email: form.companyEmail || "",
+    company_email: form.companyEmail || "",
 
     vendor: numberOrNull(form.vendorId),
+    vendor_id: numberOrNull(form.vendorId),
 
-    vendor_address: form.vendorAddress,
+    bill_to_name: form.vendorName || "",
+    bill_to_address: form.vendorAddress || "",
+    vendor_address: form.vendorAddress || "",
 
-    vendor_phone: form.vendorPhone,
+    bill_to_phone: form.vendorPhone || "",
+    vendor_phone: form.vendorPhone || "",
 
-    vendor_email: form.vendorEmail,
+    finance_contact_email: form.vendorEmail || "",
+    vendor_email: form.vendorEmail || "",
 
-    notes: form.notes,
+    notes: form.notes || "",
 
     items: calculatedItems.map((item) => ({
+      bill_item: numberOrNull(item.bill_item),
+
       product: numberOrNull(item.product),
 
-      reason_detail: item.reasonDetail,
+      item_name: item.particular || item.productName || "Debit Item",
 
-      quantity: numberOrNull(item.qty) ?? 0,
+      description: item.reasonDetail || "",
+      reason_detail: item.reasonDetail || "",
+
+      quantity: numberOrNull(item.qty) ?? 1,
+      qty: numberOrNull(item.qty) ?? 1,
 
       rate: numberOrNull(item.rate) ?? 0,
+      unit_price: numberOrNull(item.rate) ?? 0,
 
-      vat_percentage: numberOrNull(item.vat) ?? 0,
+      vat_percentage: numberOrNull(item.vat) ?? 15,
+      vat: numberOrNull(item.vat) ?? 15,
 
       vat_amount: numberOrNull(item.vatAmount) ?? 0,
 
@@ -378,14 +516,18 @@ const CreateDebitNote = () => {
      SUBMIT
   ===================================================== */
 
-  const handleSubmit = async (event) => {
-    event.preventDefault();
-
+  const handleSubmitWithStatus = async (targetStatus) => {
     dispatch(clearDebitNoteError());
-
     dispatch(clearDebitNoteMessage());
 
-    const payload = buildPayload();
+    const finalStatus = targetStatus || form.status || "pending";
+    const payload = {
+      ...buildPayload(),
+      status: finalStatus,
+      sub_total: subtotal,
+      total_vat: tax,
+      debit_amount: totalDebitAmount,
+    };
 
     let result;
 
@@ -407,6 +549,15 @@ const CreateDebitNote = () => {
     ) {
       navigate("/purchases/debit-notes");
     }
+  };
+
+  const handleSubmit = (event) => {
+    event.preventDefault();
+    handleSubmitWithStatus(form.status || "pending");
+  };
+
+  const handleDownload = () => {
+    dispatch(exportDebitNoteList());
   };
 
   /* =====================================================
@@ -548,13 +699,18 @@ const CreateDebitNote = () => {
             <div>
               <label style={labelStyle}>Against Bill *</label>
 
-              <input
+              <select
                 value={form.billId}
-                onChange={(e) => handleBillChange(e.target.value)}
-                onBlur={handleBillBlur}
-                placeholder="Bill ID"
+                onChange={(e) => handleBillSelect(e.target.value)}
                 style={inputStyle}
-              />
+              >
+                <option value="">Select Bill</option>
+                {billOptions.map((bill) => (
+                  <option key={bill.id} value={bill.id}>
+                    {bill.bill_number} - {bill.vendor_name || bill.bill_to_name || "Vendor"} ({formatCurrency(bill.total_amount)} SAR)
+                  </option>
+                ))}
+              </select>
             </div>
 
             <div>
@@ -590,10 +746,17 @@ const CreateDebitNote = () => {
               <label style={labelStyle}>Bill Value</label>
 
               <input
-                value={form.billValue}
-                onChange={(e) => handleChange("billValue", e.target.value)}
+                value={
+                  form.billValue !== "" && !isNaN(Number(form.billValue))
+                    ? `${formatCurrency(form.billValue)} SAR`
+                    : form.billValue
+                }
+                readOnly
                 placeholder="15,000 SAR"
-                style={inputStyle}
+                style={{
+                  ...inputStyle,
+                  background: "#F9FAFB",
+                }}
               />
             </div>
 
@@ -601,10 +764,17 @@ const CreateDebitNote = () => {
               <label style={labelStyle}>Already Debited</label>
 
               <input
-                value={form.alreadyDebited}
-                onChange={(e) => handleChange("alreadyDebited", e.target.value)}
+                value={
+                  form.alreadyDebited !== "" && !isNaN(Number(form.alreadyDebited))
+                    ? `${formatCurrency(form.alreadyDebited)} SAR`
+                    : form.alreadyDebited
+                }
+                readOnly
                 placeholder="10,000 SAR"
-                style={inputStyle}
+                style={{
+                  ...inputStyle,
+                  background: "#F9FAFB",
+                }}
               />
             </div>
 
@@ -612,12 +782,20 @@ const CreateDebitNote = () => {
               <label style={labelStyle}>Remaining Balance</label>
 
               <input
-                value={form.remainingBalance}
-                onChange={(e) =>
-                  handleChange("remainingBalance", e.target.value)
+                value={
+                  form.remainingBalance !== "" && !isNaN(Number(form.remainingBalance))
+                    ? `SAR ${formatCurrency(form.remainingBalance)}`
+                    : form.remainingBalance
                 }
+                readOnly
                 placeholder="SAR 5,000"
-                style={inputStyle}
+                style={{
+                  ...inputStyle,
+                  background: "#FFFBEB",
+                  color: "#B45309",
+                  fontWeight: 600,
+                  borderColor: "#FDE68A",
+                }}
               />
             </div>
 
@@ -636,6 +814,8 @@ const CreateDebitNote = () => {
                 <option value="applied">Applied</option>
 
                 <option value="cancelled">Cancelled</option>
+
+                <option value="draft">Draft</option>
               </select>
             </div>
 
@@ -682,12 +862,18 @@ const CreateDebitNote = () => {
             <div>
               <label style={labelStyle}>Vendor *</label>
 
-              <input
+              <select
                 value={form.vendorId}
-                onChange={(e) => handleChange("vendorId", e.target.value)}
-                placeholder="Vendor ID"
+                onChange={(e) => handleVendorSelect(e.target.value)}
                 style={inputStyle}
-              />
+              >
+                <option value="">Company/Client Name</option>
+                {vendorOptions.map((v) => (
+                  <option key={v.id} value={v.id}>
+                    {v.name}
+                  </option>
+                ))}
+              </select>
             </div>
 
             <div>
@@ -802,14 +988,15 @@ const CreateDebitNote = () => {
 
                     <td>
                       <input
-                        value={item.product}
-                        onChange={(e) =>
-                          updateItem(item.id, "product", e.target.value)
-                        }
-                        placeholder="Product ID"
+                        value={item.productName || item.particular || item.product || ""}
+                        onChange={(e) => {
+                          updateItem(item.id, "productName", e.target.value);
+                          updateItem(item.id, "particular", e.target.value);
+                        }}
+                        placeholder="Product 1"
                         style={{
                           ...inputStyle,
-                          width: "90px",
+                          minWidth: "120px",
                         }}
                       />
                     </td>
@@ -1049,28 +1236,70 @@ const CreateDebitNote = () => {
             onClick={handleCancel}
             style={{
               height: "36px",
-              padding: "0 25px",
-              border: "1px solid #304BA8",
-              color: "#111827",
+              padding: "0 22px",
+              border: "1px solid #D1D5DB",
+              color: "#374151",
               background: "#FFFFFF",
               borderRadius: "4px",
               cursor: "pointer",
+              fontWeight: 500,
+              fontSize: "12px",
             }}
           >
             CANCEL
           </button>
 
           <button
-            type="submit"
-            disabled={submitting}
+            type="button"
+            onClick={handleDownload}
             style={{
               height: "36px",
-              padding: "0 25px",
+              padding: "0 22px",
+              border: "1px solid #D1D5DB",
+              color: "#374151",
+              background: "#FFFFFF",
+              borderRadius: "4px",
+              cursor: "pointer",
+              fontWeight: 500,
+              fontSize: "12px",
+            }}
+          >
+            DOWNLOAD
+          </button>
+
+          <button
+            type="button"
+            disabled={submitting}
+            onClick={() => handleSubmitWithStatus("draft")}
+            style={{
+              height: "36px",
+              padding: "0 22px",
+              border: "1px solid #304BA8",
+              color: "#304BA8",
+              background: "#FFFFFF",
+              borderRadius: "4px",
+              cursor: submitting ? "not-allowed" : "pointer",
+              fontWeight: 500,
+              fontSize: "12px",
+            }}
+          >
+            SAVE DRAFT
+          </button>
+
+          <button
+            type="button"
+            disabled={submitting}
+            onClick={() => handleSubmitWithStatus(isEdit ? form.status : "pending")}
+            style={{
+              height: "36px",
+              padding: "0 24px",
               border: "none",
               color: "#FFFFFF",
               background: "#304BA8",
               borderRadius: "4px",
               cursor: submitting ? "not-allowed" : "pointer",
+              fontWeight: 500,
+              fontSize: "12px",
               opacity: submitting ? 0.7 : 1,
             }}
           >
@@ -1078,7 +1307,7 @@ const CreateDebitNote = () => {
               ? "Saving..."
               : isEdit
                 ? "UPDATE DEBIT NOTE"
-                : "ISSUE DEBIT NOTE"}
+                : "SENT FOR APPROVAL"}
           </button>
         </div>
       </form>

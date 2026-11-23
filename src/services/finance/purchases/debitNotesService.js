@@ -58,10 +58,12 @@ export const deleteDebitNote = async (id) => {
 // BILL DETAILS
 // ==========================================
 
-// GET: /finance/bill/:id/
+// GET: /finance/debit-notes/bill-details/?bill=:id
 export const fetchBillDebitDetails = async (params = {}) => {
-    const billId = params.bill_id;
-    const response = await API.get(`/finance/bill/${billId}/`);
+    const billId = params.bill_id || params.bill;
+    const response = await API.get("/finance/debit-notes/bill-details/", {
+        params: { bill: billId },
+    });
 
     return response.data;
 };
