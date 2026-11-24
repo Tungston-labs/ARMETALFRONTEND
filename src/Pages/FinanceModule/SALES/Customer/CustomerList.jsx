@@ -1,18 +1,16 @@
 import React from "react";
-
 import ReusableTable from "../../../../Components/ReusableTable/ReusableTable";
 import ReusablePagination from "../../../../Components/Pagination/ReusablePagination";
 import ReusableFilter from "../../../../Components/ReusableTable/ReusableFilter";
 import ReusableHeader from "../../../../Components/ReusableTable/ReusableHeader";
 import StatsCards from "../../../../Components/StatsCards/StatsCards";
-
 import CustomerModal from "./modal/CustomerModal";
 import { useCustomerList } from "./Usecustomerlist ";
 import { getCustomerColumns } from "./Customerlist.columns";
 import TopNotification from "../../../../Components/Topnotification/Topnotification";
 import ReusableConfirmModal from "../../../../Components/modals/ReusableConfirmModal";
-import { ExportButton } from "./CustomerList.styles";
-import { FiDownload } from "react-icons/fi";
+// import { ExportButton } from "./CustomerList.styles";
+// import { FiDownload } from "react-icons/fi";
 
 const STATUS_OPTIONS = [
     { label: "Active", value: "active" },
@@ -85,10 +83,10 @@ const CustomerList = () => {
                 buttonText="+ NEW CUSTOMER"
                 onButtonClick={handleAddCustomer}
                 >
-            <ExportButton type="button">
+            {/* <ExportButton type="button">
                     <FiDownload />
                     Export
-                </ExportButton>
+                </ExportButton> */}
             </ReusableHeader>
  
             <StatsCards cards={cards} loading={loading} />
@@ -115,6 +113,7 @@ const CustomerList = () => {
                 data={customers}
                 loading={loading}
                 autoLayout
+                   onRowClick={handleViewOverview}
             />
 
             <ReusablePagination

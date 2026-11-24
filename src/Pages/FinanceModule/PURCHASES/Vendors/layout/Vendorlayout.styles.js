@@ -91,3 +91,47 @@ export const DateSeparator = styled.span`
   font-size: 14px;
 `;
 
+/* Active / Inactive toggle shown beside the status badge */
+export const ToggleSwitch = styled.button`
+  position: relative;
+  flex-shrink: 0;
+
+  width: 40px;
+  height: 22px;
+  padding: 0;
+
+  border: none;
+  border-radius: 999px;
+
+  background: ${({ $on }) => ($on ? "#3250BC" : "#D0D5DD")};
+
+  cursor: ${({ disabled }) => (disabled ? "not-allowed" : "pointer")};
+  opacity: ${({ disabled }) => (disabled ? 0.6 : 1)};
+
+  transition: background 0.2s ease, opacity 0.2s ease;
+
+  &::after {
+    content: "";
+    position: absolute;
+    top: 2px;
+    left: ${({ $on }) => ($on ? "20px" : "2px")};
+
+    width: 18px;
+    height: 18px;
+
+    border-radius: 50%;
+    background: #ffffff;
+
+    transition: left 0.2s ease;
+  }
+
+  &:focus-visible {
+    outline: 2px solid #3250bc;
+    outline-offset: 2px;
+  }
+`;
+
+export const StatusError = styled.span`
+  color: #e53935;
+  font-size: 12px;
+`;

@@ -24,22 +24,37 @@ const StatsCards = ({ cards = [], loading = false }) => {
 
   return (
     <Wrapper>
-      {cards.map((card, index) => (
-        <Card
-          key={card.title || index}
-          onClick={card.onClick}
-          $clickable={Boolean(card.onClick)}
-        >
-          <IconWrapper $bg={card.backgroundColor} $color={card.iconColor}>
-            {card.icon}
-          </IconWrapper>
+      {cards.map((card, index) => {
+        const clickable = Boolean(card.onClick);
 
-          <Content>
-            <Count title={String(card.count)}>{card.count}</Count>
-            <Title title={card.title}>{card.title}</Title>
-          </Content>
-        </Card>
-      ))}
+        return (
+          <Card
+            key={card.title || index}
+            onClick={card.onClick}
+            $clickable={clickable}
+            // clickable cards behave like buttons for keyboard / screen-reader users
+            {...(clickable && {
+              role: "button",
+              tabIndex: 0,
+              onKeyDown: (e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  card.onClick(e);
+                }
+              },
+            })}
+          >
+            <IconWrapper $bg={card.backgroundColor} $color={card.iconColor}>
+              {card.icon}
+            </IconWrapper>
+
+            <Content>
+              <Count title={String(card.count)}>{card.count}</Count>
+              <Title title={card.title}>{card.title}</Title>
+            </Content>
+          </Card>
+        );
+      })}
     </Wrapper>
   );
 };

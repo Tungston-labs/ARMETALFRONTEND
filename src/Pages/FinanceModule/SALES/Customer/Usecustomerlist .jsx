@@ -187,13 +187,13 @@ export const useCustomerList = () => {
             backgroundColor: "#fff3f3",
             iconColor: "#DB0F12",
         },
-        {
-            title: "Payments Received",
-            count: formatCurrency(summary?.payments_received),
-            icon: <FiDollarSign />,
-            backgroundColor: "#f4fff2",
-            iconColor: "#21C034",
-        },
+       {
+    title: `Payments Received - ${monthLabel}`,
+    count: formatCurrency(summary?.payments_received),
+    icon: <FiDollarSign />,
+    backgroundColor: "#f4fff2",
+    iconColor: "#21C034",
+},
     ];
 
     // ==========================================================

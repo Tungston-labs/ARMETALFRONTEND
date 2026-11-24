@@ -4,7 +4,6 @@ import { useDispatch, useSelector } from "react-redux";
 
 import ReusableHeader from "../../../../../Components/ReusableTable/ReusableHeader";
 import CompanyHeader from "../../../../../Components/Finance/sales/customer/CompanyHeader";
-import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import {
   LayoutWrapper,
@@ -13,9 +12,14 @@ import {
   DatePickerContainer,
   DateInput,
   DateSeparator,
+  ToggleSwitch,
+  StatusError,
 } from "./CompanyLayout.styles";
 
-import { getCustomerById } from "../../../../../Redux/finance/Sales/CustomerSlice";
+import {
+  getCustomerById,
+  updateCustomerPartial,
+} from "../../../../../Redux/finance/Sales/CustomerSlice";
 
 /* =========================================================
    PAGE META  (set showDateFilter per page)
@@ -50,16 +54,63 @@ const CompanyLayout = () => {
 
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
-const toStr = (d) =>
-  d
-    ? `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`
-    : "";
 
-const toDate = (s) => (s ? new Date(`${s}T00:00:00`) : null);
+  /* ---------- STATUS TOGGLE STATE ---------- */
+
+  const [statusSaving, setStatusSaving] = useState(false);
+  const [statusError, setStatusError] = useState("");
+
   useEffect(() => {
     if (!customerId) return;
     dispatch(getCustomerById(customerId));
   }, [dispatch, customerId]);
+
+  /* ---------- CUSTOMER STATUS (Active = green, Inactive = red) ---------- */
+
+  const clientStatus = selectedCustomer?.client_status || "";
+
+  const statusLabel =
+    selectedCustomer?.client_status_name ||
+    (clientStatus
+      ? clientStatus.charAt(0).toUpperCase() + clientStatus.slice(1)
+      : "");
+
+  // success = green, danger = red, default = grey
+  const badgeVariant =
+    clientStatus === "active"
+      ? "success"
+      : clientStatus === "inactive"
+      ? "danger"
+      : "default";
+
+  // the toggle only makes sense for active / inactive customers
+  const showStatusToggle =
+    clientStatus === "active" || clientStatus === "inactive";
+
+  const handleStatusToggle = async () => {
+    if (!customerId || statusSaving) return;
+
+    const nextStatus = clientStatus === "active" ? "inactive" : "active";
+
+    setStatusSaving(true);
+    setStatusError("");
+
+    const result = await dispatch(
+      updateCustomerPartial({
+        id: customerId,
+        customerData: { client_status: nextStatus },
+      })
+    );
+
+    if (result.error) {
+      setStatusError("Could not update status.");
+    } else {
+      // reload so the badge and toggle reflect the saved status
+      await dispatch(getCustomerById(customerId));
+    }
+
+    setStatusSaving(false);
+  };
 
   /* ---------- ACTIVE PAGE ---------- */
 
@@ -143,7 +194,29 @@ const toDate = (s) => (s ? new Date(`${s}T00:00:00`) : null);
               }`
             : ""
         }
-        badge={selectedCustomer?.status || "Active"}
+        badge={statusLabel}
+        badgeVariant={badgeVariant}
+        badgeAction={
+          showStatusToggle && (
+            <>
+              <ToggleSwitch
+                type="button"
+                role="switch"
+                aria-checked={clientStatus === "active"}
+                aria-label="Toggle customer status"
+                title={
+                  clientStatus === "active"
+                    ? "Click to mark as Inactive"
+                    : "Click to mark as Active"
+                }
+                $on={clientStatus === "active"}
+                disabled={statusSaving}
+                onClick={handleStatusToggle}
+              />
+              {statusError && <StatusError>{statusError}</StatusError>}
+            </>
+          )
+        }
         showBack
         onBack={() => navigate("/sales/customers")}
         showButton={showAddButton}

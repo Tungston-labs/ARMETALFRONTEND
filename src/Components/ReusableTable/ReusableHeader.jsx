@@ -23,6 +23,7 @@ const ReusableHeader = ({
   subtitle,
   badge,
   badgeVariant = "success",
+  badgeAction = null, // optional element shown right after the badge (e.g. a toggle)
   breadcrumbs = [],
   buttonText,
   onButtonClick,
@@ -89,6 +90,8 @@ const ReusableHeader = ({
                 {badge}
               </Badge>
             )}
+
+            {badgeAction}
           </Subtitle>
         )}
 

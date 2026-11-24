@@ -31,7 +31,13 @@ export const getCustomerColumns = ({
                 accessor: "customer_name",
                 header: "Customer Name",
                 render: (row) => (
-                    <LinkName type="button" onClick={() => handleViewOverview(row)}>
+                    <LinkName
+                        type="button"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            handleViewOverview(row);
+                        }}
+                    >
                         {row.customer_name}
                     </LinkName>
                 ),
@@ -78,14 +84,20 @@ export const getCustomerColumns = ({
                         <ArchiveActionButton
                             type="button"
                             $variant="restore"
-                            onClick={() => handleRestoreCustomer(row)}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                handleRestoreCustomer(row);
+                            }}
                         >
                             Restore
                         </ArchiveActionButton>
                         <ArchiveActionButton
                             type="button"
                             $variant="delete"
-                            onClick={() => handleDeleteCustomerPermanently(row)}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteCustomerPermanently(row);
+                            }}
                         >
                             Delete
                         </ArchiveActionButton>
@@ -134,40 +146,40 @@ export const getCustomerColumns = ({
                 </StatusBadge>
             ),
         },
-       {
-    accessor: "actions",
-    header: "Actions",
-    sortable: false,
-    render: (row) => (
-        <ActionsCell style={{ flexWrap: "nowrap" }}>
-            <CircleIconButton
-                type="button"
-                $variant="edit"
-                title="Edit Customer"
-                aria-label="Edit customer"
-                onClick={(e) => {
-                    e.stopPropagation();
-                    handleEditCustomer(row);
-                }}
-            >
-                <FiEdit2 size={13} />
-            </CircleIconButton>
+        {
+            accessor: "actions",
+            header: "Actions",
+            sortable: false,
+            render: (row) => (
+                <ActionsCell style={{ flexWrap: "nowrap" }}>
+                    <CircleIconButton
+                        type="button"
+                        $variant="edit"
+                        title="Edit Customer"
+                        aria-label="Edit customer"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            handleEditCustomer(row);
+                        }}
+                    >
+                        <FiEdit2 size={13} />
+                    </CircleIconButton>
 
-            <CircleIconButton
-                type="button"
-                $variant="delete"
-                title="Archive Customer"
-                aria-label="Archive customer"
-                onClick={(e) => {
-                    e.stopPropagation();
-                    handleArchiveCustomer(row);
-                }}
-            >
-                <FiArchive size={13} />
-            </CircleIconButton>
-        </ActionsCell>
-    ),
-},
-    
+                    <CircleIconButton
+                        type="button"
+                        $variant="delete"
+                        title="Archive Customer"
+                        aria-label="Archive customer"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            handleArchiveCustomer(row);
+                        }}
+                    >
+                        <FiArchive size={13} />
+                    </CircleIconButton>
+                </ActionsCell>
+            ),
+        },
+
     ];
 };

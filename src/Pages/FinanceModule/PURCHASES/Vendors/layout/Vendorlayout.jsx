@@ -9,6 +9,8 @@ import {
   DatePickerContainer,
   DateInput,
   DateSeparator,
+  ToggleSwitch,
+  StatusError,
 } from "./Vendorlayout.styles";
 
 import VendorHeader from "../../../../../Components/Finance/purchase/vendor/VendorHeader";
@@ -16,7 +18,10 @@ import ReusableHeader from "../../../../../Components/ReusableTable/ReusableHead
 import {
   getVendorOverview,
   clearVendorDetail,
-} from "../../../../../Redux/finance/purchases/Vendordetailslice"; 
+} from "../../../../../Redux/finance/purchases/Vendordetailslice";
+
+// editVendor sends a PATCH to /finance/vendor/vendors/:id/
+import { editVendor } from "../../../../../Redux/finance/purchases/vendorsSlice";
 
 const pageMeta = {
   overview: { title: "Overview", showAddButton: false, showDateFilter: false },
@@ -85,6 +90,56 @@ const VendorLayout = () => {
 
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+
+  /* ---------- STATUS (Active = green, Inactive = red) ---------- */
+
+  const [statusSaving, setStatusSaving] = useState(false);
+  const [statusError, setStatusError] = useState("");
+
+  const vendorStatus = (selectedVendor?.client_status || "").toLowerCase();
+
+  const statusLabel =
+    selectedVendor?.client_status_display ||
+    (vendorStatus
+      ? vendorStatus.charAt(0).toUpperCase() + vendorStatus.slice(1)
+      : "");
+
+  // success = green, danger = red, default = grey
+  const badgeVariant =
+    vendorStatus === "active"
+      ? "success"
+      : vendorStatus === "inactive"
+      ? "danger"
+      : "default";
+
+  // the toggle only makes sense for active / inactive vendors
+  const showStatusToggle =
+    vendorStatus === "active" || vendorStatus === "inactive";
+
+  const handleStatusToggle = async () => {
+    if (!selectedVendor?.id || statusSaving) return;
+
+    const nextStatus = vendorStatus === "active" ? "inactive" : "active";
+
+    setStatusSaving(true);
+    setStatusError("");
+
+    const result = await dispatch(
+      editVendor({
+        id: selectedVendor.id,
+        data: { client_status: nextStatus },
+      })
+    );
+
+    if (result?.error) {
+      setStatusError("Could not update status.");
+    } else {
+      // reload so the badge and toggle reflect the saved status
+      await dispatch(getVendorOverview(vendorId));
+    }
+
+    setStatusSaving(false);
+  };
 
   /* ---------- ACTIVE PAGE ---------- */
 
@@ -189,7 +244,29 @@ const VendorLayout = () => {
               }`
             : ""
         }
-        badge={selectedVendor?.client_status || "active"}
+        badge={statusLabel}
+        badgeVariant={badgeVariant}
+        badgeAction={
+          showStatusToggle && (
+            <>
+              <ToggleSwitch
+                type="button"
+                role="switch"
+                aria-checked={vendorStatus === "active"}
+                aria-label="Toggle vendor status"
+                title={
+                  vendorStatus === "active"
+                    ? "Click to mark as Inactive"
+                    : "Click to mark as Active"
+                }
+                $on={vendorStatus === "active"}
+                disabled={statusSaving}
+                onClick={handleStatusToggle}
+              />
+              {statusError && <StatusError>{statusError}</StatusError>}
+            </>
+          )
+        }
         showBack
         onBack={() => navigate("/purchase/vendors")}
         showButton={showAddButton}

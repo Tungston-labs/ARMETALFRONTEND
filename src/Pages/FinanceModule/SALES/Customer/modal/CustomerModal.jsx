@@ -61,6 +61,7 @@ const initialFormData = {
     adminContactEmail: "",
     financialContactEmail: "",
     technicalContactEmail: "",
+    email: "", // common email used only for individuals
     clientStatus: "",
     creditLimit: "",
     financialPaymentTerms: "",
@@ -100,6 +101,12 @@ const BACKEND_FIELD_MAP = {
     notes: "notes",
 };
 
+const CONTACT_EMAIL_KEYS = [
+    "adminContactEmail",
+    "financialContactEmail",
+    "technicalContactEmail",
+];
+
 const CustomerModal = ({
     isOpen,
     onClose,
@@ -118,7 +125,8 @@ const CustomerModal = ({
     const isView = mode === "view";
     const isReadOnly = isView;
 
-    // Company-only fields (CR number, VAT number, VAT date) are hidden for individuals
+    // Individuals: no CR/VAT fields, category locked to "individual",
+    // and a single common email instead of admin/financial/technical emails
     const isIndividual = formData.customerType === "individual";
 
     const selectedCountry = useMemo(
@@ -170,11 +178,15 @@ const CustomerModal = ({
             setStateOptions(states);
             setCityOptions(cities);
 
+            const customerIsIndividual = customer.customer_type === "individual";
+
             setFormData({
                 customerId: customer.customer_id || "",
                 customerName: customer.customer_name || "",
                 customerType: customer.customer_type || "",
-                customerCategory: customer.customer_category || "",
+                customerCategory: customerIsIndividual
+                    ? "individual"
+                    : customer.customer_category || "",
                 companyType: customer.company_name || "",
                 industry: customer.industry || "",
                 website: customer.website || "",
@@ -192,6 +204,9 @@ const CustomerModal = ({
                 adminContactEmail: customer.admin_email || "",
                 financialContactEmail: customer.financial_email || "",
                 technicalContactEmail: customer.technical_email || "",
+                email: customerIsIndividual
+                    ? customer.admin_email || customer.financial_email || ""
+                    : "",
                 clientStatus: customer.client_status || "",
                 creditLimit: customer.credit_limit || "",
                 financialPaymentTerms: customer.payment_term || "",
@@ -240,20 +255,38 @@ const CustomerModal = ({
         setFormData((prev) => ({
             ...prev,
             customerType: value,
-            // clear company-only values so stale data isn't saved
             ...(value === "individual"
                 ? {
+                    // lock category to individual
+                    customerCategory: "individual",
+                    // clear company-only values so stale data isn't saved
                     crNumber: "",
                     vatRegistrationNumber: "",
                     crExpiryDate: "",
+                    // clear company contact emails
+                    adminContactEmail: "",
+                    financialContactEmail: "",
+                    technicalContactEmail: "",
                 }
-                : {}),
+                : {
+                    // switching back to company: release the forced category
+                    customerCategory:
+                        prev.customerCategory === "individual"
+                            ? ""
+                            : prev.customerCategory,
+                    // clear the common individual email
+                    email: "",
+                }),
         }));
 
         if (value === "individual") {
             clearError("crNumber");
             clearError("vatRegistrationNumber");
             clearError("crExpiryDate");
+            clearError("customerCategory");
+            CONTACT_EMAIL_KEYS.forEach(clearError);
+        } else {
+            clearError("email");
         }
 
         clearError("customerType");
@@ -309,6 +342,7 @@ const CustomerModal = ({
 
         const name = formData.customerName.trim();
         const phone = formData.phoneNumber.trim();
+        const email = formData.email.trim();
         const adminEmail = formData.adminContactEmail.trim();
         const financialEmail = formData.financialContactEmail.trim();
         const technicalEmail = formData.technicalContactEmail.trim();
@@ -347,20 +381,30 @@ const CustomerModal = ({
             nextErrors.phoneNumber = "Enter a valid phone number";
         }
 
-        if (!adminEmail) {
-            nextErrors.adminContactEmail = "Admin contact email is required";
-        } else if (!EMAIL_PATTERN.test(adminEmail)) {
-            nextErrors.adminContactEmail = "Enter a valid email address";
-        }
+        if (isIndividual) {
+            // Individuals: single common email
+            if (!email) {
+                nextErrors.email = "Email is required";
+            } else if (!EMAIL_PATTERN.test(email)) {
+                nextErrors.email = "Enter a valid email address";
+            }
+        } else {
+            // Companies: admin / financial / technical emails
+            if (!adminEmail) {
+                nextErrors.adminContactEmail = "Admin contact email is required";
+            } else if (!EMAIL_PATTERN.test(adminEmail)) {
+                nextErrors.adminContactEmail = "Enter a valid email address";
+            }
 
-        if (!financialEmail) {
-            nextErrors.financialContactEmail = "Financial contact email is required";
-        } else if (!EMAIL_PATTERN.test(financialEmail)) {
-            nextErrors.financialContactEmail = "Enter a valid email address";
-        }
+            if (!financialEmail) {
+                nextErrors.financialContactEmail = "Financial contact email is required";
+            } else if (!EMAIL_PATTERN.test(financialEmail)) {
+                nextErrors.financialContactEmail = "Enter a valid email address";
+            }
 
-        if (technicalEmail && !EMAIL_PATTERN.test(technicalEmail)) {
-            nextErrors.technicalContactEmail = "Enter a valid email address";
+            if (technicalEmail && !EMAIL_PATTERN.test(technicalEmail)) {
+                nextErrors.technicalContactEmail = "Enter a valid email address";
+            }
         }
 
         if (website && !WEBSITE_PATTERN.test(website)) {
@@ -398,10 +442,12 @@ const CustomerModal = ({
     // ============================================================
 
     const prepareCustomerData = () => {
+        const commonEmail = formData.email.trim();
+
         return {
             customer_name: formData.customerName.trim(),
             customer_type: formData.customerType,
-            customer_category: formData.customerCategory,
+            customer_category: isIndividual ? "individual" : formData.customerCategory,
             company_name: formData.companyType.trim(),
             industry: formData.industry,
             website: formData.website.trim(),
@@ -416,9 +462,17 @@ const CustomerModal = ({
             country: selectedCountry?.name || "",
             postal: formData.postalCode.trim(),
             phno: formData.phoneNumber.trim(),
-            admin_email: formData.adminContactEmail.trim(),
-            financial_email: formData.financialContactEmail.trim(),
-            technical_email: formData.technicalContactEmail.trim(),
+            // Individuals: the common email is stored in admin_email and
+            // financial_email (backend has no single-email field)
+            admin_email: isIndividual
+                ? commonEmail
+                : formData.adminContactEmail.trim(),
+            financial_email: isIndividual
+                ? commonEmail
+                : formData.financialContactEmail.trim(),
+            technical_email: isIndividual
+                ? ""
+                : formData.technicalContactEmail.trim(),
             client_status: formData.clientStatus,
             credit_limit: formData.creditLimit || "0.00",
             opening_balance: formData.openingBalance || "0.00",
@@ -459,7 +513,12 @@ const CustomerModal = ({
                     Object.entries(backendFieldErrors).forEach(
                         ([field, messages]) => {
                             const key = BACKEND_FIELD_MAP[field] || field;
-                            mapped[key] = Array.isArray(messages)
+                            // individuals only see the common email field
+                            const targetKey =
+                                isIndividual && CONTACT_EMAIL_KEYS.includes(key)
+                                    ? "email"
+                                    : key;
+                            mapped[targetKey] = Array.isArray(messages)
                                 ? messages[0]
                                 : messages;
                         }
@@ -529,6 +588,7 @@ const CustomerModal = ({
                                 onChange={handleChange}
                                 placeholder="Enter company name"
                                 disabled={isReadOnly}
+                                autoComplete="off"
                             />
                             {errors.customerName && (
                                 <span style={errorStyle}>{errors.customerName}</span>
@@ -557,9 +617,9 @@ const CustomerModal = ({
                             <Label>CUSTOMER CATEGORY</Label>
                             <Select
                                 name="customerCategory"
-                                value={formData.customerCategory}
+                                value={isIndividual ? "individual" : formData.customerCategory}
                                 onChange={handleChange}
-                                disabled={isReadOnly}
+                                disabled={isReadOnly || isIndividual}
                                 aria-invalid={!!errors.customerCategory}
                             >
                                 <option value="">Select Category</option>
@@ -590,7 +650,7 @@ const CustomerModal = ({
                                 <option value="wholesale">Wholesale & Distribution</option>
                                 <option value="finance">Banking & Financial Services</option>
                                 <option value="retail">Retail</option>
-                                <option value="others">Others</option>
+                                <option value="other">Others</option>
                             </Select>
                             {errors.industry && (
                                 <span style={errorStyle}>{errors.industry}</span>
@@ -611,6 +671,7 @@ const CustomerModal = ({
                                         placeholder="Enter number"
                                         disabled={isReadOnly}
                                         aria-invalid={!!errors.crNumber}
+                                        autoComplete="off"
                                     />
                                     {errors.crNumber && (
                                         <span style={errorStyle}>{errors.crNumber}</span>
@@ -626,6 +687,7 @@ const CustomerModal = ({
                                         placeholder="Enter number"
                                         disabled={isReadOnly}
                                         aria-invalid={!!errors.vatRegistrationNumber}
+                                        autoComplete="off"
                                     />
                                     {errors.vatRegistrationNumber && (
                                         <span style={errorStyle}>
@@ -643,6 +705,7 @@ const CustomerModal = ({
                                             value={formData.crExpiryDate}
                                             onChange={handleChange}
                                             disabled={isReadOnly}
+                                            autoComplete="off"
                                         />
                                     </InputWithIcon>
                                     {errors.crExpiryDate && (
@@ -695,7 +758,7 @@ const CustomerModal = ({
 
                         <FormGroup>
                             <AddressLabel>
-                                BILLING ADDRESS
+                                BILLING NUMBER
                                 <Required>*</Required>
                                 <PlusButton type="button">
                                     <FiPlus size={15} />
@@ -707,6 +770,7 @@ const CustomerModal = ({
                                 onChange={handleChange}
                                 placeholder="Enter billing address"
                                 disabled={isReadOnly}
+                                autoComplete="off"
                             />
                         </FormGroup>
 
@@ -720,6 +784,7 @@ const CustomerModal = ({
                                 onChange={handleCountryChange}
                                 disabled={isReadOnly}
                                 aria-invalid={!!errors.country}
+                                autoComplete="off"
                             >
                                 <option value="">Select Country</option>
                                 {COUNTRY_OPTIONS.map((c) => (
@@ -744,6 +809,7 @@ const CustomerModal = ({
                                     onChange={handleStateChange}
                                     disabled={isReadOnly || !formData.country}
                                     aria-invalid={!!errors.state}
+                                    autoComplete="off"
                                 >
                                     <option value="">Select State</option>
                                     {stateOptions.map((s) => (
@@ -764,6 +830,7 @@ const CustomerModal = ({
                                     }
                                     disabled={isReadOnly || !formData.country}
                                     aria-invalid={!!errors.state}
+                                    autoComplete="off"
                                 />
                             )}
                             {errors.state && (
@@ -781,6 +848,7 @@ const CustomerModal = ({
                                     onChange={handleCityChange}
                                     disabled={isReadOnly || !formData.state}
                                     aria-invalid={!!errors.city}
+
                                 >
                                     <option value="">Select City</option>
                                     {cityOptions.map((c) => (
@@ -801,6 +869,7 @@ const CustomerModal = ({
                                     }
                                     disabled={isReadOnly}
                                     aria-invalid={!!errors.city}
+                                    autoComplete="off"
                                 />
                             )}
                             {errors.city && (
@@ -817,6 +886,7 @@ const CustomerModal = ({
                                 onChange={handleChange}
                                 placeholder="Enter code"
                                 disabled={isReadOnly}
+                                autoComplete="off"
                             />
                         </FormGroup>
 
@@ -830,66 +900,97 @@ const CustomerModal = ({
                                 placeholder="Enter phone number"
                                 disabled={isReadOnly}
                                 aria-invalid={!!errors.phoneNumber}
+                                autoComplete="off"
                             />
                             {errors.phoneNumber && (
                                 <span style={errorStyle}>{errors.phoneNumber}</span>
                             )}
                         </FormGroup>
 
-                        <FormGroup>
-                            <Label>ADMIN CONTACT EMAIL ID</Label>
-                            <Input
-                                type="email"
-                                name="adminContactEmail"
-                                value={formData.adminContactEmail}
-                                onChange={handleChange}
-                                placeholder="Enter email"
-                                disabled={isReadOnly}
-                                aria-invalid={!!errors.adminContactEmail}
-                            />
-                            {errors.adminContactEmail && (
-                                <span style={errorStyle}>
-                                    {errors.adminContactEmail}
-                                </span>
-                            )}
-                        </FormGroup>
+                        {isIndividual ? (
+                            /* Individual: single common email */
+                            <FormGroup>
+                                <Label>EMAIL ID
+                                    <Required>*</Required>
+                                </Label>
+                                <Input
+                                    type="email"
+                                    name="email"
+                                    value={formData.email}
+                                    onChange={handleChange}
+                                    placeholder="Enter email"
+                                    disabled={isReadOnly}
+                                    aria-invalid={!!errors.email}
+                                    autoComplete="off"
+                                />
+                                {errors.email && (
+                                    <span style={errorStyle}>{errors.email}</span>
+                                )}
+                            </FormGroup>
+                        ) : (
+                            /* Company: admin / financial / technical emails */
+                            <>
+                                <FormGroup>
+                                    <Label>ADMIN CONTACT EMAIL ID
+                                        <Required>*</Required>
+                                    </Label>
+                                    <Input
+                                        type="email"
+                                        name="adminContactEmail"
+                                        value={formData.adminContactEmail}
+                                        onChange={handleChange}
+                                        placeholder="Enter email"
+                                        disabled={isReadOnly}
+                                        aria-invalid={!!errors.adminContactEmail}
+                                        autoComplete="off"
+                                    />
+                                    {errors.adminContactEmail && (
+                                        <span style={errorStyle}>
+                                            {errors.adminContactEmail}
+                                        </span>
+                                    )}
+                                </FormGroup>
 
-                        <FormGroup>
-                            <Label>FINANCIAL CONTACT EMAIL ID
-                                <Required>*</Required></Label>
-                            <Input
-                                type="email"
-                                name="financialContactEmail"
-                                value={formData.financialContactEmail}
-                                onChange={handleChange}
-                                placeholder="Enter email"
-                                disabled={isReadOnly}
-                                aria-invalid={!!errors.financialContactEmail}
-                            />
-                            {errors.financialContactEmail && (
-                                <span style={errorStyle}>
-                                    {errors.financialContactEmail}
-                                </span>
-                            )}
-                        </FormGroup>
+                                <FormGroup>
+                                    <Label>FINANCIAL CONTACT EMAIL ID
+                                        <Required>*</Required></Label>
+                                    <Input
+                                        type="email"
+                                        name="financialContactEmail"
+                                        value={formData.financialContactEmail}
+                                        onChange={handleChange}
+                                        placeholder="Enter email"
+                                        disabled={isReadOnly}
+                                        aria-invalid={!!errors.financialContactEmail}
+                                        autoComplete="off"
+                                    />
+                                    {errors.financialContactEmail && (
+                                        <span style={errorStyle}>
+                                            {errors.financialContactEmail}
+                                        </span>
+                                    )}
+                                </FormGroup>
 
-                        <FormGroup>
-                            <Label>TECHNICAL CONTACT EMAIL ID</Label>
-                            <Input
-                                type="email"
-                                name="technicalContactEmail"
-                                value={formData.technicalContactEmail}
-                                onChange={handleChange}
-                                placeholder="Enter email"
-                                disabled={isReadOnly}
-                                aria-invalid={!!errors.technicalContactEmail}
-                            />
-                            {errors.technicalContactEmail && (
-                                <span style={errorStyle}>
-                                    {errors.technicalContactEmail}
-                                </span>
-                            )}
-                        </FormGroup>
+                                <FormGroup>
+                                    <Label>TECHNICAL CONTACT EMAIL ID</Label>
+                                    <Input
+                                        type="email"
+                                        name="technicalContactEmail"
+                                        value={formData.technicalContactEmail}
+                                        onChange={handleChange}
+                                        placeholder="Enter email"
+                                        disabled={isReadOnly}
+                                        aria-invalid={!!errors.technicalContactEmail}
+                                        autoComplete="off"
+                                    />
+                                    {errors.technicalContactEmail && (
+                                        <span style={errorStyle}>
+                                            {errors.technicalContactEmail}
+                                        </span>
+                                    )}
+                                </FormGroup>
+                            </>
+                        )}
 
                         <FormGroup>
                             <Label>WEBSITE</Label>
@@ -900,6 +1001,7 @@ const CustomerModal = ({
                                 placeholder="https://example.com"
                                 disabled={isReadOnly}
                                 aria-invalid={!!errors.website}
+                                autoComplete="off"
                             />
                             {errors.website && (
                                 <span style={errorStyle}>{errors.website}</span>
@@ -931,6 +1033,7 @@ const CustomerModal = ({
                                     placeholder="00"
                                     disabled={isReadOnly}
                                     aria-invalid={!!errors.creditLimit}
+                                    autoComplete="off"
                                 />
                                 {errors.creditLimit && (
                                     <span style={errorStyle}>
@@ -972,6 +1075,7 @@ const CustomerModal = ({
                                     placeholder="0.00"
                                     disabled={isReadOnly}
                                     aria-invalid={!!errors.openingBalance}
+                                    autoComplete="off"
                                 />
                                 {errors.openingBalance && (
                                     <span style={errorStyle}>
@@ -996,6 +1100,7 @@ const CustomerModal = ({
                                     onChange={handleChange}
                                     placeholder="Enter notes"
                                     disabled={isReadOnly}
+                                    autoComplete="off"
                                 />
                             </FormGroup>
 

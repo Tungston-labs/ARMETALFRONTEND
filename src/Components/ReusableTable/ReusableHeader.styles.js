@@ -446,6 +446,24 @@ export const Subtitle = styled.div`
   }
 `;
 
+const BADGE_VARIANTS = {
+  success: `
+    background: #ecfdf3;
+    color: #03AC17;
+    border: 1px solid #a6f4c5;
+  `,
+  danger: `
+    background: #fef3f2;
+    color: #DB0F12;
+    border: 1px solid #fda29b;
+  `,
+  default: `
+    background: #f2f4f7;
+    color: #667085;
+    border: 1px solid #d0d5dd;
+  `,
+};
+
 export const Badge = styled.span`
   display: inline-flex;
   align-items: center;
@@ -465,18 +483,7 @@ export const Badge = styled.span`
 
   box-sizing: border-box;
 
-  ${({ $variant }) =>
-    $variant === "success"
-      ? `
-        background: #ecfdf3;
-        color: #03AC17;
-        border: 1px solid #a6f4c5;
-      `
-      : `
-        background: #f2f4f7;
-        color: #667085;
-        border: 1px solid #d0d5dd;
-      `}
+  ${({ $variant }) => BADGE_VARIANTS[$variant] || BADGE_VARIANTS.default}
 
   @media (max-width: ${breakpoints.mobile}) {
     min-height: 20px;
