@@ -11,8 +11,6 @@ import {
   getAttendanceSummary,
   generateAttendanceExcelReport,
 } from "../../../Redux/attendanceSlice";
-
-import Pagination from "../../../Components/Pagination/Pagination";
 import ReusableHeader from "../../../Components/ReusableTable/ReusableHeader";
 import ReusableTable from "../../../Components/ReusableTable/ReusableTable";
 import ReusableFilter from "../../../Components/ReusableTable/ReusableFilter";
