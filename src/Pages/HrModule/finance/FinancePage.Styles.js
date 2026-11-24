@@ -2,7 +2,7 @@ import styled from 'styled-components';
 import { HiOutlinePencilSquare } from 'react-icons/hi2';
 export const Container = styled.div`
   padding: 20px;
-
+  font-family: "poppins", sans-serif;
 `;
 
 export const HeaderSection = styled.div`

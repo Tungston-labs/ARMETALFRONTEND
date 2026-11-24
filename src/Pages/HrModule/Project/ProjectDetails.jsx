@@ -37,6 +37,7 @@ import {
     assignEmployees,
     removeEmployeeFromProject,
 } from "../../../Redux/fieldShiftSlice";
+import ReusablePagination from "../../../Components/Pagination/ReusablePagination";
 
 const ProjectDetails = () => {
     const { id } = useParams();
@@ -194,6 +195,16 @@ const ProjectDetails = () => {
         }));
 }, [filteredEmployees, currentPage, rowsPerPage]);
 
+const totalRecords = filteredEmployees.length;
+
+const totalPages = Math.max(1, Math.ceil(totalRecords / rowsPerPage));
+
+// If rows are removed and the current page no longer exists, go back to the last page
+useEffect(() => {
+    if (currentPage > totalPages) {
+        setCurrentPage(totalPages);
+    }
+}, [currentPage, totalPages]);
     // =====================================================
     // OPEN ADD EMPLOYEE
     // =====================================================
@@ -643,6 +654,12 @@ const ProjectDetails = () => {
                 autoLayout
             />
 
+<ReusablePagination
+    currentPage={currentPage}
+    totalPages={totalPages}
+    totalRecords={totalRecords}
+    onPageChange={setCurrentPage}
+/>
             {/* ================================================= */}
             {/* DELETE PROJECT */}
             {/* ================================================= */}

@@ -30,74 +30,74 @@ const EmployeeAttendanceModal = ({
   const [records] = useState(employee.daily_records || []);
   const printRef = useRef();
 
-  
+
   const handlePrint = useReactToPrint({
     contentRef: printRef,
     documentTitle: `${employee.employee_name}-attendance`,
   });
 
- const workingDays = employee.working_days ?? 0;
-const presentCount = employee.present_days ?? 0;
-const absentCount = employee.absent_days ?? 0;
-const lopCount = employee.lop_days ?? 0;
+  const workingDays = employee.working_days ?? 0;
+  const presentCount = employee.present_days ?? 0;
+  const absentCount = employee.absent_days ?? 0;
+  const lopCount = employee.lop_days ?? 0;
 
-const getStatusLabel = (status) => {
-  const normalized = (status || "")
-    .toLowerCase()
-    .trim();
+  const getStatusLabel = (status) => {
+    const normalized = (status || "")
+      .toLowerCase()
+      .trim();
 
-  switch (normalized) {
-    case "present":
-      return { text: "Present", key: "present" };
+    switch (normalized) {
+      case "present":
+        return { text: "Present", key: "present" };
 
-    case "active":
-      return { text: "Working", key: "active" };
+      case "active":
+        return { text: "Working", key: "active" };
 
-    case "half_day":
-      return { text: "Half Day", key: "half_day" };
+      case "half_day":
+        return { text: "Half Day", key: "half_day" };
 
-    case "leave":
-      return { text: "Leave", key: "leave" };
+      case "leave":
+        return { text: "Leave", key: "leave" };
 
-    case "holiday":
-      return { text: "Holiday", key: "holiday" };
+      case "holiday":
+        return { text: "Holiday", key: "holiday" };
 
-    case "off":
-    case "company off day":
-      return {
-        text: "Company Off Day",
-        key: "off",
-      };
+      case "off":
+      case "company off day":
+        return {
+          text: "Company Off Day",
+          key: "off",
+        };
 
-    case "second saturday":
-      return {
-        text: "Second Saturday",
-        key: "holiday",
-      };
+      case "second saturday":
+        return {
+          text: "Second Saturday",
+          key: "holiday",
+        };
 
-    case "missed_punchout":
-      return {
-        text: "Missed Punch Out",
-        key: "missed_punchout",
-      };
+      case "missed_punchout":
+        return {
+          text: "Missed Punch Out",
+          key: "missed_punchout",
+        };
 
-    case "absent":
-      return {
-        text: "Absent",
-        key: "absent",
-      };
+      case "absent":
+        return {
+          text: "Absent",
+          key: "absent",
+        };
 
-    default:
-      // For custom holidays like
-      // "Dilshima Birthday"
-      // "Christmas"
-      // "Eid"
-      return {
-        text: status,
-        key: "holiday",
-      };
-  }
-};
+      default:
+        // For custom holidays like
+        // "Dilshima Birthday"
+        // "Christmas"
+        // "Eid"
+        return {
+          text: status,
+          key: "holiday",
+        };
+    }
+  };
 
   const formatDate = (dateStr) => {
     if (!dateStr) return "—";
@@ -119,36 +119,36 @@ const getStatusLabel = (status) => {
     return `${day} ${month}`;
   };
 
-const formatTime = (timeStr) => {
-  if (!timeStr || timeStr === "null") {
-    return "—";
-  }
+  const formatTime = (timeStr) => {
+    if (!timeStr || timeStr === "null") {
+      return "—";
+    }
 
-  return String(timeStr).trim();
-};
+    return String(timeStr).trim();
+  };
 
-const cards = [
-  {
-    label: "Working Days",
-    value: workingDays,
-    type: "default",
-  },
-  {
-    label: "Present",
-    value: presentCount,
-    type: "present",
-  },
-  {
-    label: "Absent",
-    value: absentCount,
-    type: "absent",
-  },
-  {
-    label: "LOP",
-    value: lopCount,
-    type: "lop",
-  },
-];
+  const cards = [
+    {
+      label: "Working Days",
+      value: workingDays,
+      type: "default",
+    },
+    {
+      label: "Present",
+      value: presentCount,
+      type: "present",
+    },
+    {
+      label: "Absent",
+      value: absentCount,
+      type: "absent",
+    },
+    {
+      label: "LOP",
+      value: lopCount,
+      type: "lop",
+    },
+  ];
 
   return (
     <ModalOverlay
@@ -250,7 +250,7 @@ const cards = [
 
             <tbody>
               {records.length ===
-              0 ? (
+                0 ? (
                 <tr>
                   <TableCell
                     colSpan={5}
@@ -297,13 +297,13 @@ const cards = [
                           </StatusBadge>
                         </TableCell>
 
-                       <TableCell>
-  {formatTime(rec.first_punch_in)}
-</TableCell>
+                        <TableCell>
+                          {formatTime(rec.first_punch_in)}
+                        </TableCell>
 
-<TableCell>
-  {formatTime(rec.last_punch_out)}
-</TableCell>
+                        <TableCell>
+                          {formatTime(rec.last_punch_out)}
+                        </TableCell>
                         <TableCell
                           style={{
                             textAlign:
@@ -312,7 +312,7 @@ const cards = [
                         >
                           {Number(
                             rec.total_hours ||
-                              0
+                            0
                           ).toFixed(
                             2
                           )}

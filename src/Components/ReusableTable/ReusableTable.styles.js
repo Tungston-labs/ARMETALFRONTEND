@@ -29,7 +29,7 @@ export const Container = styled.div`
 
 export const TableScrollContainer = styled.div`
   width: 100%;
-  max-height: 100vh;
+  /* max-height: 100vh; */
   overflow-x: auto;
   overflow-y: auto;
 

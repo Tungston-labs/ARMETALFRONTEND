@@ -4,13 +4,13 @@ import { Container, } from "../finance/FinancePage.Styles";
 import FinanceModal from "./NewFinance";
 import { createFinance, fetchFinanceList } from "../../../Redux/financeThunks";
 import StatsCards from "../../../Components/StatsCards/StatsCards";
-import Pagination from "../../../Components/Pagination/Pagination";
 import ReusableTable from "../../../Components/ReusableTable/ReusableTable";
 import ReusableHeader from "../../../Components/ReusableTable/ReusableHeader";
 import ReusableFilter from "../../../Components/ReusableTable/ReusableFilter";
 
 import { getFinanceColumns, getStatCards } from "./FinanceColumns";
 import { useCurrency } from "../../../hooks/useCurrency"; // adjust path to match where you saved it
+import ReusablePagination from "../../../Components/Pagination/ReusablePagination";
 
 const PAGE_SIZE = 20;
 
@@ -126,12 +126,12 @@ useEffect(() => {
         <ReusableTable columns={columns} data={list} loading={loading} autoLayout/>
 
 
-        <Pagination
-          currentPage={page}
-          totalPages={pagination?.totalPages || 1}
-          totalRecords={pagination?.totalItems ?? 0}
-          onPageChange={handlePageChange}
-        />
+      <ReusablePagination
+  currentPage={page}
+  totalPages={pagination?.totalPages || 1}
+  totalRecords={pagination?.totalItems ?? 0}
+  onPageChange={handlePageChange}
+/>
       </Container>
 
       <FinanceModal

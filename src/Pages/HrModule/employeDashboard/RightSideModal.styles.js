@@ -124,9 +124,12 @@ export const EditButton = styled.button`
 
 export const ContentArea = styled.div`
   flex: 1;
+  min-height: 0;            /* lets the area scroll inside the flex column */
+  box-sizing: border-box;
   padding: 20px;
   overflow-y: auto;
-  height: 100%;
+  overflow-x: hidden;       /* removes the sideways scrollbar */
+  overscroll-behavior: contain;
   scrollbar-width: thin;
   scrollbar-color: #c1c1c1 transparent;
 
@@ -145,25 +148,28 @@ export const TwoColumnWrapper = styled.div`
   width: 100%;
   margin-bottom: 20px;
 
-  @media (max-width: 1359px) {
-    flex-direction: column;  
-    gap: 15px;             
+  /* the modal is only half the screen, so stack earlier than before */
+  @media (max-width: 1799px) {
+    flex-direction: column;
+    gap: 15px;
   }
 
   @media (min-width: 2540px) {
-   min-height:30vh ;
+    min-height: 30vh;
   }
 `;
 
 export const LeftSide = styled.div`
-  flex: 1;   
+  flex: 1;
+  min-width: 0;             /* lets the chart shrink instead of overflowing */
   display: flex;
   flex-direction: column;
   gap: 20px;
 `;
 
 export const RightSide = styled.div`
-  flex: 1; 
+  flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 20px;

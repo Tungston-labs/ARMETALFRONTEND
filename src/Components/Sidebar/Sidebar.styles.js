@@ -42,8 +42,8 @@ export const LogoSection = styled.div`
 `;
 
 export const Logo = styled.img`
-  width: 230px;
-  height: 90px;
+  width: 150px;
+  height: 80px;
   object-fit: contain;
   display: block;
 `;

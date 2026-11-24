@@ -148,16 +148,13 @@ const AttendanceList = () => {
         showDate
       />
 
-      {listLoading && <p>Loading attendance...</p>}
-
-{!listLoading && (
-  <>
-    <ReusableTable
-      columns={attendanceColumns}
-      data={visibleRows}
-      onRowClick={handleRowClick}
-      autoLayout
-    />
+   <ReusableTable
+  columns={attendanceColumns}
+  data={visibleRows}
+  loading={listLoading}
+  onRowClick={handleRowClick}
+  autoLayout
+/>
 
     <ReusablePagination
       currentPage={pagination?.current_page || currentPage}
@@ -165,8 +162,8 @@ const AttendanceList = () => {
       totalRecords={pagination?.total_items ?? 0}
       onPageChange={setCurrentPage}
     />
-  </>
-)}
+
+
     </div>
   );
 };

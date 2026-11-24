@@ -80,6 +80,8 @@ const AttendanceSummary = () => {
 
     // =========================================================
     // FETCH THIS EMPLOYEE'S ATTENDANCE FRESH FROM THE SERVER
+    // The summary API is paginated by employee, so keep looking
+    // page by page until this employee turns up.
     // =========================================================
     const loadEmployeeAttendance = async () => {
         if (!selectedMonth || !token || !employeeId) return;
@@ -88,17 +90,26 @@ const AttendanceSummary = () => {
         setRecordsLoading(true);
 
         try {
-            const result = await dispatch(
-                getAttendanceSummary({
-                    year: Number(year),
-                    month: Number(month),
-                    page: 1,
-                    token,
-                })
-            ).unwrap();
+            let pageNo = 1;
+            let summaryPages = 1;
+            let matched = null;
 
-            const results = result?.results || [];
-            const matched = results.find((row) => row.employee_id === employeeId);
+            do {
+                const result = await dispatch(
+                    getAttendanceSummary({
+                        year: Number(year),
+                        month: Number(month),
+                        page: pageNo,
+                        token,
+                    })
+                ).unwrap();
+
+                matched = (result?.results || []).find(
+                    (row) => row.employee_id === employeeId
+                );
+                summaryPages = result?.total_pages || 1;
+                pageNo += 1;
+            } while (!matched && pageNo <= summaryPages);
 
             if (matched) {
                 setDailyRecords(matched.daily_records || []);
@@ -178,6 +189,11 @@ const AttendanceSummary = () => {
     // =========================================================
     // FILTER + PAGINATION
     // =========================================================
+    const handleSearch = (value) => {
+        setSearch(value);
+        setCurrentPage(1);
+    };
+
     const filteredRecords = useMemo(() => {
         const q = search.trim().toLowerCase();
         if (!q) return dailyRecords;
@@ -190,7 +206,13 @@ const AttendanceSummary = () => {
         });
     }, [dailyRecords, search]);
 
-    const totalPages = Math.max(1, Math.ceil(filteredRecords.length / rowsPerPage));
+    const totalRecords = filteredRecords.length;
+    const totalPages = Math.max(1, Math.ceil(totalRecords / rowsPerPage));
+
+    // If the records shrink (search, reload), never stay past the last page
+    useEffect(() => {
+        if (currentPage > totalPages) setCurrentPage(totalPages);
+    }, [currentPage, totalPages]);
 
     const paginatedRecords = useMemo(() => {
         const start = (currentPage - 1) * rowsPerPage;
@@ -323,24 +345,24 @@ const AttendanceSummary = () => {
                 <StatsCards cards={statsCards} />
                 <ReusableFilter
                     search={search}
-                    onSearch={setSearch}
+                    onSearch={handleSearch}
                     searchPlaceholder="Search by date or status"
                     showSearch
                 />
-                <>
-                    <ReusableTable
-                        columns={columns}
-                        data={paginatedRecords}
-                        loading={recordsLoading}
-                        emptyMessage="No attendance records found for this month."
-                    />
 
-                    <ReusablePagination
-                        currentPage={currentPage}
-                        totalPages={totalPages}
-                        onPageChange={setCurrentPage}
-                    />
-                </>
+                <ReusableTable
+                    columns={columns}
+                    data={paginatedRecords}
+                    loading={recordsLoading}
+                    emptyMessage="No attendance records found for this month."
+                />
+
+                <ReusablePagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    totalRecords={totalRecords}
+                    onPageChange={setCurrentPage}
+                />
             </div>
 
             {isEditModalOpen && (

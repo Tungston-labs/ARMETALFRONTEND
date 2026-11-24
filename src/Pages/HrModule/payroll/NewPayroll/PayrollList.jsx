@@ -3,7 +3,6 @@ import { Container } from "../PayrollTablestyes";
 import ReusableHeader from "../../../../Components/ReusableTable/ReusableHeader";
 import StatsCards from "../../../../Components/StatsCards/StatsCards";
 import ReusableTable from "../../../../Components/ReusableTable/ReusableTable";
-import Pagination from "../../../../Components/Pagination/Pagination";
 import IncentiveModal from "../../../../Components/Hrmodule/payroll/IncentiveModal/IncentiveModal";
 import DeductionModal from "../../../../Components/Hrmodule/payroll/DeductionModal/DeductionModal";
 import { getPayrollColumns } from "./payrollColumns";
@@ -19,6 +18,7 @@ import {
 import ReusableFilter from "../../../../Components/ReusableTable/ReusableFilter";
 import { HeaderButton } from '../../../../Components/ReusableTable/ReusableHeader.styles';
 import { useCurrency } from "../../../../hooks/useCurrency";
+import ReusablePagination from '../../../../Components/Pagination/ReusablePagination';
 
 const PayrollList = () => {
 
@@ -102,7 +102,7 @@ const PayrollList = () => {
     currencyCode, // ← passed so any money column can format correctly
   });
 
-const payrollCards = getPayrollCards(counts, currencyCode);
+  const payrollCards = getPayrollCards(counts, currencyCode);
   const monthValue = `${selectedYear}-${String(selectedMonth).padStart(2, "0")}`;
   const handleDateChange = (value) => {
     const [year, month] = value.split("-");
@@ -130,15 +130,15 @@ const payrollCards = getPayrollCards(counts, currencyCode);
   return (
     <Container>
       <ReusableHeader
-  title={`Payroll Overview – ${new Date(
-    selectedYear,
-    selectedMonth - 1
-  ).toLocaleString("en-US", {
-    month: "long",
-    year: "numeric",
-  })}`}
-  breadcrumbs={["Payroll"]}
->
+        title={`Payroll Overview – ${new Date(
+          selectedYear,
+          selectedMonth - 1
+        ).toLocaleString("en-US", {
+          month: "long",
+          year: "numeric",
+        })}`}
+        breadcrumbs={["Payroll"]}
+      >
         <HeaderButton
           $variant="danger"
           onClick={handleAddDeduction}
@@ -194,12 +194,12 @@ const payrollCards = getPayrollCards(counts, currencyCode);
 
       <ReusableTable columns={columns} data={visibleRows} loading={loading} autoLayout />
 
-      <Pagination
-        currentPage={page}
-        totalPages={totalPages}
-        totalRecords={sortedData.length}
-        onPageChange={handlePageChange}
-      />
+    <ReusablePagination
+  currentPage={page}
+  totalPages={totalPages}
+  totalRecords={visibleRows.length}
+  onPageChange={handlePageChange}
+/>
 
       {showModal && (
         <IncentiveModal

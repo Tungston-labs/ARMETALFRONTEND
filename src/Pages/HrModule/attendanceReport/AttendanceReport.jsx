@@ -19,6 +19,7 @@ import ReusableFilter from "../../../Components/ReusableTable/ReusableFilter";
 
 import { getDepartments } from "../../../Redux/departmentSlice";
 import Swal from "sweetalert2";
+import ReusablePagination from "../../../Components/Pagination/ReusablePagination";
 
 const AttendanceReport = () => {
   const dispatch = useDispatch();
@@ -148,14 +149,14 @@ const AttendanceReport = () => {
       selectedMonth.split("-");
 
     dispatch(
-  getAttendanceSummary({
-    year: Number(year),
-    month: Number(month),
-    page: 1,
-    search: searchTerm,
-    token,
-  })
-);
+      getAttendanceSummary({
+        year: Number(year),
+        month: Number(month),
+        page: 1,
+        search: searchTerm,
+        token,
+      })
+    );
   }, [
     selectedMonth,
     searchTerm,
@@ -167,52 +168,52 @@ const AttendanceReport = () => {
   // FILTER / SEARCH DATA
   // =========================================================
 
-const visibleRows = useMemo(() => {
-  if (!Array.isArray(attendanceSummary)) {
-    return [];
-  }
+  const visibleRows = useMemo(() => {
+    if (!Array.isArray(attendanceSummary)) {
+      return [];
+    }
 
-  const q = searchTerm.trim().toLowerCase();
+    const q = searchTerm.trim().toLowerCase();
 
-  return attendanceSummary
-    .filter((emp) => {
-      const employeeName =
-        emp.employee_name || "";
+    return attendanceSummary
+      .filter((emp) => {
+        const employeeName =
+          emp.employee_name || "";
 
-      const employeeCode =
-        emp.employee_id || "";
+        const employeeCode =
+          emp.employee_id || "";
 
-      const matchSearch =
-        employeeName
-          .toLowerCase()
-          .includes(q) ||
-        employeeCode
-          .toLowerCase()
-          .includes(q);
+        const matchSearch =
+          employeeName
+            .toLowerCase()
+            .includes(q) ||
+          employeeCode
+            .toLowerCase()
+            .includes(q);
 
-      const matchDepartment =
-        department === "" ||
-        emp.department === department;
+        const matchDepartment =
+          department === "" ||
+          emp.department === department;
 
-      return (
-        matchSearch &&
-        matchDepartment
-      );
-    })
-    .sort((a, b) =>
-      (a.employee_name || "").localeCompare(
-        b.employee_name || ""
+        return (
+          matchSearch &&
+          matchDepartment
+        );
+      })
+      .sort((a, b) =>
+        (a.employee_name || "").localeCompare(
+          b.employee_name || ""
+        )
       )
-    )
-    .map((emp) => ({
-      ...emp,
-      id: emp.employee_id,
-    }));
-}, [
-  attendanceSummary,
-  searchTerm,
-  department,
-]);
+      .map((emp) => ({
+        ...emp,
+        id: emp.employee_id,
+      }));
+  }, [
+    attendanceSummary,
+    searchTerm,
+    department,
+  ]);
   // =========================================================
   // OPEN EMPLOYEE ATTENDANCE SUMMARY PAGE
   // =========================================================
@@ -254,14 +255,14 @@ const visibleRows = useMemo(() => {
       selectedMonth.split("-");
 
     dispatch(
-  getAttendanceSummary({
-    year: Number(year),
-    month: Number(month),
-    page,
-    search: searchTerm,
-    token,
-  })
-);
+      getAttendanceSummary({
+        year: Number(year),
+        month: Number(month),
+        page,
+        search: searchTerm,
+        token,
+      })
+    );
   };
 
   // =========================================================
@@ -350,7 +351,7 @@ const visibleRows = useMemo(() => {
         index +
         1 +
         (currentPage - 1) *
-          20,
+        20,
     },
 
     {
@@ -462,22 +463,22 @@ const visibleRows = useMemo(() => {
       />
 
       {/* FILTER */}
-     <ReusableFilter
-  search={searchTerm}
-  onSearch={setSearchTerm}
-  searchPlaceholder="Search Employee Name "
+      <ReusableFilter
+        search={searchTerm}
+        onSearch={setSearchTerm}
+        searchPlaceholder="Search Employee Name "
 
-  department={department}
-  departments={departments}
-  onDepartment={setDepartment}
+        department={department}
+        departments={departments}
+        onDepartment={setDepartment}
 
-  date={selectedMonth}
-  onDate={setSelectedMonth}
+        date={selectedMonth}
+        onDate={setSelectedMonth}
 
-  showSearch
-  showDepartment
-  showDate
-/>
+        showSearch
+        showDepartment
+        showDate
+      />
 
       {/* TABLE */}
       <PageWrapper>
@@ -493,18 +494,12 @@ const visibleRows = useMemo(() => {
         />
 
         {/* PAGINATION */}
-        <Pagination
-          currentPage={
-            currentPage
-          }
-          totalPages={
-            totalPages
-          }
-          totalRecords={summaryData?.total_items ?? attendanceSummary.length}
-          onPageChange={
-            handlePageChange
-          }
-        />
+       <ReusablePagination
+  currentPage={currentPage}
+  totalPages={totalPages}
+  totalRecords={summaryData?.total_items ?? attendanceSummary.length}
+  onPageChange={handlePageChange}
+/>
 
       </PageWrapper>
 

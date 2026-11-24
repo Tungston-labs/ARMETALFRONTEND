@@ -3,7 +3,7 @@ import styled from "styled-components";
 export const Container = styled.div`
   padding: 20px;
   font-family: "Satoshi", sans-serif;
-  min-height: 100vh;
+
 `;
 
 export const PageWrapper = styled.div`

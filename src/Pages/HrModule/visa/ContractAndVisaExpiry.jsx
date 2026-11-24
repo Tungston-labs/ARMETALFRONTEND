@@ -5,10 +5,13 @@ import {
   getAllEmployees,
   getUpcomingExpiryEmployees,
 } from "../../../Redux/employeeSlice";
-import Pagination from "../../../Components/Pagination/Pagination";
+import ReusablePagination from "../../../Components/Pagination/ReusablePagination";
 import ReusableTable from "../../../Components/ReusableTable/ReusableTable";
 import ReusableHeader from "../../../Components/ReusableTable/ReusableHeader";
 import ReusableFilter from "../../../Components/ReusableTable/ReusableFilter";
+
+// Rows per page returned by the backend (drives the "Sl No" numbering)
+const PAGE_SIZE = 20;
 
 // =========================================================
 // LABEL -> BACKEND EXPIRY TYPE MAPPING
@@ -34,11 +37,11 @@ const ContractAndVisaExpiry = () => {
   const [page, setPage] = useState(1);
   const [expiryFilter, setExpiryFilter] = useState("");
 
-  const [selectedEmployeeId, setSelectedEmployeeId] = useState(null);
-
+  // Debounce typing, then go back to page 1 (one request, not two)
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedSearch(searchText);
+      setPage(1);
     }, 500);
     return () => clearTimeout(handler);
   }, [searchText]);
@@ -60,8 +63,8 @@ const ContractAndVisaExpiry = () => {
     }
   }, [dispatch, page, debouncedSearch, expiryFilter]);
 
-  const handleSearch = (value) => {
-    setSearchText(value);
+  const handleExpiryFilterChange = (value) => {
+    setExpiryFilter(value);
     setPage(1);
   };
 
@@ -74,18 +77,14 @@ const ContractAndVisaExpiry = () => {
     return `${day}/${month}/${year}`;
   };
 
-  const currentPage = pagination?.current_page || 1;
-  const handlePageChange = (newPage) => {
-    if (!newPage || newPage < 1) return;
-    setPage(newPage);
-  };
+  const totalPages = pagination?.total_pages || 1;
 
   const columns = [
     {
       header: "Sl No",
       accessor: "slNo",
       sortable: false,
-      render: (row, index) => index + 1 + (currentPage - 1) * 20,
+      render: (row, index) => index + 1 + (page - 1) * PAGE_SIZE,
     },
     {
       header: "Employee name",
@@ -123,11 +122,11 @@ const ContractAndVisaExpiry = () => {
         />
         <ReusableFilter
           search={searchText}
-          onSearch={handleSearch}
+          onSearch={setSearchText}
           searchPlaceholder="Search by Name or Employee ID"
           status={expiryFilter}
           statuses={["Contract Within 30 Days", "Visa Within 30 Days"]}
-          onStatus={setExpiryFilter}
+          onStatus={handleExpiryFilterChange}
           showSearch
           showStatus
         />
@@ -138,11 +137,11 @@ const ContractAndVisaExpiry = () => {
           autoLayout
         />
 
-        <Pagination
-          currentPage={currentPage}
-          totalPages={pagination?.total_pages || 1}
+        <ReusablePagination
+          currentPage={page}
+          totalPages={totalPages}
           totalRecords={pagination?.count ?? pagination?.total_items ?? 0}
-          onPageChange={handlePageChange}
+          onPageChange={setPage}
         />
       </Container>
     </>

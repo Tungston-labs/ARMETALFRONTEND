@@ -85,9 +85,9 @@ export const Content = styled.div`
 
 export const Count = styled.div`
   font-size: clamp(18px, 1.8vw, 24px);
-  font-weight: 700;
+  font-weight: 500;
   line-height: 1.2;
-
+  font-family: "poppins", sans-serif;
   max-width: 100%;
   min-width: 0;
 
@@ -101,8 +101,7 @@ export const Title = styled.div`
   font-size: clamp(12px, 1.1vw, 14px);
   color: #8c89b4;
   font-weight: 400;
-  font-family: "poppins";
-
+  font-family: "poppins", sans-serif;
   max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;

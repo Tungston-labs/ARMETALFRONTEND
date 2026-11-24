@@ -9,7 +9,7 @@ import {
 import { FaAngleLeft, FaAngleRight } from "react-icons/fa";
 
 const ReusablePagination = ({
-  currentPage,
+  currentPage = 1,
   totalPages,
   totalRecords,
   onPageChange,
@@ -18,32 +18,37 @@ const ReusablePagination = ({
     return null;
   }
 
+  const goTo = (page) => {
+    if (page < 1 || page > totalPages || page === currentPage) return;
+    onPageChange?.(page);
+  };
+
+  // Builds e.g.  1 … 4 5 6 … 10   (never skips a page without an ellipsis)
   const getPages = () => {
-    const pages = [];
-
     if (totalPages <= 7) {
-      for (let i = 1; i <= totalPages; i++) {
-        pages.push(i);
-      }
-      return pages;
+      return Array.from({ length: totalPages }, (_, i) => i + 1);
     }
 
-    pages.push(1);
+    let start = Math.max(2, currentPage - 1);
+    let end = Math.min(totalPages - 1, currentPage + 1);
 
-    if (currentPage > 4) {
-      pages.push("...");
-    }
+    // near the start / end, show a few more pages so the width stays steady
+    if (currentPage <= 3) end = 4;
+    if (currentPage >= totalPages - 2) start = totalPages - 3;
 
-    const start = Math.max(2, currentPage - 1);
-    const end = Math.min(totalPages - 1, currentPage + 1);
+    // don't hide a single page behind an ellipsis, just show it
+    if (start === 3) start = 2;
+    if (end === totalPages - 2) end = totalPages - 1;
+
+    const pages = [1];
+
+    if (start > 2) pages.push("ellipsis-start");
 
     for (let i = start; i <= end; i++) {
       pages.push(i);
     }
 
-    if (currentPage < totalPages - 3) {
-      pages.push("...");
-    }
+    if (end < totalPages - 1) pages.push("ellipsis-end");
 
     pages.push(totalPages);
 
@@ -63,20 +68,24 @@ const ReusablePagination = ({
       {totalPages > 1 && (
         <>
           <ArrowButton
+            type="button"
+            aria-label="Previous page"
             disabled={currentPage === 1}
-            onClick={() => onPageChange(currentPage - 1)}
+            onClick={() => goTo(currentPage - 1)}
           >
             <FaAngleLeft />
           </ArrowButton>
 
-          {getPages().map((page, index) =>
-            page === "..." ? (
-              <Ellipsis key={index}>...</Ellipsis>
+          {getPages().map((page) =>
+            typeof page === "string" ? (
+              <Ellipsis key={page}>...</Ellipsis>
             ) : (
               <PageNumber
                 key={page}
+                type="button"
                 $active={currentPage === page}
-                onClick={() => onPageChange(page)}
+                aria-current={currentPage === page ? "page" : undefined}
+                onClick={() => goTo(page)}
               >
                 {page}
               </PageNumber>
@@ -84,8 +93,10 @@ const ReusablePagination = ({
           )}
 
           <ArrowButton
+            type="button"
+            aria-label="Next page"
             disabled={currentPage === totalPages}
-            onClick={() => onPageChange(currentPage + 1)}
+            onClick={() => goTo(currentPage + 1)}
           >
             <FaAngleRight />
           </ArrowButton>

@@ -73,20 +73,17 @@ export const employeeColumns = (
             console.error("onRestore function is missing");
           }
         }}
-        style={{
-          border: "none",
-          background: "#E8F5E9",
-          color: "#2E7D32",
-          padding: "7px 14px",
-          borderRadius: "6px",
-          cursor: "pointer",
-          fontWeight: 600,
-          position: "relative",
-          zIndex: 100,
-
-          // Small click effect
-          transition: "transform 0.12s ease, background 0.2s ease",
-        }}
+       style={{
+  border: "none",
+  background: "#E8F5E9",
+  color: "#2E7D32",
+  padding: "6px 12px",
+  borderRadius: "6px",
+  cursor: "pointer",
+  fontWeight: 600,
+  whiteSpace: "nowrap",
+  transition: "transform 0.12s ease, background 0.2s ease",
+}}
         onMouseDown={(e) => {
           e.currentTarget.style.transform = "scale(0.94)";
           e.currentTarget.style.background = "#C8E6C9";
