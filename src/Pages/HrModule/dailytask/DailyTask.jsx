@@ -28,7 +28,7 @@ import { PiUserCirclePlusThin } from "react-icons/pi";
 
 const Card = ({ dept, onClick, isActive }) => (
   <CardItem onClick={onClick} $isActive={isActive}>
-    <strong>{dept.name}</strong>
+   {dept.name}
   </CardItem>
 );
 

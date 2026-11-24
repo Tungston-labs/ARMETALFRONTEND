@@ -7,11 +7,11 @@ import StatsCards from "../../../Components/StatsCards/StatsCards";
 import ReusableTable from "../../../Components/ReusableTable/ReusableTable";
 import ReusableHeader from "../../../Components/ReusableTable/ReusableHeader";
 import ReusableFilter from "../../../Components/ReusableTable/ReusableFilter";
-
 import { getFinanceColumns, getStatCards } from "./FinanceColumns";
-import { useCurrency } from "../../../hooks/useCurrency"; // adjust path to match where you saved it
+import { useCurrency } from "../../../hooks/useCurrency"; 
 import ReusablePagination from "../../../Components/Pagination/ReusablePagination";
-
+import { exportFinanceToExcel } from "./exportFinance";
+import { HeaderButton } from "../../../Components/ReusableTable/ReusableHeader.styles";
 const PAGE_SIZE = 20;
 
 const PAYMENT_LABEL_TO_CODE = { Income: "IN", Expense: "OUT" };
@@ -19,9 +19,6 @@ const PAYMENT_CODE_TO_LABEL = { IN: "Income", OUT: "Expense" };
 
 const FinanceDetail = () => {
   const dispatch = useDispatch();
-
-  // Company's active currency, read from Redux (company slice) -
-  // same source used across Payroll, Reimbursement, etc.
   const { currencyCode } = useCurrency();
 
   const {
@@ -38,7 +35,7 @@ const FinanceDetail = () => {
   const [selectedPayment, setSelectedPayment] = useState(""); // "IN" | "OUT" | ""
   const [page, setPage] = useState(1);
   const [month, setMonth] = useState("");
-
+  const [isExporting, setIsExporting] = useState(false);
 useEffect(() => {
   dispatch(
     fetchFinanceList({
@@ -89,23 +86,45 @@ useEffect(() => {
     if (newPage < 1 || newPage > pagination.totalPages) return;
     setPage(newPage);
   };
-
+const handleExport = async () => {
+  try {
+    setIsExporting(true);
+    await exportFinanceToExcel(
+      {
+        search: searchText,
+        payment_type: selectedPayment,
+        month,
+      },
+      currencyCode
+    );
+  } catch (error) {
+    console.error("Failed to export finance list:", error);
+  } finally {
+    setIsExporting(false);
+  }
+};
   const columns = getFinanceColumns({ page, pageSize: PAGE_SIZE, currencyCode });
-
-  // Cards fed into the generic StatsCards component — built from the
-  // live Redux totals, since FinanceColumns.jsx has no access to them
   const statCards = getStatCards({ totalIncome, totalExpense, cashBalance, currencyCode });
 
   return (
     <>
       <Container>
 
-        <ReusableHeader
-          title="Finance"
-          breadcrumbs={["Dashboard", "Finance"]}
-          buttonText="+ ADD NEW FINANCE"
-          onButtonClick={() => setIsOpen(true)}
-        />
+       <ReusableHeader
+  title="Finance"
+  breadcrumbs={["Finance"]}
+  buttonText="+ ADD NEW FINANCE"
+  onButtonClick={() => setIsOpen(true)}
+>
+  <HeaderButton
+    type="button"
+    $variant="success"
+    onClick={handleExport}
+    disabled={isExporting}
+  >
+    {isExporting ? "Exporting..." : "EXPORT EXCEL"}
+  </HeaderButton>
+</ReusableHeader>
         <StatsCards cards={statCards} />
         <ReusableFilter
           showSearch

@@ -84,6 +84,7 @@ export const DepartmentPanel = styled.div`
   box-shadow: 4px 0 20px ${colors.shadowMedium};
   border-right: 3px solid ${colors.primary}; 
   overflow-y: auto;
+    font-family: "poppins", sans-serif;
   z-index: 5;
   ${CustomScrollbar}
 
@@ -577,7 +578,7 @@ export const EmployeeItem = styled.div`
   transition: background-color 0.1s;
   font-size: 1rem;
   font-weight: ${(props) => (props.$isActive ? "bold" : "normal")};
-
+  font-family: "poppins", sans-serif;
   background-color: ${(props) =>
     props.$isActive ? colors.activeBg : "transparent"};
 
@@ -630,9 +631,9 @@ export const TaskHeader = styled.div`
 export const Heading = styled.div`
   margin: 0;
   color: ${colors.primaryDark};
-  font-weight: 700;
-  font-size: 1rem;
-
+  font-weight: 500;
+  font-size:14px;
+  font-family: "poppins", sans-serif;
 @media (min-width: 2540px) {
     font-size: 1.4rem;
   }
